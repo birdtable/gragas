@@ -22,8 +22,8 @@ import (
 // first always lands while the run is still reading, however loaded the host.
 func bigRepo(t *testing.T) (repo string, release func()) {
 	t.Helper()
-	repo = fixture(t)
-	dir := filepath.Join(repo, "rulebook/lang/go/rules")
+	repo = genFixture(t, false)
+	dir := filepath.Join(repo, "rulebook/language/go/rules")
 	hold, release := testenv.HoldRead(t)
 	testenv.Link(t, hold, filepath.Join(dir, "a-hold.yaml"))
 	for i := range 600 {

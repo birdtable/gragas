@@ -179,3 +179,8 @@ so the commit that closes a gap lowers the number. A test holds this.
   framework environment guides, two operator points). They are in `open`.
 - **Grade-only reasons.** 5 rules gave no reason but their evidence grade;
   their `why` now says so.
+
+Since the move to format 3, `gragas gen` writes `rulebook/rules.json` in schema 3 (see
+`docs/format/README.md`, The generated rules.json). It still writes `rulebook/ids.lock`, and no longer
+writes `bindings.json` or `coverage.json`. `rulebook/schema/rules-json.schema.json` describes schema 2
+only; `rulebook/schema/rules-json-3.schema.json` describes what gen writes now.

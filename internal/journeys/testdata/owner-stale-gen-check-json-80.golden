@@ -8,11 +8,11 @@ $ gragas gen --check --json
   "msg": "1 generated file differ from their sources",
   "next": "gragas gen --apply",
   "changes": [
-    "write rulebook/coverage.json"
+    "write rulebook/rules.json"
   ],
   "data": {
     "stale": [
-      "rulebook/coverage.json"
+      "rulebook/rules.json"
     ]
   },
   "error": {
@@ -22,5 +22,4 @@ $ gragas gen --check --json
   }
 }
 --- stderr
-warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
 --- exit 1

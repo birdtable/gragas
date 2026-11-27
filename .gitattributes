@@ -6,7 +6,7 @@
 
 # Generated files: reviewed by their generator, not by hand.
 rulebook/rules.json linguist-generated=true
-rulebook/bindings.json linguist-generated=true
+rulebook/ids.lock linguist-generated=true
 .golangci.yml linguist-generated=true
 
 # The agent-instruction pointer is the same bytes on every checkout: Git for

@@ -25,21 +25,6 @@ func (refusingLocks) Take(string, string) (legacy.Lock, error) {
 	return nil, notMine("the state folder", "/made/up/state")
 }
 
-// laterRefusal passes the first write to w and refuses every one after it, as
-// a repository whose owner changed under the run would.
-type laterRefusal struct {
-	w legacy.Writer
-	n int
-}
-
-func (x *laterRefusal) Write(dir, path string, data []byte) error {
-	x.n++
-	if x.n > 1 {
-		return notMine("the repository", dir)
-	}
-	return x.w.Write(dir, path, data)
-}
-
 // TestALockInAnotherAccountsFolderIsRefusedAndWritesNothing: the old lock
 // refuses a state folder another account owns, so gen --apply ends refused
 // with the host's sentence and the line to type, takes no lock, writes
@@ -88,10 +73,25 @@ func TestARepositoryAnotherAccountOwnsIsRefused(t *testing.T) {
 	}
 }
 
-// TestARefusalAfterAWriteFails: a refusal that comes after a file was written
-// is not the clean refusal of a run that wrote nothing, so gen --apply ends
-// failed, naming what it wrote and the line to type again. Risk: a run that
-// wrote half its files said to have written nothing.
+// laterRefusal passes the first write to w and refuses every one after it, as
+// a repository whose owner changed under the run would.
+type laterRefusal struct {
+	w legacy.Writer
+	n int
+}
+
+func (x *laterRefusal) Write(dir, path string, data []byte) error {
+	x.n++
+	if x.n > 1 {
+		return notMine("the repository", dir)
+	}
+	return x.w.Write(dir, path, data)
+}
+
+// TestARefusalAfterAWriteFails: gen writes rules.json then ids.lock, so a
+// repository whose owner changes after the first write ends failed, with one
+// file written and the line to run again. Risk: a half-written pair said as a
+// plain refusal, so a person does not run it again.
 func TestARefusalAfterAWriteFails(t *testing.T) {
 	t.Parallel()
 	f := world(t)

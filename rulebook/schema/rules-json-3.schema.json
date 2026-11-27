@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rules-json-3.schema.json",
+  "title": "The generated rulebook/rules.json (schema 3): the format-3 book as the loader read it, each rule with its derived standing",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["generated_by", "schema", "parts", "kinds", "sources", "rules"],
+  "properties": {
+    "generated_by": { "const": "gragas gen" },
+    "schema": { "const": 3, "description": "the schema of this file; not the schema of gragas gen --json" },
+    "parts": { "type": "array", "items": { "$ref": "#/$defs/part" } },
+    "kinds": { "type": "array", "items": { "$ref": "#/$defs/kind" } },
+    "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
+    "rules": { "type": "array", "items": { "$ref": "#/$defs/rule" } }
+  },
+  "$defs": {
+    "slug": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "words": { "type": "array", "items": { "type": "string" } },
+    "text": { "type": "string", "minLength": 1 },
+    "part": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug", "layer", "name", "concerns"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "layer": { "$ref": "#/$defs/slug" },
+        "name": { "$ref": "#/$defs/text" },
+        "aliases": { "$ref": "#/$defs/words" },
+        "owners": { "$ref": "#/$defs/words" },
+        "concerns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["slug", "name"],
+            "properties": {
+              "slug": { "$ref": "#/$defs/slug" },
+              "name": { "$ref": "#/$defs/text" },
+              "aliases": { "$ref": "#/$defs/words" }
+            }
+          }
+        }
+      }
+    },
+    "kind": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug", "name"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "name": { "$ref": "#/$defs/text" },
+        "description": { "$ref": "#/$defs/text" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug", "kind", "title", "locator"],
+      "properties": {
+        "slug": { "$ref": "#/$defs/slug" },
+        "kind": { "$ref": "#/$defs/text" },
+        "title": { "$ref": "#/$defs/text" },
+        "locator": { "$ref": "#/$defs/text" },
+        "attribution": { "$ref": "#/$defs/text" },
+        "verified": { "$ref": "#/$defs/text" }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "part", "concern", "statement", "strength", "status", "origin"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*\\.[1-9][0-9]*$" },
+        "part": { "$ref": "#/$defs/slug" },
+        "concern": { "$ref": "#/$defs/slug" },
+        "aliases": { "$ref": "#/$defs/words" },
+        "statement": { "$ref": "#/$defs/text" },
+        "strength": { "enum": ["must", "should", "may"] },
+        "status": { "enum": ["proposed", "trial", "active", "retired"] },
+        "origin": { "enum": ["authored", "imported", "migrated"] },
+        "owner": { "$ref": "#/$defs/text" },
+        "review_by": { "$ref": "#/$defs/text" },
+        "zero_by": { "$ref": "#/$defs/text" },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "parts": { "$ref": "#/$defs/words" },
+            "paths": { "$ref": "#/$defs/words" },
+            "kinds": { "$ref": "#/$defs/words" }
+          }
+        },
+        "exemptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["reason"],
+            "properties": {
+              "paths": { "$ref": "#/$defs/words" },
+              "kinds": { "$ref": "#/$defs/words" },
+              "reason": { "$ref": "#/$defs/text" }
+            }
+          }
+        },
+        "reasoning": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "definition": { "$ref": "#/$defs/text" },
+            "pros": { "$ref": "#/$defs/words" },
+            "cons": { "$ref": "#/$defs/words" },
+            "decision": { "$ref": "#/$defs/text" }
+          }
+        },
+        "relations": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "relates": { "$ref": "#/$defs/words" },
+            "conflicts": { "$ref": "#/$defs/words" },
+            "depends": { "$ref": "#/$defs/words" },
+            "covers": { "$ref": "#/$defs/words" }
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ref", "backs"],
+            "properties": {
+              "ref": { "$ref": "#/$defs/text" },
+              "where": { "$ref": "#/$defs/text" },
+              "says": { "$ref": "#/$defs/text" },
+              "backs": { "enum": ["rule", "threshold", "check"] }
+            }
+          }
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tool", "target", "key", "severity", "rung", "run_point"],
+            "properties": {
+              "tool": { "$ref": "#/$defs/text" },
+              "target": { "enum": ["source", "config", "migration", "container", "workflow", "iac", "api-spec", "prose", "commit", "telemetry-registry", "dependency", "package"] },
+              "key": { "$ref": "#/$defs/text" },
+              "value": {},
+              "options": {},
+              "severity": { "enum": ["error", "warning", "info"] },
+              "rung": { "type": "integer" },
+              "run_point": { "enum": ["edit", "commit", "push", "land", "review", "release", "deploy"] },
+              "remedy": { "$ref": "#/$defs/text" },
+              "pair": { "type": "integer" },
+              "pair_path": { "$ref": "#/$defs/text" },
+              "tightens": { "$ref": "#/$defs/text" },
+              "checker": { "$ref": "#/$defs/text" }
+            }
+          }
+        },
+        "pairs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["number", "target"],
+            "properties": {
+              "number": { "type": "integer" },
+              "target": { "$ref": "#/$defs/text" }
+            }
+          }
+        },
+        "replaced_by": { "$ref": "#/$defs/text" },
+        "standing": { "enum": ["proposed", "enforced", "reviewed", "planned", "advisory", "retired"] }
+      }
+    }
+  }
+}

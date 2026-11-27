@@ -138,7 +138,7 @@ func TestJSONAnswersWithTheResult(t *testing.T) {
 	if err := json.Unmarshal([]byte(out.String()), &r); err != nil {
 		t.Fatalf("not one JSON document: %v\n%s", err, out)
 	}
-	if r.Schema != coreapi.ResultSchema || r.Command != "gen" || r.Ended != "declined" || r.Apply == nil || *r.Apply || len(r.Changes) != 4 {
+	if r.Schema != coreapi.ResultSchema || r.Command != "gen" || r.Ended != "declined" || r.Apply == nil || *r.Apply || len(r.Changes) != 2 {
 		t.Errorf("answer = %+v", r)
 	}
 }
@@ -282,9 +282,6 @@ func TestADryRunShowsThePlanAndEndsDeclinedOnTheApplyLine(t *testing.T) {
 	if !ok || c.Word() != model.Declined || c.Next() != "gragas gen --apply" {
 		t.Errorf("closing = %+v, want declined with the apply line", bl[len(bl)-1])
 	}
-	if len(sc.diag.Said) != 1 || !strings.HasPrefix(sc.diag.Said[0], "warning: the names check is skipped") {
-		t.Errorf("standard error said %q, want the names warning alone", sc.diag.Said)
-	}
 }
 
 // TestUnderJSONAPersonSeesNothingOnStdoutAndTheWarningStaysOnStderr: the
@@ -368,9 +365,9 @@ func (c closing) Repo(dir string) (legacy.Source, error) {
 	return counted{src, c.closed}, nil
 }
 
-// TestARunLetsGoOfTheRepositoryItRead: check and gen let go of the
-// repository they read once, however they end, so no folder is held open
-// after a run, which Windows would refuse to remove. Planted failure: check or gen ending without release.
+// TestARunLetsGoOfTheRepositoryItRead: check lets go of the
+// repository it reads once (gen reads through the world and holds none), however they end, so no folder is held open
+// after a run, which Windows would refuse to remove. Planted failure: check ending without release.
 func TestARunLetsGoOfTheRepositoryItRead(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
@@ -384,9 +381,6 @@ func TestARunLetsGoOfTheRepositoryItRead(t *testing.T) {
 			f.NamesErr, f.Names, p.Config.NamesFile = nil, "errors\n", "names"
 		}},
 		{"not a rulebook", []string{"check"}, exit.NotReady, func(f *porttest.Fake, _ *Process) { f.Repo = fstest.MapFS{} }},
-		{"dry run", []string{"gen"}, exit.Declined, nil},
-		{"stale check", []string{"gen", "--check"}, exit.Findings, nil},
-		{"apply", []string{"gen", "--apply"}, exit.Done, nil},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()

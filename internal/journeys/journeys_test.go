@@ -23,7 +23,8 @@ import (
 func TestEveryExitCodeIsTheOneTheTableNames(t *testing.T) {
 	t.Parallel()
 	repo := fixture(t)
-	stale := fixture(t)
+	genRepo := genFixture(t, true)
+	stale := genFixture(t, true)
 	if err := os.WriteFile(filepath.Join(stale, "rulebook/rules.json"), []byte("{}\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +68,7 @@ func TestEveryExitCodeIsTheOneTheTableNames(t *testing.T) {
 		usage bool
 	}{
 		{"check passes", repo, nil, []string{"check"}, 0, false},
-		{"gen with nothing stale", repo, nil, []string{"gen", "--check"}, 0, false},
+		{"gen with nothing stale", genRepo, nil, []string{"gen", "--check"}, 0, false},
 		{"gen --check with a stale file", stale, nil, []string{"gen", "--check"}, 1, false},
 		{"init in a rulebook is not ready", repo, nil, []string{"init"}, 4, false},
 		{"a mistyped command", repo, nil, []string{"chek"}, 2, true},
@@ -108,7 +109,7 @@ func TestEveryExitCodeIsTheOneTheTableNames(t *testing.T) {
 // gen --apply runs at once would interleave their writes.
 func TestARunThatFindsTheLockHeldIsBusy(t *testing.T) {
 	t.Parallel()
-	repo := fixture(t)
+	repo := genFixture(t, true)
 	if err := os.WriteFile(filepath.Join(repo, "rulebook/rules.json"), []byte("{}\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -142,8 +143,8 @@ func TestARunThatFindsTheLockHeldIsBusy(t *testing.T) {
 // writes, or a write that leaves no record.
 func TestGenWritesOnlyWithApplyRecordsTheRunAndIsSafeTwice(t *testing.T) {
 	t.Parallel()
-	repo := fixture(t)
-	target := filepath.Join(repo, "rulebook/coverage.json")
+	repo := genFixture(t, true)
+	target := filepath.Join(repo, "rulebook/rules.json")
 	want, err := os.ReadFile(target)
 	if err != nil {
 		t.Fatal(err)
@@ -168,8 +169,8 @@ func TestGenWritesOnlyWithApplyRecordsTheRunAndIsSafeTwice(t *testing.T) {
 	}
 	records := readRecords(t)
 	last := records[len(records)-1]
-	if last.ID == "" || last.Code != 0 || last.Ending != "done" || len(last.Changes) != 1 || last.Changes[0] != "write rulebook/coverage.json" ||
-		len(last.Extra.Undo) != 1 || last.Extra.Undo[0].How != "printed" || len(last.Extra.Undo[0].Lines) != 1 || last.Extra.Undo[0].Lines[0] != "git restore --source=HEAD -- rulebook/coverage.json" {
+	if last.ID == "" || last.Code != 0 || last.Ending != "done" || len(last.Changes) != 1 || last.Changes[0] != "write rulebook/rules.json" ||
+		len(last.Extra.Undo) != 1 || last.Extra.Undo[0].How != "printed" || len(last.Extra.Undo[0].Lines) != 1 || last.Extra.Undo[0].Lines[0] != "git restore --source=HEAD -- rulebook/rules.json" {
 		t.Errorf("the run record is %+v", last)
 	}
 	again := run(t, repo, nil, "gen", "--apply")
@@ -182,15 +183,15 @@ func TestGenWritesOnlyWithApplyRecordsTheRunAndIsSafeTwice(t *testing.T) {
 // error with no id cannot be matched to its record.
 func TestAFailedWriteCarriesTheRunID(t *testing.T) {
 	t.Parallel()
-	repo := fixture(t)
+	repo := genFixture(t, true)
 	dir := filepath.Join(repo, "rulebook")
 	// A link to nowhere where the generated file goes: the write cannot go
 	// through it, with no mode bits involved. (A folder there is read as a
 	// layer, and the book is refused before any write.)
-	if err := os.Remove(filepath.Join(dir, "coverage.json")); err != nil {
+	if err := os.Remove(filepath.Join(dir, "rules.json")); err != nil {
 		t.Fatal(err)
 	}
-	testenv.Link(t, "nowhere/coverage.json", filepath.Join(dir, "coverage.json"))
+	testenv.Link(t, "nowhere/rules.json", filepath.Join(dir, "rules.json"))
 	r := run(t, repo, nil, "gen", "--apply")
 	records := readRecords(t)
 	id := records[len(records)-1].ID
@@ -198,7 +199,7 @@ func TestAFailedWriteCarriesTheRunID(t *testing.T) {
 		t.Fatalf("exit %d, the last record %q; the run said:\n%s%s", r.code, id, r.stdout, r.stderr)
 	}
 	// A failed replace leaves what stands at the target: the planted link is still a link.
-	if _, err := os.Readlink(filepath.Join(dir, "coverage.json")); err != nil {
+	if _, err := os.Readlink(filepath.Join(dir, "rules.json")); err != nil {
 		t.Errorf("the failed write took what stood at the target: %v", err)
 	}
 }

@@ -3,7 +3,7 @@ $ gragas gen
 gragas  v1.2.3 (abc1234) go<version>
 reading rulebook/ in .
 
-  would write      rulebook/coverage.json
+  would write      rulebook/rules.json
 This was a dry run and nothing was changed. Add --apply to
 make these changes.
 
@@ -11,5 +11,4 @@ make these changes.
   the plan
     gragas gen --apply
 --- stderr
-warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
 --- exit 6
