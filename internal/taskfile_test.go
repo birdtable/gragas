@@ -1188,8 +1188,8 @@ func TestFullRunsEveryMemberThePushLeavesOutAsDeps(t *testing.T) {
 	if bad := fullShapeProblems(full, members, checks); len(bad) != 0 {
 		t.Errorf("full (gragas#1619): %v", bad)
 	}
-	if !strings.Contains(full, "landing runs full on the Mac; a tag needs task release green on the Mac") {
-		t.Error("full's desc does not say landing runs it on the Mac and a tag needs the release green on the Mac")
+	if !strings.Contains(full, "landing runs full on the release machine; a tag needs task release green on the release machine") {
+		t.Error("full's desc does not say landing runs it on the release machine and a tag needs the release green on the release machine")
 	}
 	for _, p := range []struct{ what, in, from, to string }{
 		{"a member called in full's cmds", "full", "      - task: tools-check\n", "      - task: tools-check\n      - task: vuln\n"},

@@ -49,6 +49,15 @@ jobs:
           go-version-file: go.mod
           cache: false
       # REPO-SPECIFIC STEP 1 of 2 (the only lines a sibling repo changes in this job, with step 2).
+      # The tests run the pinned tools and read the module graph of every system with GOPROXY off, so
+      # the runner first builds go-task from the pinned tools module (docs/checks.md, Setup), lets
+      # `task tools` build and fetch the rest into .tools, and fills the module cache.
+      - name: tools
+        run: |
+          echo "GOTOOLCHAIN=$(go env GOVERSION)" >> "$GITHUB_ENV"
+          CGO_ENABLED=0 go build -C tools -o "../.tools/bin/task$(go env GOEXE)" github.com/go-task/task/v3/cmd/task
+          GOTOOLCHAIN=$(go env GOVERSION) ./.tools/bin/task tools
+          go mod download
       - name: go vet
         run: go vet ./...
       # REPO-SPECIFIC STEP 2 of 2. go test runs with the race detector, in shuffled order and never

@@ -7,7 +7,7 @@ for: How the program is built, and every decision behind it
 
 # gragas: the architecture
 
-This is the record of the design as of 8 Nov 2026. It is built from [the spec](spec.md) (S1 to S75) at 77a7bd8 in the companion tool, with the fixes of the independent review (architecture-review.md, 158e723) and the structural calls of the product README's "Architecture review, structural calls (7 Nov, night)" applied. The documents named in plain text here (the review, the product README and its rulings, product-frame.md, the v6 page, research/build-rules.md, research/rules-by-component.md) are in the working folder of companion 8e9aacc, not in this repository. It supersedes the v6 architecture page (D1 to D64) where section 17 says so; [the v6 index](decisions/superseded-v6.md) lists the numbers. Licence of everything it describes: Apache-2.0, for the engine and for the rulebook.
+This is the record of the design as of 8 Nov 2026. It is built from [the spec](spec.md) (S1 to S75) at 77a7bd8 in the companion tool, with the fixes of the independent review (architecture-review.md, 158e723) and the structural calls of the product README's "Architecture review, structural calls (7 Nov, night)" applied. The documents named in plain text here (the review, the product README and its rulings, product-frame.md, the v6 page, research/build-rules.md, research/rules-by-component.md) are in the working folder of companion 8e9aacc, not in this repository. It supersedes the v6 architecture page (D1 to D64) where section 17 says so; the v6 index, which is not in this repository, lists the numbers. Licence of everything it describes: Apache-2.0, for the engine and for the rulebook.
 
 **Designed and built.** This document describes a target. What is built is what `layers.yaml` lists as packages and what the old `check` and `gen` do; everything else is designed, and each part says in which milestone of section 18 it is built. Section 3.3 lists every path this document names that does not exist yet, with the milestone that creates it.
 
@@ -305,7 +305,7 @@ Seventeen ports (twelve since the Signer went out, gragas#1556, thirteen again w
 
 ### 4.1 Tools are plugins
 
-gragas knows no tool. It embeds no description of one, and its non-test Go names none; a gate test refuses a tool's name there. What it knows is the plugin interface, and anything that fulfils the interface works with gragas ([plugin-interface](decisions/plugin-interface.md)). A plugin is code, in the author's language, for one tool; the one in this tree is `standin`, a fake the tests use. The plugins that serve golangci-lint, ESLint, the TypeScript compiler and ast-grep live in birdtable/gragas-plugins, beside the SDK. gragas always runs the tool itself: a plugin says what to run and reads what came out, and starts nothing.
+gragas knows no tool. It embeds no description of one, and its non-test Go names none; a gate test refuses a tool's name there. What it knows is the plugin interface, and anything that fulfils the interface works with gragas (the plugin-interface decision). A plugin is code, in the author's language, for one tool; the one in this tree is `standin`, a fake the tests use. The plugins that serve golangci-lint, ESLint, the TypeScript compiler and ast-grep live in birdtable/gragas-plugins, beside the SDK. gragas always runs the tool itself: a plugin says what to run and reads what came out, and starts nothing.
 
 **The interface is five operations** over a versioned contract (`contract/plugin/v1/`):
 
@@ -734,7 +734,6 @@ The current tree is a validator and generator over a rulebook that lives inside 
 | gragas.yaml (constants: package name, docs base, site URL) | deleted: the docs base belongs to a rulebook's identity, there is no site URL, the package names live in the manifests | delete |
 | `Taskfile.yml` | the same gate, growing the explorer's checks, the closure test, the cross-compile, the release recipe | keep and grow |
 | `.golangci.yml` | rendered from the pinned rulebook's preset plus the generated layer rows, never hand-edited | regenerate |
-| `AGENTS.md` | rewritten as a short map that names no other repository and whose every path resolves [agents.instructions.1, agents.instructions.2] | rewrite |
 | `docs/layers.md`, `docs/schema-v2.md`, `docs/self-check.md` | `layers.md` stays generated; the schema doc becomes the format spec; the self-check becomes the engine's own `check` report | regenerate, move, delete |
 | new | `gate/`, `docs/surface.md`, `core/lifecycle`, `core/proof`, `core/project`, `core/agents`, `internal/apply`, `host/git`, `host/tool`, `host/sandbox`, `host/clock`, `host/term`, `internal/model`, `internal/exit`, `internal/canon`, `internal/markdown`, `explorer/`, `internal/host/assets/` (the embedded data folders below it), `cmd/gragas-subset` | new |
 
