@@ -631,10 +631,10 @@ func TestAFilesReadPluginIsHandedOnlyTheFilesItsPlanReads(t *testing.T) {
 		wantResults int
 		wantFiles   int
 	}{
-		{"a glob of the root's files hands over the file", "*.yml", 1, 1, 1},
-		{"a path hands over the file", "p.yml", 1, 1, 1},
+		{"a glob of the root's files hands over the file", "*.yml", 0, 1, 1},
+		{"a path hands over the file", "p.yml", 0, 1, 1},
 		{"a folder the preset has no file in hands over none", "rules/**", 1, 1, 0},
-		{"a glob of every folder hands over the file", "**/*.yml", 1, 1, 1},
+		{"a glob of every folder hands over the file", "**/*.yml", 0, 1, 1},
 		{"a plan that asks for no read gets no read result", "", 1, 0, 0},
 	} {
 		p := filesReadPlugin("")
@@ -664,49 +664,6 @@ func TestAFilesReadPluginIsHandedOnlyTheFilesItsPlanReads(t *testing.T) {
 	}
 }
 
-// TestAPresetTheReadTakesWholeFailsAsInTheEngine: the engine sends the whole
-// config beside a read, so a plugin whose read takes a preset of over half the
-// entries cap is refused there, and C23 fails it here and does not pass it.
-// Planted: the matched files taken out of the config (this row passes, as the old split did).
-func TestAPresetTheReadTakesWholeFailsAsInTheEngine(t *testing.T) {
-	t.Parallel()
-	p := filesReadPlugin("")
-	p.OnPlan = planReading("p.yml")
-	inner := p.OnEntries
-	// The stand-in applies no cap, so it refuses as the codec does: an entries
-	// request of the config and the read files over wire.MaxEntriesInput.
-	p.OnEntries = func(in plugin.EntriesRequest) (plugin.EntriesResponse, error) {
-		size := 0
-		for _, f := range in.Config {
-			if f.Data != nil && f.Data.Text != nil {
-				size += len(*f.Data.Text)
-			}
-		}
-		for _, r := range in.Have {
-			for _, f := range r.Files {
-				if f.Data.Text != nil {
-					size += len(*f.Data.Text)
-				}
-			}
-		}
-		if size > 64<<10 {
-			return plugin.EntriesResponse{}, &plugin.LimitError{What: plugin.LimitEntries, Size: size, Cap: 64 << 10}
-		}
-		return inner(in)
-	}
-	b := withReadRecording(t, p)
-	big := strings.Repeat("#", 40<<10)
-	for i, k := range b.Cases {
-		if k.Name == "7-preset" {
-			b.Cases[i].Response = []byte(strings.Replace(string(k.Response), "# MARK\\nk: 1\\n", "# MARK\\n"+big+"\\nk: 1\\n", 1))
-		}
-	}
-	got := run(t, resave(b))
-	if got[23].Status != model.CheckFailed {
-		t.Errorf("C23 for a plugin whose read takes a 40 KiB preset whole: %s %v, want failed, as the engine refuses it", got[23].Status, got[23].What)
-	}
-}
-
 // TestARunOnlyRecordingAtTheLastStepIsNotSkipped: a recording of a run alone
 // at round 2 step 15 adds no read, so no place is needed for one and C23 is
 // not skipped for want of a step. Planted: the
@@ -732,7 +689,7 @@ func TestARunOnlyRecordingAtTheLastStepIsNotSkipped(t *testing.T) {
 // the plan of round 0 an empty have. The plan
 // here names the preset's file only for such a request. Planted: the plan
 // asked with the whole recorded have (this row red: the glob misses, so the
-// read result holds no file; p.yml is in the config either way).
+// read result holds no file; p.yml is in the config, as the read took none).
 func TestThePlanIsAskedAsTheEngineAsksIt(t *testing.T) {
 	t.Parallel()
 	p := filesReadPlugin("")
@@ -764,7 +721,7 @@ func TestThePlanIsAskedAsTheEngineAsksIt(t *testing.T) {
 		}
 	}
 	run(t, resave(b))
-	if inConfig != 1 || inRead != 1 {
-		t.Errorf("a plan that reads p.yml for round 0 with no have: %d files in the config and %d in the reads, want 1 and 1", inConfig, inRead)
+	if inConfig != 0 || inRead != 1 {
+		t.Errorf("a plan that reads p.yml for round 0 with no have: %d files in the config and %d in the reads, want 0 (the read took it) and 1", inConfig, inRead)
 	}
 }

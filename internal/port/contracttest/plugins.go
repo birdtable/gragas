@@ -262,9 +262,7 @@ func pluginsTogether(t *testing.T, build func(t *testing.T) PluginsFixture) {
 		var wg sync.WaitGroup
 		errs := make([]error, 8)
 		for i := range errs {
-			// measured: calls of one plugin at once, 8 overlapping where a
-			// serial loop would hide a shared-state fault, as the suite's
-			// planted serial fault shows
+			// measured: calls of one plugin at once, 8 overlapping where a serial loop would hide a shared-state fault, as the suite's planted serial fault shows
 			wg.Go(func() { errs[i] = f.Call(t.Context(), p) })
 		}
 		wg.Wait()

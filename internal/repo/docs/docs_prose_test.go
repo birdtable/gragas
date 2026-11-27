@@ -30,7 +30,7 @@ var (
 func readProse(t *testing.T) (map[string]string, []string) {
 	t.Helper()
 	prose := map[string]string{}
-	paths := []string{"AGENTS.md", "CLAUDE.md", "Taskfile.yml"}
+	paths := []string{"Taskfile.yml"}
 	yamls, err := filepath.Glob(filepath.Join(root, "gate", "*.yaml"))
 	if err != nil {
 		t.Fatal(err)

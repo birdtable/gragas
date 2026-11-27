@@ -61,6 +61,8 @@ func TestCacheListAndClearReachTheWiredSandboxsNestedFolders(t *testing.T) {
 		}
 	}
 	p := world(nil, cfg)
+	// Main wires Steps after world; the clear plan counts the tools' cache folders through it.
+	p.Steps = tools(cfg, 0)
 	root := opened(t, p, filepath.Join(base, "project"))
 	var made []model.Scratch
 	for _, files := range [][]model.File{
@@ -138,6 +140,8 @@ func TestACacheClearInOneFolderLeavesTheScratchFolderARunInAnotherHolds(t *testi
 		}
 	}
 	a, b := world(nil, cfg), world(nil, cfg)
+	// Main wires Steps after world; the clear plan counts the tools' cache folders through it.
+	a.Steps, b.Steps = tools(cfg, 0), tools(cfg, 0)
 	rootA := opened(t, a, filepath.Join(base, "a"))
 	rootB := opened(t, b, filepath.Join(base, "b"))
 	var holds []model.Hold
