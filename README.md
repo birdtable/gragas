@@ -106,7 +106,7 @@ Every command gragas has decided on, from one registry. Only the ones marked yes
 
 ## The checks
 
-`task pre-push` runs the commit-level checks on the machine that pushes, and the pre-push hook runs it before every push. There is no CI on a push or a pull request. Each check is a task of `Taskfile.yml`, in one of four tiers: `pre-commit` (the staged change reads and never rewrites, and holds no secret), `pre-push` (the pushed tree passes the commit-level members), `full` (every member the push leaves out, which landing runs on the merged tree) and `release` (a fresh clone of the tag passes, with what only a release proves). A tier's wall time is judged against a number in `gate/budgets.yaml`, printed with each run, and this page does not repeat it. `docs/checks.md` has the setup, the tiers and the gate.
+`task pre-push` runs the commit-level checks on the machine that pushes, and the pre-push hook runs it before every push. The one workflow, `.github/workflows/test.yml`, runs `go vet` and `go test` on GitHub's hosted runners as the proof on other systems, and it is no part of the gate. Each check is a task of `Taskfile.yml`, in one of four tiers: `pre-commit` (the staged change reads and never rewrites, and holds no secret), `pre-push` (the pushed tree passes the commit-level members), `full` (every member the push leaves out, which landing runs on the merged tree) and `release` (a fresh clone of the tag passes, with what only a release proves). A tier's wall time is judged against a number in `gate/budgets.yaml`, printed with each run, and this page does not repeat it. `docs/checks.md` has the setup, the tiers and the gate.
 
 The shared Go plumbing, the lock and the atomic write, comes from a private module.
 

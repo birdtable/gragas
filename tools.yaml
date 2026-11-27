@@ -279,6 +279,77 @@ tools:
         member: changie.exe
         sha256: 8a4117075d09d0e515969d314f5d51331a251f4e16b7d6a6e3b68b876bb59a3b
 
+  # The workflow linters. Each archive sum is the one the publisher's release holds (actionlint's
+  # actionlint_1.7.12_checksums.txt, zizmor's release digests), and each program sum is of the member unpacked from it.
+  - id: actionlint
+    why: the workflow linter, which reads .github/workflows (supply.workflows.2)
+    version: 1.7.12
+    released: "2026-03-30"
+    from: release
+    run: [--version]
+    says: "1.7.12"
+    platforms:
+      darwin/amd64:
+        url: https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_darwin_amd64.tar.gz
+        archive: 5b44c3bc2255115c9b69e30efc0fecdf498fdb63c5d58e17084fd5f16324c644
+        member: actionlint
+        sha256: d1f7cee75ae2873609bd9567b4600bebc5315a5e733e73202987a44fafdd53b2
+      darwin/arm64:
+        url: https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_darwin_arm64.tar.gz
+        archive: aba9ced2dee8d27fecca3dc7feb1a7f9a52caefa1eb46f3271ea66b6e0e6953f
+        member: actionlint
+        sha256: 8db11704dc296f096216db4db65d86cd7f0ebfdf4c38453a1da276b137b88388
+      linux/amd64:
+        url: https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+        archive: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        member: actionlint
+        sha256: c872d6db8c6bf83a8eaa704fc93999f027d55dffbc63b8a6abdccb47df5f4cd4
+      linux/arm64:
+        url: https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_arm64.tar.gz
+        archive: 325e971b6ba9bfa504672e29be93c24981eeb1c07576d730e9f7c8805afff0c6
+        member: actionlint
+        sha256: ac0323433c2853ec3fb978c611430c5b3dc5d43c58d1a1ec031b00ab572beb60
+      windows/amd64:
+        url: https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_windows_amd64.zip
+        archive: 6e7241b51e6817ea6a047693d8e6fed13b31819c9a0dd6c5a726e1592d22f6e9
+        member: actionlint.exe
+        sha256: 54ca21be3de4c7cfa26914aa8b61bd76bf573ef3caac5f80d110558cdf241718
+
+  # zizmor v1.32.0, not v1.33.1: the later tags are under the cooldown.
+  - id: zizmor
+    why: the workflow security audit, which reads .github/workflows offline (supply.workflows.2)
+    version: 1.32.0
+    released: "2026-11-02"
+    from: release
+    run: [--version]
+    says: "zizmor 1.32.0"
+    platforms:
+      darwin/amd64:
+        url: https://github.com/zizmorcore/zizmor/releases/download/v1.32.0/zizmor-x86_64-apple-darwin.tar.gz
+        archive: 6983143c719ada6845a69cc4dd2bacc215f971662fecd8bbd2678388e5ce5969
+        member: zizmor
+        sha256: 8b9512c8507f17266325c8a580b6897cf8834e2892a4bc3acd70b43165bb72af
+      darwin/arm64:
+        url: https://github.com/zizmorcore/zizmor/releases/download/v1.32.0/zizmor-aarch64-apple-darwin.tar.gz
+        archive: 6efed18c4539a663fd3c851a2be9533fd8456c4e646d9416206da059154a0d3c
+        member: zizmor
+        sha256: fd1e0503f98714dac56fb6859ccb8ddbac2dc1eb00562dc9d174c6858994c0f1
+      linux/amd64:
+        url: https://github.com/zizmorcore/zizmor/releases/download/v1.32.0/zizmor-x86_64-unknown-linux-gnu.tar.gz
+        archive: bb110cc765eca9cd7efb2e284a956be5974c60027b0970f16397d86208a9957b
+        member: zizmor
+        sha256: 04d55fb88e582a8e9a9ce6b4753df723fc44c35e0d1a8e8771db9e017066c6df
+      linux/arm64:
+        url: https://github.com/zizmorcore/zizmor/releases/download/v1.32.0/zizmor-aarch64-unknown-linux-gnu.tar.gz
+        archive: cb152b207f815116d7fa1c1ee4614f61578803351395052908095e79adfd9fd0
+        member: zizmor
+        sha256: 5056aebea3b0ec5238921c5fd11dae104fdb65589e3ed0a8bb2e06ef85d6e809
+      windows/amd64:
+        url: https://github.com/zizmorcore/zizmor/releases/download/v1.32.0/zizmor-x86_64-pc-windows-msvc.zip
+        archive: d284a16e09d9df4ce2c000357e7b59bd531be093bea5718a1ce225b449b59d49
+        member: zizmor.exe
+        sha256: 7e15e89277a8d051589476a6c3333067541dc469ddc59535545bd458d0fc6d82
+
   # v3.26.0, not v3.27.0: the later tag is under the cooldown
   # (rulebook/lang/go/libraries.yaml), and the archive's licence is MIT. Each
   # archive sum is the publisher's vale_3.26.0_checksums.txt of the release,

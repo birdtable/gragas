@@ -324,17 +324,17 @@ func TestEveryToolPinsWindowsOrSaysWhyNot(t *testing.T) {
 	if gaps := windowsGaps(data); len(gaps) > 0 {
 		t.Errorf("tools.yaml: %s", strings.Join(gaps, "; "))
 	}
-	for _, id := range []string{"node", "pnpm", "golangci-lint", "ast-grep", "goreleaser", "changie", "vale"} {
+	for _, id := range []string{"node", "pnpm", "golangci-lint", "ast-grep", "goreleaser", "changie", "vale", "actionlint", "zizmor"} {
 		if _, err := readToolPin(data, id, "windows/amd64"); err != nil {
 			t.Errorf("%s: %v", id, err)
 		}
 	}
 	cut := regexp.MustCompile(`(?m)^      windows/amd64:\n(?:        [^\n]*\n){4}`)
-	if len(cut.FindAll(data, -1)) != 7 {
-		t.Fatalf("tools.yaml holds %d windows/amd64 release pins, want 7", len(cut.FindAll(data, -1)))
+	if len(cut.FindAll(data, -1)) != 9 {
+		t.Fatalf("tools.yaml holds %d windows/amd64 release pins, want 9", len(cut.FindAll(data, -1)))
 	}
-	if gaps := windowsGaps(cut.ReplaceAll(data, nil)); len(gaps) != 7 {
-		t.Errorf("a copy with every windows release pin cut: %v, want the seven tools red", gaps)
+	if gaps := windowsGaps(cut.ReplaceAll(data, nil)); len(gaps) != 9 {
+		t.Errorf("a copy with every windows release pin cut: %v, want the nine tools red", gaps)
 	}
 	reason := []byte("    no-windows: \"a reason\"\n    platforms:\n")
 	planted := bytes.Replace(data, []byte("    platforms:\n"), reason, 1)

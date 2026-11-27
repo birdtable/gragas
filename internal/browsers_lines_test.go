@@ -402,7 +402,7 @@ func TestTheBrowsersLinesOfTheTaskfile(t *testing.T) {
 		{"the run line's --env names a folder below the pin's", strings.Replace(real, run, strings.Replace(run, "{{.ROOT_DIR}}/.tools/playwright", "{{.ROOT_DIR}}/.tools/playwright/other", 1), 1),
 			"tasks.explorer-test.cmds.1.cmd names PLAYWRIGHT_BROWSERS_PATH 1 times and sets it to {{.ROOT_DIR}}/.tools/playwright 0"},
 		{"the tools step installs into another folder", strings.Replace(real, `PLAYWRIGHT_BROWSERS_PATH=\"{{.ROOT_DIR}}/.tools/playwright\"`, `PLAYWRIGHT_BROWSERS_PATH=\"{{.ROOT_DIR}}/other/browsers\"`, 1),
-			"tasks.tools.cmds.14.cmd names PLAYWRIGHT_BROWSERS_PATH 1 times and sets it to {{.ROOT_DIR}}/.tools/playwright 0"},
+			"tasks.tools.cmds.16.cmd names PLAYWRIGHT_BROWSERS_PATH 1 times and sets it to {{.ROOT_DIR}}/.tools/playwright 0"},
 		{"a second assignment after the held one", strings.Replace(real, run, strings.Replace(run, `-- run test`, `-- run test --env PLAYWRIGHT_BROWSERS_PATH=other`, 1), 1),
 			"tasks.explorer-test.cmds.1.cmd names PLAYWRIGHT_BROWSERS_PATH 2 times and sets it to {{.ROOT_DIR}}/.tools/playwright 1"},
 		// a call of the check in any other form is no pin check

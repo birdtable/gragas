@@ -94,6 +94,7 @@ every exception is listed in `suppressions.txt`.
 | tests.journeys.1 to .4, .6 | no journey map or per-command journey test; journeys share one state folder and no scan holds the binary to the contract package; a stale or unstamped binary is not refused and no leftover scan follows a run | not placed |
 | tests.measures.2, .6 | no tier budgets, floors or comparison helper | not placed |
 | tests.runners.2, .3 | the test flags live in gragas's Taskfile, not a shared preset, and no `-p` comes from a slot variable | M4, with the presets |
+| supply.workflows.5 | gragas's one workflow, `test.yml`, runs on a pull request, where the rule asks for a workflow on a tag and by hand only; the rule is the rulebook owner's to amend | not placed |
 
 ## The cycle's parts: held by no check yet
 
