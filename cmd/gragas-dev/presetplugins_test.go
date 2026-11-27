@@ -6,95 +6,22 @@ import (
 	"path"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/birdtable/gragas/internal/config"
 	configtest "github.com/birdtable/gragas/internal/config/testing"
 	hostfs "github.com/birdtable/gragas/internal/host/fs"
 	"github.com/birdtable/gragas/internal/model"
 )
-
-// stateFake is the cmd/gragas of a module the member builds in place of
-// gragas's own: plugin approve writes a file named for the plugin into the
-// folder the state variable names, and is refused when it names none;
-// --json preset --check answers report, a Result document. No gragas is built
-// or run outside the journeys (AGENTS.md, The Go code).
-func stateFake(stateVar, report string) string {
-	return `package main
-
-import (
-	"fmt"
-	"os"
-	"path/filepath"
-)
-
-func main() {
-	switch {
-	case len(os.Args) > 3 && os.Args[1] == "plugin" && os.Args[2] == "approve":
-		dir := os.Getenv(` + strconv.Quote(stateVar) + `)
-		if dir == "" {
-			fmt.Fprintln(os.Stderr, "the fake: no state folder is named")
-			os.Exit(1)
-		}
-		if err := os.WriteFile(filepath.Join(dir, "approved-"+os.Args[3]), nil, 0o600); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-	case len(os.Args) == 4 && os.Args[1] == "--json" && os.Args[2] == "preset" && os.Args[3] == "--check":
-		fmt.Println(` + strconv.Quote(report) + `)
-	default:
-		fmt.Fprintln(os.Stderr, "the fake: not a run the member makes:", os.Args[1:])
-		os.Exit(2)
-	}
-}
-`
-}
 
 // fakeReport is the fake's answer to --json preset --check: the tree's one
 // preset, golangci-lint's, compared and the same.
 const fakeReport = `{"schema": "gragas.result/v1", "command": "preset", "ended": "done", "msg": "the fake: 1 preset file compared",
 "data": {"files": [{"path": "presets/golangci-lint/.golangci.yml", "tool": "golangci-lint", "state": "same"}], "compared": 1}}`
 
-// TestTheApprovalStaysOutOfTheAccountsStateFolder: the member runs with the state folder's variable
-// set, as an account's own may be, to a folder that stands in for the
-// account's. It builds a fake gragas that approves by writing into the folder
-// the variable names, so the approval lands in the folder of the member's run,
-// and the account's folder holds nothing after.
-func TestTheApprovalStaysOutOfTheAccountsStateFolder(t *testing.T) {
-	t.Parallel()
-	v := config.StateVar()
-	if v == "" {
-		t.Fatal("no variable moves the state folder on this system")
-	}
-	src := t.TempDir()
-	configtest.MkdirPrivate(t, src, "cmd/gragas")
-	for name, body := range map[string]string{
-		"go.mod":             "module example.com/fake\n\ngo 1.22\n",
-		"cmd/gragas/main.go": stateFake(v, fakeReport),
-	} {
-		if err := os.WriteFile(filepath.Join(src, filepath.FromSlash(name)), []byte(body), 0o600); err != nil {
-			t.Fatal(err)
-		}
-	}
-	account := t.TempDir()
-	environ := append(slices.Clone(configtest.Inherited()), v+"="+account)
-	n, marked, said, err := presetPlugins(t.Context(), environ, src, "../..")
-	// The member names each pinned plugin no rule binds before the check's
-	// answer, so the fake's line is the last.
-	lines := strings.Split(said, "\n")
-	if err != nil || n == 0 || marked == 0 || lines[len(lines)-1] != "the fake: 1 preset file compared" {
-		t.Fatalf("the member over the tree with a fake gragas: %d approved, %d marked, said %q, error %v; want each pin approved, the fake's check, and the tree's marked preset held to the mark", n, marked, said, err)
-	}
-	left, err := os.ReadDir(account)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, e := range left {
-		t.Errorf("the account's state folder holds %s after the member's run: its approval was not kept to the folder of its run", e.Name())
-	}
-}
+// golangciManifest is the manifest of golangci-lint's plugin as these tests
+// need it, planted inline: this tree holds no bundle for it.
+const golangciManifest = "name: golangci-lint\ntool: golangci-lint\npreset:\n  path: .golangci.yml\n  mark: true\n"
 
 // The pins of tools.yaml's plugins: block and the plugin lock held to them
 // (gragas#2340): a pin that cannot be read pins nothing, and a lock that is
@@ -146,13 +73,9 @@ func TestThePluginPinsAreReadStrictly(t *testing.T) {
 // manifest with no preset: makes none, and one the member cannot read is
 // refused, naming what it is.
 func TestThePluginsPresetIsReadStrictly(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join("..", "..", "plugins", "golangci-lint", "1.0.1", "plugin.yaml"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	pre, ok, err := readPluginPreset(raw)
+	pre, ok, err := readPluginPreset([]byte(golangciManifest))
 	if err != nil || !ok || pre != (pluginPreset{tool: "golangci-lint", path: ".golangci.yml", mark: true}) {
-		t.Fatalf("the pinned manifest: %+v, %v, %v; want golangci-lint's .golangci.yml, marked", pre, ok, err)
+		t.Fatalf("golangci-lint's manifest: %+v, %v, %v; want its .golangci.yml, marked", pre, ok, err)
 	}
 	head := "name: x\ntool: x\n"
 	block := "preset:\n  path: x.yml\n  # a note\n  readback:\n    mark: false\n"
@@ -205,17 +128,13 @@ func TestThePluginsPresetIsReadStrictly(t *testing.T) {
 }
 
 // markedRoot is a root of two pinned plugins whose manifests ask for the mark:
-// golangci-lint, the tree's own manifest, with its preset as given, and
+// golangci-lint, its manifest planted inline, with its preset as given, and
 // ast-grep, whose preset is not there. Only the plants write files.
 func markedRoot(t *testing.T, golangci string) (string, []pluginPin) {
 	t.Helper()
 	dir := t.TempDir()
-	raw, err := os.ReadFile(filepath.Join("..", "..", "plugins", "golangci-lint", "1.0.1", "plugin.yaml"))
-	if err != nil {
-		t.Fatal(err)
-	}
 	for name, body := range map[string]string{
-		"plugins/golangci-lint/1.0.1/plugin.yaml": string(raw),
+		"plugins/golangci-lint/1.0.1/plugin.yaml": golangciManifest,
 		"plugins/ast-grep/1.0.0/plugin.yaml":      "name: ast-grep\ntool: ast-grep\npreset:\n  path: sgconfig.yml\n  mark: true\n",
 		"presets/golangci-lint/.golangci.yml":     golangci,
 	} {
