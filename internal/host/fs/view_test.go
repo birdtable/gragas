@@ -139,8 +139,11 @@ func TestAViewOrAnOpenInOfARootNotOpenedIsAnError(t *testing.T) {
 // removed after it was opened has no view, never an empty one. A system
 // that refuses to remove a folder held open leaves it there, and the view
 // then still reads it: either way the view never answers a folder that is
-// not the one opened. Planted failure: FS without its check of the folder
-// at the root's name, which answers an empty view of the removed folder.
+// not the one opened. RemoveAll empties a folder before it removes it, so the
+// kept folder may already have lost its file: the view then says the file is
+// not there, and never reads other bytes. Planted failure: FS without its
+// check of the folder at the root's name, which answers an empty view of the
+// removed folder.
 func TestAViewOfARootWhoseFolderIsGoneIsAnError(t *testing.T) {
 	t.Parallel()
 	dir := filepath.Join(t.TempDir(), "root")
@@ -155,7 +158,7 @@ func TestAViewOfARootWhoseFolderIsGoneIsAnError(t *testing.T) {
 		if err != nil {
 			t.Fatalf("FS of a folder the system kept = %v", err)
 		}
-		if data, err := fs.ReadFile(view, "a.yaml"); err != nil || string(data) != "a: 1\n" {
+		if data, err := fs.ReadFile(view, "a.yaml"); err != nil && !errors.Is(err, fs.ErrNotExist) || err == nil && string(data) != "a: 1\n" {
 			t.Errorf("ReadFile(a.yaml) of a folder the system kept = %q, %v", data, err)
 		}
 		return

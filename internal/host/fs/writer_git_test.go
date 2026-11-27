@@ -28,16 +28,16 @@ func TestNoWriterWritesOutsideTheRoot(t *testing.T) {
 	}
 }
 
-// TestAPathInTheSystemsFormIsWritten: a path made with the
-// system's own separator, sub\f on Windows, is written, appended to and
-// removed by the Writer: its separator is no part of a name. It cannot go red
-// on a system whose separator is /; a Windows run of internal/host/fs is
-// the proof of the class.
+// TestAPathInTheSystemsFormIsWritten: a path made with the system's own
+// separator and turned to the slash form every Writer path is in, sub/f, is
+// written, appended to and removed by the Writer. The separator is never
+// part of a name: the path with the backslash itself is refused on every
+// system (TestABackslashInANameIsRefusedOnEverySystem).
 func TestAPathInTheSystemsFormIsWritten(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
 	_, w, root := opened(t, dir)
-	p := filepath.Join("sub", "f")
+	p := filepath.ToSlash(filepath.Join("sub", "f"))
 	if err := w.Replace(root, p, []byte("x\n")); err != nil {
 		t.Fatalf("Replace of %s = %v", p, err)
 	}

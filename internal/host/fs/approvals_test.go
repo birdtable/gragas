@@ -406,12 +406,14 @@ func TestARecordAFolderOfACloneHoldsIsNotRead(t *testing.T) {
 		},
 		"through a link into the project": func(t *testing.T, project string) (string, []string) {
 			t.Helper()
+			makeFolder(t, project)
 			link := filepath.Join(t.TempDir(), "link")
 			testenv.Link(t, project, link)
 			return filepath.Join(link, "state"), []string{project}
 		},
 		"beneath a second spelling of the root": func(t *testing.T, project string) (string, []string) {
 			t.Helper()
+			makeFolder(t, project)
 			second := filepath.Join(t.TempDir(), "second")
 			testenv.Link(t, project, second)
 			return filepath.Join(project, "state"), []string{second}
@@ -422,9 +424,7 @@ func TestARecordAFolderOfACloneHoldsIsNotRead(t *testing.T) {
 			project := filepath.Join(t.TempDir(), "project")
 			dir, roots := place(t, project)
 			for _, r := range append([]string{project}, roots...) {
-				if err := os.MkdirAll(r, 0o750); err != nil && !errors.Is(err, fs.ErrExist) {
-					t.Fatal(err)
-				}
+				makeFolder(t, r)
 			}
 			m := machine{dir: dir, project: project}
 			m.plant(t, yes)
@@ -708,5 +708,20 @@ func TestARecordThatGrowsPastMaxOwnedBetweenTheTwoReadsIsRefused(t *testing.T) {
 	}
 	if !errors.Is(err, pluginbundle.ErrOverBound) {
 		t.Fatalf("a record grown to MaxOwned+1 bytes: %v, want ErrOverBound", err)
+	}
+}
+
+// makeFolder makes the folder at dir unless it is already there, as a folder
+// or as a link to one: a link planted before its target exists is not a link
+// to a folder on every system, so the target is made first, and MkdirAll of a
+// path that is a link answers an error that is not fs.ErrExist on every
+// system.
+func makeFolder(t *testing.T, dir string) {
+	t.Helper()
+	if info, err := os.Stat(dir); err == nil && info.IsDir() {
+		return
+	}
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		t.Fatal(err)
 	}
 }

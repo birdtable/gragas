@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/birdtable/go-files/confine"
 
@@ -29,6 +30,9 @@ func (t *Tree) Locate(start, marker string) (model.Root, error) {
 	from, err := filepath.Abs(start)
 	if err != nil {
 		return "", fmt.Errorf("locate %s: %w", marker, err)
+	}
+	if info, err := os.Stat(from); err == nil && !info.IsDir() {
+		return "", fmt.Errorf("locate %s: the start %s is a file, not a folder", marker, start)
 	}
 	for {
 		dir, err := confine.Nearest(from, marker, "")
@@ -67,11 +71,35 @@ func innerFile(from, to, marker string) error {
 		if _, err := os.Stat(filepath.Join(dir, marker)); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("locate %s: %w", marker, err)
 		}
+		if err := fileOnTheWay(dir, marker); err != nil {
+			return err
+		}
 		up := filepath.Dir(dir)
 		if up == dir {
 			return nil
 		}
 		dir = up
+	}
+	return nil
+}
+
+// fileOnTheWay is the error for a marker whose inner name, below dir, runs
+// through a file: dir/.gragas is a file where the marker .gragas/pin.yaml
+// asks for a folder. Systems answer a path below a file differently (Linux
+// says it is not a folder, Windows that it does not exist), so the walk asks
+// for each folder of the marker's path itself and says the same on every
+// system. It is nil when each one that is there is a folder.
+func fileOnTheWay(dir, marker string) error {
+	parts := strings.Split(marker, "/")
+	for i := 1; i < len(parts); i++ {
+		at := filepath.Join(dir, filepath.FromSlash(strings.Join(parts[:i], "/")))
+		info, err := os.Stat(at)
+		if err != nil {
+			return nil
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("locate %s: %s is a file, not a folder", marker, at)
+		}
 	}
 	return nil
 }
