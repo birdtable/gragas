@@ -11,7 +11,7 @@ import (
 )
 
 // bundleFolder writes the bundle of name at version below a new folder that is
-// not the rulebook and answers the version's folder, the one plugin add is
+// not the rulebook and answers the version's folder in the slash form, the one plugin add is
 // given, and the folder it lies below, so a transcript can name it.
 func bundleFolder(t *testing.T, name, version string, extra map[string]string) (folder, root string) {
 	t.Helper()
@@ -23,7 +23,7 @@ func bundleFolder(t *testing.T, name, version string, extra map[string]string) (
 		files[name+"/"+version+"/"+p] = body
 	}
 	root = rulebookFrom(t, files)
-	return filepath.Join(root, name, version), root
+	return filepath.ToSlash(filepath.Join(root, name, version)), root
 }
 
 var addRunID = regexp.MustCompile(`files written, run [0-9a-f]+`)
@@ -33,8 +33,10 @@ var addRunID = regexp.MustCompile(`files written, run [0-9a-f]+`)
 func addScrub(tr, dir string, bundleRoots ...string) string {
 	for _, r := range bundleRoots {
 		tr = strings.ReplaceAll(tr, r, "<bundles>")
+		tr = strings.ReplaceAll(tr, filepath.ToSlash(r), "<bundles>")
 		if real, err := filepath.EvalSymlinks(r); err == nil {
 			tr = strings.ReplaceAll(tr, real, "<bundles>")
+			tr = strings.ReplaceAll(tr, filepath.ToSlash(real), "<bundles>")
 		}
 	}
 	// "3 files written, run 041a7adf5a570f33": the run's id is new each time.
@@ -68,7 +70,7 @@ func TestPluginAddDryRunApplyAndASecondRun(t *testing.T) {
 	if err := os.Rename(filepath.Join(inRoot, "lint-b"), filepath.Join(in, "lint-b")); err != nil {
 		t.Fatal(err)
 	}
-	inFolder := filepath.Join(in, "lint-b", "2.0.0")
+	inFolder := filepath.ToSlash(filepath.Join(in, "lint-b", "2.0.0"))
 	lock := filepath.Join(dir, "plugins", "lock.yaml")
 	steps := []struct {
 		name string
@@ -141,7 +143,7 @@ func TestPluginAddRefusals(t *testing.T) {
 		misfiled["lint-z/1.0.0/"+p] = body
 	}
 	wrongNameRoot := rulebookFrom(t, misfiled)
-	wrongManifest := filepath.Join(wrongNameRoot, "lint-z", "1.0.0")
+	wrongManifest := filepath.ToSlash(filepath.Join(wrongNameRoot, "lint-z", "1.0.0"))
 	tooBig, tooBigRoot := bundleFolder(t, "lint-a", "1.0.0", map[string]string{"notes.txt": big})
 	changed, changedRoot := bundleFolder(t, "lint-a", "1.0.0", map[string]string{"notes.txt": "another file"})
 	plain, plainRoot := bundleFolder(t, "lint-a", "1.0.0", nil)
