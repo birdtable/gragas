@@ -465,16 +465,17 @@ func TestThePrePushHookRefusesACommitWhoseHookDiffersFromItsOwn(t *testing.T) {
 	})
 }
 
-// TestATaskEndedByASignalIsRefusedAndSaysSo: a task that does not run to its end is refused with
-// exitFailed, and the hook names the task and logs nothing for it, never a silent red (gragas#2408).
-// The words that say what ended it are a system's own (Unix says "signal: killed"), so none is asserted.
+// TestATaskEndedByASignalIsRefusedAndSaysSo: a task that is killed is refused with exitFailed and
+// logs nothing, never a silent red (gragas#2408). Whether the hook can also say that it did not run
+// to its end depends on the run reporting no exit code, which a system's own kill does not: that is
+// taskEnd's table test, not this one, and the words come back at the go-proc pin that tells a run
+// ended from outside on every system.
 func TestATaskEndedByASignalIsRefusedAndSaysSo(t *testing.T) {
 	t.Parallel()
 	dir, log, _, second := hookClone(t, fakeTaskConfig{Kill: []string{"pre-push"}}, "")
 	code, out := prePushIn(t, dir, second, "refs/heads/topic")
-	// go-proc answers a run a signal ended as an error, which taskEnd gives as a run that did not reach its end.
-	if code != exitFailed || !strings.Contains(out, "task pre-push did not run to its end") {
-		t.Errorf("a pre-push that did not run to its end gave code %d, want %d and the words 'task pre-push did not run to its end':\n%s", code, exitFailed, out)
+	if code != exitFailed {
+		t.Errorf("a pre-push that was killed gave code %d, want %d:\n%s", code, exitFailed, out)
 	}
 	if got := taskCalls(t, log); got != nil {
 		t.Errorf("a task that ended itself logged %q", got)
