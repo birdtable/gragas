@@ -1,0 +1,8 @@
+$ gragas init
+--- exit 2
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  usage      init needs to know what this folder is
+    gragas init --kind rulebook
+--- stderr

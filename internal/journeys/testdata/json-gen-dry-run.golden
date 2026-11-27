@@ -1,0 +1,10 @@
+{
+  "schema": 2,
+  "command": "gen",
+  "apply": false,
+  "ended": "done",
+  "msg": "the generated files are current",
+  "data": {
+    "stale": []
+  }
+}

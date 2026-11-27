@@ -1,0 +1,2 @@
+go test fuzz v1
+string("[[allowlists]]\npaths = [\n  '''^a/''',\n  '''^b/''',\n]")

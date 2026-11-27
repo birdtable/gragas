@@ -1,0 +1,106 @@
+part: go
+concern: logging
+order: 3
+title: Logging in Go programs
+summary: >-
+  A daemon logs with the structured standard logger, every line carries the program version and a run id from
+  one handler, and output for a person goes to stderr.
+rules:
+  - id: go.logging.1
+    slug: structured-logger
+    since: 0.1.0
+    rule: >-
+      A daemon logs through log/slog or a handler of it, output for a person goes to stderr, and no fatal log
+      call appears outside main.
+    detail: >-
+      A handler of slog includes a library that implements slog.Handler (for example a terminal-styled handler
+      at a terminal and JSON without one); the program logs through the slog API either way. The standard log
+      package is denied in the daemon kind; the logger is passed in and messages are static with key-value
+      attributes, so a printf-built message is a finding. A fatal log call outside main is held by
+      go.errors.4. A CLI is exempt until the shared logger leaf exists. What a daemon log holds and where it
+      goes is daemon.logging.1; the audit record is daemon.logging.3.
+    level: package
+    why: >-
+      Own measure: only one of our repos uses slog (3 files); another has a log.Fatal. One logging API with a
+      choice of handler keeps styled terminal output and machine logs from being two code paths.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    unless:
+      - kinds:
+          - cli
+        reason: >-
+          The shared logger leaf that wraps the handler does not exist yet; go.logging.2 holds for both kinds
+          once it is built.
+    sources:
+      - ref: decision-65-go
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: sloglint
+        tier: "1"
+        fix: auto
+        note: >-
+          golangci-lint sloglint (no-global all, static-msg, kv-only) plus depguard deny of the standard log
+          package in the daemon kind. Plant: import "log" and log.Printf in a daemon package fail, and
+          slog.Info with a message built with a printf fails. Control: a logger passed in with a static
+          message, through any slog.Handler, passes
+    relates:
+      - id: go.errors.4
+        how: see
+      - id: daemon.logging.1
+        how: see
+      - id: daemon.logging.3
+        how: see
+    open:
+      - Output for a person to stderr is held by the CLI part's matrix test.
+  - id: go.logging.2
+    slug: version-and-run-id
+    since: 0.1.0
+    rule: >-
+      Every log line from a daemon or a long CLI run carries the program version and a run id from one
+      handler, so a CLI call and the daemon it spoke to can be joined.
+    detail: >-
+      One shared logger constructor adds the version and the run id. A matrix test runs the binary or daemon
+      with logging on, parses every stderr or log line as JSON and asserts both fields; the default logger is
+      banned so lines cannot bypass the handler.
+    level: program
+    why: >-
+      Practice. A run id exists in 10 files of one repo and 2 of another; a request id nowhere; 21 files write
+      to stderr directly.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It has no log output of its own.
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: sloglint
+        tier: "2"
+        fix: auto
+        note: >-
+          shared logger constructor adding version and run id from one slog handler; matrix test parses every
+          log line as JSON and asserts both fields; sloglint no-global all The constructor is ui.NewLogger,
+          which wraps the shared slog handler. Plant: a log line through the default logger with no run id
+          fails the parse assertion. Control: a logger from the constructor passes
+    open:
+      - >-
+        Depends on the shared logger leaf existing; the rule falls to best practice if that handler is not
+        built.
+      - >-
+        The marginal assertion on the matrix helper is cheap, its cost being carried by the CLI part's
+        terminal rules.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

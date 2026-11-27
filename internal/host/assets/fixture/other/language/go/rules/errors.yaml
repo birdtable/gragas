@@ -1,0 +1,28 @@
+format: 3
+part: go
+concern: errors
+rules:
+  - id: go.errors.1
+    statement: Wrap an error with what was being done.
+    strength: must
+    status: active
+    owner: alex
+    review_by: "2027-06-01"
+    origin: authored
+    sources:
+      - {ref: effective-go, where: errors, backs: rule}
+    bindings:
+      - tool: golangci-lint
+        target: config
+        key: wrapcheck
+        value: true
+        severity: error
+        rung: 1
+        run_point: push
+  - id: go.errors.2
+    statement: Return an error and never panic in a library.
+    strength: should
+    status: active
+    owner: alex
+    review_by: "2027-06-01"
+    origin: authored

@@ -1,0 +1,30 @@
+# The parts every fixture tree uses, unless the tree has its own parts.yaml.
+layers:
+  - key: base
+    name: Base
+  - key: lang
+    name: Language
+waivers:
+  Hard: native
+  Answered: recorded
+  Review: never
+parts:
+  - short: arch
+    split: base-arch
+    layer: base
+    name: Architecture and boundaries
+    description: Modules, layers and ports.
+    builds_on: []
+    bindings: [go, ts, any]
+    owner: operator
+  - short: go
+    split: lang-go
+    layer: lang
+    name: Go
+    description: "What only Go has: errors and goroutines."
+    builds_on: []
+    when:
+      facets: [go]
+    facets: [go]
+    bindings: [go]
+    owner: operator

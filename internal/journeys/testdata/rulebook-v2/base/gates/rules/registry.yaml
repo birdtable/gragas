@@ -1,0 +1,429 @@
+part: gates
+concern: registry
+order: 11
+title: The rule registry
+summary: >-
+  The rulebook is data. A standard is active only while it links the check that enforces it, rule ids are
+  unique and every claim resolves, every rule has one owner, rules have a way out, packs add rows and never
+  edit the base, and the status board is derived from the registry, not typed.
+rules:
+  - id: gates.registry.1
+    slug: active-only-with-a-check
+    since: 0.1.0
+    rule: >-
+      A standard is active only while it links the check that enforces it; a rule with no check is marked as
+      an instruction and does not bind anyone.
+    detail: >-
+      The rule data is validated by a JSON Schema that requires either a `check` or `instruction` on every
+      row, and the registry repo's gate (make check and the pre-push hook) fails otherwise. A rule stays
+      unbound until its check exists, so the grid cannot lie; a changelog ledger lists rules not yet on (for
+      example todo and skip bans, an unknown-cast comment rule, deep relative imports, and ticketed
+      suppressions in tests).
+    level: process
+    why: >-
+      The reference team learned this the hard way; the ledger idea comes from the same team. No fault in our
+      own record; the schema uses a standard validator, no program built.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "1"
+        note: >-
+          Rule data validated by a JSON Schema (a standard validator) requiring `check` or `instruction` on
+          every row. Plant: A rule row with neither fails. Control: A row with a check, or marked instruction,
+          passes.
+    open:
+      - The schema validator is not chosen (check-jsonschema or ajv).
+    note: >-
+      Merges the standard-links-its-check rule, the Go no-check-is-an-instruction rule and the ledger of
+      unbound rules.
+  - id: gates.registry.2
+    slug: ruling-held-by-named-check
+    since: 0.1.0
+    rule: >-
+      Findings from a platform review are pinned as tests, so each accepted ruling is held by a check that
+      names it, or says it is an instruction.
+    detail: >-
+      Examples of review tests: config shape, exact licence match, last value wins, no package runner, the
+      skip list agrees with the byte-equal list, no rule below error. An accepted decision links the check
+      that holds it or says instruction.
+    level: process
+    why: A ruling with no check is forgotten by the next change.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          Tests in the shared package named after each review finding that pin the ruling. Plant: Reverting a
+          ruled setting fails the test that names it. Control: The ruled configuration passes.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: gates.registry.3
+    slug: rule-ids-and-claims-resolve
+    since: 0.1.0
+    rule: >-
+      Rule ids are unique, every claim in a rule resolves to a file or command that exists, and every cited
+      rule id and ticket exists.
+    detail: >-
+      A rule-link checker (`companion check rule-links`) walks the rule data: unique ids, every backticked
+      file, command or id resolves, every rule id or ticket cited (each rule row states its zero-by) in code,
+      docs, cards and change descriptions exists (rules in the rulebook, tickets in the index). A URL link
+      checker is a candidate for external links. A ticket names only things that exist.
+    level: file
+    why: >-
+      52 "claim false" lines in the first review; the guides test in one repo is the model.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. A rule-links check command: unique rule ids, resolvable backticked claims, cited
+          ids exist (the guide-names-real-tests test is the model). Plant: A
+          duplicate id fails; a claim naming a missing file fails; a cited rule id that does not exist fails.
+          Control: A registry with unique ids and resolving claims passes.
+    open:
+      - On the web side no check yet verifies that a cited rule or ticket id exists.
+      - "v1 evidence, not yet a source: own bugs (52 lines)"
+    note: >-
+      Merges the Go unique-id rule, the web citation rule and the rulebook-committed rule.
+  - id: gates.registry.4
+    slug: one-owner-per-rule
+    since: 0.1.0
+    rule: >-
+      Every rule is assigned to exactly one owner or card, and a generated roster fails when a rule is
+      unassigned or doubled.
+    detail: >-
+      A generator over the rule data and the cards: every rule id assigned once; unassigned or doubled fails.
+      Where the source asks for a named owner who reads changes to sensitive paths, a CODEOWNERS file is not
+      available (one GitHub identity), so a named non-author reviewer by trailer carries it.
+    level: process
+    why: >-
+      A donor lesson: a generated roster failing on unassigned or doubled rules. No fault of ours counted.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. A roster generator over the rule data and cards. Plant: A rule with no card, and a
+          rule on two cards, both fail. Control: One owner each passes.
+    open:
+      - Falls to best practice if the roster is kept by hand.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: own measure; reference lesson
+  - id: gates.registry.5
+    slug: stage-exit-review
+    since: 0.1.0
+    rule: >-
+      At each stage exit, list the rules whose check has not fired in a stated window and the rules with no
+      owner, and keep each with a reason or remove it; the exemption list and extension table are reviewed
+      too.
+    detail: >-
+      A silent rule may be working, so a firing count alone never removes one; the window is a guess and the
+      output is a report that opens a review. Fire counts per rule come from gate logs. A row that no concern
+      used in two stages is questioned, and a recurring workaround becomes a row.
+    level: process
+    why: >-
+      Rows only accumulate; the window is a guess (principles report P-02 section 7.3).
+    kind: rule
+    strength: Answered
+    status: active
+    sources:
+      - ref: p-02-enforcement-and-measure
+        where: section 7.3
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class our-cli. A fire-count report from gate logs at each stage exit; a rule silent past its
+          window blocks the stage exit until answered. Plant: A fixture log with one silent rule lists it.
+          Control: A log where every rule fired lists nothing.
+    review_question: >-
+      Which rules have not fired in the window or have no owner, and what was decided for each?
+    open:
+      - The window is a guess and is data.
+      - The Go and web sources have no scheduled review at a stage end today.
+    note: Merges the stage-exit rows from both sides and the exemption-list review row.
+  - id: gates.registry.6
+    slug: rung-moves-announced
+    since: 0.1.0
+    rule: >-
+      A shared check moves by rung (review, ratcheted, zero, enforced); its rung is a field on the rule and a
+      move is announced.
+    detail: >-
+      The rung field is in the rule table. Rung adoption for a repo with debt (the adoption order is in the
+      handbook): off, then suppress all in a no-logic change, then error for new files, then the registry
+      stage, then zero. A firing count alone never removes a rule.
+    level: process
+    why: A shared check that changes level silently surprises every repo that takes it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. The rule-table schema requires a `rung` field with the four values; a rung
+          change must be recorded in the changelog. Plant: A rule with no rung fails the schema. Control: A
+          rule with a rung passes.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: gates.registry.7
+    slug: base-and-packs
+    since: 0.1.0
+    rule: >-
+      Base rules apply to every project; a kind or a framework brings a rule pack of its own, a pack adds rows
+      and never edits a base row, and an exemption is per kind with a one-line reason, as data.
+    detail: >-
+      The rule data has an applies-to and an exempt field per row, and a repo's rendered config equals the
+      base plus its packs (a byte check re-renders base plus packs and compares). Exemptions are per kind,
+      with a one-line reason, in the rule file and not a repo's choice.
+    level: process
+    why: >-
+      Operator direction (points 15 and 18): a repo cannot differ from base plus its packs.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: operator-points
+        backs: rule
+      - ref: operator-points
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The sync check re-renders base plus packs for a repo and compares bytes with the
+          committed config. Plant: Delete a rule from the rendered file; the byte check fails. Control: A
+          clean render passes.
+  - id: gates.registry.8
+    slug: rule-data-least-powerful
+    since: 0.1.0
+    rule: >-
+      Rule data stays least-powerful: the schema of rule packs and exemptions forbids expressions,
+      conditionals and references to other rows, and a pack states for each row its level, its check, its
+      plant and which base rows it narrows with a reason.
+    detail: >-
+      JSON Schema for pack files with additionalProperties false and no expression, conditional or cross-row
+      reference keys, validated in the standards repo's gate by the front-matter validator. Free-text fields
+      are listed so that no check reads them. Off-the-shelf validators for pure YAML or JSON packs are
+      check-jsonschema and cue vet; not compared here.
+    level: file
+    why: Rule data with logic in it is a second program nobody reviews.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: operator-points
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "3"
+        note: >-
+          A JSON Schema for pack files (additionalProperties false, no conditional keys) run in the standards
+          repo's gate. Plant: A pack row with an `if` key fails the schema. Control: A valid pack passes.
+    open:
+      - >-
+        Note, 8 Nov 2026: a folder pattern in registry or layer data is a glob with one ellipsis or one star
+        segment, not an expression, so this rule holds for it; the schema should say so.
+  - id: gates.registry.9
+    slug: framework-needs-a-pack
+    since: 0.1.0
+    rule: >-
+      A framework is not admitted until its pack exists with checks and planted violations; adding a
+      dependency that brings a framework fails the allow-file check until the pack names it.
+    detail: >-
+      The module allow file has a pack field per allowed module; the check fails go.mod requires with no pack,
+      and a pack referenced by no row. For the web, the generator refuses to list a framework with no pack
+      directory holding a plants folder. The route in is the pilot (gates.registry.10).
+    level: package
+    why: >-
+      A two-stack foundation costs each rule a column; a framework in use has no pack today.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: operator-points
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The module allow file has a pack field per allowed module; a require with no pack
+          fails. Plant: Add a framework require with no pack entry; fails. Control: Pack named; passes.
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. The generator refuses to list a framework with no pack directory holding a
+          plants folder (a 10-line test in the shared repo). Plant: A listed framework with no plants folder
+          fails the generator test. Control: A framework with a pack and plants passes.
+    relates:
+      - id: gates.registry.10
+        how: see
+    open:
+      - >-
+        No framework in use has a pack; the Postgres pack is written and binds when a repo adopts Postgres
+        (decision 37).
+  - id: gates.registry.10
+    slug: pack-pilot
+    since: 0.1.0
+    rule: >-
+      The first project on a rule pack runs a pilot list of framework-specific checks, signed by a named
+      person, before others adopt it.
+    detail: >-
+      Every pack row runs on the first project with a plant before a second project on that framework starts;
+      until then the pack is admitted by pilot. For React, the pilot list covers: a gated loader sends nothing
+      without permission, a loader-created entry is not persisted when it must not be, search serialisation
+      round-trips, the production build loads under the declared script policy, and the router test helper
+      renders in the story tool and the unit runner. The list is signed by a named person; a stored signed
+      file could be presence-checked, but who signs is the point.
+    level: process
+    why: A rule pack that was never run on real code has unproven plants.
+    kind: rule
+    strength: Hard
+    status: later
+    when:
+      facets:
+        - react
+    review_question: >-
+      Has the first project on this pack run every pack row with a plant, and who signed the list?
+    open:
+      - >-
+        Binds with the first React project; the list then becomes a file that land reads.
+    note: Merges the pilot rule and the pack-admission route.
+  - id: gates.registry.11
+    slug: rule-growth-one-change
+    since: 0.1.0
+    rule: >-
+      Growing the rule set is one change that adds the rule, its check, its plant and its grid cell together.
+    detail: >-
+      The boundary preset ships an empty extension list that later rules append to; a new shared rule lands
+      with its check and its plant in one change. A gate check in the registry repo: a change adding a rule
+      row must also add the check id, plant and grid cell (diff scan).
+    level: process
+    why: "A donor lesson: rows were added without their checks."
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. Land refuses a new rule row with no check, plant or grid cell (diff scan in the
+          registry repo's gate). Plant: A rule row added with no plant is refused. Control: A row added with
+          its check, plant and cell passes.
+    open:
+      - >-
+        Would become a hard rule when a rule enters without its plant; Hard from the enforcement record.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: own measure; reference lesson
+  - id: gates.registry.12
+    slug: status-board-generated
+    since: 0.1.0
+    rule: >-
+      A status board is derived from the gate registry, not typed, and a page is generated from the rule data.
+    detail: >-
+      The board is generated from the registry and committed, with a generate-then-check drift gate. Generated
+      pages show the rules, the debt and the progress. A hand edit of the board fails.
+    level: file
+    why: >-
+      Hand-typed status at a reference team said 3 enforced where the computed count was 0. Our own criteria
+      column of checks is hand-typed, which is the same fault.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. Status board generated from the rule registry and committed, with a
+          generate-check drift gate. Plant: Edit the board by hand and the check fails; a registry rule with
+          no fixture shows as unproven. Control: A regenerated board passes.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A (reference)"
+    note: >-
+      Merges the status-board rule, the page-generator tool and the generated-views kind.
+  - id: gates.registry.13
+    slug: grid-from-resolved-configs
+    since: 0.1.0
+    rule: >-
+      The rule-by-repo grid is computed from resolved configs; a rule set to warn is not counted as enforced,
+      and a tool whose config cannot be read shows "unreadable", never "no".
+    detail: >-
+      The grid generator reads the resolved config (for golangci-lint, `golangci-lint linters --json`, to try)
+      and counts error severity only. The gate fails if the committed grid differs from a regenerated one
+      (generate-then-check).
+    level: process
+    why: >-
+      The reference team's computed grid said 0 enforced where hand-typed status said 3.
+    kind: rule
+    strength: Record
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class record. A grid generator reading resolved configs; a gate test fails a hand-typed cell.
+          Plant: A rule at warn counted as enforced fails; a hand edit of the grid fails. Control: A
+          regenerated grid passes.
+    review_question: Is any grid cell hand-typed or counted from a rule at warn?
+    open:
+      - >-
+        Donor fault only (no fault in our record); becomes a hard rule if our hand-kept status is found wrong.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+  - id: gates.registry.14
+    slug: rule-row-required-fields
+    since: 0.1.0
+    rule: >-
+      Every rule row states its status, the check that enforces it, its zero-by, and the failure it prevents,
+      and has a fixture.
+    detail: >-
+      The rule table requires status, enforced-by and zero-by fields on every row, and a failure-prevented
+      sentence and a fixture on every rule.
+    level: file
+    why: A rule row without these cannot be told from a wish.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. Rule-table schema requires status, enforced_by, zero_by, failure and fixture.
+          Plant: A row missing any field fails the schema. Control: A complete row passes.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A (reference)"

@@ -1,0 +1,16 @@
+$ gragas validate
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Notices
+  names check: the names check did not run: no names list
+  was given; set the names-file key or GRAGAS_NAMES_FILE
+0 migrated rules held from the prose lint until reworded;
+the count only falls.
+The rulebook holds no rule yet. Write one with `gragas rule
+new`, or bring some in with `gragas import`.
+
+  done       0 rules, 0 findings, 1 notice
+    gragas rule new
+--- stderr

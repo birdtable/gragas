@@ -1,0 +1,70 @@
+part: aws
+concern: resources
+order: 2
+title: Stored data and buckets
+summary: >-
+  Anything that holds state survives a stack deletion, and every storage bucket is private and encrypted at
+  rest with no switch to turn either off.
+rules:
+  - id: aws.resources.1
+    slug: state-bearing-resources-retained
+    since: 0.1.0
+    rule: State-bearing resources are retained on delete.
+    detail: >-
+      A resource that holds data that cannot be rebuilt (a database, a bucket with content, a queue holding
+      work) carries a retain-on-delete policy so removing the stack does not remove the data. In Go, a store
+      says whether it can be rebuilt, and state that cannot be rebuilt is append-only and kept; removal keeps
+      user state.
+    level: deploy
+    why: >-
+      Deleting a stack that owns data deletes the data; one command removes it with no recovery.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule over the infrastructure code failing a database table, bucket or queue construct
+          without the retain-on-delete setting. Plant: a table declared without retention fails. Control: a
+          table with retention passes
+    open:
+      - In Go, keeping user state on removal or uninstall is a gap with no row yet.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      The retention of imported identity, IAM and DNS resources is the SST rule imported-resources-retained.
+  - id: aws.resources.2
+    slug: buckets-closed-and-encrypted
+    since: 0.1.0
+    rule: >-
+      Every storage bucket blocks public access (all four flags) and is encrypted at rest, set by the shared
+      component, with no component option that can turn either off.
+    detail: >-
+      In Go, a secret is written with its final mode in a private folder and peer credentials are checked.
+      Hosting posture for a static site (public access, encryption at rest) is a gap with no row yet.
+    level: deploy
+    why: >-
+      A public or unencrypted bucket is a data leak by default; removing the choice removes the mistake.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing a raw bucket construct, and a unit test of the shared bucket component
+          asserting all four blocks and encryption are always set and no option disables them. Plant: a bucket
+          built without the component fails; a component option that turns public access on fails. Control:
+          the component bucket passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

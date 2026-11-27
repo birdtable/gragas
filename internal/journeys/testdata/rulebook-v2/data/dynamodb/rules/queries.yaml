@@ -1,0 +1,53 @@
+part: dynamodb
+concern: queries
+title: Queries
+summary: >-
+  Reads answer a question through a key or an index. A scan is for migrations and exports only, and a filter
+  expression never does the real work of a query.
+rules:
+  - id: dynamodb.queries.1
+    slug: no-scan-on-request-path
+    since: 0.1.0
+    rule: >-
+      A Scan runs only in a migration or an export named on a short allow list, and a filter expression is
+      never how a query gets its result.
+    detail: >-
+      If removing a filter expression would change the answer a user sees, the key design is wrong and the
+      access-pattern list needs a new line. The scanned-to-returned item ratio is measured per action.
+    level: function
+    why: >-
+      A filter is applied after the items are read, so every removed item is still paid for and the response
+      size limit is hit before the filter runs: a filter cannot save a bad model.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: debrie-dynamodb-book
+        where: the three API action types
+        backs: rule
+      - ref: p-03-data
+        where: section 16
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing ScanCommand and FilterExpression outside allow-listed migration and export
+          paths. Plant: a Scan in a handler's action file fails. Control: the same call in an allow-listed
+          migration passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          forbidigo on the DynamoDB Scan call outside allow-listed paths. Plant: a Scan call in a handler
+          fails. Control: a Scan in an allow-listed migration passes
+    review_question: >-
+      Does any query rely on a filter expression for its result, and is the access-pattern list missing a
+      line?
+    open:
+      - >-
+        Measure: items scanned against items returned, per action, from the response counts. No limit is set
+        until one is measured.

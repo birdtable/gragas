@@ -1,0 +1,20 @@
+[data-part="empty-frame"] {
+  display: grid;
+  justify-items: center;
+  gap: var(--gr-space-2);
+  padding: var(--gr-space-8) var(--gr-space-4);
+  text-align: center;
+  background: var(--gr-ground-surface);
+  border: 1px dashed var(--gr-control-border);
+  border-radius: var(--gr-radius-md);
+}
+
+.gr-frame-title {
+  margin: 0;
+  color: var(--gr-text-ink);
+  font-weight: 600;
+}
+
+.gr-frame-hint {
+  color: var(--gr-text-muted);
+}

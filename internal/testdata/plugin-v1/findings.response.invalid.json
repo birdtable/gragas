@@ -1,0 +1,10 @@
+[
+  {"name":"an unknown field","patch":[{"op":"add","path":"/0/later","value":1}],"problem":"Additional properties are not allowed ('later' was unexpected)"},
+  {"name":"no ran","patch":[{"op":"remove","path":"/1/ran"}],"problem":"'ran' is a required property"},
+  {"name":"a line from 0","patch":[{"op":"replace","path":"/0/findings/0/line","value":0}],"problem":"minimum"},
+  {"name":"a column from 0","patch":[{"op":"replace","path":"/0/findings/0/column","value":0}],"problem":"minimum"},
+  {"name":"a finding with no message","patch":[{"op":"remove","path":"/0/findings/1/message"}],"problem":"'message' is a required property"},
+  {"name":"a finding with a field it does not name","patch":[{"op":"add","path":"/0/findings/0/fix","value":"rm -rf"}],"problem":"Additional properties are not allowed ('fix' was unexpected)"},
+  {"name":"a line past u32","patch":[{"op":"replace","path":"/0/findings/0/line","value":4294967296}],"problem":"maximum"},
+  {"name":"a column past u32","patch":[{"op":"replace","path":"/0/findings/0/column","value":4294967296}],"problem":"maximum"}
+]

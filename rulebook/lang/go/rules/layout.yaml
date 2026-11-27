@@ -1,0 +1,85 @@
+format: 3
+part: go
+concern: layout
+rules:
+  - id: go.layout.1
+    statement: "A Go program starts from one layout template: programs live under cmd/<name>/ and everything else under internal/, with no pkg/ folder; adapters live under one host folder, one package per platform or per external tool, and the core lives outside it; and every package sits in a layer named in the import table."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - library
+        reason: A library has exported packages at its root and no cmd folder.
+    reasoning:
+      definition: "The template is rule data (the layer and import table), so a new program starts from it one to one: cmd/<name>/ (wires and registers implementations, nothing else), internal/core/ (the domain), internal/core/api/ (routes and their JSON result types), port packages (interfaces only, each with its fake), slot packages with their registries, internal/host/<platform or tool>/ (adapters, such as host/linux, host/launchd), internal/door/ (listeners), internal/config/, internal/cli/<group>/ and internal/cli/ui/ (the only terminal code), and leaf packages. A layout test walks the module tree and lists packages: it fails on any directory named pkg, on a main package outside cmd/<name>/, on a non-test package at the module root or outside cmd/ and internal/, on an adapter outside the host folder, and on a package with no layer in the table. A library repo is declared kind lib in rule data and is exempt, since a library has exported packages at its root. The popular project-layout repository (golang-standards/project-layout) is not a standard."
+      pros:
+        - "Practice; all six of our Go repos follow cmd and internal. A shared layout makes a port, an adapter or a command findable across programs by an agent that has read one of them, and the two Go target programs already agree on the names."
+    relations:
+      relates:
+        - arch.structure.6
+    sources:
+      - ref: decision-65-go
+        backs: rule
+  - id: go.layout.2
+    statement: "No init functions outside the main package, or their count only falls."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "Own measure: init functions in our repos today: 26 in one, 1 in another, 0 in the rest. The linter is enabled in six of six configs."
+    sources:
+      - ref: golangci-lint-linters
+        where: gochecknoinits
+        says: Checks that no init functions are present in Go code.
+        backs: rule
+      - ref: docker-commands-register
+        says: "The one surveyed command line program that registers commands from init functions through blank imports, which makes the command set depend on import side effects."
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: gochecknoinits
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: go.layout.3
+    statement: No replace directive in go.mod and no go.work file in a committed tree.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "A local replace builds on one machine only and hides the real dependency; a workspace file changes resolution for everyone who checks out."
+    sources:
+      - ref: go-modules-reference
+        where: "go.mod, replace directives"
+        says: "replace directives only apply in the main module's go.mod file and are ignored in other modules."
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: gomoddirectives
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: go.layout.4
+    statement: Shipped binaries are built with cgo disabled.
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: A library ships no binary.
+    reasoning:
+      pros:
+        - "A cgo binary links the host's C library and breaks the static, copy-anywhere build. Own measure: set in 5 of the 7 programs today (verified); the library repo and one scraper set none."
+    sources:
+      - ref: go-reasons-stated
+        backs: rule

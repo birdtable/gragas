@@ -1,0 +1,16 @@
+format: 3
+part: lambda
+concern: bundle
+rules:
+  - id: lambda.bundle.1
+    statement: "Each function bundle has a size budget, and a built handler bundle over its byte limit fails the check."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "A size-limit tool bundles each handler entry with the build bundler and compares it with the limit in the package manifest (a list of path and limit). In Go, binary size is recorded as a metric, not a gate."
+      pros:
+        - A large bundle slows cold start and approaches the platform package limit without anyone choosing it.

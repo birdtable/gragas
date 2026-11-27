@@ -1,0 +1,21 @@
+# The explorer's workspace: one package manager (pnpm, pinned in tools.yaml),
+# installing from the lockfile only, with no release-age window. pnpm 12
+# holds a one-day window of its own when the key is absent and then writes a
+# minimumReleaseAgeExclude entry for a younger release, so the key is set to 0:
+# the window is off, stated, not left to a default. strictDepBuilds makes an install that meets a package with a build
+# script fail rather than run it or skip it unseen; a package that needs one is
+# listed under allowBuilds with a reason, and none does. test/install-settings.test.ts
+# pins each setting.
+packages:
+  - packages/*
+minimumReleaseAge: 0
+strictDepBuilds: true
+saveExact: true
+engineStrict: true
+# The parts catalogue (Storybook) pulls esbuild, whose install
+# script only verifies a binary that comes from its platform package; the
+# entry says the script does not run (false), so strictDepBuilds does not stop
+# the install, and no other package is allowed or denied here.
+# test/install-settings.test.ts pins this block to exactly this one line.
+allowBuilds:
+  esbuild: false

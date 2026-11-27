@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "command": "init",
+  "apply": false,
+  "ended": "declined",
+  "msg": "nothing was changed",
+  "next": "gragas init --kind rulebook --name demo --owner team-a --apply",
+  "changes": [
+    "would make rulebook.yaml",
+    "would make structure.yaml",
+    "would append to history.jsonl"
+  ],
+  "data": {
+    "schema": 1,
+    "guard": [
+      "gragas guard staged || exit 2",
+      "gragas guard edit || exit 2",
+      "gragas guard staged --merge-hook || exit 2"
+    ],
+    "gate": "gragas guard staged",
+    "ignore": ".gragas/state.yaml"
+  }
+}

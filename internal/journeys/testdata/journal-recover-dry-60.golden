@@ -1,0 +1,13 @@
+$ gragas journal recover
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  would roll back  run r3 (gragas gen --apply)
+This was a dry run and nothing was changed. Add --apply to
+make these changes.
+
+  done       nothing was rolled back yet, the lines above
+  are the plan
+    gragas journal recover --apply
+--- stderr

@@ -1,0 +1,12 @@
+$ gragas term retire spare
+--- 80 columns
+--- screen at the end
+What is the decision called? (--decision-title answers it in a script)
+It no longer holds
+What did you decide, and why? (--decision-text answers it in a script)
+
+
+
+  declined   no answer to: What did you decide, and why?
+    gragas help term retire
+--- exit 6

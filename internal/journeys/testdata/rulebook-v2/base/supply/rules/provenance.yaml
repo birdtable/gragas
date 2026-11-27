@@ -1,0 +1,205 @@
+part: supply
+concern: provenance
+order: 11
+title: Provenance of copies and generated files
+summary: >-
+  A file that came from somewhere else says where. A vendored file equals its source at a named version by
+  hash, a part copied between sites records its origin, a generated file names the tool version that made it
+  and leaves no diff when regenerated, and a fetched program is pinned and verified before use.
+rules:
+  - id: supply.provenance.1
+    slug: vendored-file-equals-source
+    since: 0.1.0
+    rule: >-
+      A vendored token file equals the source at its named version, by hash, in the path agents take.
+    level: release
+    why: >-
+      One program's header said version 9 while the source tokens said 1, so a copy had drifted from what it
+      named.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. companion tokens verify reads the version and sha256 in a lock file and compares
+          them with the vendored file and the registry version. Plant: editing a vendored token file by one
+          byte fails; a lock naming version 9 for a package at version 1 fails. Control: restoring the file
+          passes
+    open:
+      - >-
+        When tokens are consumed as a package dependency, the package manager's lock integrity covers it and
+        this rule reduces to the lockfile check.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: a vendored header said version 9
+        against a source at version 1
+  - id: supply.provenance.2
+    slug: copied-part-records-origin
+    since: 0.1.0
+    rule: >-
+      A part copied between sites records where it came from, with a header naming the source repository,
+      version, path and a hash.
+    detail: "The header form is copied-from: <repo>@<version> <path> plus a hash."
+    level: file
+    why: A copy with no origin cannot be updated or checked against its source.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. files placed by companion sync carry a copied-from header with a hash; the sync
+          check fails when a header is missing or the hash differs from the source at that version. Plant: a
+          synced file with its header removed fails; a drifted body fails. Control: an intact synced file
+          passes
+    open:
+      - >-
+        Half holds, for synced copies only. A hand copy dropped in with no header is not seen unless the
+        cross-repository clone scan finds it (a known gap).
+  - id: supply.provenance.3
+    slug: generated-files-name-their-version
+    since: 0.1.0
+    rule: Generated files name the version of the tool that made them.
+    detail: >-
+      Generated files start with the standard "Code generated ... DO NOT EDIT." line and a version token.
+      Regeneration is go generate.
+    level: file
+    why: A generated file with no banner is edited by hand and its tool version is lost.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "1"
+        note: >-
+          a banner check that generated files start with the standard line and a version token. Plant: a
+          generated file missing the banner fails. Control: a file with both passes
+    relates:
+      - id: supply.provenance.5
+        how: see
+      - id: supply.provenance.6
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      Split from a bundled source row that also held two other rules, kept as supply.provenance.5 and
+      supply.provenance.6.
+  - id: supply.provenance.4
+    slug: regenerating-leaves-no-diff
+    since: 0.1.0
+    rule: >-
+      If a repository has generators, regenerating leaves no diff; with zero inputs the check reports not
+      applicable with the count.
+    detail: >-
+      The rule is in the gate list from the start. Its input count is the number of go:generate lines, zero
+      today, and it declares zero a valid state: it returns not applicable with zero inputs and the count
+      (decision 26) until the first generator appears. The generator lines counted are //go:generate lines.
+    level: file
+    why: >-
+      A stale generated file passes review because nobody regenerates it. No Go repository used go:generate in
+      the seven checked, which the count shows, with the build-constraint lines as the positive.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-26
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          go generate ./... followed by git diff --exit-code; not applicable with count 0 while no go:generate
+          line exists. Plant: a stale generated file fails. Control: freshly generated files pass
+    open:
+      - The two repositories without Go files have a zero that says nothing.
+  - id: supply.provenance.5
+    slug: one-token-file
+    since: 0.1.0
+    rule: >-
+      There is one token file for design tokens, and every copy of it is a recorded vendored copy.
+    level: file
+    why: Two token files drift apart; the bundled source row asked for one.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. a single tokens source in the repository, with the sync and verify checks of
+          supply.provenance.1 for every copy. Plant: a second token file that is not a recorded copy fails.
+          Control: one source and its recorded copies pass
+    open:
+      - >-
+        The source row reads only "one token file" inside a bundled row; this wording is an interpretation.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: supply.provenance.6
+    slug: recipes-work-on-mac-and-linux
+    since: 0.1.0
+    rule: Build and gate recipes are Taskfile tasks that run the program's own commands, with standard tools only.
+    level: file
+    why: >-
+      A recipe written as shell for one system silently differs on another; a task that runs a program command
+      has no shell of its own to differ, so the rule asks for no claim of which systems it works on.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "1"
+        note: >-
+          a task in the Taskfile using standard tools only and no shell line of its own. Plant: a task that
+          runs a shell pipeline fails. Control: a task that runs one program command passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: supply.provenance.7
+    slug: fetched-program-pinned-and-verified
+    since: 0.1.0
+    rule: >-
+      A program fetched into an image, a tool cache or a build is pinned by version and verified before use by
+      a signature or a checksum from its publisher's https origin, its version is read back, and a
+      verification that cannot run stops the step.
+    detail: >-
+      Every fetch names an exact version. Before the fetched program is used, it is checked against the
+      publisher's signature where the publisher signs, and otherwise against a checksum fetched from the same
+      https origin as the program (never a checksum kept beside the download URL on a mirror). The program is
+      then run to print its version, which must equal the pinned one. A missing signature tool, an unreachable
+      checksum or a version mismatch stops the step with could not run; the step never continues unverified.
+      Locked packages are held by supply.age.4; this rule covers what a package manager does not fetch.
+    level: deploy
+    why: >-
+      A program fetched outside the lockfile has no integrity check unless the step does one, and a step that
+      skips a check it cannot run installs whatever the network handed it.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test over image build files and fetch scripts that every download is followed by a signature or
+          checksum verification against the publisher's https origin and a version read-back, with no fallback
+          branch that skips the check. Plant: a download step with no checksum check fails; a checksum fetched
+          over plain http fails; a verify step guarded by || true fails. Control: a pinned download verified
+          against the publisher's checksum and read back passes
+    relates:
+      - id: supply.age.4
+        how: see

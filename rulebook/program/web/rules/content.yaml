@@ -1,0 +1,122 @@
+format: 3
+part: web
+concern: content
+rules:
+  - id: web.content.1
+    statement: "A template or component holds no sentence: every user-visible word comes from a named message module, a data file or the server, with no literal in markup, aria-label, placeholder, title, alt or notice, and no new per-feature copy file."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "New files start at zero; old ones only fall (ESLint bulk suppressions). The lint is `eslint-plugin-i18next` `no-literal-string` in jsx-text-only mode plus attribute lists on components and templates; strings in frontmatter and script that reach the page are caught by `no-restricted-syntax` on assignments to `textContent`, `innerText`, `title` and `placeholder` with a string literal; a syntax-tree scanner is the second net. Server-owned display text that is not an error renders through a marker part that is marked and counted. Where a builder has no notices, errors go to the lifecycle banner as messages. Template element `<h1>` and `<script>` in `.astro` and `.tsx`; lint mode `mode: \"jsx-text-only\"`; plants `el.textContent = \"Something went wrong\"`; control `t(\"dash.title\")` as a JSX expression."
+      pros:
+        - "One site holds 981 literals, another 1,844, about 8,400 sites in all; the scanner's verdicts agreed on 80 of 80 judged cases on the web. There is no zero target for old files."
+    sources:
+      - ref: web-reasons-stated
+        backs: rule
+  - id: web.content.2
+    statement: "Numbers, sizes, durations, relative times, dates, times, money and lists come from one formatter with one locale rule, golden-tested against a table that the Go side also runs; the Intl constructors appear only inside it."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "View files may not use `toFixed`, `toLocale*String`, `Intl.NumberFormat`, `Intl.DateTimeFormat`, `Intl.PluralRules`, `Math.pow`, `** 10`, `>> 10`, `/ 1024` or `/ 1e9`; only the formatter module may (ESLint `no-restricted-properties` and `no-restricted-syntax`). No currency-symbol concatenation. The shared golden table runs in the TypeScript and the Go formatter tests (190 of 190 in trial). Named formats live in a data file. Pure logic with a stateable invariant (a formatter, a parser) has a property test; no property-test library is picked, so one enters through the supply-chain rule. Golden data file: `formats.json`; property tests use `fast-check`. Plant: `bytes.toFixed(1) + \" GB\"`."
+      pros:
+        - "1,500,000,000 bytes reads 2 GB, 1.4 GB, 1.5 GB and 1.4 GB: at least four rounding rules and two bases, differing between sites and inside one."
+    sources:
+      - ref: p-07-testing
+        where: section 4.9
+        backs: rule
+  - id: web.content.3
+    statement: "Plurals go through one function; a hand-built plural is refused."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "`no-restricted-syntax` on a conditional expression testing equality with 1 in view files, and `Intl.PluralRules` outside the formatter; on the Go side a forbidigo-style or parser test for `== 1` followed by a string result in the same function (heuristic, baseline). Plural messages are structured variants. The real gate is the import ban of the formatter rule. Plant forms: `n === 1 ? \"file\" : \"files\"`, selector `ConditionalExpression[test.right.value=1]`; the Go heuristic uses `go/parser`; the passing form is `plural(n, \"file\")`."
+      pros:
+        - "12 or more Go helpers each have their own plural."
+  - id: web.content.4
+    statement: "The zone a time is shown in is stated by the product, never by the viewer's browser by accident."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "`no-restricted-syntax` on `new Intl.DateTimeFormat` without a `timeZone` property and on `toLocaleString`, `toLocaleTimeString` and `toLocaleDateString` calls without a `timeZone` option; only the formatter module may call them at all. Plant: `new Intl.DateTimeFormat(\"en\")` with no zone."
+      pros:
+        - Seven web sites showed times with no stated zone.
+  - id: web.content.5
+    statement: "Dates use one date library with timezone support, no raw date arithmetic appears outside one date module, and display goes through the shared formatter."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The reference date library was `date-fns` with timezone support."
+      pros:
+        - Raw date arithmetic is where daylight-saving and zone bugs hide.
+  - id: web.content.6
+    statement: "The locale is a boot-time value read from one place, the page language and direction follow it, and fonts name a family per script in use."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "One config lists the default and the supported languages; a change reloads the app; the strategy is explicit (stored choice, preferred language, base locale) with no cookie. Until a second language exists the only one is the default and no language is pre-chosen. Axe `html-has-lang` and `html-lang-valid`; `no-restricted-properties` on `navigator.language(s)` and on assignments to the document's lang outside the locale module. A font family per script is review. Locale setter banned outside the module: `document.documentElement.lang`; markup `<html lang>`; engine `axe-core`."
+      pros:
+        - "v1 gave no reason beyond its evidence grade, Evidence D."
+  - id: web.content.7
+    statement: "Product name, short name, tagline and brand identity (organisation, manifest, theme colour, title template) are written once per product in per-brand config chosen at build time, and read by the page, the manifest, the banner and the docs; no brand literal appears elsewhere and no logo is imported directly."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Cspell `flagWords` lists the name, short name and tagline strings with the brand file alone in its ignored paths (or ESLint `no-restricted-syntax` on a matching literal outside the brand module). The Go banner reads the generated constant; the docs read it by include. The page entry and the manifest are generated per brand. Existing literals have a baseline whose counts only fall. Scan config: `ignorePaths` limited to the brand file."
+      pros:
+        - "45 and 27 site literals in two web sites; 112, 444, 130, 108 and 53 Go sites in five programs."
+  - id: web.content.8
+    statement: "A logo is used at its own colours from one recorded source, and the favicon set and logo files are generated from it and hash-checked."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The generate-with-check mode compares hashes; a scan that the logo SVG's fill and stroke colours equal the recorded source colours is a small addition (Stylelint cannot read SVG attributes). No direct logo asset import. Hash check command: `companion gen` with `gen --check`."
+      pros:
+        - "One site's favicon generator is unfound."
+  - id: web.content.9
+    statement: "A sentence built from parts carries each part as a parameter of one message function; no hard-coded fragments are spliced."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "`no-restricted-syntax` on string concatenation or a template literal in view files where a literal piece contains a space and a variable is spliced (`\"Hello \" + name`, or `n` spliced before ` files` in a template literal); allowed with a reason and a baseline; keep the selector tight, since it fires on non-sentence concatenations such as class names. Plants: `\"Deleted \" + count + \" files\"` and `\"Hello \" + name` fail; `msg(\"deleted\", values)` with `count` among the values passes."
+      pros:
+        - "13 to 25 percent of site strings are fragments."
+  - id: web.content.10
+    statement: "Messages are typed, owned and checked: a key used in code exists, every locale has the same keys and placeholders as the base language, plurals are structured variants that compile, only whitelisted markup is allowed, and keys are never built dynamically."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The key's owner prefix is the file's owner. A term is not used inside a sentence (a glossary lists the terms). Messages are imported per domain, not as one barrel. Codes are a closed documented set apart from sentences, each sentence takes its parts as parameters, and retired words fail."
+      pros:
+        - The source report names the missing locale key parity as a gap with no row.
+  - id: web.content.11
+    statement: "A screen never reads config for words, formats, brand or icons directly: a few small interfaces do, wired in one file; and where a server's own text is the content it is marked and counted."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The boundaries rule makes a screen element unable to import config, words, formats, brand or icon data; a marker part wraps any server-provided sentence (declared as English, not translated), a lint bans rendering `error.detail` or `res.message` raw, and the count of marked uses is printed. Only the kernel packages and the app element import config. Marker part `<ServerText>`; plant `config/words.json`; raw forms `error.detail` and `res.message` as JSX expressions."
+      pros:
+        - "v1 gave no reason beyond its evidence grade, Evidence D."
+    sources:
+      - ref: web-reasons-stated
+        backs: rule
+  - id: web.content.12
+    statement: "Config files hold data only: no logic and no markup; the gate and format files are protected paths, and any managed content editor is an add-on."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The formats, icons and system tokens files are protected paths; the messages files are not. A managed editor is an add-on: git is the source of truth, the editor writes back by pull request, the runtime reads only bundled files, and any runtime content read goes through a gate primitive."
+      pros:
+        - Config that holds logic is code outside the checks.

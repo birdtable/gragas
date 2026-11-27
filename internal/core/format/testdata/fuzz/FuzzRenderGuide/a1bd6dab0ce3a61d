@@ -1,0 +1,5 @@
+go test fuzz v1
+string("```gragas\nrules:\r\r- id: a.b.1\n```")
+string("0")
+string("0")
+string("0")

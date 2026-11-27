@@ -1,0 +1,12 @@
+$ gragas plugin add <bundles>/lint-a/1.0.0 --apply
+--- exit 1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  failed     the plan could not be made:
+  lint-a@1.0.0 is locked at
+  sha256:99f8602a3203331eb3a1a14d2ba1b7a18f17b1ed3b00698edf78b3ee9fddb0fa,
+  and these files are
+  sha256:dd4760dd93fcd1613e205f99d1af23924fb8b13c87dcd56c2868855e26bbb13e:
+  remove it first: file already exists
+--- stderr

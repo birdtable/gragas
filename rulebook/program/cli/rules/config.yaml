@@ -1,0 +1,262 @@
+format: 3
+part: cli
+concern: config
+rules:
+  - id: cli.config.1
+    statement: "Settings come through one declared helper; a program declares which sources it reads (file, environment, flags) and documents them; where more than one source is on they resolve flag, then environment, then file, then default; and a program that runs from a rules file lets the environment name only paths and terminal variables from a short tested list, with a flag overriding only for its own run."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It takes parameters instead of reading settings.
+    reasoning:
+      definition: "Settings are declared once through the shared config helper (flag name, environment name, file key, default, doc line) together with the program's source declaration; precedence is implemented once with its own test table. A rules-file program (one whose behaviour an owner audits in a file, such as a tool that runs as root) declares the file as its only settings source: the environment may name the config file or the state folder and the terminal variables of cli.config.3, nothing else, and a flag changes only the run it is given to, never the file. A test sets every other environment variable the helper knows and asserts it has no effect. A repo-check bans any other reader: the environment ban (cli.config.3), the flag ban (cli.config.7) and a direct decode of a file into a config type."
+      pros:
+        - "Practice. A setting that is not in the file of a rules-file program is a setting nobody can audit; a service in a container has no file and reads the environment by design. One helper with declared sources serves both and keeps the precedence table where two sources are on."
+    relations:
+      relates:
+        - cli.config.3
+        - cli.config.7
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.config.2
+    statement: "An unknown config key is refused when a person wrote the file; a renamed or retired key is refused at its file and line with the migrate command and is never read; a kept file of another shape is refused or started fresh and said so, never decoded into the current fields; a message from a peer across a trust boundary refuses unknown fields, and tolerant reading is only for a peer the reader trusts and is stated per decoder; an added field does not raise the schema number."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    reasoning:
+      definition: "A person's config refuses unknown keys so a typo is seen. An old key is never read beside the new one, not for a window and not for a release: the loader keeps a list of retired keys with the command that rewrites them and refuses with file, line and that command. A state or record file whose version is not the current one is not decoded into the current type; the program either refuses naming the version or starts a fresh file and says so. Every wire decoder is declared strict or tolerant in code: strict (unknown type or field refused) for a peer the reader does not control (a guest, a route body, an archive), tolerant only for a peer the reader trusts and deploys. The loader decodes a person's file with the undecoded-keys check (or the disallow-unknown-fields option for JSON); forbidigo bans a direct decode into config types outside the loader."
+      pros:
+        - "Own measure; the planted-key test exists in four repos. Two spellings read at once is the state two target programs measured as the source of silent misreads, and the migrate command in the refusal makes a window unnecessary. Tolerant reading is a courtesy to a peer you trust and a hole for one you do not."
+    relations:
+      relates:
+        - arch.ports.19
+        - store.state-files.8
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.config.3
+    statement: "The environment is read only in the config package, and in the terminal module for the terminal variables (NO_COLOR, TERM, COLUMNS, LESS, PAGER, ACCESSIBLE)."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    reasoning:
+      definition: "forbidigo with type analysis on the getenv, lookupenv, environ, expandenv and syscall getenv calls outside those two places, through path exclusions, on a one-file-per-entry shrink-only list. Passing the parent environment to a child is legitimate; list those files by path. ACCESSIBLE turns on the accessible mode of forms the same way --accessible does."
+      pros:
+        - "Own measure; one reader is what lets precedence and the colour decision be tested once."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: cli.config.4
+    statement: "A secret never comes from a flag and is never printed; it does not reach a child through the environment unless the row that starts the child names why; every secret a program owns sits in one owner-only folder under collision-free names and is referenced by a key ending in _file; and a service receives it through the service manager's credential passing, never through group read."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    reasoning:
+      definition: "The keys folder is mode 0700 and each file 0600, owned by the running account (root for a system service). A secret name cannot collide with an id the program makes. A config value is never the secret itself; a key that names a secret ends in _file and holds a path. A planted-secret test runs each command with a fixture secret in the environment and in a file and asserts the secret bytes appear in no stdout, stderr or log; an ast-grep rule flags flags whose name matches token, secret, password, passwd or apikey; a config-key check fails a key that holds a secret value and does not end in _file; a secret scanner runs on staged diffs at tier 1. Which process can read a secret once it is in a child's environment is review."
+      pros:
+        - "Own bugs. A key in a group-readable file and a token readable from a dump are known leaks; the _file suffix makes a secret reference recognisable in any config."
+    relations:
+      relates:
+        - service.authz.13
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.config.5
+    statement: "Paths come from one helper filled by the platform's defaults for the program's kind, one key each, overridden only by --config or one environment variable naming a file or folder; the config folder holds only files the owner writes, while history, generated output and state live in their own folders and kept copies are pruned by age and count."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no state paths.
+    reasoning:
+      definition: "The defaults per kind and platform are rule data: a per-user tool follows XDG on Linux and Application Support on macOS; a system service uses /etc for config, /var/lib for state and /run for runtime files on Linux. A new platform adds a row, not a rule. forbidigo bans the home, config and cache folder lookups outside the shared paths helper, and an ast-grep rule flags string literals that start with ~/ or contain /.config/ or /.local/ in non-test code (the literal list is lint data, in the rule file). History copies go under the state folder (one folder per run, owner-only) and are pruned by age and count; generated files go in their own generated folder."
+      pros:
+        - "Own measure; hand-built home paths in non-test code today: 19, 4, 1, 3 and 0 across five repos. The folder depends on who runs the program and on which system, and saying so is what makes the helper right on the next platform; keeping history and generated output out of the config folder keeps it readable after a year of runs."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: cli.config.6
+    statement: "Every config key and environment variable has a reader, a default, a doc row and a documented refused-when, and is refused at load naming key and reason; a key spelled in another case is refused naming its spelling; a value that becomes a path, a file name or an argument of a privileged command is held to a closed pattern and never starts with a dash; every boolean switch has a test for its non-default value; and a key meets one more question before it is added: who can pick a better value than the program?"
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no config of its own.
+    reasoning:
+      definition: "The doc row gives type, default and what refuses the value. Names reaching a path or argv match a declared pattern (for example lower camel case, no leading dash); a URL is https only with no login part. A refusal names the key, the file and line, and the reason. Doctor checks the rest against the machine."
+      pros:
+        - "Own bugs: one fault in record, a parsed key read by nothing. A silently ignored key and a value that reaches an argv unchecked are two of the places a config reader lies to its owner."
+    relations:
+      relates:
+        - tests.admission.9
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.config.7
+    statement: "Flags are defined in main or the command layer only; a library takes parameters."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    reasoning:
+      pros:
+        - "Practice; libraries that read flags cannot be reused or tested."
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: depguard
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: cli.config.8
+    statement: "A config migration is a dry run first, proves on a copy that the new config means the same as the old before writing, moves across filesystems by copy, sync and rename, leaves no link at an old secret path, and prints its whole way back."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no config to migrate.
+    reasoning:
+      definition: "Means the same is checked field by field, for each person's effective permissions, and for every generated unit (rendered again from the new config and compared). The dry run opens on why it migrates. A secret moved to a new path is moved, not linked."
+      pros:
+        - "The equivalence proof is what makes a migration safe to run on an owner's config, and the printed way back is its undo."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.config.9
+    statement: "Each setting has one home file; a setting written in two config files is refused at load naming both places; no file overrides another; and everything about one configured thing lives in that thing's own table, with no other file keying a map by its name."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no config files.
+      - kinds:
+          - single-config-file
+        reason: A program with one config file cannot set a key in two.
+    reasoning:
+      definition: "The loader reads every config file, builds the set of keys per file, and refuses a key found in two with both files and lines. A configured thing (a machine, an app, a share) is named in one entry and its settings sit in its table."
+      pros:
+        - "Override chains between files are the config bug that takes an afternoon to find, and refusing duplicates costs one loop at load. One table per thing keeps it deletable in one place."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.config.10
+    statement: "A missing config file means the defaults, a config file that exists but cannot be read is an error, never the defaults, and a list key is an allowlist where an empty or absent list allows nothing."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no config file.
+    reasoning:
+      definition: "Cannot be read covers permission denied, a parse error and a read error. No key exists whose absence means everything; a program that wants allow-all needs an explicit value naming it."
+      pros:
+        - "A default used because a file was unreadable, and an absent list that means everything, are two of the places a config reader lies to its owner."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.config.11
+    statement: "A setting that can be implemented more than one way names the implementation with one key and takes its keys in a table named after it, an unknown value is refused naming the implementations this build has, and a key that may grow accepts either its value or a table holding it, both documented as the one shape, so growing it never needs a migration."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no config.
+    reasoning:
+      definition: "For example by = \"ntfy\" with an ntfy table beside it; a second backend is a new table, not a migration. Both forms of a growable key are read always."
+      pros:
+        - "This is the config half of ports and adapters: a second backend is one new table, and value-or-table lets a key grow without breaking a file written years before."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.config.12
+    statement: "A config file whose contents decide what runs as root is refused when anyone but root or the running account owns it, or when group or others can write it, and the refusal gives the fixing line."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no config file.
+    reasoning:
+      definition: "The check runs at every load, on the file and on each folder above it up to the root of the filesystem. The fixing line is the chown and chmod to paste."
+      pros:
+        - A config writable by a non-root user that a root process runs commands from is a privilege escalation.
+    sources:
+      - ref: decision-65-cli
+        backs: rule

@@ -1,0 +1,9 @@
+$ gragas tools
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+no bindings: 0 rules held
+
+  done       0 tools, 0 entries, 0 rules held
+--- stderr

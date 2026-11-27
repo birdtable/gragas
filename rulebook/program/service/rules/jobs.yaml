@@ -1,0 +1,24 @@
+format: 3
+part: service
+concern: jobs
+rules:
+  - id: service.jobs.1
+    statement: "A service that owns job runs records each run in one shared job-run schema, through one shared recorder, and exposes them through one shared operations contract."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    exemptions:
+      - kinds:
+          - service
+          - no-jobs
+        reason: a service that owns no job runs has nothing to record
+    reasoning:
+      definition: "The shared operations contract serves the runs at /ops/job-runs, and every run validates against the shared job-runs schema."
+      pros:
+        - Each service inventing its own run log leaves no single answer to what ran last night and what failed.
+    sources:
+      - ref: service-reasons-stated
+        backs: rule

@@ -1,0 +1,21 @@
+$ gragas decision new --decision-slug small --title Small --text Keep it small. --rejected big: slow --cite-source effective-go
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+What changes
+  new decision small: Small, with 1
+  rejected option(s)
+
+What is written where
+  decisions.yaml: adds decision small
+  history.jsonl: appends one entry (new)
+This was a dry run and nothing was
+changed. Add --apply to make these
+changes.
+
+  declined   nothing was changed
+    gragas decision new --cite-source
+effective-go --decision-slug small
+--rejected 'big: slow' --text 'Keep it
+small.' --title Small --apply
+--- stderr

@@ -1,0 +1,407 @@
+part: supply
+concern: install
+order: 2
+title: Install and build inputs
+summary: >-
+  How dependencies get into a build. One pinned package manager installs from the lockfile only, direct
+  versions are exact, nothing runs at install time unless named, the build and type-check run with the network
+  blocked, no import resolves to a package nobody declared, and the toolchain is one version.
+rules:
+  - id: supply.install.1
+    slug: install-from-the-lockfile-only
+    since: 0.1.0
+    rule: >-
+      One package manager, pinned, installs from the lockfile only; the lockfile is the pin, it is verified,
+      and a version conflict is never hidden.
+    detail: >-
+      For Go: go.sum is committed, go mod verify passes, builds use -mod=readonly, and no gate or release
+      script uses -mod=mod or go get. For JavaScript: install with the frozen-lockfile form only, one package
+      manager for the whole estate, and a peer mismatch fails the install instead of being silenced (a
+      legacy-peer switch is removed). Go has no peer ranges, so that half does not transfer. The strict
+      install form is --frozen-lockfile; peer mismatches are not hidden (legacy-peer-deps is removed). The
+      gate scanner (gatescan) bans -mod=mod and go get in gate and release scripts.
+    level: program
+    why: >-
+      An install that resolves again can differ by day. In the web estate a package manager that honours the
+      cooldown refused a young locked entry while another passed it, so the choice of manager is part of the
+      defence.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: sections 12 and 13
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          go mod verify, GOFLAGS=-mod=readonly, and a scan that bans -mod=mod and go get in gate and release
+          scripts. Plant: a gate or release script that runs go get, or a tampered module cache, fails.
+          Control: a clean tree passes
+      - binding: ts
+        class: preset-config
+        tier: "3"
+        note: >-
+          the package manager pinned by the manifest field, install with --frozen-lockfile only, and an
+          only-allow guard in the preinstall hook; strict peer dependencies on. Plant: an install with a
+          changed manifest and a stale lockfile fails; a second package manager fails. Control: a frozen
+          install passes
+    open:
+      - >-
+        go mod verify offline and the tampered-cache refusal were planted in a trial; the Go gate-script scan
+        is proposed and was not planted.
+      - >-
+        v1 evidence, not yet a source: practice; a package manager that refuses a young locked entry passes
+        where another does not
+  - id: supply.install.2
+    slug: build-and-check-offline
+    since: 0.1.0
+    rule: >-
+      After the dependencies are installed, the build, the type-check and the tests run with the network
+      blocked, and generated output comes from committed inputs.
+    detail: >-
+      No CDN or latest-tag URL in a build config; no download at build time; a code generator's output fails
+      the build when it did not compile. A build step that declares a fetch as its own input, such as a
+      content build that reads a remote source, is exempt, because that fetch is the build's input. A Go
+      build runs behind go-proc's network block (sandbox.Run) with GOFLAGS=-mod=readonly and GOPROXY=off; a
+      JS build runs under a sandbox runtime with an empty domain allowlist. Where the system gives no block
+      (Windows today: sandbox.ErrNoBlock) the run is refused by name and never made unblocked. Install itself
+      needs the network and runs before. The install step is npm ci or its frozen equivalent; the build and type-check run after it
+      with no network. A message-format plugin loads from disk through node_modules, not from a URL. The
+      sandbox is @anthropic-ai/sandbox-runtime; a scan of gate and release scripts by gatescan bans -mod=mod
+      and go get.
+    level: program
+    why: >-
+      A build that reaches the network can differ by day and is an exfiltration route. How a block is
+      made differs by system, so the rule names the behaviour and the refusal, never one means.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: sections 12 and 13
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "3"
+        note: >-
+          build and type-check run under a sandbox runtime with an empty allowed-domain list, and are refused
+          by name where the system gives no block. Plant: a node fetch of the registry under the sandbox with
+          no allowed domains fails; a build step that fetches at build time fails. Control: the offline build
+          step passes
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          go-proc's network block with GOFLAGS=-mod=readonly and GOPROXY=off; where it gives none
+          (sandbox.ErrNoBlock) the step is refused by name, never run unblocked. Plant: a build step
+          that fetches at build time fails. Control: a build that reads only the module cache passes
+    open:
+      - >-
+        The macOS means is not chosen. The sandbox runtime was run on macOS (exit 1 on the plant, a 403 on the
+        connect); the Linux path is from its README and was not run. The sandbox runtime is below version 1.0,
+        so using it needs a pilot record.
+      - No gate proved a build with the network off before this rule.
+  - id: supply.install.3
+    slug: package-manager-pinned-in-manifest
+    since: 0.1.0
+    rule: >-
+      The manifest pins the package manager by name with an error on mismatch and a minimum version, so an old
+      tool that would ignore a setting silently refuses to install.
+    detail: >-
+      The settings check reads the package manager pin as part of the check-npmrc command of the reference.
+    level: file
+    why: >-
+      A package manager older than the settings file ignores the settings, so the cooldown and install-script
+      guards vanish without a message.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          a settings check that reads the manifest field and requires the manager name and a minimum version.
+          Plant: a manifest with no manager pin fails. Control: a manifest pinning the manager and its minimum
+          version passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      In Go the same idea is a pinned toolchain version that a preflight checks before the gate, so a stale
+      toolchain cannot skip a flag.
+  - id: supply.install.4
+    slug: exact-versions
+    since: 0.1.0
+    rule: >-
+      Direct code dependencies use exact versions, ranges are allowed only for peers, and the exact-pin rule
+      covers code dependencies, not the images a program writes into a stack it deploys.
+    detail: >-
+      Every direct dependency in a manifest or module file names one exact version; a peer dependency may name
+      a range. The rule is about code the build resolves. A stack file that a program writes for its owner (a
+      compose file, a service unit) may follow an image's release tag and update by comparing the running
+      digest with the registry; how such stacks are written is held by the daemon and deploy rules, not here.
+      An image the release itself builds is pinned by digest (supply.release.9). The second opinion rule is
+      prefer-absolute-version-dependencies (and the dev form).
+    level: file
+    why: >-
+      A range on a direct dependency means two installs of one commit can differ. In the web baseline none of
+      32 direct dependencies was a range. Extending exact pins to the images a program deploys for its owner
+      would forbid the update path that design chose on purpose.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: syncpack
+        tier: "1"
+        note: >-
+          syncpack semver groups with an exact range, a separate group for peers that allows ranges;
+          npm-package-json-lint prefer-absolute-version rules as a second opinion. Plant: a caret range in
+          dependencies and a tilde range in devDependencies each fail. Control: exact pins pass
+    relates:
+      - id: supply.release.9
+        how: see
+  - id: supply.install.5
+    slug: lagging-peer-range-on-record
+    since: 0.1.0
+    rule: >-
+      A shared package whose peer range lags a major tool is replaced or overridden on record.
+    level: program
+    why: >-
+      A peer range that excludes the installed major forces a silenced install, which hides every other peer
+      conflict.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "3"
+        note: >-
+          strict peer dependencies so an unmet peer fails the install; every peer rule or override entry
+          carries an exception record naming reason, owner and expiry. Plant: a shared package whose peer
+          range excludes the installed tool major fails the install. Control: the same install with a recorded
+          override passes
+    open:
+      - The record check is the exception-record parser, not yet built.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C: a lint plugin lagged a major
+        linter, and a build plugin needed a peer-ignoring switch
+  - id: supply.install.6
+    slug: install-scripts-off
+    since: 0.1.0
+    rule: No package runs an install script unless it is named on a reasoned allowlist.
+    detail: >-
+      Either of two settings blocks scripts, and the last value wins as the package manager reads it. The few
+      packages that need a script are rebuilt by an explicit step after an install with scripts off. Go
+      modules run nothing at fetch, and the one native build step is removed by building without cgo, so the
+      rule has no Go check. The npm form is ignore-scripts, with the allowlisted few rebuilt explicitly.
+    level: deploy
+    why: >-
+      An install script runs arbitrary code on every machine that installs, which is the usual route of a
+      package takeover.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          strict dependency-build setting true with the named build list, read back from the resolved config,
+          last value wins. Plant: the setting off fails the read-back; a package with a script that is not
+          named fails. Control: the setting on with a named package passes
+    open:
+      - "v1 evidence, not yet a source: C: the setting is held in the web template"
+  - id: supply.install.7
+    slug: install-script-allowlist-schema
+    since: 0.1.0
+    rule: >-
+      Every install-script allowlist entry names the package, an owner and a reason of at least ten
+      characters; the file must parse, and an absent file is fine.
+    level: file
+    why: >-
+      An allowlist without owner and reason becomes a list nobody can review or expire.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          a settings check that validates the allowlist against a schema of package, owner and reason of ten
+          or more characters. Plant: an entry with a short reason fails; a file that does not parse fails.
+          Control: a complete entry passes, and an absent file passes
+    open:
+      - >-
+        The reference check carries no expiry on an allowlist entry; our exception record adds one.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: supply.install.8
+    slug: no-phantom-imports
+    since: 0.1.0
+    rule: >-
+      No phantom imports: the lock has exactly the declared direct dependencies, a binary run by name is a
+      declared dependency, in a workspace the root manifest holds no dependency a package imports, and each
+      package declares exactly the siblings its import rules allow, checked both ways.
+    detail: >-
+      A bare package-runner call resolves an unlisted tool to whatever has that name, so every binary used
+      must be a declared dependency. A non-flat install layout keeps an undeclared import from resolving. The
+      install is the frozen-lockfile form so a mismatch fails. In a workspace, a dependency in the root
+      manifest resolves from every file, so the root holds only workspace tooling that no package imports.
+      Each package's manifest declares exactly the packages its units may import under the layer table
+      (arch.layers.12): a declared sibling it may not import fails, and an allowed import it does not declare
+      fails.
+    level: package
+    why: >-
+      A package that resolves only because something else installed it breaks the day that other package
+      changes, and a bare runner call can fetch a stranger. A root dependency hides the same phantom import
+      inside a workspace.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: knip
+        tier: "2"
+        note: >-
+          knip with unlisted, unresolved and binaries issue types set to error, a non-flat node_modules
+          layout, and a frozen install that fails when the lock and manifest disagree; a workspace check that
+          the root manifest's dependencies are imported by no package and that each package's declared
+          siblings equal the siblings its import rules allow. Plant: an import of a package that is not in the
+          manifest fails; a binary run by name that is not declared fails; a root dependency imported by a
+          package fails. Control: a declared import passes
+    relates:
+      - id: arch.layers.12
+        how: see
+    open:
+      - >-
+        knip needs its framework plugin active or it reports files used only from template files as unused.
+        Not re-run.
+  - id: supply.install.9
+    slug: toolchain-one-version
+    since: 0.1.0
+    rule: >-
+      The toolchain is at one version in every project, with the same presets, the toolchain a gate ran on is
+      the one the lockfile names, each dependency has one version across a workspace's packages, and siblings
+      are linked as workspace dependencies.
+    detail: >-
+      A preflight on every gate host compares the runtime version with its pinned file, the package manager
+      with the manifest field, and the frozen install offline, and lists missing tools; a non-zero result
+      stops the gate. A runtime-major file is rendered from the template answer so one major holds across
+      declarations. One preflight serves Go and web. The preflight frozen install is install --frozen-lockfile
+      --offline. In a workspace each third-party dependency resolves to one version across all packages, and a
+      package depends on a sibling only through a workspace link, never a published version of it.
+    level: deploy
+    why: >-
+      A gate that ran on a different toolchain than the lockfile names proves nothing about the shipped build.
+      One tool version per estate removes a class of drift.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-17
+        backs: rule
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. companion preflight on every gate host (runtime against the pinned file, manager
+          against the manifest, frozen install dry check). Plant: a host with the wrong runtime major fails.
+          Control: a matching host passes
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          sherif 1.13.0 over the workspace manifests (one version per dependency, workspace links for
+          siblings). Plant: two packages declaring different versions of one dependency fail; a sibling
+          declared by a published version fails. Control: one version per dependency and workspace links pass
+      - binding: go
+        class: preset-config
+        tier: "1"
+        note: >-
+          one pinned version per tool in the tools module, run by the gate and never fetched at run time, with
+          the preflight naming missing ones. Plant: a gate host with a missing or wrong tool version fails the
+          preflight. Control: a matching host passes
+  - id: supply.install.10
+    slug: check-tools-pinned-no-runner-fetch
+    since: 0.1.0
+    rule: >-
+      Each check tool has one pinned version and runs from the pinned install, passing its exit code through;
+      no tool is run through a package runner that could fetch a same-named stranger.
+    detail: >-
+      A test fails if the runner's name appears in a shipped file. No go run of a package at a version at gate
+      time, and no go get or -mod=mod in gate or release scripts. The licence checker is one of the tools run
+      from the pinned install (license-checker with the others such as depcruise, spectral, cspell and
+      markdownlint).
+    level: package
+    why: >-
+      A check that fetches its own tool at run time can be replaced by whatever has that name, and a changed
+      version gives a changed verdict.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test that fails if a package runner name appears in a shipped file, and a wrapper that runs each
+          named tool from the package's own pinned install. Plant: a shipped script that calls the runner
+          fails the test. Control: a script that calls the pinned install passes
+      - binding: go
+        class: preset-config
+        tier: "1"
+        note: >-
+          tools pinned in the tools module and run by companion, with a scan that bans go run of a versioned
+          package and go get in gate scripts. Plant: a gate script with go run of a package at a version
+          fails. Control: a pinned tool call passes
+  - id: supply.install.11
+    slug: module-hygiene-tidy-and-go-version
+    since: 0.1.0
+    rule: >-
+      The module tidy command leaves no diff, and the language version is one the estate supports.
+    level: package
+    why: >-
+      A stale unused require is a dependency nobody chose, and an unsupported language version silently skips
+      fixes.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          go mod tidy -diff exit non-zero on a diff; the Go version line checked against rule data. Plant: an
+          unused require left in go.mod fails. Control: a tidy module passes
+    relates:
+      - id: supply.install.1
+        how: see
+    open:
+      - The same rule for JavaScript is the frozen-lockfile check in supply.install.1.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: own measure; one repository sat on
+        an old Go version

@@ -1,0 +1,9 @@
+$ gragas tools
+--- exit 4
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  not ready  no rulebook.yaml here. tools lists a rulebook's tools here, and the
+  form for a project comes later
+    gragas init
+--- stderr

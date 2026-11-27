@@ -1,0 +1,56 @@
+format: 3
+part: docs
+concern: samples
+rules:
+  - id: docs.samples.1
+    statement: "Code in docs uses the real interfaces: every import in a documentation code fence resolves, every block compiles or type-checks, and install and upgrade steps in a guide are run as written by a test, with a step that loses its block failing."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "For Go, fenced blocks are extracted into a scratch package inside the module and vetted. For TypeScript, every fence in the design-system and reference docs type-checks against the real barrels. A block marked as a fragment is skipped and counted, and that count only falls. A repository with no blocks prints not applicable. The golden path and the rule file agree. Steps under the install and upgrade headings of a guide and the changelog are written as the program's own commands, not shell lines, and are cut out by a test and run in order on a clean machine or container, from the previous release to the commit; a step heading with no block, or a block that fails, fails the test."
+      pros:
+        - "Docs rot; the counted 41 fenced Go blocks in six clones showed no known fault from them yet, so the Go half is practice only."
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+  - id: docs.samples.2
+    statement: "A README keeps the shape of its kind: a directory README answers what is here, how to run it and where the rules are and points to AGENTS.md, a package README states what it is, what it exports, what it may import and how it is tested, and a CLI's product README has a fixed order of parts."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The kind follows from where the README sits: the repo root holds the product README, a package root a package README, any other folder a directory README. The product order is: a claim, what it is, install, getting started, the commands table (generated from help), longer parts, limits, where things live, documentation and contributing. A new kind adds its shape here and to the check, never a README with no kind. The package README's import line agrees with the declared import table."
+      pros:
+        - "A README with a known shape is read in one pass by a stranger and can be partly generated; a README that does not point to the rules sends an agent and a person to guess."
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+  - id: docs.samples.3
+    statement: "A change in user-visible behaviour (a flag, an exit code, a --json field, a command, a config key, a written file) touches its doc in the same commit, or says docs: none in the commit."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The behaviour is read from the command manifest, the config schema and the list of files the program writes; the doc is the file under the docs folder or the README that names the changed item. A doc change in a later commit does not count."
+      pros:
+        - "A visible choice about docs, though it buys visibility and not truth."
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+  - id: docs.samples.4
+    statement: "One program is kept as the worked example of every rule, linked from templates and guidance."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - The first file an agent opens should be a good one.
+  - id: docs.samples.5
+    statement: Each project has a profile page in the shared docs with the same fixed headings.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - A fixed page per project lets a reader and an agent find the same facts in the same place.

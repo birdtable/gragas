@@ -1,0 +1,5 @@
+[
+  {"name": "an unknown field", "patch": [{"op": "add", "path": "/0/exclusions/0/lifted_by", "value": "alex"}], "problem": "Additional properties are not allowed ('lifted_by' was unexpected)"},
+  {"name": "a missing required field", "patch": [{"op": "remove", "path": "/0/exclusions/0/decision"}], "problem": "'decision' is a required property"},
+  {"name": "a number below one", "patch": [{"op": "replace", "path": "/0/exclusions/0/number", "value": 0}], "problem": "minimum"}
+]

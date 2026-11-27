@@ -1,0 +1,8 @@
+format: 3
+part: cli
+concern: flags
+rules:
+  - id: cli.flags.1
+    statement: Hold to this rule of the fixture parent or import.
+    strength: must
+    status: active

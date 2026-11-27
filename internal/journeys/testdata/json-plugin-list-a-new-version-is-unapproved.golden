@@ -1,0 +1,40 @@
+$ gragas plugin list --json
+--- exit 0
+--- stdout
+{
+  "rows": [
+    {
+      "name": "lint-a",
+      "version": "1.0.0",
+      "tool": "lint-a",
+      "digest": "<lint-a@1.0.0>",
+      "approved": true,
+      "note": ""
+    },
+    {
+      "name": "lint-a",
+      "version": "1.1.0",
+      "tool": "lint-a",
+      "digest": "<lint-a@1.1.0>",
+      "approved": false,
+      "note": ""
+    },
+    {
+      "name": "lint-b",
+      "version": "1.0.0",
+      "tool": "",
+      "digest": "sha256:0c781efa13b0c034ff643e1dcc2ef87b3c202d58b04bc2f412ccc1393000bb73",
+      "approved": false,
+      "note": "the plugin's digest is not the manifest's: lint-b 1.0.0 reads as sha256:0c781efa13b0c034ff643e1dcc2ef87b3c202d58b04bc2f412ccc1393000bb73, and its lock holds <lint-b@1.0.0>"
+    },
+    {
+      "name": "lint-c",
+      "version": "1.0.0",
+      "tool": "",
+      "digest": "sha256:d955d5c40130a4a212fb6cf4f7aa9d53531db8e735ff2ecbb5da2008f8fed52e",
+      "approved": false,
+      "note": "the plugin's digest is not the manifest's: lint-c 1.0.0 reads as sha256:d955d5c40130a4a212fb6cf4f7aa9d53531db8e735ff2ecbb5da2008f8fed52e, and its lock holds <lint-c@1.0.0>"
+    }
+  ]
+}
+--- stderr

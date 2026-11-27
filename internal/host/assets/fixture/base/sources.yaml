@@ -1,0 +1,9 @@
+format: 3
+sources:
+  - {slug: effective-go, kind: guide, title: Effective Go, locator: "https://example.com/effective-go", attribution: alex, verified: "2026-09-01"}
+  - {slug: rfc-0001, kind: standard, title: A standard of errors, locator: "RFC 0001"}
+  - {slug: error-study, kind: study, title: A study of error messages, locator: "doi:10.0000/fixture.1", attribution: alex}
+  - {slug: outage-note, kind: incident, title: The outage with no cause in its error, locator: "https://example.org/outage-1", verified: "2026-09-15"}
+  - {slug: wrap-record, kind: decision-record, title: The record of wrapping, locator: wrap-errors}
+  - {slug: tool-manual, kind: vendor-document, title: The linter manual, locator: "https://example.com/linter/manual"}
+  - {slug: house-call, kind: own-decision, title: A call the owners made, locator: house-call}

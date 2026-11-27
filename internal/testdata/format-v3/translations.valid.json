@@ -1,0 +1,9 @@
+[
+  {
+    "format": 3,
+    "translations": [
+      {"entity": "rule:go.errors.1", "field": "statement", "language": "de", "text": "Gib Fehler mit Kontext zurück.", "hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"},
+      {"entity": "term:digest", "field": "definition", "language": "de", "text": "Der Hash einiger Bytes.", "hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+    ]
+  }
+]

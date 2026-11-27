@@ -1,0 +1,4 @@
+heading 1 line 1 "Plain guide" #plain-guide
+heading 2 line 7 "Setext heading" #setext-heading
+paragraph lines 3-3 "Only prose here, and nothing for the engine."
+must line 5 under #plain-guide "a list item that MUST stay short"

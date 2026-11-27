@@ -1,0 +1,332 @@
+part: ts
+concern: lint-config
+order: 5
+title: Lint configuration and suppression ratchet
+summary: >-
+  How the lint runs, for either engine: bulk suppressions that only shrink, rules that start as errors,
+  uncached typed lint at the push and land tiers, a fast untyped lint at edit time, and a stated scope of what
+  is linted and with which settings. A rule that only ESLint needs says so and binds only where ESLint is the
+  engine.
+rules:
+  - id: ts.lint-config.1
+    slug: bulk-suppressions-with-line-count
+    since: 0.1.0
+    rule: >-
+      Applies when the engine is ESLint, the bulk suppressions are paired with a per-file count of lines,
+      because they are not a ratchet on their own.
+    detail: >-
+      ESLint-only. ESLint 10 bulk suppressions (`eslint-suppressions.json`, `--suppress-all`,
+      `--prune-suppressions`) record errors per file but allow the file to grow; a per-file line-count
+      baseline refuses growth. Biome has no bulk suppression file: each suppression is an inline
+      `biome-ignore` comment with a reason, counted by the shrink-only suppression count of the gates part, so
+      the line-count pairing is not needed there.
+    level: file
+    why: In a trial a suppressed file grew by 250 lines and ESLint exited 0.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: eslint-docs
+        where: bulk suppressions
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: eslint
+        tier: "3"
+        note: >-
+          ESLint bulk suppressions paired with a per-file line-count baseline. Plant: growth of a suppressed
+          file by 250 lines exits 0 under suppressions alone and is refused by the line-count baseline.
+          Control: an unchanged suppressed file passes
+    open:
+      - The per-file count is planned; the behaviour of suppressions was tried.
+      - "v1 evidence, not yet a source: C (250 lines grown, exit 0)"
+  - id: ts.lint-config.2
+    slug: new-rule-ships-as-error
+    since: 0.1.0
+    rule: >-
+      A new rule ships as an error, never a warning; the suppression list is seeded with every rule id of the
+      family and pruned when code is fixed.
+    detail: >-
+      Bulk suppression records errors only, so a warning is never ratcheted. After code is fixed the run fails
+      until the list is pruned (`--prune-suppressions`, exit 2 on an unpruned entry), and the flag that
+      ignores unpruned entries is refused by the lint wrapper at the land tier. Biome form: a new rule enters
+      the one Biome config at `error`, existing hits are suppressed with a `biome-ignore` comment carrying a
+      reason, and Biome's unused-suppression report fails a comment left after the code is fixed. The seeding
+      and pruning of a list file is ESLint-only.
+    level: file
+    why: Without pruning the list keeps room for the old violations to come back.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: eslint-docs
+        where: bulk suppressions
+        backs: rule
+      - ref: biome-docs
+        where: suppressions
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: eslint
+        tier: "3"
+        note: >-
+          ESLint 10.14 bulk suppressions (`--suppress-all`, `--suppress-rule`, `--prune-suppressions`,
+          `--suppressions-location`; the list is `eslint-suppressions.json`) and a lint wrapper that refuses
+          `--pass-on-unpruned-suppressions` at land. Plant: fixed code leaves a stale entry and exits 2; the
+          pass-on-unpruned flag returns 0, so the land wrapper must refuse it; a new violation exits 2.
+          Control: a pruned list with no violations passes
+    open:
+      - Behaviour tried on one ESLint version; re-run when the version moves.
+      - "v1 evidence, not yet a source: C (ESLint 10.14.0 tried)"
+  - id: ts.lint-config.3
+    slug: typed-lint-uncached
+    since: 0.1.0
+    rule: >-
+      Applies when the engine is ESLint, typed lint is never cached across files, and the lint cache is
+      allowed only for a config with no typed rules.
+    detail: >-
+      ESLint-only. The lint wrapper refuses `--cache` when the config uses typed parser options at push and
+      land. Lint at each gate tier runs uncached over the whole tree; where a repo turns test selection on
+      (tests.selection.1), push and land may lint the reverse closure of the changed files instead, and the
+      release lints everything. Biome keeps no lint cache between runs, so the rule has nothing to hold there.
+    level: process
+    why: >-
+      A typed rule's result in one file depends on its imports, so a cached result is stale when another file
+      changes. A global check is never affected-only unless sound under caching.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: typescript-eslint-docs
+        where: typed linting performance
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: eslint
+        tier: "0"
+        note: >-
+          the lint wrapper refuses `--cache` when the ESLint config has typed parserOptions at the push and
+          land tiers. Plant: typed lint with `--cache` at land is refused. Control: untyped lint with
+          `--cache` passes
+    relates:
+      - id: tests.selection.1
+        how: see
+    open:
+      - >-
+        Half is enforceable (the cache ban); the reverse-closure scope applies only where selection is on and
+        is not yet configured.
+  - id: ts.lint-config.4
+    slug: edit-time-lint-under-two-seconds
+    since: 0.1.0
+    rule: >-
+      Applies when the engine is ESLint, the edit tier lints the changed file through a warm server with an
+      untyped config in under two seconds (2 s).
+    detail: >-
+      ESLint-only. An agent edit hook runs oxlint or a warm ESLint server on the changed file only. The two
+      seconds is a measure: the donor reports a cold single-file lint of 20 seconds. Warm servers considered
+      are eslint_d (15.1.0, MIT) and oxlint (1.91.0), not run here. Biome form: the edit hook runs `biome
+      check` on the changed file, which needs no warm server; the same two-second ceiling applies and is
+      recorded the same way.
+    level: process
+    why: A cold lint is too slow for an edit loop, so the agent skips it.
+    kind: measure
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: hook
+        tool: eslint
+        tier: "0"
+        note: >-
+          an edit hook that runs a warm untyped ESLint lint on the changed file and records its time, with a
+          ceiling of two seconds. Plant: a hook configuration that lints the whole project or exceeds the
+          ceiling fails. Control: a one-file untyped lint under the ceiling passes
+      - binding: ts
+        class: hook
+        tier: "0"
+        note: >-
+          an edit hook that runs `biome check` on the changed file and records its time, with a ceiling of two
+          seconds. Plant: a hook configuration that checks the whole project or exceeds the ceiling fails.
+          Control: a one-file check under the ceiling passes
+    open:
+      - >-
+        Speed is watched, not enforced; the hook is not built. The cold figure is a source report, not a
+        measurement of ours.
+      - "v1 evidence, not yet a source: D (research reports); own measure"
+  - id: ts.lint-config.5
+    slug: tests-linted-untyped
+    since: 0.1.0
+    rule: >-
+      Test files are linted without type information, and the function-length cap and the non-null assertion
+      rule are off in tests.
+    detail: >-
+      The shared config has a tests override: no parser project, the function-length cap off and
+      `no-non-null-assertion` off. The assertion style ban that applies outside tests (ts.type-safety.2) is
+      relaxed the same way. Biome form: an `overrides` entry for test paths turns off `noNonNullAssertion`,
+      the function-length check and the type-aware rules.
+    level: package
+    why: >-
+      Typed lint on every test file is the slowest part of the run, and tests use assertions legitimately.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: typescript-eslint-docs
+        where: linting without type information
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "0"
+        note: >-
+          a test of the shared config that resolves the settings for a test file path and asserts no parser
+          project and the two rules off. Plant: a config whose test override turns on typed rules fails.
+          Control: a config that matches the recorded settings passes
+    relates:
+      - id: ts.type-safety.2
+        how: see
+    open:
+      - The test of the resolved settings is not built.
+  - id: ts.lint-config.6
+    slug: script-files-linted-with-runtime-globals
+    since: 0.1.0
+    rule: Plain script files (js, mjs, cjs) are linted with the runtime's globals.
+    detail: >-
+      The config has an override for plain script files that declares the runtime's globals, so `process` or
+      `__dirname` in a script is not flagged as undefined and the script is still linted. Biome form: an
+      `overrides` entry for plain script files declares the runtime globals in `javascript.globals`.
+    level: package
+    why: >-
+      Without the override a script either fails with false errors or is left out of the lint.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: eslint-docs
+        where: language options and globals
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "0"
+        note: >-
+          a config test that resolves the settings for a `.mjs` path and asserts the runtime globals are
+          declared. Plant: a script using `process` fails if globals are missing from the override. Control: a
+          script file with the override passes
+    open:
+      - Written from the shared-config source's setting list; not built.
+  - id: ts.lint-config.7
+    slug: root-config-files-linted
+    since: 0.1.0
+    rule: >-
+      Root tool config files that sit outside the compiler include are still linted, without a parse error.
+    detail: >-
+      Root config files (build, test and lint config) are outside the compiler's include list, so a typed
+      parser project cannot read them. They get an untyped override or a default project, so they are linted
+      without a parse error. ESLint-only: Biome needs no parser project, so root config files are linted with
+      the rest and cannot hit this parse error.
+    level: package
+    why: >-
+      A parse error on a config file stops the whole lint run, or the file is silently skipped.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: typescript-eslint-docs
+        where: projectService
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "0"
+        note: >-
+          a lint run over the root config files that must exit without a parse error. Plant: a root config
+          file outside the include list that produces a parse error fails. Control: the same file with the
+          override lints cleanly
+    open:
+      - Written from the shared-config source's setting list; not built.
+  - id: ts.lint-config.8
+    slug: generated-and-output-folders-excluded
+    since: 0.1.0
+    rule: >-
+      Build output, coverage, cache and infrastructure-tool output folders are excluded from lint.
+    detail: >-
+      The ignore list names build output, coverage, cache and generated folders (including the generated route
+      tree). A generated file is never linted and never hand-edited. Biome form: the same folders are excluded
+      by negated patterns in `files.includes` of the one Biome config, checked by the same test.
+    level: package
+    why: Linting generated output produces errors nobody can fix.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: eslint-docs
+        where: ignoring files
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "0"
+        note: >-
+          the lint ignore list in the shared config, checked by a test that a file in each listed folder is
+          reported as ignored. Plant: a violation placed in the build output folder must not be reported, and
+          a violation outside it must be. Control: the same file outside an ignored folder is linted
+    open:
+      - Folder names are fixed in the shared config; the check is not built.
+  - id: ts.lint-config.9
+    slug: test-lint-plugin-pinned
+    since: 0.1.0
+    rule: >-
+      The test lint plugin is pinned exactly, and a test confirms its TypeScript peer range accepts the
+      project's version.
+    detail: >-
+      The test-runner lint plugin is pinned to an exact version in the shared config's package. A test reads
+      its peer range and fails when the project's TypeScript version is outside it. ESLint-only: Biome has no
+      test-runner lint plugin, so the pin and peer-range test bind only where the engine is ESLint; the Biome
+      version itself is pinned exactly like any other tool.
+    level: package
+    why: >-
+      A plugin whose peer range excludes the project's TypeScript installs with a warning and then fails or
+      silently skips rules.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test that reads the plugin's peer range and checks it against the installed TypeScript version,
+          plus an exact pin in the manifest. Plant: a plugin whose peer range excludes the installed
+          TypeScript fails the test. Control: a plugin whose range accepts it passes
+    open:
+      - Peer-range tests are not built.

@@ -1,0 +1,200 @@
+part: ts
+concern: lint
+order: 3
+title: The lint engine and its rules
+summary: >-
+  The lint engine is a project parameter (Biome or ESLint) with one shared strict config, type-aware where it
+  is cheap, running the rules the compiler cannot: promises, type-only imports and schema-library misuse.
+  Every rule is an error, and each rule names its Biome form or says it is ESLint-only.
+rules:
+  - id: ts.lint.1
+    slug: type-aware-correctness
+    since: 0.1.0
+    rule: >-
+      Type-aware correctness rules run as errors where they are cheap: no floating promise, no misused promise
+      and no unsafe-any flow.
+    detail: >-
+      The set is the strict type-checked preset: `no-floating-promises`, `no-misused-promises`, the
+      `no-unsafe-*` family, and no needless conditions. A background task is awaited or handled. The fast tool
+      (oxlint with its type-aware backend) runs at tier 2 on `.ts`, `.tsx` and `.astro` frontmatter and
+      scripts; the typed ESLint run is not used below the land tier. Tests are linted without type information
+      (see ts.lint-config.5). Biome form: `noFloatingPromises` and `noMisusedPromises` (Biome's type-aware
+      rules) at error. The `no-unsafe-*` family is ESLint-only: Biome has no form and a GritQL pattern cannot
+      see types, so a Biome project records the gap.
+    level: function
+    why: >-
+      A promise that is neither awaited nor handled fails silently and out of order. Typed ESLint costs 3.3 to
+      4.4 times the untyped run (donor measure); oxlint took 0.6 CPU seconds for the same 3,633 files.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: typescript-eslint-docs
+        where: strict-type-checked
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: typescript-eslint-strict-type-checked
+        tier: "2"
+        note: >-
+          oxlint with oxlint-tsgolint (no-floating-promises, no-misused-promises, no-unsafe-* set by the
+          preset) at tier 2, and the typescript-eslint strict-type-checked preset at the land tier. Plant: a
+          floating promise in a `.ts` file fails; the awaited twin passes. Control: an awaited promise in the
+          same file passes
+      - binding: ts
+        class: preset-config
+        tier: "2"
+        note: >-
+          Biome `noFloatingPromises` and `noMisusedPromises` at error in the one Biome config. Plant: a
+          floating promise in a `.ts` file fails under Biome. Control: an awaited promise in the same file
+          passes
+    relates:
+      - id: ts.lint-config.5
+        how: see
+    open:
+      - One rule was compared between the fast tool and ESLint, not the whole preset.
+      - >-
+        The fast tool reads scripts and frontmatter, not `.astro` markup. Version 1.91.0 was young when
+        measured under the former 14-day window; re-run on the newest release outside tools.yaml's
+        window.
+      - "v1 evidence, not yet a source: C (measured cost of typed lint)"
+  - id: ts.lint.2
+    slug: type-only-imports-explicit
+    since: 0.1.0
+    rule: >-
+      Type-only imports are free across layers, and type imports are written explicitly so the exemption is
+      checkable.
+    detail: >-
+      The layer rule allows `import type` across any layer (the plugin reads `importKind`), and
+      `consistent-type-imports` makes a type-only import explicit, so a value import across layers fails while
+      the same name as a type passes. Biome form: `useImportType` at error makes the type import explicit; the
+      layer half is held by the boundary checker of the architecture part, a separate check that reads the
+      import kind.
+    level: file
+    why: >-
+      A type creates no run-time dependency, so a layer rule that forbids it forbids nothing real and invites
+      workarounds.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: typescript-handbook
+        where: import type
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: eslint
+        tier: "0"
+        note: >-
+          eslint-plugin-boundaries with type imports allowed across layers, and typescript-eslint
+          `consistent-type-imports` as an error. Plant: a value import across layers fails; the same name
+          imported with `import type` passes. Control: an explicit type import across layers passes
+      - binding: ts
+        class: preset-config
+        tier: "0"
+        note: >-
+          Biome `useImportType` at error, with the layer rule in the separate boundary checker. Plant: a type
+          used only as a type but imported as a value fails under Biome. Control: an explicit type import
+          passes
+    open:
+      - "v1 evidence, not yet a source: C (the plugin's import kind was tried)"
+  - id: ts.lint.3
+    slug: lint-rules-are-errors
+    since: 0.1.0
+    rule: >-
+      The lint engine is a project parameter (Biome or ESLint), there is one config, and every rule in it is
+      an error, never a warning, for whichever engine is chosen.
+    detail: >-
+      The project declares its engine once; a second lint engine in the same project fails. The shared config
+      for the declared engine sets each rule at error level and ships as one versioned unit. For Biome that is
+      one `biome.json` with every enabled rule at `error` and the formatter in the same file; for ESLint it is
+      one strict flat config with its plugin set. A rule is either at error or off and recorded on the
+      off-list with a reason; `warn` (Biome or ESLint) and Biome's `info` level are refused. Every lint rule
+      in this part names its Biome form (a built-in rule, a GritQL plugin or a separate check) or says it is
+      ESLint-only; an ESLint-only rule binds only where the engine is ESLint, and a Biome project holds the
+      same intent through the named form or records the gap. A new engine is added by naming its form on each
+      rule, never by rewriting the rules.
+    level: package
+    why: >-
+      A warning is read by nobody; the gate must fail on it. The rules that matter (every rule at error, a
+      plant per rule, type-aware checks) are engine-free, so tying the part to one engine would make the next
+      engine change a rewrite.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: eslint-docs
+        where: configuring rules
+        backs: rule
+      - ref: biome-docs
+        where: configure rules
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: eslint
+        tier: "0"
+        note: >-
+          a test that reads the declared engine, loads its one config (`biome.json` or the ESLint flat config)
+          and fails on any rule set to `warn` or `info`, on any rule `off` that is not on the recorded
+          off-list, and on a second engine's config in the project. Plant: a Biome config with one rule at
+          `warn` fails; an ESLint config with one rule at `warn` fails; a project with both configs fails.
+          Control: a config with all rules at `error` for the declared engine passes
+    open:
+      - The test is written from the shared-config source's text; not built.
+  - id: ts.lint.4
+    slug: schema-library-lint
+    since: 0.1.0
+    rule: >-
+      Schema declarations pass the schema library's lint rules: no any-schema, no unknown-schema, strict
+      objects, no throw inside a refinement and no schema built inside a function.
+    detail: >-
+      The plugin for the schema library's current major version runs as errors: `no-any-schema`,
+      `no-unknown-schema`, `prefer-strict-object`, `no-throw-in-refine` and `no-function-scoped-schema`. Biome
+      form: one GritQL plugin per rule (an any or unknown schema, a non-strict object, a throw inside a
+      refinement, a schema built inside a function), registered in the one Biome config at error.
+    level: function
+    why: >-
+      A loose schema parses everything and checks nothing, which defeats the parse-at-the-edge rule.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: zod-docs
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          eslint-plugin-zod rules no-any-schema, no-unknown-schema, prefer-strict-object, no-throw-in-refine
+          and no-function-scoped-schema as errors. Plant: a schema declared as `z.any()` fails; a strict
+          object passes. Control: a strict object schema declared at module scope passes
+      - binding: ts
+        class: analyzer
+        tier: "0"
+        note: >-
+          v1 class our-plugin. GritQL plugins for Biome, one per schema-library rule, at error. Plant: a
+          schema declared as an any schema fails under Biome; a strict object passes. Control: a strict object
+          schema declared at module scope passes
+    open:
+      - >-
+        Plugin version 5.2.2 at the time of the source; the rule names are from its README and were not run.
+    note: Rule-set form of the pick of the schema library, recorded in tools.yaml.

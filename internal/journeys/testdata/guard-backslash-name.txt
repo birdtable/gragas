@@ -1,0 +1,2 @@
+# one case per line: the name a guard is handed that holds a backslash
+notes\\x.md

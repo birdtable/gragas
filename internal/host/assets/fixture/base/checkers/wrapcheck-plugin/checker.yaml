@@ -1,0 +1,6 @@
+format: 3
+name: wrapcheck-plugin
+tool: golangci-lint
+publisher: alex
+tests: testdata
+licence: Apache-2.0

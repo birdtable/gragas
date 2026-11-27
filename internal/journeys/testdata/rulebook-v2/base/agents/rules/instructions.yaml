@@ -1,0 +1,237 @@
+part: agents
+concern: instructions
+order: 1
+title: Agent instruction files
+summary: >-
+  The file an agent reads before it works is a short map, one fact in one home. It holds what cannot be found
+  from the code and the repo's numbered invariants, never how they are checked, every command and path it
+  names resolves, and the rules it points at reach the agent offline and load only for the paths they govern.
+rules:
+  - id: agents.instructions.1
+    slug: short-instruction-map
+    since: 0.1.0
+    rule: >-
+      The instruction file is a short map that holds what a reader cannot find from the code, and a repo-wide
+      invariant may live there as a numbered rule that code cites, each naming the check that holds it where
+      one exists, while how a rule is checked leaves the file.
+    detail: >-
+      The file holds commands, traps, a where-to-look table and the repo's numbered invariants, not a
+      repository overview, and each fact has one home. An invariant keeps its number for life and code cites
+      it by number; its line is the rule and the name of its check, never the steps of the check. A number
+      that code cites must exist in the file (docs.links.2). The repo-wide rules live in AGENTS.md, numbered,
+      and code cites them by number. Its size is measured as a byte count per file that is a ratchet and only
+      falls, and a report lists the lines whose rule id already has a check. A required list of headings is
+      checked, and the file is size-checked. The reference organisation capped the pair of files at 12,000
+      characters, a figure no measurement of ours supports, so no limit is set here. The rule applies to
+      AGENTS.md. The size check is ported from the UI repository's check-agents-md. The workflow of each
+      repository validates its instruction file against the shared convention.
+    level: file
+    why: >-
+      One controlled study found no gain in success and over 20 percent more cost from longer files, and every
+      line is paid for on every run. Our own files are 33,282 B, 18,492 B and 8,811 B (and 4,400 B in another
+      repository).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-09-agentic-development
+        where: sections 7.1 and 9.3
+        backs: rule
+      - ref: decision-65-agents
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. companion check agents-md, a shrink-only byte-count ratchet per instruction file
+          with a report of lines whose rule id already has a check, ported from the UI repository's existing
+          check; a required-headings rule from markdownlint. Plant: an instruction file grown by 1 KB fails
+          the ratchet; a fixture line added must raise the count. Control: the file shrunk passes
+    relates:
+      - id: docs.links.2
+        how: see
+    open:
+      - No limit has been measured; the ratchet is the control.
+      - >-
+        A UI repository holds the size check today; Go repositories have it planned only.
+      - agnix 0.61.0 claims 758 rules; no byte-size ratchet was found in it.
+    note: >-
+      Merges the Go and UI instruction-size rows with the handbook rule that a line whose rule has a check
+      leaves the file.
+  - id: agents.instructions.2
+    slug: instruction-commands-resolve
+    since: 0.1.0
+    rule: >-
+      Every backticked command and path in an instruction file resolves, and CLAUDE.md holds only the line
+      that imports AGENTS.md.
+    detail: >-
+      Paths are checked against the tree with an allow list for runtime paths, make targets against the
+      Makefile, scripts against the package manifest, and CLAUDE.md with an exact-match test for the import
+      line. An audit also reports stale or contradictory lines and references to missing files or commands.
+      READMEs point to AGENTS.md. AGENTS.md holds commands, traps and a where-to-look table.
+    level: file
+    why: >-
+      A scan found dangling or unverifiable references in 7 of 7 AGENTS.md files, 3 truly dangling, and the
+      same name-exists class holds for ticket faults.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: agents-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tool: agnix
+        tier: "1"
+        note: >-
+          agnix 0.61.0 with --strict for missing paths; a roughly 40-line companion check for make targets,
+          npm scripts and grep -x @AGENTS.md CLAUDE.md for the import line. Plant: an AGENTS.md naming a
+          missing path (docs/missing.md) and a missing make target (make nosuchtarget) fails; a CLAUDE.md with
+          extra text fails. Control: a file whose paths, targets and import line all resolve passes
+    open:
+      - >-
+        agnix did not flag a missing npm script or a CLAUDE.md that is not the import line, so those parts are
+        our own check.
+      - Not re-run since the first scan.
+      - "v1 evidence, not yet a source: own measure (scan of 7 of 7 AGENTS.md files)"
+    note: Merges the Go and UI rows with the reference's two rules and the audit tools.
+  - id: agents.instructions.3
+    slug: rules-load-by-path
+    since: 0.1.0
+    rule: >-
+      Rules load only when the paths they govern are touched, and an agent reads the instruction file, the
+      ticket and every anchor it cites, in that order, before proposing or changing anything.
+    detail: >-
+      A nested AGENTS.md or a path-scoped rule file holds a kind's rules under that kind's directory (the
+      closest file to the edited path wins), and the root file holds no rule id of a kind or framework pack. A
+      pack loads its own rules. An anchor is any file, rule or decision the ticket names; the agent reads each
+      before its first proposal, and a session-start hook can record the reads so a proposal made before them
+      is flagged.
+    level: file
+    why: >-
+      Rules in the root file are paid for on every task and then crowd out the instruction map; unmeasured
+      beyond the same size study.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-agents
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. a structure check that the root instruction file holds no rule id of a kind or
+          framework part, with nested AGENTS.md files (and Claude path-scoped rule files as the Claude-only
+          form). Plant: a web rule id added to the root file fails. Control: the same rule in the web
+          directory's file passes
+    review_question: >-
+      Did the session read the instruction file, the ticket and each anchor it cites before its first
+      proposal?
+    open:
+      - >-
+        Nested AGENTS.md is read by several agent tools per agents.md; path-scoped rule files only by Claude.
+      - >-
+        Half checkable: the structure is a check, whether a rule belongs in a path-scoped file is review.
+      - The read order is held by review until a session hook records reads.
+  - id: agents.instructions.4
+    slug: procedures-ship-as-skills
+    since: 0.1.0
+    rule: >-
+      A procedure an agent runs often ships as a skill that loads on use, and the instruction file points at
+      it and does not repeat it.
+    detail: >-
+      An agent uses the packaged procedures and generators (add a route, add a migration, does-it-exist
+      lookups, build a page, plan a ticket) instead of improvising the steps. New pages and parts come from a
+      generator or a golden page.
+    level: process
+    why: >-
+      A procedure written in the instruction file is paid for every run and drifts from the generator.
+    kind: instruction
+    strength: Review
+    status: proposed
+    review_question: >-
+      Is this procedure in a skill, and does the instruction file point at it rather than repeat it?
+    open:
+      - >-
+        The skills themselves are tooling of the reference organisation's fleet; ours are still to be written.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D (unmeasured)"
+  - id: agents.instructions.5
+    slug: rules-reachable-offline
+    since: 0.1.0
+    rule: >-
+      An agent can reach the current rules with no network and no sibling clone, because they are vendored at
+      a tag and each vendored file equals its locked hash.
+    detail: >-
+      Agents find standards and decisions by text search on a checkout, not by a portal. Each vendored file is
+      hashed against a lock file, and a rule lookup in a test with no network and no clone must succeed. A
+      rule file reachable only by URL fails. Vendored tokens for UI projects follow the same rule.
+    level: program
+    why: Agents run in directories that are not sibling clones.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-3
+        backs: rule
+      - ref: decision-4
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. companion sync vendors the rules from the private standards repository at a tag;
+          companion check hashes each vendored file against rules.lock and fails on a difference or a missing
+          file. Plant: a vendored file edited by one byte fails; a rule file reachable only by URL fails the
+          offline lookup. Control: a clean vendored copy passes
+    open:
+      - The rule data lives in a private repository (ruled 4 Nov, decision 3).
+      - The offline lookup test is planned only.
+  - id: agents.instructions.6
+    slug: first-file-is-good
+    since: 0.1.0
+    rule: >-
+      The first file an agent opens in an area is a good one, small and typical of how the area is written.
+    level: file
+    why: >-
+      An agent copies the first file it reads; one UI component file of 2,868 lines is the example agents
+      copy.
+    kind: instruction
+    strength: Lens
+    status: proposed
+    review_question: >-
+      Would a new contributor copying the first file an agent opens in this area write good code?
+    relates:
+      - id: docs.samples.4
+        how: see
+    open:
+      - >-
+        No plant yet; a lens that scores the first file for a new area is unproven (decision 44).
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A (one component file is 2,868
+        lines)
+    note: The golden page or worked example is docs.samples.4.
+  - id: agents.instructions.7
+    slug: library-shipped-instructions
+    since: 0.1.0
+    rule: >-
+      Where a library ships its own agent instructions, take the version that does and link them from the
+      project's instruction file.
+    level: package
+    why: The library authors know how the library is meant to be used.
+    kind: instruction
+    strength: Lens
+    status: proposed
+    review_question: >-
+      Does any dependency admitted in this change ship agent instructions or an llms.txt, and is it linked?
+    open:
+      - >-
+        A report listing dependencies that ship AGENTS.md or llms.txt could prompt it; unproven.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"

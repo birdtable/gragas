@@ -1,0 +1,200 @@
+format: 3
+part: web
+concern: parts
+rules:
+  - id: web.parts.1
+    statement: "The platform comes first: the native element, native event source, `Intl` and CSS; ARIA only fills gaps, and a primitive library that a pack names fills the rest."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A banned-package list covers packages that reimplement the platform: date libraries, polyfills for `Intl`, wrappers around the native event source, icon fonts, and UI kits that wrap native elements. It is read from the same package table as the supply-chain rule. ARIA is not used where a native element exists: a prefer-tag-over-role rule and the HTML validator's prefer-native-element and no-redundant-role rules. Plant forms: adding `moment` or `dayjs` to the dependencies; `<div role=\"button\">`. The ban list is `companion deps`, covering wrappers of `EventSource`; template form `astro/jsx-a11y/prefer-tag-over-role`. A primitive library that a pack names is the gap-filler."
+      pros:
+        - "The principle is supported by practice (evidence B); a reimplemented platform feature carries its own accessibility and locale faults."
+  - id: web.parts.2
+    statement: "Feature code holds no hand-built twin of a catalogued part: no raw button, input, select, textarea, table, dialog or spinner class where a catalogued part exists; the count is kept per part and only shrinks."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "One element ban per catalogued part, generated from the parts catalogue and applied to feature folders only, so the part's own folder is exempt; it works on components and on templates. The input count is the number of catalogued parts; zero is a valid state and returns \"not applicable: 0 inputs\" with the count, never a pass. A rule added before the catalogue exists needs its plant in the same change. A conversion from a string-built element is counted too. Selector form: `JSXOpeningElement[name.name=\"button\"]`, working on `.tsx` and on `.astro` templates. The utility spinner class `animate-spin` is also a raw-element twin."
+      pros:
+        - "Measured: 3 twins in one site, 1 of 144 faults in another, 2 in a third; 19 buttons and 10 tables built from strings in one site, and 103 buttons from strings in 43 files in another."
+    relations:
+      relates:
+        - react.components.3
+  - id: web.parts.3
+    statement: "Every screen guideline gets a lint rule, a test, or a stated reason that it stays text."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Examples to turn into checks: no card as a page root, record cells use the record field, list pages use the table component. A rule that no tool can catch is marked an instruction with its reason."
+      pros:
+        - "A guideline that no check holds is read once and then drifts; marking it as an instruction states honestly that it is not held."
+  - id: web.parts.4
+    statement: "A page never wraps itself in a surface the shell already provides: the header sits on the canvas, a list table is its own card and record sections are section cards."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - A page that adds its own container around itself doubles borders and padding the shell already gives.
+  - id: web.parts.5
+    statement: "A page uses the archetype: the page shell and header, lists through the list screen and table, and records like the existing record pages."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - New screens built from a generator or golden page keep one folder shape and one look.
+  - id: web.parts.6
+    statement: "A shape the general part cannot express has its own catalogued part; for example a round icon-only button uses the icon button part."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "Bending the general part with extra props closes the catalogue's promise of few, closed props."
+  - id: web.parts.7
+    statement: "Shared parts take few, typed and closed props in one naming; a control uses one value and change contract, extra search terms go in a keywords prop, and explanations sit outside the control."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - A control with two value contracts forces every caller to learn which one it has.
+  - id: web.parts.8
+    statement: "Each kind of value is shown through its one part: identifiers in a monospace value, copyable values in a copyable value, secrets in a secret input, status in a status badge, permissions in a permission label, and the responsive dialog or table for phone versus desktop."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The permission label renders from a message map keyed by the permission registry id, and server text goes through the server-text part, so no literal sentence is shown."
+      pros:
+        - "Ids, secrets and statuses shown as plain text lose copy, masking and meaning."
+  - id: web.parts.9
+    statement: "There is one notification system, a notify wrapper over the design system's toaster that takes a message result and not a literal; an actionable notice never auto-dismisses; the old toast library is gone."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The old toast library was `react-toastify`."
+      pros:
+        - "Two toast systems stack and style differently; a literal sentence escapes the message catalogue."
+  - id: web.parts.10
+    statement: "Icons are named by meaning from one registry, and the set changes in one file; direct imports of an icon package live only in the registry."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A name like an action or object resolves through the design system's registry, which ships built-in entries; a project config extends or overrides them. No inline `<svg>` outside the registry folder, and no import of an icon package anywhere but the one icon module. Selector `JSXElement[openingElement.name.name=\"svg\"]`; `@tabler/icons-react` only inside the icon module; `lucide-react` anywhere else fails."
+      pros:
+        - "One site has 99 icon names; another has 3 inline shapes and 6 glyphs; the icon package is 15 minor releases behind."
+  - id: web.parts.11
+    statement: "A parts catalogue exists as data an agent can query (part, states, props, file, stack, accessibility state), every part and prop used resolves against it, a new part adds its row, and an agent looks a part's real interface up in it and never assumes."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Where a doc generator reads the stack (react-docgen for components) the catalogue is generated and a check fails on drift; where none does (templates) it is hand-written and checked against each part file's exported props. The type checker rejects an unknown prop on a typed component. A new gating primitive adds a catalogue row and tests. Without the catalogue, the checks that depend on it (twin scan, examples, kit render test) are vacuous. Command `companion catalogue` with `--check` failing on drift; template stack checked with `@astrojs/compiler` or the TypeScript API, and `astro check` rejects an unknown prop. Agents query the catalogue (the story tool's `docs-show` query) and never assume a part's props. A new gating primitive adds a row to the `authz-gates` catalogue and tests. Template-stack catalogue entries are hand-written for `.astro` part files."
+      pros:
+        - "An audit found 22 parts declared and never drawn, and 39 drawn and never declared. Agents invent props when no queryable interface exists."
+  - id: web.parts.12
+    statement: "Every shared part has a living example in each of its states, and a new canonical part ships with an example and a catalogue row."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "For every part in the catalogue and every state it declares, a story or gallery entry must exist and render; the story tool's runner (or the Vitest addon) runs each story and checks it for accessibility; the template stack's gallery is a route that lists each part and state, rendered by the land-tier browser run. Existence is compared against the catalogue. Zero shared parts is a valid state, reported as \"not applicable: 0 inputs\". React stack runner: `@storybook/test-runner`; check command `companion parts --examples`."
+      pros:
+        - "The donor's story gate found 523 of 1,241 stories failing axe, which shows the net catches things, not that it prevents them."
+  - id: web.parts.13
+    statement: "Extract a part once the same part is hand-built in three or more files of a site; across sites, only at a second live consumer on the same framework and after its fault has recurred."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A report from a clone scan (a clone detector plus a JSX subtree-shape count per site) prints a shape with three or more copies as a candidate; the third copy blocks until it is moved or listed as independent. The extraction itself is judged. The exact-clone half is already enforced elsewhere. Seed: the copy census script `step-copies.py`; the clone detector is `jscpd`."
+      pros:
+        - "Copies exist inside one site today and not across sites; thresholds are the donor's own."
+  - id: web.parts.14
+    statement: "The shared kit renders with no provider and carries its own words as plain data: a strings object with English defaults, which the host may override in part."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The kit holds no i18n library and no host config. A test renders every exported part from the catalogue with no provider and no wrapper and asserts it does not throw and its words come from the part's own defaults. Vacuous on the template stack while parts have no provider. The component-stack form, a render test with no provider, is react.testing.3. Part of the kit's own words are screen-reader-only text (`sr-only`), placeholders and default prop strings."
+      pros:
+        - "The donor's design system added a provider and an English defaults object for this at its 0.13.0 release."
+    relations:
+      relates:
+        - react.testing.3
+  - id: web.parts.15
+    statement: The shared parts package depends on no app-level library beyond its declared peers and holds no program domain.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The kit keeps no data-fetching dependency except the form peer, and no i18n library; the kit imports no program package and holds mechanism only."
+      pros:
+        - "A kit that imports app libraries cannot be reused on a second site without that site adopting the first one's stack."
+  - id: web.parts.16
+    statement: "Every UI part comes from the design system's single entry; no second UI kit is imported, in code or in the manifest."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A second kit (a component library, a headless primitive set, a command-menu or drawer package) fails in imports and in the package manifest. A design-system source copied into the shared package counts as the package, on the primitive library chosen earlier. Plant: a named import of `Button` from `\"@mui/material\"` fails; the check reads `package.json` too. The reference also banned `@radix-ui/*`, `cmdk` and `vaul` as second kits."
+      pros:
+        - "Two kits mean two focus models, two token systems and two sets of faults."
+  - id: web.parts.17
+    statement: "The design's named parts exist as `data-` attributes in the shipped page, match the design's numbers, and are what visual tests measure."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Plant attribute: `data-part=\"card\"`. The numbers come from the design file, or from the committed parts file where no machine-readable design exists; a page with visual tests and neither file fails."
+      pros:
+        - "A card five pixels off its design is invisible to a unit test, and a visual test needs named parts to measure instead of a picture to compare (web.testing.5)."
+    relations:
+      relates:
+        - web.testing.5
+    sources:
+      - ref: decision-65-web
+        backs: rule
+  - id: web.parts.18
+    statement: "Template and prop type errors are caught by a gate on every stack in use, and a stack with no typed check declares the gap in its parameters file."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Template stacks: `.astro` and `.tsx`; the tagged-template stack (`lit-html`) has no typed check (`lit-analyzer`)."
+      pros:
+        - "The weak link of the static path: a wrong prop type in a template reaches the page unseen."
+  - id: web.parts.19
+    statement: One behaviour test written with role and test-id locators only passes unchanged on any stack.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "One browser journey per behaviour; raw selectors fail the lint (`no-raw-locators`, `prefer-native-locators`) and the same spec runs against each stack's build in the admission pilot and must pass unchanged. The same spec runs in the `pack-admission` pilot. Plant: `page.locator(\".card > div\")`."
+      pros:
+        - "Eight of eight spike builds passed the journey, showing the locator contract is the DOM contract between stacks."
+  - id: web.parts.20
+    statement: "A component folder has the closed shape: module, stylesheet, stories and test."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "New folders only until the old ones move. The check declares zero component folders a valid state and returns \"not applicable: 0 inputs\" with the count. An alternative that checks names only: `@ls-lint/ls-lint`."
+      pros:
+        - "The four text rules for the shape run against nothing, since no component folder exists at its pin; unproven on real folders."
+  - id: web.parts.21
+    statement: "Charts come from the design system; the app has no direct chart dependency."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A heavy capability is owned once, so the app does not carry a second copy."

@@ -1,0 +1,43 @@
+--- language/go/rules/errors.yaml after bind --option
+format: 3
+part: go
+concern: errors
+rules:
+  - id: go.errors.1
+    statement: Wrap an error.
+    strength: must
+    status: proposed
+    origin: authored
+    sources:
+      - ref: effective-go
+        backs: rule
+    pairs:
+      - number: 1
+        target: source
+  - id: go.errors.2
+    statement: Log an error once.
+    strength: may
+    status: active
+    origin: authored
+    sources:
+      - ref: effective-go
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: errorlint
+        value: true
+        options:
+          max: 3
+          skip: [a, b]
+        severity: error
+        rung: 1
+        run_point: commit
+  - id: go.errors.3
+    statement: Return an error.
+    strength: must
+    status: proposed
+    origin: authored
+    sources:
+      - ref: effective-go
+        backs: rule

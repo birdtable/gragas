@@ -1,0 +1,6 @@
+go test fuzz v1
+string("format: 3\npart: go\nconcern: errors\nrules:\n  - id: go.errors.1\n    statement: Wrap an error with what was being done.\n    strength: must\n    status: active\n    origin: authored\n    sources:\n      - ref: wrap-errors   # the first\n        where: section 2\n        backs: rule\n    exemptions:\n      - paths: [tools/**]\n        reason: generated code\n    owner: team-a\n\n  - id: go.errors.2\n    statement: Return an error and never panic in a library.\n    strength: should\n    status: active\n    origin: authored\n    sources: [{ref: wrap-errors, backs: rule}]   # flow\n    exemptions:\n    - kinds: [test]\n      reason: tests may panic\n\n  - id: go.errors.3\n    statement: Log an error once.\n    strength: may\n    status: proposed\n    origin: authored\n\n  - id: go.errors.4\n    statement: Wrap with the verb w.\n    strength: should\n    status: active\n    origin: authored\n    exemptions:\n      -   kinds: [test]\n          reason: tests print\n")
+string("go.errors.1")
+string("sources")
+string("")
+string("ref: rfc-9110\nbacks: rule\nnote: x")

@@ -1,0 +1,42 @@
+/* The palette is a dialog: its frame is the dialog's (dialog.css), and a part
+   imports what it draws with. */
+@import "../dialog/dialog.css";
+
+.gr-palette-input {
+  inline-size: 100%;
+  padding: var(--gr-space-2) var(--gr-space-3);
+  font: inherit;
+  color: var(--gr-text-ink);
+  background: var(--gr-ground-page);
+  border: 1px solid var(--gr-control-border);
+  border-radius: var(--gr-radius-sm);
+}
+
+.gr-palette-list {
+  display: grid;
+  gap: var(--gr-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gr-palette-command {
+  inline-size: 100%;
+  padding: var(--gr-space-2) var(--gr-space-3);
+  font: inherit;
+  text-align: left;
+  color: var(--gr-text-ink);
+  background: transparent;
+  border: 0;
+  border-radius: var(--gr-radius-sm);
+  cursor: pointer;
+}
+
+.gr-palette-command:hover {
+  background: var(--gr-ground-page);
+}
+
+.gr-palette-empty {
+  margin: 0;
+  color: var(--gr-text-muted);
+}

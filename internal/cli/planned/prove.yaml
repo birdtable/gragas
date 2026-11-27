@@ -1,0 +1,11 @@
+name: prove
+order: 250
+context: R
+ends: report
+summary: "Run every rule's pairs through its tool and write the proof grid"
+examples:
+  - {line: "gragas prove", does: "run them and report"}
+  - {line: "gragas prove --apply", does: "write the grid"}
+writes: ["proof/grid.json"]
+exits: ["done", "findings", "not ready", "busy"]
+json: report

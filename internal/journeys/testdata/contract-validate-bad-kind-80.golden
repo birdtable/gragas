@@ -1,0 +1,16 @@
+$ gragas contract validate bundle.json --as nope
+--- exit 2
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  bundle
+  report
+  changelog
+  sarif
+  plan
+  proposal
+  grid
+
+  usage      "nope" is not a kind of document. The kinds are listed above
+    gragas contract validate bundle.json --as bundle
+--- stderr

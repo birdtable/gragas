@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("100644 89abcdef0123456789abcdef0123456789abcdef 2 2\ta\x00100644 89abcdef0123456789abcdef0123456789abcdef 2 0\tb\x00")

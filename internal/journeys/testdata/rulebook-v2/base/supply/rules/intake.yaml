@@ -1,0 +1,359 @@
+part: supply
+concern: intake
+order: 1
+title: Dependency intake
+summary: >-
+  What may enter a build at all. Each concern has one owner library chosen in a data file, alternatives are
+  banned by name, a new dependency meets a bar and is justified in the change that adds it, and a second
+  person signs it. Libraries that do what the platform already does stay out, and every ban names the
+  condition under which it would be lifted.
+rules:
+  - id: supply.intake.1
+    slug: one-owner-per-concern
+    since: 0.1.0
+    rule: >-
+      Each concern has exactly one importable owner chosen in a data file, the alternatives are banned by
+      name, and the failure message says what to import instead.
+    detail: >-
+      The owner is a module, a standard-library package or a shared package. The concern table is the
+      rulebook's list of libraries: one owner per concern with the alternatives named, and every verdict in it
+      is a candidate until ruled. The table is data validated by a schema that requires an owner and the
+      alternatives. A direct dependency that is not in the table fails, and a banned name in source or in a
+      manifest fails. Existing uses of a banned library are a list that only shrinks and never gains an entry.
+      Until the data file exists, the rule for a project is an instruction, and the check reports not
+      applicable with the count of entries (zero) rather than passing. The first entries of a web project's
+      table follow its framework part. Example plant: left-pad as an unlisted name and lodash as a banned one.
+      The allow-file is the shrink-only list of existing uses. Existing uses are suppressed into a
+      suppressions file (eslint-suppressions.json, written with --suppress-rule) that never gains an entry.
+      The build-time cap flag is --max-issues, set to 0. Examples of banned alternatives in a web table:
+      react-hook-form (the form pick is TanStack Form, a settled pick), react-hotkeys-hook, react-i18next
+      and react-intl; the full lists belong to the framework parts.
+    level: package
+    why: >-
+      Without one owner per concern, each author picks a library and the build carries several for the same
+      job. In the Go estate no repository had a ban list, and one would have failed the terminal-colour ban on
+      day one; all 32 direct dependencies of the web estate hit no ban, so the cost of binding is low.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 10
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          depguard rows generated from the ban table, with the issue cap set to zero so the first run is not
+          truncated. Plant: an import of a banned library fails with a message naming the owner. Control: an
+          import of the owner passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: gomodguard_v2
+        tier: "1"
+        fix: never
+        note: >-
+          Held by the golangci preset, whose comment on gomodguard_v2 names this rule: a module the register
+          bans is refused in go.mod, with the owner named as the one to use
+      - binding: ts
+        class: preset-config
+        tool: syncpack
+        tier: "1"
+        note: >-
+          syncpack lint with a config generated from the packages data file (one version group per allowed
+          package, one banned group per banned name, a final banned catch-all so any unlisted direct
+          dependency fails) plus ESLint no-restricted-imports generated from the same file for names in
+          source. Plant: a banned name and an unlisted name in a scratch manifest each fail. Control: only
+          listed packages with exact pins pass
+      - binding: any
+        class: preset-config
+        tier: "3"
+        note: >-
+          JSON Schema check of the concern table requiring an owner and alternatives on every entry. Plant: a
+          table entry without an owner fails. Control: a complete entry passes
+    open:
+      - >-
+        The data file for web projects does not exist yet, so the web half is an instruction until it does.
+      - >-
+        The reference list of decided libraries includes framework-specific picks; those belong in the
+        framework part and are not copied here.
+      - >-
+        v1 evidence, not yet a source: practice; the web side was named by the operator and evidenced by the
+        current dependency count
+      - >-
+        v1 reference, not yet a source: Go language rulebook sources GL-1 and GL-5 (own reports)
+    note: >-
+      The depguard issue cap truncated the first planted run at 50 issues, hence the cap of zero. A concern
+      that is not needed yet is named in advance and not added (a handbook point).
+  - id: supply.intake.2
+    slug: allow-file-and-falling-count
+    since: 0.1.0
+    rule: >-
+      Each shipped binary has a declared closure of the internal packages and external modules it may link,
+      checked per binary by a test with a shrink-only allow list, and the count of linked modules only falls.
+    detail: >-
+      For each binary the repository declares which internal packages and which external modules it may link,
+      citing the concern each external module serves. A test lists each binary's real dependency closure (go
+      list -deps for the binary's main package) and fails on any internal package or module outside that
+      binary's list, so a helper or guest binary that links a host package fails even when the main binary
+      may. The allow list only shrinks without a recorded exemption, and the count of linked modules per
+      binary only falls. An empty allow file is refused with a distinct exit code, not read as a pass. The
+      test runs in the local gate.
+    level: package
+    why: >-
+      A module can be linked without anyone having chosen it. In the Go estate, direct requires ranged from 7
+      to 15 per repository and linked modules from 38 to 47, and no repository had an allow file. A count per
+      repository hides a small binary that has grown the large one's dependencies, which is where a trust line
+      breaks.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tool: golangci-lint
+        tier: "2"
+        note: >-
+          a per-binary closure test comparing go list -deps of each main package with that binary's allow list
+          in rule data, with the count cap and the empty-file refusal; golangci-lint gomodguard_v2 with the
+          allowed-modules list generated from the union of the lists for the direct half. Plant: a guest
+          binary that imports a host package fails; an import of a module that is off every list fails.
+          Control: each binary linking only its listed packages passes
+    open:
+      - >-
+        The direct half is off the shelf; the transitive cap is our own script and was planted 72 of 72 in a
+        trial.
+      - >-
+        v1 reference, not yet a source: Go estate dependency reports GL-2 and GL-3 (own reports)
+  - id: supply.intake.3
+    slug: new-dependency-bar
+    since: 0.1.0
+    rule: >-
+      A new third-party module meets a bar: a permissive licence, a release or push in the last 12 months,
+      more than one committer or a named organisation, and a module graph small enough to read.
+    detail: >-
+      The change that adds the module carries a row in the concern table, one sentence on what the standard
+      library lacks, and the weight of the dependency. The facts are measured by script; the sentence is read
+      by a reviewer.
+    level: package
+    why: >-
+      A dependency chosen without facts is accepted on a name; the bar turns the choice into measurable items.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          a facts script over the module proxy and the repository host API, plus a module-graph script,
+          failing on bar items. Plant: a module with no licence fails. Control: a permissively licensed,
+          active module passes
+    open:
+      - >-
+        The standard-library sentence is a review item; the facts script is a recipe to write, not a program
+        to build.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+      - "v1 reference, not yet a source: Go estate dependency report GL-5 (own report)"
+  - id: supply.intake.4
+    slug: new-dependency-justified-and-signed
+    since: 0.1.0
+    rule: >-
+      A commit that adds a dependency to any manifest section is justified in its pull request and signed off
+      by someone other than its author; a version bump of an existing dependency does not count.
+    detail: >-
+      Every manifest section counts: runtime, development, optional and peer dependencies. The signature is
+      held by a stored verdict from a different identity on changes to the protected path list. The
+      justification text is read by a reviewer.
+    level: process
+    why: >-
+      Adding a dependency is the largest single change of supply-chain surface; one author should not make it
+      alone.
+    kind: rule
+    strength: Lens
+    status: active
+    sources:
+      - ref: decision-31
+        backs: rule
+    checks: []
+    review_question: >-
+      Does the pull request say why this dependency is needed, what it replaces, and does it carry a sign-off
+      from someone other than its author?
+    open:
+      - >-
+        The independent signature depends on a stored non-author verdict, which today cannot be told apart
+        because every agent pushes as one identity.
+    note: >-
+      v1 review check (review is not a v2 check class): protected-path rule requiring a stored non-author
+      verdict on manifest changes; a model reads the justification in the pull request
+  - id: supply.intake.5
+    slug: standard-library-first
+    since: 0.1.0
+    rule: >-
+      The standard library comes before a new dependency or a home-made helper, before a part is written the
+      change names the maintained tools surveyed and why none fits, and a part a maintained tool already does
+      well is not rebuilt.
+    detail: >-
+      Order of preference: the standard library, then a maintained tool or library that does the job, then our
+      own code. A change that adds a new part (a module, a command, a parser, a protocol client) names the
+      maintained tools it looked at and the reason each was not used; "none surveyed" fails the review. Where
+      a maintained program does the job, the program uses it through an adapter (arch.ports.6) and reads its
+      machine output (arch.ports.20) rather than reimplementing it.
+    level: package
+    why: >-
+      A dependency or a helper for something the standard library already does is weight with no gain, and a
+      part rebuilt where a maintained tool exists is code we now maintain alone.
+    kind: rule
+    strength: Lens
+    status: active
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+    checks: []
+    review_question: >-
+      Does the standard library or a maintained tool already do what this new dependency, helper or part does,
+      and which tools were surveyed?
+    relates:
+      - id: arch.ports.6
+        how: see
+      - id: arch.ports.20
+        how: see
+    open:
+      - >-
+        Whether the standard library or a tool would do is semantic and not checkable by tool. A partial aid
+        is a linter that flags helpers replaced by the standard library.
+      - "v1 reference, not yet a source: Go standard library first (own report GL-5)"
+    note: >-
+      v1 review check (review is not a v2 check class): a model checks whether the standard library covers the
+      new module, beside the allow-file row that new modules already need, and a required survey field in the
+      change template (presence only) for a new part
+  - id: supply.intake.6
+    slug: new-library-names-what-it-replaces
+    since: 0.1.0
+    rule: >-
+      A new library is a row of the register of libraries, which names the job, what it replaces and the
+      alternatives it bans, and it passes the supply-chain gate and logs the replaced use as debt with a date
+      by which it is gone.
+    detail: >-
+      The register is rulebook/lang/go/libraries.yaml. One concern keeps one library: the row names its job,
+      the library to call, where an import of it is allowed, the modules and hand-written code it replaces, and
+      the ban for the alternatives (depguard imports, forbidigo patterns). A row that is chosen and bans
+      something becomes a row of the Go preset; a row that needs a spike, or is conditional, does not. The
+      places still using the replaced code are listed in the debt record with a zero-by date. The replaced use
+      may be a hand-written copy object or vocabulary.
+    level: process
+    why: >-
+      A library added beside the old one doubles the code for a concern and leaves the old one to rot.
+    kind: rule
+    strength: Lens
+    status: active
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 10
+        backs: rule
+    checks: []
+    review_question: >-
+      Does the change that adds this library say what it replaces, ban the alternatives and record the
+      replaced use as debt?
+    open:
+      - >-
+        The table row and the supply-chain gate are mechanical; whether the replaced use is named is judged.
+    note: >-
+      v1 review check (review is not a v2 check class): the concern-table check (supply.intake.1) fails a
+      library without a table row; a model reads the change for the replaced use and the debt entry
+  - id: supply.intake.7
+    slug: platform-duplicates-banned
+    since: 0.1.0
+    rule: A dependency that does what the platform already does is on the ban list.
+    detail: >-
+      Advice-only plugins that report native replacements: @e18e/eslint-plugin and eslint-plugin-depend.
+    level: package
+    why: >-
+      A package that repeats a built-in feature adds code, update work and attack surface for nothing.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: syncpack
+        tier: "1"
+        note: >-
+          ban entries (name, reason, platform export that replaces it) in the packages data file become banned
+          syncpack groups. Plant: a banned platform-duplicating dependency fails. Control: a manifest without
+          one passes
+    open:
+      - >-
+        An advisory plugin that reports dependencies with a native replacement exists; it was not run and is
+        advice, not the gate.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: supply.intake.8
+    slug: ban-has-reentry-trigger
+    since: 0.1.0
+    rule: >-
+      Every banned or watched library has a named re-entry trigger, and the ban list covers the library
+      family, not only the member in use.
+    detail: A trigger is a version, a stated need or a measured threshold.
+    level: package
+    why: >-
+      A ban with no way back is either ignored or never revisited; a ban of one family member leaves the
+      others open.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          the packages data file validated by JSON Schema (ajv) requiring a re-entry field on every ban entry.
+          Plant: a ban entry without a re-entry trigger fails. Control: an entry with one passes
+    open:
+      - >-
+        Half of this holds: the schema half is enforced; whether the family is complete is judged by a person.
+        Proposed to split it.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: supply.intake.9
+    slug: agent-fit
+    since: 0.1.0
+    rule: A dependency's API is one that models write correctly without prompting.
+    level: package
+    why: A library whose API models misuse costs repeated rework in agent-written code.
+    kind: instruction
+    strength: Lens
+    status: proposed
+    review_question: >-
+      Write a sample against this dependency's API with a model and score whether it is correct without
+      prompting.
+    open:
+      - >-
+        No measure exists for agent fit; it would change if a repository logged how often agents misuse a
+        dependency API.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: supply.intake.10
+    slug: test-only-module-absent-from-build
+    since: 0.1.0
+    rule: A test-only module is absent from the non-test build.
+    level: package
+    why: >-
+      A module linked only for tests that reaches the shipped build enlarges what ships.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          go list -deps without tests compared with the allow file; reports not applicable with the count
+          while there are zero test-only modules. Plant: a test-only module in the production dependency list
+          fails. Control: a clean list passes
+    open:
+      - "Not applicable today: zero test-only modules."
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

@@ -1,0 +1,29 @@
+{
+  "name": "@gragas/element",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The explorer's element package: an empty shell until its tickets land.",
+  "engines": {
+    "node": "24.22.1"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit --composite false --incremental false --listFiles -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@gragas/contract": "workspace:*",
+    "@gragas/tokens": "workspace:*",
+    "@gragas/core": "workspace:*"
+  }
+}

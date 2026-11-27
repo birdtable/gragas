@@ -1,0 +1,10 @@
+format: 3
+part: go
+concern: errors
+rules:
+  - id: go.errors.2
+    aliases: [go.errors.1]
+    statement: Wrap an error.
+    strength: must
+    status: proposed
+    origin: authored

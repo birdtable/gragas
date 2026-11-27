@@ -1,0 +1,155 @@
+format: 3
+part: gates
+concern: registry
+rules:
+  - id: gates.registry.1
+    statement: "A standard is active only while it links the check that enforces it; a rule with no check is marked as an instruction and does not bind anyone."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The rule data is validated by a JSON Schema that requires either a `check` or `instruction` on every row, and the registry repo's gate (make check and the pre-push hook) fails otherwise. A rule stays unbound until its check exists, so the grid cannot lie; a changelog ledger lists rules not yet on (for example todo and skip bans, an unknown-cast comment rule, deep relative imports, and ticketed suppressions in tests)."
+      pros:
+        - "The reference team learned this the hard way; the ledger idea comes from the same team. No fault in our own record; the schema uses a standard validator, no program built."
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+  - id: gates.registry.2
+    statement: "Findings from a platform review are pinned as tests, so each accepted ruling is held by a check that names it, or says it is an instruction."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Examples of review tests: config shape, exact licence match, last value wins, no package runner, the skip list agrees with the byte-equal list, no rule below error. An accepted decision links the check that holds it or says instruction."
+      pros:
+        - A ruling with no check is forgotten by the next change.
+  - id: gates.registry.3
+    statement: "Rule ids are unique, every claim in a rule resolves to a file or command that exists, and every cited rule id and ticket exists."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A rule-link checker (`companion check rule-links`) walks the rule data: unique ids, every backticked file, command or id resolves, every rule id or ticket cited (each rule row states its zero-by) in code, docs, cards and change descriptions exists (rules in the rulebook, tickets in the index). A URL link checker is a candidate for external links. A ticket names only things that exist."
+      pros:
+        - "52 \"claim false\" lines in the first review; the guides test in one repo is the model."
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+  - id: gates.registry.4
+    statement: "Every rule is assigned to exactly one owner or card, and a generated roster fails when a rule is unassigned or doubled."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A generator over the rule data and the cards: every rule id assigned once; unassigned or doubled fails. Where the source asks for a named owner who reads changes to sensitive paths, a CODEOWNERS file is not available (one GitHub identity), so a named non-author reviewer by trailer carries it."
+      pros:
+        - "A donor lesson: a generated roster failing on unassigned or doubled rules. No fault of ours counted."
+  - id: gates.registry.5
+    statement: "At each stage exit, list the rules whose check has not fired in a stated window and the rules with no owner, and keep each with a reason or remove it; the exemption list and extension table are reviewed too."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A silent rule may be working, so a firing count alone never removes one; the window is a guess and the output is a report that opens a review. Fire counts per rule come from gate logs. A row that no concern used in two stages is questioned, and a recurring workaround becomes a row."
+      pros:
+        - "Rows only accumulate; the window is a guess (principles report P-02 section 7.3)."
+    sources:
+      - ref: p-02-enforcement-and-measure
+        where: section 7.3
+        backs: rule
+  - id: gates.registry.6
+    statement: "A shared check moves by rung (review, ratcheted, zero, enforced); its rung is a field on the rule and a move is announced."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The rung field is in the rule table. Rung adoption for a repo with debt (the adoption order is in the handbook): off, then suppress all in a no-logic change, then error for new files, then the registry stage, then zero. A firing count alone never removes a rule."
+      pros:
+        - A shared check that changes level silently surprises every repo that takes it.
+  - id: gates.registry.7
+    statement: "Base rules apply to every project; a kind or a framework brings a rule pack of its own, a pack adds rows and never edits a base row, and an exemption is per kind with a one-line reason, as data."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The rule data has an applies-to and an exempt field per row, and a repo's rendered config equals the base plus its packs (a byte check re-renders base plus packs and compares). Exemptions are per kind, with a one-line reason, in the rule file and not a repo's choice."
+      pros:
+        - "Operator direction (points 15 and 18): a repo cannot differ from base plus its packs."
+    sources:
+      - ref: operator-points
+        backs: rule
+  - id: gates.registry.8
+    statement: "Rule data stays least-powerful: the schema of rule packs and exemptions forbids expressions, conditionals and references to other rows, and a pack states for each row its level, its check, its plant and which base rows it narrows with a reason."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "JSON Schema for pack files with additionalProperties false and no expression, conditional or cross-row reference keys, validated in the standards repo's gate by the front-matter validator. Free-text fields are listed so that no check reads them. Off-the-shelf validators for pure YAML or JSON packs are check-jsonschema and cue vet; not compared here."
+      pros:
+        - Rule data with logic in it is a second program nobody reviews.
+    sources:
+      - ref: operator-points
+        backs: rule
+  - id: gates.registry.9
+    statement: "A framework is not admitted until its pack exists with checks and planted violations; adding a dependency that brings a framework fails the allow-file check until the pack names it."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The module allow file has a pack field per allowed module; the check fails go.mod requires with no pack, and a pack referenced by no row. For the web, the generator refuses to list a framework with no pack directory holding a plants folder. The route in is the pilot (gates.registry.10)."
+      pros:
+        - "A two-stack foundation costs each rule a column; a framework in use has no pack today."
+    relations:
+      relates:
+        - gates.registry.10
+    sources:
+      - ref: operator-points
+        backs: rule
+  - id: gates.registry.10
+    statement: "The first project on a rule pack runs a pilot list of framework-specific checks, signed by a named person, before others adopt it."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - react
+    reasoning:
+      definition: "Every pack row runs on the first project with a plant before a second project on that framework starts; until then the pack is admitted by pilot. For React, the pilot list covers: a gated loader sends nothing without permission, a loader-created entry is not persisted when it must not be, search serialisation round-trips, the production build loads under the declared script policy, and the router test helper renders in the story tool and the unit runner. The list is signed by a named person; a stored signed file could be presence-checked, but who signs is the point."
+      pros:
+        - A rule pack that was never run on real code has unproven plants.
+  - id: gates.registry.11
+    statement: "Growing the rule set is one change that adds the rule, its check, its plant and its grid cell together."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The boundary preset ships an empty extension list that later rules append to; a new shared rule lands with its check and its plant in one change. A gate check in the registry repo: a change adding a rule row must also add the check id, plant and grid cell (diff scan)."
+      pros:
+        - "A donor lesson: rows were added without their checks."
+  - id: gates.registry.12
+    statement: "A status board is derived from the gate registry, not typed, and a page is generated from the rule data."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The board is generated from the registry and committed, with a generate-then-check drift gate. Generated pages show the rules, the debt and the progress. A hand edit of the board fails."
+      pros:
+        - "Hand-typed status at a reference team said 3 enforced where the computed count was 0. Our own criteria column of checks is hand-typed, which is the same fault."
+  - id: gates.registry.13
+    statement: "The rule-by-repo grid is computed from resolved configs; a rule set to warn is not counted as enforced, and a tool whose config cannot be read shows \"unreadable\", never \"no\"."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The grid generator reads the resolved config (for golangci-lint, `golangci-lint linters --json`, to try) and counts error severity only. The gate fails if the committed grid differs from a regenerated one (generate-then-check)."
+      pros:
+        - "The reference team's computed grid said 0 enforced where hand-typed status said 3."
+  - id: gates.registry.14
+    statement: "Every rule row states its status, the check that enforces it, its zero-by, and the failure it prevents, and has a fixture."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The rule table requires status, enforced-by and zero-by fields on every row, and a failure-prevented sentence and a fixture on every rule."
+      pros:
+        - A rule row without these cannot be told from a wish.

@@ -1,0 +1,36 @@
+part: sst
+tools:
+  - key: sst
+    name: SST
+    role: >-
+      Declares and deploys the infrastructure of every service; its components package holds the shared
+      constructs.
+    binding: ts
+    state: chosen
+    why: >-
+      It is the infrastructure tool of the reference estate and the one the shared constructs are built on.
+    open:
+      - Version pins are held by sst-exact-pinned; none is recorded here.
+  - key: durable-functions
+    name: durable functions
+    role: >-
+      Lambda durable functions (the SST workflow component, from SST 4.17.0): the platform saves a long
+      workflow step by step, so it resumes after a failure or a wait without job tables of our own.
+    binding: ts
+    version: SST 4.17.0
+    state: candidate
+    why: It would replace hand-built job tables for long workflows.
+    open:
+      - >-
+        Not tried. In Go, a daemon or command writes intent before the effect and resumes from its run record
+        and journal.
+  - key: sst-schemadeployer
+    name: SST SchemaDeployer
+    role: Applies migrations at deploy and refuses destructive ones without a plan.
+    binding: sql
+    state: chosen
+    why: >-
+      Destructive schema changes are stopped at the same point as destructive infrastructure changes.
+    open:
+      - >-
+        In Go, versioned stores need an explicit apply for any change and a newer file is left untouched.

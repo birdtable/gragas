@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-decision.schema.json",
+  "title": "Decision (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "slug",
+    "title",
+    "text",
+    "who",
+    "date"
+  ],
+  "properties": {
+    "slug": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0"
+    },
+    "title": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "text": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "rejected": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/text"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "cites": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "x-introduced": "1.0",
+          "default": []
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "x-introduced": "1.0",
+          "default": []
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "x-introduced": "1.0",
+          "default": []
+        }
+      },
+      "x-introduced": "1.0",
+      "default": {}
+    },
+    "who": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "date": {
+      "$ref": "common.schema.json#/$defs/date",
+      "x-introduced": "1.0"
+    },
+    "supersedes": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/slug"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "superseded_by": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/slug"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    }
+  }
+}

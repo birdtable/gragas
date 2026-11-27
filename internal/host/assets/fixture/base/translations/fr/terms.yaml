@@ -1,0 +1,12 @@
+format: 3
+translations:
+  - entity: term:gate
+    field: definition
+    language: fr
+    text: Un contrôle qui arrête un envoi quand il échoue.
+    hash: sha256:e9f040762370206a21747369cc9370f28651fdf1cc0e93572bced06b19827bf9
+  - entity: term:wrap
+    field: definition
+    language: fr
+    text: Ajouter ce qui était en cours à une erreur avant de la rendre.
+    hash: sha256:258d54cd5a8e4542ac88e7f282f01d52566d7e08144201512f3475283bc30386

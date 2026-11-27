@@ -1,0 +1,8 @@
+$ gragas plugin add author/standin/1.0.0 --apply
+--- exit 1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  failed     the plan could not be made: the plugin is of another contract:
+  plugin.yaml of standin 1.0.0 is of contract 2, and the engine's is 1
+--- stderr

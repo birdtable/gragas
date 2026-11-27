@@ -1,0 +1,26 @@
+$ gragas term retire gate --decision-title It no longer holds --decision-text The rule says what the code stopped doing.
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+What changes
+  gate: active, then retired. The term
+  stays in its file and no statement may
+  use it
+  add decision decide-retire-gate
+
+What is written where
+  terms.yaml: sets status of gate
+  decisions.yaml: adds decision
+  decide-retire-gate
+  history.jsonl: appends one entry
+  (retire)
+This was a dry run and nothing was
+changed. Add --apply to make these
+changes.
+
+  declined   nothing was changed
+    gragas term retire gate
+--decision-text 'The rule says what the
+code stopped doing.' --decision-title
+'It no longer holds' --apply
+--- stderr

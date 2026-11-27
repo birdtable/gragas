@@ -1,0 +1,12 @@
+format: 3
+translations:
+  - entity: rule:go.errors.1
+    field: statement
+    language: fr
+    text: Enveloppez une erreur avec ce qui était en cours.
+    hash: sha256:2eeaad265b9cd5c91e2783a32f74a5d2dc23b123c29cc116289d71c7d0a1d690
+  - entity: rule:go.errors.1
+    field: reasoning.definition
+    language: fr
+    text: Une erreur dit ce qui a échoué et ce qui était en cours.
+    hash: sha256:f3e17c194cc69178a98115219e19f39e89a7079df9c805a6d52f938a4d8399db

@@ -1,0 +1,11 @@
+$ gragas rule promote go.errors.3 --decision-title Try it --decision-text Let it run a release.
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    go.errors.3 has no example
+  pair, and a rule is not promoted
+  without it (S24)
+    add good.* and bad.* under
+pairs/go.errors.3/1/ at the rulebook's
+root, and list the pair in the rule
+--- stderr

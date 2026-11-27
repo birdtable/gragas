@@ -1,0 +1,12 @@
+{
+  "$comment": "The test-only entry's own build, into dist/fixtures; the library build excludes it and package.json's files and publishConfig leave it out of the tarball.",
+  "extends": "../../tsconfig.library.json",
+  "compilerOptions": {
+    "lib": ["es2023", "dom"],
+    "types": ["node"],
+    "rootDir": "src/fixtures",
+    "outDir": "${configDir}/dist/fixtures",
+    "tsBuildInfoFile": "${configDir}/dist/fixtures/.tsbuildinfo"
+  },
+  "include": ["src/fixtures"]
+}

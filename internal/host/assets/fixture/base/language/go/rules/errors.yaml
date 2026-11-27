@@ -1,0 +1,85 @@
+format: 3
+part: go
+concern: errors
+rules:
+  - id: go.errors.1
+    aliases: [go.errs.1]
+    statement: Wrap an error with what was being done.
+    strength: must
+    status: active
+    scope:
+      parts: [go]
+      paths: ["**/*.go"]
+      kinds: [service]
+    exemptions:
+      - paths: ["testdata/**"]
+        reason: Fixtures hold planted code.
+      - kinds: [library]
+        reason: A library returns the error it was given.
+    reasoning:
+      definition: An error says what failed and what was being done.
+      pros: [The cause is found from the message.]
+      cons: [Messages grow longer.]
+      decision: wrap-errors
+    pairs:
+      - {number: 1, target: source}
+      - {number: 2, target: config}
+    owner: alex
+    review_by: "2027-03-01"
+    relations:
+      relates: [go.layout.1]
+      conflicts: [go.layout.2]
+      depends: [base.errors.1]
+      covers: [go.errors.2]
+    origin: authored
+    sources:
+      - {ref: effective-go, where: errors, says: Errors are values., backs: rule}
+      - {ref: tool-manual, where: wrapcheck, backs: check}
+      - {ref: error-study, where: table 2, says: Wrapped messages were found faster., backs: threshold}
+    bindings:
+      - tool: golangci-lint
+        target: config
+        key: wrapcheck
+        value: true
+        options: {ignoreSigs: [".Errorf("], ignorePackageGlobs: ["example.com/*"]}
+        severity: error
+        rung: 1
+        run_point: push
+        remedy: Wrap the error with fmt.Errorf and %w.
+        pair: 1
+        pair_path: pkg/a.go
+        tightens: std.errors.1
+      - tool: golangci-lint
+        target: config
+        key: errorlint
+        value: true
+        severity: error
+        rung: 0
+        run_point: land
+        pair: 2
+        pair_path: .golangci.yml
+  - id: go.errors.2
+    statement: Return an error and never panic in a library.
+    strength: should
+    status: proposed
+    origin: migrated
+  - id: go.errors.3
+    statement: Check an error before the value it came with.
+    strength: must
+    status: trial
+    owner: alex
+    zero_by: "2027-06-01"
+    origin: authored
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: staticcheck.SA4006
+        value: 3.5
+        severity: error
+        rung: 3
+        run_point: review
+        pair: 1
+        pair_path: pkg/b.go
+        checker: wrapcheck-plugin
+    pairs:
+      - {number: 1, target: source}

@@ -1,0 +1,10 @@
+$ gragas plugin add <bundles>/lint-z/1.0.0 --apply
+--- exit 1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  failed     the plan could not be made:
+  the plugin's manifest is refused:
+  plugin.yaml names lint-a 1.0.0, and
+  the lock installs it as lint-z 1.0.0
+--- stderr

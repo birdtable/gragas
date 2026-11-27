@@ -1,0 +1,20 @@
+# Paths confine refuses: each names something outside a root, or nothing a
+# root holds. One a line; \\ is a backslash. The NUL cases are in
+# confine_test.go.
+..
+../x
+a/../../x
+a/..
+/repo/x
+/
+C:/x
+C:\\x
+c:x
+a\\..\\..\\x
+a\\b
+a:b
+a//b
+a/./b
+./a
+a/
+.

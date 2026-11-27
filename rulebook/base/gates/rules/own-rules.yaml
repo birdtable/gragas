@@ -1,0 +1,69 @@
+format: 3
+part: gates
+concern: own-rules
+rules:
+  - id: gates.own-rules.1
+    statement: "A banned import or code pattern is a lint error whose message names what to use instead, and the ban lists ship empty and are filled by later rules naming the owning package."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Built-in ban rules (restricted imports, restricted syntax, `no-console`, `n/no-process-env`, the eslint-comments rules) and dependency or forbidden-call linters (depguard and forbidigo for Go) forbid a named import or pattern outside its owner, each with a message that names what to use instead and the home and fix. The import and syntax ban lists exist but ship empty; each later rule fills its part naming the owning package in the message, so a ban doubles as a capability registry: each concern has one importable owner and the alternatives are banned by name."
+      pros:
+        - A ban without a message is satisfied by guessing the nearest bypass.
+  - id: gates.own-rules.2
+    statement: "Rules written for the repo's own code (custom lint rules, structural patterns, domain check scripts) are checks, each with a plant and a measured error rate."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Examples that were five small rules in one source row: a call banned in one feature area, a UI primitive banned outside its owner path, with a hand-built twin counted. Each is a lint or structural rule with a planted violation and a clean control. Shape rules and generated depguard rows are kept with a planted hit and measured false rates (gates.plants.14)."
+      pros:
+        - A domain rule written only as prose is not held.
+    relations:
+      relates:
+        - gates.plants.14
+  - id: gates.own-rules.3
+    statement: "Generated code is never edited by hand; regenerate it, and a check fails when the copy differs from a fresh generation."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A generated file names its version or carries a banner and regenerating leaves no diff. A derived artifact (a spec from a schema, types from a database, enums from a glossary, token output, route trees) is generated and diffed. Shapes that cross a language boundary have one source."
+      pros:
+        - "A hand-edit is overwritten by the next regeneration, or worse, kept and drifts."
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+  - id: gates.own-rules.4
+    statement: There is no literal service address or fallback beside the configured one.
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "Config is read in one package with a reader, a default and a doc row per key; a secret never comes from a flag. Variables are declared in a typed schema."
+      pros:
+        - A hard-coded fallback address sends traffic to the wrong place when the configured one is missing.
+    replaced_by: code.config.1
+  - id: gates.own-rules.5
+    statement: "Secret-shaped keys in public environment files fail, and no secret reaches the bundle."
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "Public environment files hold only public values; a variable whose name looks like a secret fails the check."
+      pros:
+        - A secret in a public file ships to every browser.
+    replaced_by: supply.secrets.3
+  - id: gates.own-rules.6
+    statement: "A repo's own gate imports nothing from the code it judges, and reaches it only through a declared internal export or the built binary."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A gate that needs facts from the code reads them through an export declared for gates (an internal entry the package lists for that use) or by running the built program and reading its machine output. Importing the package it judges is a finding: a fault in the subject then breaks or bends the gate, and the gate passes whatever the subject's own code says. The import rule names the gate folder and the internal exports it may reach."
+      pros:
+        - "A gate that imports its subject dies with it when the subject breaks, and judges the subject with the subject's own logic."
+    sources:
+      - ref: decision-65-gates
+        backs: rule

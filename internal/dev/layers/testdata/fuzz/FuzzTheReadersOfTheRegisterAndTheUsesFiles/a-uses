@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("repo: app\npicks:\n  - {item: x, register_key: yaml, job: j, scope: s, ban: b, banned_calls: [gopkg.in/yaml.v3]}\nfindings:\n  - {where: a.go, what: w, state: open, symbol: S, removed_by: [t-1], cut: true}\n")

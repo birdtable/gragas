@@ -1,0 +1,119 @@
+[
+  {
+    "contract": 1,
+    "needs": [],
+    "name": "lint-a",
+    "version": "2.0.0",
+    "tool": "lint-a",
+    "tool_versions": ">=10.13.0 <11.0.0",
+    "targets": [
+      "source"
+    ],
+    "provides": [
+      "plan",
+      "entries",
+      "findings",
+      "rank",
+      "preset"
+    ],
+    "extends": true,
+    "warning": true,
+    "config_loads_code": true,
+    "preset": {
+      "path": "lint-a.config.js",
+      "inputs": [],
+      "mark": true,
+      "readback": {
+        "severity": false,
+        "defaults": [
+          "rule-a",
+          "rule-b",
+          "rule-c"
+        ]
+      }
+    },
+    "wiring": {
+      "import": {
+        "at": "/extends",
+        "form": "list"
+      },
+      "install": [
+        "npm",
+        "install",
+        "--save-dev",
+        "lint-a"
+      ]
+    },
+    "resolve_from": "node_modules",
+    "counted": {
+      "fold_keys": true,
+      "exclusions": [["linters", "exclusions", "rules"], ["issues", "exclude-dirs"], ["run", "skip_files"]],
+      "loosening": [{"at": ["linters", "exclusions", "generated"], "values": ["lax"]}, {"at": ["run", "issues-exit-code"], "values": ["0"]}, {"at": ["linters", "exclusions", "paths-except"], "unless": "[]"}, {"at": ["issues", "new-from-rev"], "unless": ""}],
+      "directive": "nolint"
+    },
+    "programs": [
+      {
+        "id": "lint-a",
+        "manifest": "node_modules/lint-a/package.json",
+        "script_at": "/bin/lint-a",
+        "interpreter": "node",
+        "version_argv": [
+          "--version"
+        ],
+        "versions": ">=10.13.0 <11.0.0"
+      },
+      {
+        "id": "lint-a-native",
+        "path": ".tools/bin/lint-a",
+        "version_argv": [
+          "version"
+        ],
+        "version_pattern": "v([0-9.]+)",
+        "versions": ">=2.0.0 <3.0.0"
+      },
+      {
+        "id": "lint-a-helper",
+        "versions": ">=1.4.0",
+        "version_argv": [
+          "--version"
+        ]
+      }
+    ],
+    "wasm": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  {
+    "contract": 1,
+    "needs": [
+      "describe",
+      "cache-vars"
+    ],
+    "name": "lint-b",
+    "version": "0.10.0",
+    "tool": "lint-b",
+    "tool_versions": ">=1.0.0",
+    "targets": [
+      "config",
+      "prose"
+    ],
+    "provides": [
+      "entries"
+    ],
+    "extends": false,
+    "warning": false,
+    "programs": [
+      {
+        "id": "lint-b",
+        "path": "bin/lint-b",
+        "version_argv": [
+          "-V"
+        ],
+        "versions": ">=1.0.0",
+        "cache_vars": [
+          "LINT_B_CACHE",
+          "LINT_B_MOD_CACHE"
+        ]
+      }
+    ],
+    "wasm": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }
+]

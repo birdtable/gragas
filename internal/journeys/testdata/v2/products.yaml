@@ -1,0 +1,4 @@
+kinds:
+  - key: cli
+    name: Command-line program
+    description: A program run from a terminal.

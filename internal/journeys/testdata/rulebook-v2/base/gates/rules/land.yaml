@@ -1,0 +1,677 @@
+part: gates
+concern: land
+order: 5
+title: The land check and verdicts
+summary: >-
+  Main moves only by a reviewed merge of a tree the full local gate passed, bound to that tree by a local
+  stamp, or, where a repo runs the lander, by a commit the land check accepts. There a verdict is bound to the
+  tree it judged, recomputed by the lander and never taken from the author, and a plan carries its own hash.
+rules:
+  - id: gates.land.1
+    slug: main-moves-only-on-accepted-commit
+    since: 0.1.0
+    rule: >-
+      Main moves only by a reviewed change whose merged tree the checks passed: the lander runs them on the
+      merged tree, then squash-merges; where a repo has no lander, the owner fast-forwards main to the exact
+      tree the pre-push hook passed, or has the gate run again on the merged tree first.
+    detail: >-
+      The change is reviewed (the author's own included), and the owner merges it or says to. Where a repo
+      runs the lander, the lander checks out origin/main plus the squash in a scratch clone, runs the repo's
+      own checks there (its Taskfile's pre-push tier, or make check in gragas), and only then squash-merges.
+      Where it does not, the pre-push hook has run the full gate on the pushed tree (gates.hooks.1), and the
+      owner either fast-forwards main to that exact commit, so the tree that moves main is the tree that ran,
+      or, when main has moved since or the merge is a squash, has the gate run again on the merged tree before
+      main moves: a squash onto a main that moved is a tree that never ran. There is no stamp, no stored
+      verdict and no hash record: a pass is the run just made on the tree about to move main, never a claim
+      carried from another tree, another machine or the author's word. In both forms nothing else moves main:
+      no direct push to main and no merge of a tree the checks did not pass.
+    level: release
+    why: >-
+      A merge path that skips the check is the path that gets used. With no hosted land job the binding between the tree that was merged and the run that passed it is that the run is made
+      on that tree, just before the merge; a pass on one tree must never be claimed for another.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-50
+        backs: rule
+      - ref: decision-65-gates
+        backs: rule
+      - ref: operator-points
+        backs: rule
+      - ref: gragas-907-ticket
+        where: the table rows gates.land.1 to gates.land.3
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. Branch protection refuses a direct push to main; the lander runs the checks on
+          origin/main plus the squash and squash-merges only on green. Plant: A change whose merged tree has
+          a red member is not merged; a direct push to main is refused. Control: A change whose merged tree
+          passes is squash-merged.
+    relates:
+      - id: gates.hooks.1
+        how: see
+      - id: gates.land.12
+        how: see
+    open:
+      - >-
+        No tool key is bound yet to the check above: the lander that runs the checks on origin/main plus the
+        squash is the lander's card (fleet#25) and the no-lander path has no check that main moved to the
+        exact tree that ran; until a key resolves, the rule is read in review. Plant for the future key: a
+        fast-forward to a commit other than the one the hook passed is refused.
+  - id: gates.land.2
+    slug: verdict-bound-to-tree
+    since: 0.1.0
+    rule: >-
+      A verdict is bound to the tree it judged, the land gate runs on the tree that was pushed, and changing
+      the tree after a gate run means a new run.
+    detail: >-
+      Every land carries the gate summary of its tree (the verdict carries the commit's tree id; it lists the
+      tree id, a test count and zero skipped). The lander accepts a verdict only for the tree it merges and
+      re-runs the top tier when a merge changes the tree. An amend that keeps the tree keeps the verdict; any
+      change reruns, so there is no ban on amending. The lander reads the verdict from the gate's own output
+      or from a stored record keyed by tree, never from the author's report, and never from a stamp left by a
+      session that may be cut off; the hand-in is read from the ref, not from the message.
+    level: release
+    why: >-
+      A lead reported 14 chosen tests green where the whole package would have failed 4. The tree-keyed
+      verdict is proven in one repo; two other repos have variants.
+    kind: rule
+    strength: Hard
+    status: retired
+    note: >-
+      Retired with gragas#907. No verdict is stored or bound to a tree: the lander runs the checks on the
+      merged tree and then squash-merges (gates.land.1), so a pass is never carried from one tree to another.
+    sources:
+      - ref: decision-20
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 4 O4
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. Land step reads the verdict record keyed by tree id from the stored record and
+          refuses a verdict whose tree differs from the tree being merged, and ignores any session stamp.
+          Plant: Land ignores a stamp with no stored record; a verdict for a different tree is refused.
+          Control: A verdict for exactly the merged tree passes.
+    relates:
+      - id: gates.land.3
+        how: see
+    open:
+      - >-
+        The lander setting that makes the refusal required is unset in the fleet; the refusal waits on a fix
+        in the delivery tool (decision 20).
+    note: >-
+      Merges the verdict-bound-to-tree rules of the Go and web sides, the amend rule and the rule that a
+      hand-in is read from the ref. The recompute half is gates.land.3.
+  - id: gates.land.3
+    slug: lander-recomputes-verdict
+    since: 0.1.0
+    rule: >-
+      Where a repo runs the lander, it recomputes a hash over the tree, the base and the rule set, and refuses
+      a verdict record that it cannot recompute or whose base is stale.
+    detail: >-
+      Applies only to a repo that runs the lander (gates.land.1); a repo whose land step is the local gate and
+      a reviewed merge has no verdict record. The record lists what was run and why the selector, not the
+      author, chose it. A file with plausible fields typed by hand has the same shape as one written by the
+      gate, so the lander does the arithmetic itself. The verdict lists what was selected and why.
+    level: release
+    why: >-
+      A self-reported proof was the fault: a lead reported 14 chosen tests green where the whole package would
+      have failed 4 (P-09 section 4 O4). Agents declare done early and prove subsets; the known way round is
+      re-running a chosen subset through the gate, so the record lists the selection and its reason.
+    kind: rule
+    strength: Hard
+    status: retired
+    note: >-
+      Retired with gragas#907. No verdict record exists to recompute: the lander runs the checks itself on the
+      merged tree (gates.land.1), and no stored verdict or hash record is accepted.
+    sources:
+      - ref: p-09-agentic-development
+        where: sections 4 and 6.4
+        backs: rule
+      - ref: decision-65-gates
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The land check recomputes the hash over tree, base and rule set from the record
+          and compares; a mismatch is red. Plant: A hand-typed summary with a plausible hash is refused; a
+          summary computed on an older base is refused. Control: A verdict the gate wrote itself on the
+          current base passes.
+    relates:
+      - id: gates.land.1
+        how: see
+    open:
+      - Recompute is new; the tree-keyed verdict it extends exists in one repo only.
+  - id: gates.land.4
+    slug: plan-hash
+    since: 0.1.0
+    rule: >-
+      Where a repo runs the lander, the run record carries the plan with a hash over changes, rules and
+      result, and the lander recomputes it.
+    detail: >-
+      Applies only to a repo that runs the lander (gates.land.1). The summary carries the plan: the base, head
+      and merge-base ids, the rules hash, manifests hash and graph hash, the scope and its reasons, the
+      selected domains, tests, stories and checks, and the plan hash. The lander recomputes the plan at the
+      commit and compares the plan hash; a hand-edited plan with a stale hash is refused. For Go, the run
+      record lists each skipped package with its reason keyed to the tree and the land step compares it (no
+      plan hash yet).
+    level: release
+    why: >-
+      A plan that is only a file is the author's claim; a recomputed hash makes it the gate's.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-gates
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The plan carries a sha256 over changes, rules and result; the lander recomputes it
+          and refuses a mismatch. Plant: A hand-edited plan with a stale hash is refused. Control: An unedited
+          plan passes.
+    relates:
+      - id: gates.land.1
+        how: see
+    open:
+      - Hash is trialled in an affected-set script; recompute and refusal are to build.
+      - The Go side has no plan hash yet, only a skipped-package list.
+  - id: gates.land.5
+    slug: wrong-base-refused
+    since: 0.1.0
+    rule: >-
+      A plan computed against a base that is not the current main tip is refused, with a message that names
+      the rerun.
+    detail: >-
+      The lander refuses a plan whose base is not the main tip and merge-base of the ref, or whose head is not
+      the gated commit, with a message like "plan computed against X, main is Y: re-run the land tier".
+    level: release
+    why: A stale base lets a green result from an older tree stand for a newer one.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The land check compares the plan's base and head with the main tip, merge-base and
+          gated commit. Plant: A plan whose base is one commit behind main is refused with the rerun message.
+          Control: A plan on the current tip passes.
+    open:
+      - >-
+        On the Go and web sides the verdict is bound to the tree so a stale base fails, but no row refuses by
+        base and names the rerun.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+  - id: gates.land.6
+    slug: land-conditions-modular
+    since: 0.1.0
+    rule: >-
+      The land check is a runner over separate condition files, each with its own spec, and a new condition
+      never edits the runner.
+    detail: >-
+      One program with conditions as separate modules; a pack adds conditions and never edits the base runner.
+      The proven land gate with its conditions is lifted as a shared piece, and a project adds only its own
+      rules.
+    level: package
+    why: A runner that every new condition edits is a gate whose own changes weaken it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          A test that the runner discovers every condition file and that no condition file is imported by name
+          from the runner. Plant: A condition that is added by editing the runner fails the discovery test.
+          Control: A condition added as a file with its spec passes.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: gates.land.7
+    slug: land-tier-reach
+    since: 0.1.0
+    rule: >-
+      The land tier runs tests only for what the change can reach and every whole-program check, with a full
+      run as backstop, fail closed, each skip proved.
+    detail: >-
+      Selected tests and stories at land, for affected domains only; every always-full check (gates.command.6)
+      in full. The full suite runs at least every third release (decisions 18 and 27), and the post-land full
+      run is the backstop. Each skipped package has a proved reason.
+    level: release
+    why: >-
+      A full suite at every land misses the budget; selection without a backstop misses what selection missed.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-18
+        backs: rule
+      - ref: decision-27
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The land plan selects tests from the change's reach and requires the always-full
+          list; the release job runs the full suite at least every third release. Plant: A land plan that
+          omits an always-full check fails. Control: A plan with the always-full list and selected tests
+          passes.
+    relates:
+      - id: gates.command.6
+        how: see
+  - id: gates.land.8
+    slug: full-red-lock
+    since: 0.1.0
+    rule: >-
+      A red release tier in the fresh checkout refuses the tag; the bad range is bisected and the miss becomes
+      a permanent test.
+    detail: >-
+      The release recipe runs the release tier of the repo's own Taskfile in a fresh checkout of the commit
+      it is about to tag, and a red run refuses the tag until the cause is fixed or reverted. There is no lock
+      file and no record kept between runs: the next release runs the tier again on its own commit. The bad
+      range is bisected with the full tier, the ticket that landed it is reopened, and the miss becomes a
+      permanent test. On our side the check attaches to the release backstop, not to every land (decisions 18
+      and 27); there is no run after each land.
+    level: release
+    why: >-
+      A red nobody stops compounds; the miss that got through selection teaches the planner only if it is
+      kept.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-18
+        backs: rule
+      - ref: decision-27
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. The release recipe runs the release tier in a fresh checkout of the commit to be
+          tagged and refuses the tag on red. Plant: A release whose tier has a red member is refused. Control:
+          A release whose tier is green tags.
+    open:
+      - The lander machine is named in the source; the rule holds for any lander.
+      - >-
+        No tool key is bound yet to the check above: the release recipe's run of the release tier in a fresh
+        checkout is the work of the gate rules' Taskfile check (gragas-new-3, gragas#929) and the release
+        script; until a key resolves, the rule is read in review. Plant for the future key: a release whose
+        tier has a red member is refused.
+  - id: gates.land.9
+    slug: proof-debt-bound
+    since: 0.1.0
+    rule: A bound on how many changes may land without a full proof.
+    detail: >-
+      The land check refuses a land when main is more than 3 lands (not commits) past the last full-green full
+      run. On our side it is counted in releases: at most two tags pass between full runs (the full run at
+      least every third release).
+    level: release
+    why: Selection without a bound lets unproven changes pile up on main.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The land check counts lands (or releases) since the last full-green and refuses
+          past the bound. Plant: A land that is the fourth since the last full green is refused. Control: The
+          third passes.
+    open:
+      - >-
+        The bound is 3 lands in the source and 2 tags in our decisions; the number is a guess and is data.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+  - id: gates.land.10
+    slug: artefact-records-its-tree
+    since: 0.1.0
+    rule: >-
+      A gate check on a built artefact is accepted only when the artefact records the tree it was built from.
+    detail: >-
+      For the web, a story check passes only on a built storybook whose stamp records the source commit and a
+      dirty flag, where that commit equals HEAD or the planner proves no change in the story closure (stories
+      and their imports, tool config, global style, `package-lock.json`, environment files, the design system
+      version) between them; the full tier always rebuilds. For Go, the binary under journey tests runs as
+      built, and the version output prints the commit, but nothing ties the binary under test to the tree.
+    level: release
+    why: An old build passes checks that the new tree would fail.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The check reads the artefact's build stamp and compares its commit and dirty flag
+          with the tree. Plant: An artefact built from an older tree is refused. Control: An artefact built
+          from the current tree passes.
+    open:
+      - >-
+        No Go row ties the binary under test to the tree, and no web row records the source tree on the built
+        page; both are gaps.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+  - id: gates.land.11
+    slug: cache-trust
+    since: 0.1.0
+    rule: >-
+      A cached result counts only when a trusted runner wrote it under a key from the tree, lockfile and
+      platform, and a fail is never cached.
+    detail: >-
+      The key is recomputed from the tree ids of the gated commit, the lockfile, the runtime version, the OS
+      and the architecture (and the browser version for stories). The summary records whether the source was a
+      run or the cache (`result-cache`) and the key. The full tier ignores the cache. A cache is trusted only
+      for packages that read nothing the cache cannot see; a verdict names the OS and host.
+    level: release
+    why: >-
+      A cache keyed on less lets a result from a different platform or lockfile stand in.
+    kind: rule
+    strength: Hard
+    status: retired
+    note: >-
+      Retired with gragas#907. The target keeps no stamp, no cache key and no cached result: each repo's tiers
+      run every time from its own Taskfile, so nothing is trusted that a run did not just produce.
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The land check recomputes the cache key and compares it with the key recorded in
+          the summary; failures are never written. Plant: A cache hit written by an untrusted runner or under
+          a different lockfile is refused. Control: A trusted hit under the recomputed key passes.
+  - id: gates.land.12
+    slug: train-gated-on-merged-tree
+    since: 0.1.0
+    rule: >-
+      Where a repo lands trains, a train of changes is gated once, on its merged tree, before any of its
+      changes lands; a change landed alone passes the same gate on the tree as pushed.
+    detail: >-
+      Applies only to a repo that lands trains of changes; a repo that merges one reviewed change at a time
+      meets the second half through gates.land.1. The train builder compiles and vets the union of the train's
+      trees before landing any of them. The land path comes first: many changes are not re-gated one by one.
+    level: release
+    why: >-
+      Two semantic conflicts passed every file-overlap tool and only train builds caught them (two cases in
+      the delivery record, P-09 O5).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-09-agentic-development
+        where: section 4 O5
+        backs: rule
+      - ref: decision-65-gates
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The train builder type-checks and runs the merged tree of all changes once before
+          any lands. Plant: Two branches that each pass, one adding a required port method and one adding an
+          implementer without it, must fail on the merged tree. Control: Two compatible branches pass on the
+          merged tree.
+    relates:
+      - id: gates.land.1
+        how: see
+    open:
+      - >-
+        Lives in the delivery tool's land step, under a hold (ticket 3369) and decision 20.
+  - id: gates.land.13
+    slug: verdict-survives-clean-rebase
+    since: 0.1.0
+    rule: >-
+      A green verdict survives a clean rebase, and landing many changes does not re-gate each.
+    detail: >-
+      The verdict is keyed to the change's patch id (`git patch-id`) as well as the tree, so a clean rebase
+      keeps it.
+    level: release
+    why: >-
+      At a reference team one change ran to revision 9 when the lead wrote and revision 11 by 17:20Z; part of
+      that is real fixes, not rebases.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. Verdict keyed to the git patch id; the land step accepts a verdict whose patch id
+          equals the change's. Plant: A clean rebase of a change whose verdict is stored is accepted without a
+          rerun; a rebase that alters the patch is rerun. Control: A change with no stored verdict is gated.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+  - id: gates.land.14
+    slug: heavy-run-refused-if-verdict-exists
+    since: 0.1.0
+    rule: A heavy run is refused if a verdict for the tree already exists.
+    detail: >-
+      The heavy-run wrapper refuses a run when the verdict store holds a verdict for the tree.
+    level: process
+    why: >-
+      At a reference team 98 of 201 heavy runs were a bare full gate repeated until the command refused.
+    kind: rule
+    strength: Hard
+    status: retired
+    note: >-
+      Retired with gragas#907. The target keeps no stamp, no cache key and no cached result: each repo's tiers
+      run every time from its own Taskfile, so nothing is trusted that a run did not just produce. A heavy run
+      is no longer refused on the strength of a verdict that exists.
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. A heavy wrapper that checks the verdict store for the tree before running. Plant:
+          A second full gate on a tree that has a verdict is refused. Control: A first full gate runs.
+    open:
+      - "v1 evidence, not yet a source: A (98 of 201 heavy runs at a reference team)"
+  - id: gates.land.15
+    slug: the-stamp-is-a-claim
+    since: 0.1.0
+    rule: >-
+      A stamp is a claim keyed to the exact tree, its settings and its tools, and it only lets a rerun on the
+      same key be skipped; it is never keyed to a commit or an age, landing and release never take it as
+      proof, and a member that reads a moving source pins that source by digest in the key.
+    detail: >-
+      A stamp is plain data that any process able to write the common git folder can write, so it is trusted
+      only to skip a local rerun. gates.land.11 holds the key of a cached result; this rule holds what the
+      stamp may and may not do. A stamp keyed to a commit id survives an amend that changes nothing, which is
+      fine, and one keyed to an age vouches for code nobody ran, which is not. A vulnerability database or a
+      remote list the member reads is part of the key as a digest, or the stamp is stale the moment the
+      source moves. The landing proof is keyed to the candidate tree (gates.land.16), which is what makes a
+      moved main stale nothing.
+    level: program
+    why: >-
+      Two projects kept a stamp keyed to a 24-hour age; another fleet's landing read a stamp bound to the main
+      branch's tip, so every landing staled every waiting green and 37 of 44 land commands in 8 hours landed
+      nothing.
+    kind: instruction
+    strength: Lens
+    status: retired
+    note: >-
+      Retired with gragas#907. The target keeps no stamp, no cache key and no cached result: each repo's tiers
+      run every time from its own Taskfile, so nothing is trusted that a run did not just produce. No stamp is
+      a claim of any kind.
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      What is in this stamp's key, who reads the stamp, and does any member read a source the key does not
+      pin by digest?
+    relates:
+      - id: gates.land.11
+        how: see
+      - id: gates.land.2
+        how: see
+      - id: tests.selection.7
+        how: see
+      - id: gates.land.16
+        how: see
+    open:
+      - >-
+        Planned check: the stamp's key fields are listed in the runner's report, and a test writes a stamp on a
+        changed tree and sees the runner refuse it. Plant: a stamp keyed to the commit alone is refused.
+        Control: a stamp keyed to the tree is served. No tool key is bound yet.
+      - >-
+        gates.land.1 says the hook and the release read the local stamp. Under this rule they read it to skip a
+        rerun of the same key and for nothing else; the release's own proof is the tier on a fresh clone of the
+        tag.
+  - id: gates.land.16
+    slug: one-proof-per-train
+    since: 0.1.0
+    rule: >-
+      Approved, disjoint changes land as a train proved once on its merged tree; the proof is keyed to the
+      candidate tree, so a landing that produces a tree already proved needs no rerun, landing makes one push,
+      the next train is built on this train's squash and never on its verdict commit, and a train of one is a
+      train.
+    detail: >-
+      gates.land.12 holds that a train is gated once on its merged tree. This rule holds the four things around
+      it that cost proofs. The key is the candidate tree, not the main branch's tip, so a green that is still
+      the same tree after main moved is still green. Landing pushes once, so there is one new tree per train.
+      The next train starts from the squash that landed, because a verdict commit that never lands is not a
+      base anyone can build on. A project with one builder lands trains of one with the same rule. A
+      post-land run of the whole tree is retired where the landing proof is the whole merged tree
+      (gates.land.12), because it proves nothing new and holds a slot.
+    level: process
+    why: >-
+      One project ran 44 checks for 13 landings, 18 of them on a verdict commit that never lands, and two landing
+      agents threw away 9 of each other's proofs; in another fleet 44 land commands in 8 hours landed 8 changes,
+      5.1 runs per change.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      What tree is this proof keyed to, how many pushes does this landing make, and what is the next train
+      built on?
+    relates:
+      - id: gates.land.12
+        how: see
+      - id: gates.land.13
+        how: see
+      - id: gates.land.15
+        how: see
+    open:
+      - >-
+        Planned check: the landing record names the candidate tree id and the proof's key, and a landing that
+        ran a proof for a tree id the record already holds green is a finding. The first half is built: the
+        landing script prints the candidate's tree id and head commit before the judge runs, and
+        cmd/gragas-dev/land_test.go holds the line on a passing and a red run. The finding is not. What holds now: the printed tree id and head commit, by that test. What does not: one proof per tree,
+        one push per landing and the next train's base have no check. No tool key is bound: the gragas tool has
+        no preset, so no key of it resolves, and an unresolved checks row raises checks-unresolved, a baseline
+        that may only fall. The rule stays as it is until a key holds it (gragas#832).
+  - id: gates.land.17
+    slug: the-base-judges-the-head
+    since: 0.1.0
+    rule: >-
+      Where a project has protected paths, the landing judge is built from the main branch and run on the
+      change, so a change cannot loosen the rules it is judged by; the judge is not the tier runner, a file the
+      judge reads changes format in two steps, expand then contract, and everything else at landing runs the
+      head's own tier.
+    detail: >-
+      gates.protection.1 to .3 hold the verdicts and the list of protected paths. This rule holds which code
+      runs the check. The judge is small and trusted, built from the base revision into its own folder; the
+      tier runner is the head's own and runs the head's members. A format change to a file the judge reads
+      (the members file, the protected list) lands first as a reader that accepts both forms, then as the
+      writer of the new form, because the base's judge must still read the head's file. A project with no
+      protected paths has no judge, and the hub lands it on the head's tier alone.
+    level: process
+    why: >-
+      A head that changed the format of a file the judge reads was judged by code that could not read it and
+      went red at landing; five projects with no judge needed the rule only where one exists.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Is this landing judge built from the base, does this change alter a file the judge reads, and if so is
+      it the expand step or the contract step?
+    relates:
+      - id: gates.protection.1
+        how: see
+      - id: gates.protection.3
+        how: see
+      - id: gates.land.3
+        how: see
+    open:
+      - >-
+        Planned check: the landing script builds the judge from the base revision and refuses a head that
+        changes a judge file's format in one step (the base's judge fails to read it). No tool key is bound
+        yet.
+  - id: gates.land.18
+    slug: a-red-names-the-last-green-main
+    since: 0.1.0
+    rule: >-
+      A hand-off between agents carries a notice to the agent that waits, the wait is logged, and a red proof at
+      or after landing says in the same message which main branch commit to build on.
+    detail: >-
+      A hand-off is a change passed from builder to reviewer, reviewer to lander, or lander back to builder.
+      The notice goes to the one who waits, not to a channel they may read later, and the wait is a row where
+      the hub counts rounds (gates.measures.5). When a landing proof is red, the message that says so names the
+      last green main, so nobody waits for someone to name one.
+    level: process
+    why: >-
+      Six engineers of one fleet waited 333 agent-minutes after a red post-land proof for someone to name a
+      main branch commit, and four hand-offs with no notice idled 106 minutes in one day.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Who waits on this hand-off, did they get a notice, and does this red message name the last green main?
+    relates:
+      - id: gates.measures.5
+        how: see
+      - id: agents.delivery.1
+        how: see
+    open:
+      - >-
+        The landing script's red message carries the main commit id the run judged against, held by
+        cmd/gragas-dev/land_test.go. Plant: a head with no verdict for a protected path ends red, naming the
+        base's main commit. Control: a head with its verdict prints no red line. What holds now: the red message's main commit, by that test. What does not: the notice to the agent that
+        waits and the logged wait have no check. No tool key is bound: the gragas tool has no preset, so no key
+        of it resolves, and an unresolved checks row raises checks-unresolved, a baseline that may only fall.
+        The rule stays as it is until a key holds it (gragas#832).

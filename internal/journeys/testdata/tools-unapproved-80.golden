@@ -1,0 +1,10 @@
+$ gragas tools
+--- exit 4
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  not ready  the plugin standin 1.0.0 could not be opened: the plugin is not
+  approved:
+  sha256:<digest>
+    gragas plugin approve standin@1.0.0
+--- stderr

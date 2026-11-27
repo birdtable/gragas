@@ -1,0 +1,202 @@
+part: docs
+concern: glossary
+order: 1
+title: Glossary and retired words
+summary: >-
+  Every program owns a glossary of its terms, and a check holds it to the code. A word the project has retired
+  fails where it is typed, in code, comments and docs, and the failure names the right word. Words that two
+  programs share have one definition, with a machine code kept apart from its sentence.
+rules:
+  - id: docs.glossary.1
+    slug: glossary-held-to-code
+    since: 0.1.0
+    rule: >-
+      Each program owns a glossary of its terms, held to its code by a check, and a product term is defined
+      once and linked wherever it appears.
+    detail: >-
+      The glossary lists each term with its definition, its aliases (prior names and outside words it
+      translates) and the names that were retired, with what was retired when. Every schema, event or public
+      name the program publishes is a term; every term names one of those or a retired name; every retired
+      name in the lint configuration is in the glossary. Every page and help text links the first use of a
+      term on it to its glossary entry, and the same thing carries the same name everywhere. A map of which
+      program owns which concept sits beside the glossaries. An editor that shows a term's definition on hover
+      is an aid for people only; agents read the glossary file.
+    level: word
+    why: >-
+      Fault evidence in our own repos: word faults 7, 3 and 2 in three repos, and the old organisation name
+      found 181 times in one repo by a spell tool. Names that drift between pages and services make a reader
+      and an agent guess which thing is meant.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-03-data
+        where: on shared vocabulary
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. a glossary data file lists each term, its page and its banned alternates; (a
+          companion glossary check) fails on the built pages when the first use of a term on a page does not
+          link to its glossary anchor, and the retired-word check (cspell flagWords) fails the alternate
+          names. Plant: a page that uses an alternate name fails; a page that mentions a term without the link
+          fails. Control: a page that uses the term with its link passes
+    review_question: >-
+      Is this a new name for a thing the glossary already names, and is every published schema or event a
+      term?
+    relates:
+      - id: docs.glossary.2
+        how: see
+    open:
+      - >-
+        Half holds: names and links are checks; whether a new name is the same thing as an old one is review.
+      - "Planned only: no link check exists yet."
+      - "v1 evidence, not yet a source: A (word faults 7, 3 and 2 in three repos)"
+    note: >-
+      Held for words in code by docs.glossary.2. Glossary-to-code consistency (every published schema or event
+      is a term) is a check the part still has to design.
+  - id: docs.glossary.2
+    slug: retired-word-fails
+    since: 0.1.0
+    rule: >-
+      A retired word fails where it is typed, in code, comments and docs, and the failure names the right
+      word.
+    detail: >-
+      The retired-words list maps each retired word to its right word, and the failure message carries that
+      right word. It covers identifiers, comments, strings and markdown, and a word retired in every sense
+      fails in docs and comments as well as code. A retired identifier is not the same as a retired word: a
+      name kept as a code name (a wire value or a compound the registry still requires) stays allowed. The
+      list lives in one shared place and is synced into each repo, and each repo's own linter holds the names
+      it retired so a retired name fails in the service that retired it. A write-time hook runs the scan on
+      the edited file.
+    level: word
+    why: >-
+      A retired name that keeps appearing spreads back into new code. A spell tool found 181 hits of the old
+      organisation name in one repo alone, and only one repo had a gate (five retired words).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-03-data
+        where: on shared vocabulary
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "0"
+        note: >-
+          typos (crate-ci/typos) over identifiers, comments and docs with a retired-words file mapping each
+          word to its right word under extend-words; fallback cspell flagWords with word->replacement entries,
+          and ignoreRegExpList for retired identifiers kept as code names. Plant: a retired word in a comment,
+          in an identifier and in a markdown file each fails and names the right word. Control: a file using
+          the right word passes
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint no-restricted-syntax with an Identifier or Literal selector holding the retired names as a
+          regex and the right word in the message, no plugin (Biome form is a GritQL plugin on the same
+          names). Plant: an identifier or string literal using a retired word fails with the right word in the
+          message. Control: the right word passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          forbidigo or ast-grep with the right word in the message. Plant: an identifier using a retired word
+          fails with the right word in the message. Control: the right word passes
+    open:
+      - >-
+        A retired word that is also a normal word needs a context rule that the typos tool cannot give: list
+        it as exact-case only.
+      - >-
+        cspell splits camelCase and so sees single words only: names belong to the identifier scan.
+      - >-
+        Whether the shared list's home is the standards repository is proposed, not settled.
+      - >-
+        v1 evidence, not yet a source: own measure (a spell tool found 181 hits of the old organisation name
+        in one repo, which has a retired-words check)
+    note: >-
+      Merges the retired-word rule from the spell-check row with the per-program retired-identifier rules.
+  - id: docs.glossary.3
+    slug: shared-word-sets
+    since: 0.1.0
+    rule: >-
+      Each word set that two programs share has one definition, and a machine-readable code is kept apart from
+      its sentence in a closed, documented set.
+    detail: >-
+      For exit codes the check is the one in the code part: a documented table compared with the constants.
+      Other shared word sets live in one data file consumed by every language through the generator, with a
+      schema that separates the machine code from the sentence a person reads.
+    level: word
+    why: >-
+      Two programs that each spell out a code or status word drift apart, and a code that is also a sentence
+      cannot be changed without breaking readers.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-13
+        backs: rule
+      - ref: decision-19
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test compares the documented table of codes with the Go constants (TestExitCodesDocumented)
+          against the ruled set 0 to 6. Plant: adding an exit code constant that is not in the table fails;
+          deleting a table row fails. Control: a matching table passes
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. other shared word sets live in one JSON file consumed by Go and TypeScript
+          through the generator, with a schema separating a machine code from its sentence. Plant: a shared
+          word set defined twice fails the generator check. Control: one definition passes
+    open:
+      - "Unproven in two repos: the table-against-constants test."
+      - >-
+        If the operator would rather not build for evidence D this becomes a best practice.
+    note: >-
+      Exit codes have one home in the code part; the other shared word sets are planned.
+  - id: docs.glossary.4
+    slug: no-internal-names-for-users
+    since: 0.1.0
+    rule: >-
+      Printed text, the README and the how-to guides carry no code identifier, no word from a listed set of
+      internal jargon, and no internal doc path, register, issue, rule or decision id, which belong in the
+      register, the design notes and commits.
+    detail: >-
+      Printed text is every string the program shows a person: help, hints, errors, prompts and status rows. A
+      code identifier is a package, type or function name as it appears in the code. The jargon list is one
+      data file per repo, next to the glossary. An id is any pattern the citation resolver knows (rule,
+      decision, ticket, register row) and any path into the docs or design folders. Design notes, the
+      register, agent files and commits may use all of these. A word a person needs that is also an identifier
+      is defined in the glossary and spelled the way a person says it.
+    level: word
+    why: >-
+      A person reading help or a guide cannot follow an internal name or id anywhere, so it is noise that also
+      leaks how the code is built; the id belongs where the people who can follow it read.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. a scan of the exported printed strings, the README and the how-to guides against
+          the repo's exported identifiers, the jargon list and the citation resolver's id patterns. Plant: a
+          help line naming an internal package fails; a README line citing a decision id fails; an error
+          naming a register row fails. Control: the same line in a design note passes, and plain words in the
+          README pass

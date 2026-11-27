@@ -1,0 +1,687 @@
+# Shared golangci-lint base for Go projects.
+#
+# Written by hand, never generated. Each linter and setting names the rule ids
+# it holds; each of those rules names this file in its check. golangci-lint v2,
+# pinned at 2.15.0. A project's .golangci.yml is generated from this file,
+# unchanged, and the project's own lint/project.yml: the "# slot <name> begin"
+# and "# slot <name> end" lines mark what a project may replace, and the project
+# file maps each slot's name to its text. Lines starting "# per-project:" name
+# paths that only a project knows (its runner, terminal module, adapters, paths
+# helper, layer table); a project fills them in its slots.
+version: "2"
+
+run:
+  tests: true
+
+issues:
+  # go.errors.4, gates.plants.10: no cap, so repeats are not hidden.
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  # gates.plants.10: a second hit on one line still shows.
+  uniq-by-line: false
+
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    # generated:linters:begin
+    # generated:linters:end
+  # per-project: sqlclosecheck and rowserrcheck where database/sql is imported (go.style.4).
+
+  settings:
+    depguard:
+      rules:
+        # cli.config.7: flag parsing lives in cmd/ and the command packages only.
+        cli-flags:
+          # slot cli-flags begin
+          files: ["$all", "!**/cmd/**"]
+          # per-project: also "!**/<command package>/**"
+          # slot cli-flags end
+          deny:
+            - pkg: flag
+              desc: "cli.config.7: flags are parsed in cmd/ only"
+            - pkg: github.com/spf13/pflag
+              desc: "cli.config.7: flags are parsed in cmd/ only"
+            - pkg: github.com/spf13/cobra
+              desc: "cli.config.7: flags are parsed in cmd/ only"
+            - pkg: github.com/urfave/cli
+              desc: "cli.config.7: flags are parsed in cmd/ only"
+        # cli.look.1, arch.shared.7: terminal libraries only in the shared UI module.
+        owner-ui:
+          # slot owner-ui begin
+          files: ["$all"]
+          # per-project: "!**/<shared UI module>/**"
+          # slot owner-ui end
+          deny:
+            - pkg: golang.org/x/term
+              desc: "arch.shared.7: terminal detection belongs to the shared UI module"
+            - pkg: github.com/mattn/go-isatty
+              desc: "arch.shared.7: terminal detection belongs to the shared UI module"
+            - pkg: github.com/fatih/color
+              desc: "cli.look.1: terminal styling belongs to the shared UI module"
+            - pkg: github.com/muesli/termenv
+              desc: "cli.look.1: terminal styling belongs to the shared UI module"
+        # arch.ports.24: no folder imports an operating-system package; the platform libraries hold them.
+        os-host:
+          # slot os-host begin
+          files: ["$all"]
+          # per-project: leave "$all": a product has no host layer. A folder that has not
+          # moved its operating-system code yet is spared as "!**/<folder>/**", and each file in it
+          # carries a row of the project's exemptions file, which only falls.
+          # slot os-host end
+          deny:
+            - pkg: golang.org/x/sys
+              desc: "arch.ports.24: an operating-system package belongs to the platform libraries, not to a product"
+            - pkg: github.com/gofrs/flock
+              desc: "arch.ports.24: an operating-system package belongs to the platform libraries, not to a product"
+            - pkg: github.com/shirou/gopsutil
+              desc: "arch.ports.24: an operating-system package belongs to the platform libraries, not to a product"
+        # No file names the system packages, tests included; a program
+        # asks go-proc, go-files and the standard library for what they hold. A
+        # file still on it is excluded by path in the project's overrides, each
+        # with the row that removes it.
+        no-os-packages:
+          files: ["$all"]
+          deny:
+            - pkg: syscall
+              desc: "arch.ports.24: no syscall: the standard library, go-proc and go-files name what a system differs in"
+            - pkg: golang.org/x/sys
+              desc: "arch.ports.24: no golang.org/x/sys: go-proc and go-files name what a system differs in"
+        # arch.ports.11: wire by hand in the entry point.
+        no-di:
+          files: ["$all"]
+          deny:
+            - pkg: go.uber.org/fx
+              desc: "arch.ports.11: no dependency-injection framework"
+            - pkg: go.uber.org/dig
+              desc: "arch.ports.11: no dependency-injection framework"
+            - pkg: github.com/google/wire
+              desc: "arch.ports.11: no dependency-injection framework"
+            - pkg: github.com/samber/do
+              desc: "arch.ports.11: no dependency-injection framework"
+        # go.style.5: tests use the standard testing package only; no assertion
+        # library.
+        no-assert:
+          files: ["$test"]
+          deny:
+            - pkg: github.com/stretchr/testify
+              desc: "go.style.5: a test uses the standard testing package only"
+            - pkg: gotest.tools
+              desc: "go.style.5: a test uses the standard testing package only"
+            - pkg: github.com/onsi/gomega
+              desc: "go.style.5: a test uses the standard testing package only"
+            - pkg: github.com/onsi/ginkgo
+              desc: "go.style.5: a test uses the standard testing package only"
+            - pkg: github.com/matryer/is
+              desc: "go.style.5: a test uses the standard testing package only"
+            - pkg: github.com/frankban/quicktest
+              desc: "go.style.5: a test uses the standard testing package only"
+        # tests.doubles.2: no mock library; a fake is written by hand.
+        no-mocks:
+          files: ["$all"]
+          deny:
+            - pkg: github.com/golang/mock
+              desc: "tests.doubles.2: no mock library"
+            - pkg: go.uber.org/mock
+              desc: "tests.doubles.2: no mock library"
+            - pkg: github.com/stretchr/testify/mock
+              desc: "tests.doubles.2: no mock library"
+            - pkg: github.com/vektra/mockery
+              desc: "tests.doubles.2: no mock library"
+        # supply.intake.6: the register of libraries
+        # (rulebook/lang/go/libraries.yaml) names one library a job. Each chosen
+        # row whose ban names depguard is a rule here, lib-<row>, written by
+        # hand: each import the row denies, with the why of the module it
+        # replaces (or the row's ban.note where it replaces none) and the row's
+        # library. internal/preset_register_test.go holds these rules to the
+        # register both ways. A project spares the package a row allows in that
+        # row's slot, for example "!**/<the one editing package>/**".
+        lib-yaml:
+          # slot lib-yaml begin
+          files: ["$all"]
+          # slot lib-yaml end
+          deny:
+            - pkg: gopkg.in/yaml.v3
+              desc: "supply.intake.6: row yaml: archived upstream; go.yaml.in/yaml/v3 is the same code under the new path, so no call changes; instead: go.yaml.in/yaml/v3"
+            - pkg: gopkg.in/yaml.v2
+              desc: "supply.intake.6: row yaml: the older line of the archived module; a second YAML implementation (one pin stays in one program for a crawl dependency, see crawl-pins); instead: go.yaml.in/yaml/v3"
+            - pkg: github.com/go-yaml/yaml
+              desc: "supply.intake.6: row yaml: archived in April 2025; instead: go.yaml.in/yaml/v3"
+            - pkg: github.com/goccy/go-yaml
+              desc: "supply.intake.6: row yaml: a second YAML implementation with 277 open issues and no gain over the first; instead: go.yaml.in/yaml/v3"
+        lib-toml-read:
+          # slot lib-toml-read begin
+          files: ["$all"]
+          # slot lib-toml-read end
+          deny:
+            - pkg: github.com/pelletier/go-toml
+              desc: "supply.intake.6: row toml-read: a second TOML library for a job that has one; v2 is allowed only for the toml-edit row; instead: github.com/BurntSushi/toml"
+        lib-toml-edit:
+          # slot lib-toml-edit begin
+          files: ["$all"]
+          # slot lib-toml-edit end
+          deny:
+            - pkg: github.com/pelletier/go-toml
+              desc: "supply.intake.6: row toml-edit: the v2 path of this library is denied everywhere except the one editing package and the config checker's reader; instead: github.com/pelletier/go-toml/v2"
+        lib-openapi-server:
+          # slot lib-openapi-server begin
+          files: ["$all"]
+          # slot lib-openapi-server end
+          deny:
+            - pkg: github.com/oapi-codegen
+              desc: "supply.intake.6: row openapi-server: the tool is never imported by non-generated code; instead: github.com/oapi-codegen/oapi-codegen/v2"
+        lib-terminal-style:
+          # slot lib-terminal-style begin
+          files: ["$all"]
+          # slot lib-terminal-style end
+          deny:
+            - pkg: github.com/pterm/pterm
+              desc: "supply.intake.6: row terminal-style: global writers and state, its own layout; instead: charm.land/lipgloss/v2"
+            - pkg: github.com/rivo/tview
+              desc: "supply.intake.6: row terminal-style: a second UI framework beside Charm; instead: charm.land/lipgloss/v2"
+            - pkg: github.com/jedib0t/go-pretty
+              desc: "supply.intake.6: row terminal-style: a second style system; the lipgloss table is already linked; instead: charm.land/lipgloss/v2"
+            - pkg: github.com/olekukonko/tablewriter
+              desc: "supply.intake.6: row terminal-style: a second style system; the lipgloss table is already linked; instead: charm.land/lipgloss/v2"
+            - pkg: github.com/cli/go-gh/v2/pkg/term
+              desc: "supply.intake.6: row terminal-style: it reads os.Stdout and os.Environ only, so streams cannot be injected; instead: charm.land/lipgloss/v2"
+        lib-pseudoconsole:
+          # slot lib-pseudoconsole begin
+          files: ["$all"]
+          # slot lib-pseudoconsole end
+          deny:
+            - pkg: github.com/charmbracelet/x/conpty
+              desc: "supply.intake.6: row pseudoconsole: ruled 14 Nov 2026 in favour of go-pty (x/conpty was the earlier pick); instead: github.com/aymanbagabas/go-pty"
+            - pkg: github.com/creack/pty
+              desc: "supply.intake.6: row pseudoconsole: no pseudoconsole on Windows; instead: github.com/aymanbagabas/go-pty"
+            - pkg: github.com/charmbracelet/x/xpty
+              desc: "supply.intake.6: row pseudoconsole: larger than the use; instead: github.com/aymanbagabas/go-pty"
+            - pkg: github.com/UserExistsError/conpty
+              desc: "supply.intake.6: row pseudoconsole: stale; instead: github.com/aymanbagabas/go-pty"
+        lib-child-process:
+          # slot lib-child-process begin
+          files: ["$all"]
+          # slot lib-child-process end
+          deny:
+            - pkg: github.com/go-cmd/cmd
+              desc: "supply.intake.6: row child-process: no output cap, no pid-reuse guard, no Windows tree kill; instead: github.com/birdtable/go-proc"
+            - pkg: k8s.io/utils/exec
+              desc: "supply.intake.6: row child-process: an interface for faking; the program has its own port; instead: github.com/birdtable/go-proc"
+            - pkg: github.com/kolesnikovae/go-winjob
+              desc: "supply.intake.6: row child-process: last release 2020, last push 2023; instead: github.com/birdtable/go-proc"
+            - pkg: github.com/tg123/jobobject
+              desc: "supply.intake.6: row child-process: last release 2020, last push 2023; instead: github.com/birdtable/go-proc"
+        lib-file-owner-and-mode:
+          # slot lib-file-owner-and-mode begin
+          files: ["$all"]
+          # slot lib-file-owner-and-mode end
+          deny:
+            - pkg: github.com/moby/sys/user
+              desc: "supply.intake.6: row file-owner-and-mode: it parses a garbled group id as 0, so a trust decision cannot rest on it; instead: golang.org/x/sys"
+            - pkg: github.com/hectane/go-acl
+              desc: "supply.intake.6: row file-owner-and-mode: x/sys/windows sets the same ACL with no new dependency; instead: golang.org/x/sys"
+        # per-project (go.logging.1, daemon kind only):
+        # no-std-log:
+        #   files: ["$all"]
+        #   deny:
+        #     - pkg: log
+        #       desc: "go.logging.1: log through the shared slog logger"
+        # per-project (arch.layers.2, arch.layers.5, arch.layers.7, arch.layers.9,
+        # arch.ports.1, arch.ports.2, arch.ports.8): the layer and port rows are
+        # rendered from the project's layer table, never written here.
+        # slot layer-rows begin
+        # slot layer-rows end
+        # arch.shared.8: the ban on each shared primitive's import outside its
+        # owner is rendered from the project's shared registry, never written here.
+        # slot shared-imports begin
+        # slot shared-imports end
+
+    dupl:
+      threshold: 60 # code.duplication.1
+
+    errcheck:
+      # go.errors.1, go.errors.3 (tests excluded below)
+      check-type-assertions: true
+      check-blank: true
+
+    exhaustive:
+      default-signifies-exhaustive: true # code.idioms.3 (tests excluded below)
+
+    forbidigo:
+      analyze-types: true # go.errors.3, go.concurrency.1, cli.config.3, cli.output.2, tests.isolation.6
+      # true by default, which skips every ban inside an
+      # Example and the whole of a test file that holds one Example alone
+      exclude-godoc-examples: false
+      forbid:
+        - pattern: ^panic$
+          msg: "go.errors.3: panic is for programmer errors; outside main and tests it needs an allow-list entry"
+        - pattern: ^os\.Exit$
+          msg: "go.errors.4: only main exits"
+        - pattern: ^log\.(Fatal|Fatalf|Fatalln)$
+          msg: "go.errors.4: only main exits"
+        - pattern: ^context\.(Background|TODO)$
+          msg: "go.concurrency.1: take the context from the caller"
+        - pattern: ^os\.(Getenv|LookupEnv|Environ)$
+          msg: "cli.config.3: read the environment in the config package"
+        - pattern: ^os\.(UserConfigDir|UserCacheDir|UserHomeDir)$
+          msg: "cli.config.5: folders come from the paths helper"
+        - pattern: ^fmt\.(Print|Printf|Println)$
+          msg: "cli.errors.3: write through the injected writer or the terminal module"
+        - pattern: ^os\.(Stdout|Stderr)$
+          msg: "cli.errors.3: write through the injected writer or the terminal module"
+        - pattern: ^json\.(NewEncoder|Marshal|MarshalIndent)$
+          pkg: ^encoding/json$
+          msg: "cli.output.2: JSON output is written by the root command only"
+        # cli.process.1: starting a program is the call, not the os/exec import
+        # (exec.LookPath starts nothing and is std's own answer for a name on
+        # PATH); the runner's files, and a project's others, are spared below.
+        - pattern: ^exec\.(Command|CommandContext)$
+          pkg: ^os/exec$
+          msg: "cli.process.1: a program starts through the runner, not exec.Command or exec.CommandContext"
+        # a literal &exec.Cmd{...} then .Run() starts a program with neither call
+        - pattern: ^exec\.Cmd$
+          pkg: ^os/exec$
+          msg: "cli.process.1: a program starts through the runner, not exec.Command or exec.CommandContext"
+        - pattern: ^os\.StartProcess$
+          msg: "cli.process.1: start programs through the runner"
+        - pattern: ^syscall\.(ForkExec|Exec|StartProcess)$
+          msg: "cli.process.1: start programs through the runner"
+        # go.concurrency.4: a program's stop is os.Interrupt through
+        # signal.NotifyContext, and the system's own SIGTERM where it sends one
+        # comes from the kit's Main; no file names
+        # syscall.SIGTERM, which has no Windows form a test could send.
+        - pattern: ^syscall\.SIGTERM$
+          pkg: ^syscall$
+          msg: "go.concurrency.4: no syscall.SIGTERM: stop through the kit's Main, and send a test program os.Interrupt through go-proc's handle"
+        - pattern: ^runtime\.(GOOS|GOARCH)$
+          msg: "arch.ports.1, arch.ports.24: platform checks belong to the platform libraries"
+        - pattern: ^testing\.(T|B|F)\.(Skip|Skipf|SkipNow)$
+          msg: "tests.admission.5: a skip needs an allow-list entry and a reason"
+        - pattern: ^time\.Sleep$
+          msg: "tests.isolation.6: no sleep in a test; wait on a signal"
+        # supply.intake.6: each call a chosen row of the register of libraries
+        # forbids, where its ban names forbidigo, written by hand with the row's
+        # job and its library; internal/preset_register_test.go holds them to
+        # the register both ways.
+        - pattern: ^syscall\.Flock$
+          pkg: ^syscall$
+          msg: "supply.intake.6: row path-lock: one holder per path, on Linux, macOS, freebsd and Windows; instead: github.com/gofrs/flock"
+        - pattern: ^unix\.Flock$
+          pkg: ^golang\.org/x/sys/unix$
+          msg: "supply.intake.6: row path-lock: one holder per path, on Linux, macOS, freebsd and Windows; instead: github.com/gofrs/flock"
+        - pattern: ^syscall\.Umask$
+          pkg: ^syscall$
+          msg: "supply.intake.6: row unix-socket-listen: bind a Unix socket with a mode and take sockets passed by the service manager; instead: github.com/birdtable/go-socket"
+        - pattern: ^unix\.Umask$
+          pkg: ^golang\.org/x/sys/unix$
+          msg: "supply.intake.6: row unix-socket-listen: bind a Unix socket with a mode and take sockets passed by the service manager; instead: github.com/birdtable/go-socket"
+        # arch.ports.24: the identity and ownership calls of os mean a
+        # different thing on each system (Windows answers -1, or no support), so a
+        # product asks go-files and go-proc, which hold what differs.
+        - pattern: ^os\.(Getuid|Geteuid|Getgid|Getegid|Getgroups|Chown|Lchown|Root\.Chown|Root\.Lchown)$
+          msg: "arch.ports.24: the meaning of an account's id and of a file's owner differs by system; ask the platform library that covers the need (go-files' trust, go-proc's peer)"
+        # arch.shared.8: the ban on each shared primitive's call outside its owner
+        # is rendered from the project's shared registry, never written here.
+        # slot shared-calls begin
+        # slot shared-calls end
+        # slot forbid-extra begin
+        # slot forbid-extra end
+        # per-project (cli.errors.2, cli.look.4, cli.look.5, cli.output.5): the
+        # shared UI module's literals and constructors, for example
+        #   ^ui\.(Ending|Refusal)$, ^lipgloss\.Style\.(Padding|Margin|Width)$,
+        #   flag definitions of the module's flag names.
+        # per-project (arch.ports.6, arch.shared.8, cli.config.2): sibling names,
+        #   shared exports and config decodes named in rule data.
+
+    gocognit:
+      min-complexity: 20 # code.size.3 (tests excluded below)
+
+    gocritic:
+      # code.comments.3: commentedOutCode only.
+      disable-all: true
+      enabled-checks:
+        - commentedOutCode
+
+    gocyclo:
+      min-complexity: 30 # code.idioms.4
+
+    gomoddirectives:
+      # go.layout.3: no replace lines at all.
+      replace-local: false
+      replace-allow-list: []
+      # go.cycle.3: the go line and the toolchain line name a release to the patch, so a
+      # build says which Go it ran on; a bare 1.27 or a toolchain with no patch fails.
+      go-version-pattern: '^1\.\d+\.\d+$'
+      toolchain-pattern: '^go1\.\d+\.\d+$'
+
+    gomodguard_v2:
+      # supply.intake.6: a module a chosen row of the register of libraries replaces and
+      # bans is refused in go.mod, with the row's why as the reason and the row's own
+      # module as the one to use. The rows are held to the register by
+      # internal/preset_register_test.go. A repo's own blocked modules go in its own
+      # .golangci.yml, never here.
+      blocked:
+        # json-schema
+        - module: github.com/kaptinlin/jsonschema
+          reason: less mature
+          recommendations: [github.com/santhosh-tekuri/jsonschema/v6]
+        # json-schema
+        - module: github.com/google/jsonschema-go
+          reason: aimed at one protocol; second choice
+          recommendations: [github.com/santhosh-tekuri/jsonschema/v6]
+        # json-schema
+        - module: cuelang.org/go
+          reason: a large dependency and a new language for one small job
+          recommendations: [github.com/santhosh-tekuri/jsonschema/v6]
+        # version-and-semver
+        - module: github.com/carlmjohnson/versioninfo
+          reason: 'package-level variables set in init, no injected build info, no stamp merge'
+          recommendations: [golang.org/x/mod]
+        # version-and-semver
+        - module: github.com/caarlos0/go-version
+          reason: 'one maintainer, the same 40 lines, no stamp'
+          recommendations: [golang.org/x/mod]
+        # command-tree
+        - module: github.com/alecthomas/kong
+          reason: the same
+          recommendations: [github.com/spf13/cobra]
+        # command-tree
+        - module: github.com/hashicorp/cli
+          reason: 'no safe arguments, no dry run, no json mode'
+          recommendations: [github.com/spf13/cobra]
+        # ansi-text
+        - module: github.com/acarl005/stripansi
+          reason: no push since 2022
+          recommendations: [github.com/charmbracelet/x/ansi]
+        # ansi-text
+        - module: github.com/muesli/reflow
+          reason: last release 2021
+          recommendations: [github.com/charmbracelet/x/ansi]
+        # ansi-text
+        - module: github.com/muesli/cancelreader
+          reason: no release since 2022; the standard library does it in about 60 lines
+          recommendations: [github.com/charmbracelet/x/ansi]
+        # forms-and-live-ui
+        - module: github.com/AlecAivazis/survey
+          reason: archived in April 2024
+          recommendations: [charm.land/huh/v2]
+        # forms-and-live-ui
+        - module: github.com/manifoldco/promptui
+          reason: 'no accessible mode, no multi-step form'
+          recommendations: [charm.land/huh/v2]
+        # forms-and-live-ui
+        - module: github.com/walles/moor
+          reason: a second terminal framework for about 200 lines of pager
+          recommendations: [charm.land/huh/v2]
+        # forms-and-live-ui
+        - module: github.com/jackdoe/go-pager
+          reason: 'abandoned, for about 200 lines of pager'
+          recommendations: [charm.land/huh/v2]
+        # log
+        - module: github.com/lmittmann/tint
+          reason: 'a fine handler, but the Charm one is already linked'
+          recommendations: [log/slog]
+        # shell-quote
+        - module: github.com/kballard/go-shellquote
+          reason: last tag 2018
+          recommendations: [al.essio.dev/pkg/shellescape]
+        # confine-to-folder
+        - module: github.com/cyphar/filepath-securejoin
+          reason: superseded by os.Root; the fd form is Linux only and it follows links inside the root
+          recommendations: [os]
+        # confine-to-folder
+        - module: github.com/google/safeopen
+          reason: its own README defers to os.Root
+          recommendations: [os]
+        # confine-to-folder
+        - module: github.com/containerd/continuity
+          reason: 'RootPath resolves a string, so it checks then uses'
+          recommendations: [os]
+        # path-lock
+        - module: github.com/alexflint/go-filemutex
+          reason: blocking only, one maintainer, last release January 2024
+          recommendations: [github.com/gofrs/flock]
+        # path-lock
+        - module: github.com/juju/fslock
+          reason: archived 2016, LGPL
+          recommendations: [github.com/gofrs/flock]
+        # path-lock
+        - module: github.com/nightlyone/lockfile
+          reason: 'a pid file with staleness, which goes stale'
+          recommendations: [github.com/gofrs/flock]
+        # app-folders
+        - module: github.com/adrg/xdg
+          reason: 'its macOS default is the Library folder, its variables are read at init, one maintainer'
+          recommendations: [github.com/birdtable/go-files]
+        # app-folders
+        - module: github.com/kirsle/configdir
+          reason: stale
+          recommendations: [github.com/birdtable/go-files]
+        # machine-facts
+        - module: github.com/mackerelio/go-osstat
+          reason: lighter but no Windows load either; second choice
+          recommendations: [github.com/birdtable/go-proc]
+        # machine-facts
+        - module: github.com/prometheus/procfs
+          reason: Linux only
+          recommendations: [github.com/birdtable/go-proc]
+        # machine-facts
+        - module: github.com/elastic/go-sysinfo
+          reason: macOS needs cgo
+          recommendations: [github.com/birdtable/go-proc]
+        # machine-facts
+        - module: go.uber.org/automaxprocs
+          reason: superseded by the runtime since Go 1.25
+          recommendations: [github.com/birdtable/go-proc]
+        # login-service
+        - module: github.com/kardianos/service
+          reason: 'no timers, Windows needs an administrator, Zlib licence, fixed templates'
+          recommendations: [github.com/birdtable/go-proc]
+        # login-service
+        - module: howett.net/plist
+          reason: an encoder for about 60 lines of fixed text
+          recommendations: [github.com/birdtable/go-proc]
+        # login-service
+        - module: github.com/takama/daemon
+          reason: stale
+          recommendations: [github.com/birdtable/go-proc]
+        # sandbox
+        - module: github.com/elastic/go-seccomp-bpf
+          reason: 64-bit argument compare and arch-mismatch issues are open
+          recommendations: [github.com/birdtable/go-proc]
+        # sandbox
+        - module: github.com/seccomp/libseccomp-golang
+          reason: cgo
+          recommendations: [github.com/birdtable/go-proc]
+        # sandbox
+        - module: github.com/criyle/go-sandbox
+          reason: a judge sandbox needing root
+          recommendations: [github.com/birdtable/go-proc]
+        # sandbox
+        - module: github.com/tailscale/wf
+          reason: a firewall tool needing administrator
+          recommendations: [github.com/birdtable/go-proc]
+        # unix-socket-listen
+        - module: github.com/cloudflare/tableflip
+          reason: 'fd handover for upgrades, a different job'
+          recommendations: [github.com/birdtable/go-socket]
+        # unix-socket-listen
+        - module: github.com/ory/graceful
+          reason: one server only; signal glue
+          recommendations: [github.com/birdtable/go-socket]
+        # unix-socket-listen
+        - module: github.com/pseidemann/finish
+          reason: one server only; signal glue
+          recommendations: [github.com/birdtable/go-socket]
+        # unix-socket-listen
+        - module: github.com/libp2p/go-socket-activation
+          reason: no gain over go-systemd
+          recommendations: [github.com/birdtable/go-socket]
+        # peer-identity
+        - module: github.com/tailscale/peercred
+          reason: no tag, last push January 2025, Unix only, 16 stars
+          recommendations: [github.com/birdtable/go-socket]
+        # peer-identity
+        - module: github.com/natefinch/npipe
+          reason: no ACL, unmaintained
+          recommendations: [github.com/birdtable/go-socket]
+        # epub-and-crawl
+        - module: github.com/raitucarp/epub
+          reason: runner-up; the switch target if go-epub is archived
+          recommendations: [github.com/go-shiori/go-epub]
+        # std-synctest
+        - module: github.com/benbjohnson/clock
+          reason: the standard library has a fake clock for tests
+          recommendations: [testing/synctest]
+        # std-synctest
+        - module: github.com/jonboulle/clockwork
+          reason: the standard library has a fake clock for tests
+          recommendations: [testing/synctest]
+        # std-synctest
+        - module: github.com/coder/quartz
+          reason: the standard library has a fake clock for tests
+          recommendations: [testing/synctest]
+
+    gosec:
+      # supply.scans.3: every rule runs, G201, G202, G204 and G404 among them, and no
+      # includes or excludes list narrows it; an exclusion below names its rule
+      # ids, its paths and its reason (internal/contexts_test.go holds the four).
+      config:
+        global:
+          # cli.process.1, gates.exemptions.1: a #nosec comment silences
+          # nothing; a suppression is a nolint with its reason, counted.
+          nosec: true
+
+    govet:
+      enable:
+        - waitgroup # go.concurrency.2 (on top of the default analyzers, code.format.2)
+
+    iface:
+      enable: # arch.ports.10
+        - identical
+        - unused
+        - opaque
+
+    interfacebloat:
+      max: 10 # go.style.1
+
+    nolintlint:
+      # gates.exemptions.1, gates.exemptions.2
+      allow-unused: false
+      require-explanation: true
+      require-specific: true
+
+    paralleltest:
+      # go.cycle.2, tests.runners.4: a test that runs alone is written
+      # //nolint:paralleltest // serial: <the process state it needs>; the
+      # project's suppression list holds the text, since nolintlint cannot.
+      ignore-missing: false
+      ignore-missing-subtests: false
+
+    revive:
+      rules:
+        - name: early-return # code.idioms.1
+        - name: indent-error-flow # code.idioms.1
+        - name: exported # code.naming.1 (stutter check on), code.comments.4
+        - name: var-naming # code.naming.1
+        - name: package-naming # arch.structure.7
+          arguments:
+            - check-extra-bad-name: true
+              user-defined-bad-names: [helpers, types, models, interfaces, base, other, misc]
+        - name: argument-limit # code.size.4
+          arguments: [6]
+        - name: deep-exit # go.errors.4
+        - name: datarace # go.concurrency.2
+        - name: waitgroup-by-value # go.concurrency.2
+        - name: forbidden-call-in-wg-go # go.concurrency.2
+
+    sloglint:
+      # go.logging.1, go.logging.2
+      no-global: all
+      static-msg: true
+      kv-only: true
+
+    thelper:
+      # go.style.5: a helper calls t.Helper first. Where the testing value sits
+      # in the parameters and what it is named are not the rule.
+      test: {begin: true, first: false, name: false}
+      benchmark: {begin: true, first: false, name: false}
+      tb: {begin: true, first: false, name: false}
+      fuzz: {begin: true, first: false, name: false}
+
+    staticcheck:
+      # code.format.2: all groups, the non-default ST checks off except
+      # ST1003, which code.naming.1 asks for. ST1005 stays on (go.errors.5 is
+      # not ruled yet; a project that keeps sentence-style errors excludes it).
+      checks:
+        - all
+        - -ST1000
+        - -ST1016
+        - -ST1020
+        - -ST1021
+        - -ST1022
+
+  exclusions:
+    # code.comments.4: no exclusion presets, so the comments preset stays off.
+    presets: []
+    # cli.process.1, gates.exemptions.1: a generated-file header silences no
+    # linter; golangci-lint v2 reads one loosely by default and drops the whole
+    # file. A suppression is a nolint with its reason, counted.
+    generated: disable
+    # Keep this list last in the file: a project's own exclusion rules are
+    # list items appended below its overrides line.
+    rules:
+      # slot exclusions-generated begin
+      # slot exclusions-generated end
+      # go.errors.1, code.idioms.3, code.size.3, code.duplication.1: non-test
+      # code only; a test's table of cases repeats by design.
+      - path: _test\.go$
+        linters: [dupl, errcheck, exhaustive, gocognit]
+      # supply.scans.3: a test reads and writes its own temp folders and testdata,
+      # builds its inputs from planted values, and plants credential-shaped strings
+      # that the secret scan reads with every file; G104 is errcheck's, as above.
+      - path: _test\.go$
+        linters: [gosec]
+        text: "G(101|104|115|122|301|302|304|306|703):"
+      # go.errors.3, go.errors.4: main and tests may panic and exit.
+      - path: (^|/)cmd/|_test\.go$
+        linters: [forbidigo]
+        text: "go\\.errors\\.[34]:"
+      # go.concurrency.1: a root context is made in main and in tests.
+      - path: (^|/)cmd/[^/]+/main\.go$|_test\.go$
+        linters: [forbidigo]
+        text: "go\\.concurrency\\.1:"
+      # cli.config.3: the config package and main read the environment; only
+      # the config package's own files, not a package below it. A test reads
+      # it with std.
+      # per-project: add the terminal module path.
+      - path: (^|/)cmd/[^/]+/main\.go$|(^|/)internal/config/[^/]+\.go$|_test\.go$
+        linters: [forbidigo]
+        text: "cli\\.config\\.3:"
+      # cli.process.1: a test starts the programs it tests with std; the
+      # runner's own files and a project's other callers are named here.
+      - path: _test\.go$
+        linters: [forbidigo]
+        text: "cli\\.process\\.1: a program starts through the runner"
+      # slot owner-exec begin
+      # per-project: the runner package's files, as one rule each:
+      #   - path: (^|/)<runner package>/[^/]+\.go$
+      #     linters: [forbidigo]
+      #     text: "cli\\.process\\.1: a program starts through the runner"
+      # slot owner-exec end
+      # cli.errors.3: main wires the process streams into run.
+      # per-project: add the terminal module path.
+      - path: (^|/)cmd/[^/]+/main\.go$
+        linters: [forbidigo]
+        text: "cli\\.errors\\.3:"
+      # cli.output.2: only the command path is checked: cmd/ and the command
+      # tree under internal/cli/.
+      # per-project: add the root command file.
+      - path-except: (^|/)cmd/|(^|/)internal/cli/
+        linters: [forbidigo]
+        text: "cli\\.output\\.2:"
+      # tests.admission.5, tests.isolation.6: test files only.
+      - path-except: _test\.go$
+        linters: [forbidigo]
+        text: "tests\\.(admission\\.5|isolation\\.6):"
+# slot overrides begin
+# slot overrides end

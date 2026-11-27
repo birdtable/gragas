@@ -1,0 +1,50 @@
+part: gates
+concern: readers
+order: 13
+title: Readers of the gate's files
+summary: >-
+  A reader of the gate's own YAML refuses what the format forbids, so a file that says a thing twice is an
+  error and never a silent last-one-wins.
+rules:
+  - id: gates.readers.1
+    slug: gate-reader-refuses-a-duplicate-key
+    since: 0.1.0
+    rule: A gate or repo reader of YAML refuses a duplicate key.
+    detail: >-
+      The keys of a YAML mapping are unique (YAML 1.2.2, section 3.2.1.1). A reader of the gate registry, the
+      repo checks or the dev tool's own files that takes the last of two equal keys lets a second definition
+      override the first without a word, so the strict reader is the one every such reader calls and the
+      permissive one is banned in those folders.
+    level: file
+    why: >-
+      A duplicate key in a gate list drops the first entry silently and the gate passes with a check missing
+      (gragas#1733, class 4).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: yaml-1-2-2-mapping-keys
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: forbidigo
+        tier: "1"
+        fix: never
+        note: >-
+          golangci-lint forbidigo bans ordered.ParseYAML in internal/dev/gate, internal/repo and cmd/gragas-dev
+          and names ParseStrict. Plant: a file in internal/dev/gate that calls ordered.ParseYAML is reported
+          (internal/parse_strict_test.go). Control: the same call in another folder, and ParseStrict in the
+          gate, pass.
+    examples:
+      bad:
+        lang: go
+        code: |
+          // a gate list read so that a key written twice keeps the last one
+          rows, err := ordered.ParseYAML(data)
+      good:
+        lang: go
+        code: |
+          // the strict reader refuses a key written twice
+          rows, err := ordered.ParseStrict(data)

@@ -1,0 +1,194 @@
+part: supply
+concern: workflows
+order: 10
+title: CI workflow hygiene
+summary: >-
+  Workflow files are code that holds credentials. The gate runs locally, so no workflow runs on push; no
+  workflow starts itself, every workflow file passes a linter and a security audit with every action pinned to
+  a commit, the token a job holds is read-only and scoped, and every shell script is linted wherever it is
+  found.
+rules:
+  - id: supply.workflows.1
+    slug: no-workflow-triggers-itself
+    since: 0.1.0
+    rule: >-
+      No workflow triggers itself: workflows run only when started (manual dispatch or a call from another
+      workflow), or on a tag push for a release, never on a schedule, a push to a branch or a pull request.
+    detail: >-
+      The gate runs locally: make check and the pre-push hook (gates.hooks.1) are the only gate on a push, and
+      no workflow repeats it on push or pull request. A release workflow runs on a release tag push or by
+      dispatch, has a dry-run option and one verify file per export, and the first publish of a package is
+      only from the workflow. A check too slow for the hook runs in the release workflow (gates.hooks.4). The
+      check is parse-based: it normalises the on key (a scalar, an inline list, a quoted key and a map all
+      count) to a set of events and allows only dispatch, call and push with tags. A check in the ast-grep
+      style passed three of five cheap restructurings and was rejected; the parse-based check passed six of
+      six. The same check runs on Go and web repositories. A conftest policy is the alternative form. Cases
+      the check covers: on: push: branches (the push.branches key) fails while push.tags passes. A run step
+      with -count=N above 1 is denied. The audit named dangerous-triggers covers only pull_request_target,
+      workflow_run and issue_comment, so it does not cover trigger sets.
+    level: deploy
+    why: >-
+      Hosted minutes on every push are refused: the tag is the release and the local gate
+      is the gate. Neither the workflow linter nor the security audit checks the trigger set, so a push
+      trigger went unseen.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-14
+        backs: rule
+      - ref: decision-34
+        backs: rule
+      - ref: decision-65-supply
+        backs: rule
+      - ref: operator-points
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "2"
+        note: >-
+          a 20-line parse-based trigger check over workflow files, or a conftest policy over the on key (read
+          as the string true under YAML 1.1) allowing only dispatch, call and tag push, run in the local gate.
+          Plant: on push branches fails, and so do the scalar form, the inline list with dispatch and the
+          quoted on form; a pull_request trigger fails. Control: dispatch only, and push with tags, pass
+    relates:
+      - id: gates.hooks.1
+        how: see
+      - id: gates.hooks.4
+        how: see
+    open:
+      - >-
+        Open decision on scheduled runs, held at "none unless the age of the last whole run keeps growing".
+  - id: supply.workflows.2
+    slug: workflows-linted-and-actions-pinned
+    since: 0.1.0
+    rule: >-
+      Workflow files pass a workflow linter and a security audit, and every action is pinned to a commit.
+    level: deploy
+    why: >-
+      Injected faults in workflow files were found by the linter and the audit in a planted trial: three of
+      three. One repository had two high audit findings for a token with no permission input.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "2"
+        note: >-
+          actionlint and zizmor --offline pinned in the shared gate pack, with the unpinned-uses audit
+          checking action pins by commit; pinact is an alternative. Plant: injected faults in a workflow are
+          found, and an unpinned action fails with the unpinned-uses error. Control: a clean pinned workflow
+          passes
+    open:
+      - >-
+        The tools disagree with one repository's own workflow comments on whether a finding matters.
+      - >-
+        Whether the unpinned-uses audit checks pins by commit is to be verified; it failed an unpinned action
+        in a trial.
+  - id: supply.workflows.3
+    slug: ci-token-read-only-and-scoped
+    since: 0.1.0
+    rule: A CI token is read-only and scoped to the repositories it needs.
+    detail: >-
+      Each workflow declares read-only permissions at the top. One release token covered the whole owner, and
+      decision 21 leaves it as it is, recorded as an exception with a stored verdict and an expiry tied to the
+      shared tooling work; the release box keeps its pending mark. The permissions: key is declared at the top
+      of each workflow.
+    level: release
+    why: >-
+      A token that can write to every repository turns a compromised job into a compromise of the estate.
+    kind: rule
+    strength: Hard
+    status: active
+    unless:
+      - kinds:
+          - library
+        reason: A library with no CI token has nothing to scope.
+    sources:
+      - ref: decision-21
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "3"
+        note: >-
+          zizmor excessive-permissions audit plus a conftest rule that top-level permissions is present.
+          Plant: a workflow with write-all permissions fails. Control: a workflow with read-only top-level
+          permissions passes
+    open:
+      - >-
+        v1 evidence, not yet a source: own measure; one release token covers the whole owner
+  - id: supply.workflows.4
+    slug: every-shell-script-linted
+    since: 0.1.0
+    rule: >-
+      Every shell script is linted and is found by its first line, not by its file extension.
+    detail: >-
+      The finder looks past the .sh name, which hid shell scripts from the extension glob.
+    level: file
+    why: >-
+      A glob on the shell extension showed one repository clean while blind to 29 files; there were 46
+      extensionless shell scripts against 40 tracked ones with the extension.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "1"
+        note: >-
+          shellcheck over tracked files whose first line is a shell shebang, found by a finder script pinned
+          in the shared gate pack. Plant: a shell script with an unquoted variable and no extension fails.
+          Control: a clean script passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: own measure; 46 extensionless shell
+        scripts against 40 with the extension
+  - id: supply.workflows.5
+    slug: workflows-run-the-one-gate-command
+    since: 0.1.0
+    rule: >-
+      A project has no workflow that gates a push: its workflows are the release workflow on a tag and
+      workflows started by hand, and any of them that runs gate members runs the one gate command the hook
+      runs, plus only the members moved there for time.
+    detail: >-
+      The gate is make check (or the repo's one gate command), run by the pre-push hook. A workflow never
+      holds its own list of gate steps: the release workflow runs the gate command, then the members too slow
+      for the hook (gates.hooks.4), such as fuzzing and race tests, then
+      builds and publishes. A dispatch workflow that checks a tree runs the same gate command. Where a shared
+      workflow exists, a project workflow calls it rather than copying its steps. No workflow is triggered by
+      a push to a branch or a pull request (supply.workflows.1).
+    level: deploy
+    why: >-
+      Hosted minutes on every push are refused, and a workflow with its own gate steps
+      drifts from the gate the hook runs, so the release can pass a tree the hook would refuse.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+      - ref: operator-points
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "2"
+        note: >-
+          the trigger check of supply.workflows.1, and a test that reads each workflow and fails a job that
+          runs a lint, test or scan tool directly instead of the gate command or a member listed as moved for
+          time. Plant: a project workflow with its own push trigger fails; a release job running golangci-lint
+          directly fails. Control: a tag-triggered release workflow that runs the gate command and then the
+          fuzz member passes
+    relates:
+      - id: gates.hooks.4
+        how: see
+      - id: supply.workflows.1
+        how: see
+    note: >-
+      Related to supply.workflows.1 by the same trigger set; this rule holds what a workflow may run.

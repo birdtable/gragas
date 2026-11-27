@@ -1,0 +1,76 @@
+$ gragas plugin test plugins/standin/1.0.0
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Checks
+check  result  what it holds, and what
+               is wrong
+C1     passed  the manifest passes its
+               schema
+C2     passed  the contract is the
+               engine's and every need
+               is a feature it has
+C3     passed  name, version and wasm
+               digest are the bundle's
+C4     passed  provides is not empty and
+               grant ids are unique
+C5     passed  the module imports
+               nothing but WASI preview
+               1
+C6     passed  each request passes its
+               schema
+C7     passed  each call ends within the
+               limits with exit code 0
+C8     passed  each stdout is one JSON
+               document that passes the
+               response schema
+C9     passed  each answer keeps every
+               order rule
+C10    passed  each answer equals the
+               saved answer in canonical
+               form
+C11    passed  a second run gives the
+               same bytes
+C12    passed  a request with one
+               unknown field gives the
+               same answer
+C13    passed  every run step names a
+               granted program and
+               passes the path rules
+C14    passed  an unknown operation,
+               target or for answers
+               unsupported
+C15    passed  an operation the plugin
+               does not provide answers
+               unsupported
+C16    passed  both ends of the tool
+               version range are served
+               and one outside it is
+               unsupported
+C17    passed  a malformed request ends
+               in a bug error or a
+               crash, never in success
+C18    passed  entries has a recording
+               for each tool version
+               tested
+C19    passed  findings has a planted
+               output, a clean control
+               and a tool failure
+C20    passed  plan has a one-round case
+               and a refused case with a
+               path
+C21    passed  preset has a golden, the
+               mark on its first line
+               and a refused option
+C22    passed  rank has a pair each for
+               tighter, weaker and same,
+               and a swap swaps the
+               answer
+C23    passed  a preset, recorded, reads
+               back as the same entries
+
+  done       plugins/standin/1.0.0: 23
+  passed, 0 failed, 0 not run, 0 not
+  asked
+--- stderr

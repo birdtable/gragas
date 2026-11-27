@@ -1,0 +1,87 @@
+[data-view="changelog"] {
+  display: grid;
+  gap: var(--gr-space-4);
+}
+
+.gr-changelog-question,
+.gr-changelog-nothing {
+  margin: 0;
+  color: var(--gr-text-muted);
+}
+
+.gr-changelog-filters,
+.gr-changelog-options,
+.gr-changelog-releases,
+.gr-changelog-changes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gr-changelog-filters {
+  display: grid;
+  gap: var(--gr-space-3);
+}
+
+.gr-changelog-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gr-space-3);
+}
+
+.gr-changelog-options [aria-current="true"] {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.gr-changelog-releases,
+.gr-changelog-changes {
+  display: grid;
+  gap: var(--gr-space-4);
+}
+
+[data-part="changelog-release"] {
+  display: grid;
+  gap: var(--gr-space-3);
+}
+
+[data-part="changelog-release"] h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+[data-part="changelog-change"] {
+  display: grid;
+  gap: var(--gr-space-2);
+  padding: var(--gr-space-3);
+  border: 1px solid var(--gr-control-border);
+  border-radius: var(--gr-radius-md);
+}
+
+.gr-changelog-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
+  gap: var(--gr-space-2) var(--gr-space-4);
+  margin: 0;
+}
+
+.gr-changelog-fields dt {
+  color: var(--gr-text-muted);
+}
+
+.gr-changelog-fields dd,
+.gr-changelog-fields p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.gr-changelog-mark {
+  color: var(--gr-text-muted);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 40rem) {
+  .gr-changelog-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

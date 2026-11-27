@@ -1,0 +1,3 @@
+[
+  {"binding": {"tool": "ast-grep", "target": "source", "key": "no-eval-call", "severity": "error"}, "layer": "base"}
+]

@@ -1,0 +1,42 @@
+part: dynamodb
+concern: migrations
+title: Changing what a table holds
+summary: >-
+  A change to the item shape or the indexes is either additive or a planned migration whose backfill is
+  resumable and safe to run twice.
+rules:
+  - id: dynamodb.migrations.1
+    slug: backfill-safe-to-run-twice
+    since: 0.1.0
+    rule: >-
+      A change to what a table holds is additive where it can be, and otherwise a migration with a written
+      plan whose backfill is resumable and safe to run twice.
+    detail: >-
+      Additive means readers default a missing attribute and writers add it as items are touched. A change
+      that rewrites every item, or a new index that needs a backfill, is an extract-transform-load job with a
+      written plan: a parallel scan, batched writes, resumable, idempotent.
+    level: program
+    why: >-
+      A new access pattern on existing data usually needs a full rewrite, and a one-off script run once and
+      never retested leaves the table half migrated when it fails.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: debrie-dynamodb-book
+        where: strategies for migrations
+        backs: rule
+      - ref: p-03-data
+        where: section 16
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          the backfill runs twice in a test against a local table, and the second run changes nothing. Plant:
+          a backfill that appends instead of setting fails the run-twice test. Control: an idempotent backfill
+          passes
+    review_question: What do old and new readers see while the backfill is half done?
+    note: >-
+      Agents write the one-off script and run it once; the run-twice test is the guard.

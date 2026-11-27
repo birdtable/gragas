@@ -1,0 +1,18 @@
+part: go
+concern: layers
+title: Layers
+summary: Code is split into named layers and imports run one way.
+rules:
+  - id: go.layers.1
+    slug: imports-run-one-way
+    since: 0.1.0
+    rule: Imports run one way through named layers.
+    why: A reason long enough.
+    kind: rule
+    level: file
+    strength: Review
+    review_question: Do imports run one way here?
+    status: active
+    sources:
+      - ref: a-book
+        backs: rule

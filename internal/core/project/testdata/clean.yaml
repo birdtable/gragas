@@ -1,0 +1,5 @@
+# A project's exceptions with nothing wrong: one row for an active rule,
+# whose exit is an issue, and one whose exit is a file of the project.
+exemptions:
+  - {id: layers-a, rule: arch.layers.1, path: internal/a/, reason: "the split waits for its ticket", exit: "x/rulebook#34", owner: gate, expires: "2099-12-31"}
+  - {id: errors-b, rule: go.errors.1, path: internal/b/, reason: "the wrapper lands with its part", exit: "rulebook/parts.yaml", owner: gate, expires: "2099-06-30"}

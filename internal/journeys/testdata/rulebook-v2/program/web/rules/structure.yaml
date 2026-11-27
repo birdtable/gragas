@@ -1,0 +1,448 @@
+part: web
+concern: structure
+order: 1
+title: Structure and boundaries
+summary: >-
+  How a web front end is laid out: layers that import one way, thin pages and routes, modules with a public
+  entry, and what a project shares with other sites.
+rules:
+  - id: web.structure.1
+    slug: network-one-module
+    since: 0.1.0
+    rule: >-
+      Exactly one module touches the network or writes a URL; views and parts take data as arguments, the
+      hosts a page may reach come from configuration, and a fetch that follows a user-supplied address
+      resolves and checks it first.
+    detail: >-
+      The one module is the generated client output plus one core client module (the gateway folder). No other
+      file calls `fetch`, `EventSource`, `XMLHttpRequest`, `new WebSocket` or `navigator.sendBeacon`, in any
+      form: bare, through `window`, `globalThis` or `self`, as a destructured alias, or by bracket access.
+      Embedded page scripts and virtual files are inside the rule. No connector call (`.get`, `.post` and the
+      like) is made outside the client layer and its gated hooks. A site that fetches at build time declares
+      that as a parameter. The hosts a program may reach come from configuration, never from a request; a
+      fetch whose address can come from a request resolves the address and checks it against the allowed hosts
+      first (server-side request forgery). Embedded scripts in `.astro` files (`<script>`) are inside the
+      rule. The destructured alias form takes `fetch` out of `window` in a `const` and the bracket form is
+      `window["fetch"]`.
+    level: file
+    why: >-
+      A network call anywhere lets data, permissions and error handling be bypassed, and a host taken from a
+      request is an open door. Both sites passed when counted; no fault was found in outbound hosts, and 20
+      outbound call sites on the Go side were counted and not traced.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: mcdonald-grokking-web-app-security
+        where: ch. 14 on server-side request forgery
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint `no-restricted-globals` for fetch, EventSource, XMLHttpRequest and WebSocket, plus
+          `no-restricted-properties` for the same names on window, globalThis and self, plus
+          `no-restricted-syntax` for a destructured alias and bracket access; all scoped to everything except
+          the gateway folder and including the virtual-file glob of embedded scripts. A second
+          `no-restricted-syntax` rule fails a fetch whose first argument is neither a string literal nor a
+          member of the gateway module. Plant: each of the five forms (bare fetch, window.fetch,
+          globalThis.fetch, destructured alias, bracket access) in a page file and in an embedded script must
+          fail. Control: the same call inside the gateway folder passes
+    review_question: Can any part of this outbound address come from a request?
+    open:
+      - >-
+        The bare-global form is trialled (the linter flagged bare fetch and none of the window, globalThis,
+        destructured and bracket forms until the extra rules were added); the destructured alias and the
+        gateway-folder exemption were not planted.
+      - >-
+        Proposal: split into call sites (a rule) and request-derived hosts (review only; no sink exists yet to
+        plant). Until then outbound hosts are held by the review question.
+      - Without the virtual-file glob a fetch inside an embedded script passed silently.
+      - >-
+        v1 evidence, not yet a source: A: both sites pass today; outbound hosts, no fault found
+  - id: web.structure.2
+    slug: raw-markup-funnel
+    since: 0.1.0
+    rule: >-
+      Raw markup is written only through one funnel module, and HTML that comes from data goes through a
+      sanitiser inside it.
+    detail: >-
+      Outside the funnel, no `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `DOMParser`
+      with innerHTML, `createContextualFragment`, `setHTMLUnsafe`, iframe `srcdoc` or computed property form
+      of these. The framework's own raw-HTML escape (a set-html directive, a dangerously-set prop) is banned
+      the same way. The sanitiser library is imported in the funnel only. The funnel module exposes `put()`
+      and `raw()`. Template stack: `astro/no-set-html-directive` from `eslint-plugin-astro`. Component stack:
+      the React form, react.components.3. Sanitiser: `dompurify`, imported in the funnel only. The computed
+      form is `el["innerHTML"] = x`.
+    level: file
+    why: >-
+      A stray raw-HTML write is a script-injection hole; a text rule that matched only five spellings let the
+      others pass.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          the framework's no-raw-HTML ESLint rule (an Astro set-html rule; the React rule is
+          react.components.3) plus `no-restricted-properties` on the property names above and
+          `no-restricted-syntax` for the computed form, scoped outside the funnel module; an import ban on the
+          sanitiser outside the funnel. Plant: each of the five bypasses found in trial (DOMParser plus
+          innerHTML, createContextualFragment, setHTMLUnsafe, srcdoc, el["innerHTML"]) fails outside the
+          funnel and passes inside it. Control: the same write inside the funnel module passes
+    relates:
+      - id: react.components.3
+        how: see
+    open:
+      - The older text rule stays until the ESLint form passes the same five plants.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D as to faults"
+  - id: web.structure.3
+    slug: entry-only-wires
+    since: 0.1.0
+    rule: >-
+      An entry file and a route file only wire: they import from the owning module's public entry and contain
+      no function over a small line limit, no client call, no query hook and no markup.
+    detail: >-
+      Entry files are the program entry and route files. A function declaration over the limit (kept in rule
+      data) fails. The route-file form on a router stack (one page import, route group, route helper) is
+      react.routing.11. Entry files include `app/main.ts` and route files; the function check is
+      `no-restricted-syntax` on `FunctionDeclaration` with a body over the `thin-route` line limit kept in
+      rule data.
+    level: file
+    why: >-
+      Logic in an entry or a route file escapes the module's tests and boundaries; both entries complied when
+      counted.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          the boundaries plugin with an `entry` element type that may import only wiring elements, plus
+          `no-restricted-syntax` on function declarations over the limit, plus a ban on client calls, query
+          hooks and markup in route files. Plant: an entry file declaring a 40-line function fails, and a
+          route file calling a query hook fails. Control: an entry that only imports and calls start() passes
+    relates:
+      - id: react.routing.11
+        how: see
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C: both entries comply
+  - id: web.structure.4
+    slug: page-orchestrates-model-decides
+    since: 0.1.0
+    rule: >-
+      A page is one orchestrator of route input, gated data and catalogued parts. Where the page reads a
+      server of ours, the server hands over order, totals, peaks and sentences and the page only draws, and a
+      value the page recomputes from fields beside it is refused in review. A page's own business rules, where
+      it has any, live in the module's model folder.
+    detail: >-
+      The model folder is `model/`. The server side of the split is service.contract.20 (units in keys,
+      formatted text beside the number, sentences with their inputs).
+    level: file
+    why: >-
+      A page that holds its own rules cannot be tested without rendering and drifts from the other pages. One
+      implementation of a rule is the only one that stays right, and the server is where the test runs on real
+      data; a page that recomputes a total is a second implementation.
+    kind: rule
+    strength: Lens
+    status: active
+    sources:
+      - ref: decision-65-web
+        backs: rule
+    checks: []
+    review_question: >-
+      Is this page one orchestrator; does it recompute anything a server of ours could hand over; and where
+      did its own rules go?
+    relates:
+      - id: service.contract.20
+        how: see
+    open:
+      - >-
+        Blocked as a check: only the line count is mechanical, and the cheap cure (move lines into a helper)
+        passes it. A rule on what the model folder may import (the layer rule) holds one direction only.
+    note: >-
+      v1 review check (review is not a v2 check class): a model lens question on pages; a line limit
+      (`max-lines-per-function`) narrows it but cannot tell whether the rules moved
+  - id: web.structure.5
+    slug: pure-layers
+    since: 0.1.0
+    rule: >-
+      Pure layers touch no document, window or storage; they take plain values and return decisions, and the
+      orchestrating module holds the ports.
+    detail: >-
+      Scoped to pure folders: no import of DOM modules and no use of `document`, `window`, `localStorage`,
+      `sessionStorage` or `navigator`. A function that takes a port and also branches is reported, not failed.
+      The port-and-branch report is a query of `companion shape`.
+    level: file
+    why: >-
+      A pure layer is the part that tests without a browser; once it touches the DOM it cannot be exercised in
+      isolation.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: khorikov-unit-testing
+        where: ch. 6.3 to 6.5 and 7.1 to 7.5
+        backs: rule
+      - ref: b-03-unit-testing
+        where: section 5
+        backs: rule
+      - ref: p-01-core-programming
+        where: section 16
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          a pure element type in the boundaries rule whose imports exclude DOM modules, plus
+          `no-restricted-globals` for document, window, localStorage, sessionStorage and navigator in the pure
+          folders; the port-and-branch report is a shape query in the shape tool. Plant: a pure-layer file
+          touching document.title fails. Control: the same logic taking a plain value passes
+    open:
+      - >-
+        Half holds: the ban is a rule; the port-and-branch report is a report. A fixture with one such
+        function must be counted before the report is trusted.
+      - >-
+        v1 evidence, not yet a source: D (Unit Testing Principles, Practices, and Patterns, Khorikov)
+  - id: web.structure.6
+    slug: presentational-no-data
+    since: 0.1.0
+    rule: >-
+      A presentational part imports no data layer, query hook or client; data arrives from a page or a
+      container.
+    detail: >-
+      The check declares zero part folders a valid state and returns "not applicable: 0 inputs" with the
+      count, never a pass. Component-stack form: `components/` imports no `api/`; the plant is a part
+      importing `../api/client`.
+    level: file
+    why: >-
+      A part that fetches for itself cannot be shown in a catalogue or reused on another page.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          the boundaries rule: a presentational element may not depend on the data element (api, store,
+          query); returns "not applicable: 0 inputs" when no part folder exists. Plant: a part importing the
+          api client fails. Control: a part receiving its data as props passes
+    open:
+      - Vacuous today at the pin (no component folder); the plant proves it can fail.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D: the design lead calls it generic
+        to any UI
+  - id: web.structure.7
+    slug: shared-code-no-data
+    since: 0.1.0
+    rule: >-
+      Shared presentation and utility code contains no query hook and no fetch; data access lives in modules.
+    level: package
+    why: >-
+      Shared code that fetches turns every consumer into a network client and hides the data flow.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          `no-restricted-imports` and `no-restricted-syntax` on query hooks, gated hooks and fetch in the
+          shared library and shared UI folders. Plant: a query hook called in a shared utility file fails.
+          Control: the same hook in a module passes
+    open:
+      - Proposed for lack of a source (decision 47); v1 gave no evidence.
+    note: >-
+      Related to the one-network-module rule (that bans the call everywhere but the gateway) and to the
+      presentational rule (which bounds parts); this one bounds the shared folders.
+  - id: web.structure.8
+    slug: module-manifest
+    since: 0.1.0
+    rule: >-
+      Each module declares itself in one typed manifest the host reads, imports no page eagerly, and a feature
+      flag switches off a module's surface, never its code.
+    detail: >-
+      The manifest holds an id equal to the module's folder, a title, a flag, its requirements, navigation,
+      slots, query-cache roots and persistence. Dependencies and tier live in one data file, and routes come
+      from the module's route group. A flag also switches off the closure of the modules that depend on it.
+    level: package
+    why: >-
+      Without a manifest the host imports modules by name, and a module cannot be turned off without deleting
+      code.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          a type check that each manifest satisfies the manifest type with an id equal to its folder, plus a
+          rule banning eager page imports in a manifest and a test that the flag-off closure includes
+          dependents. Plant: a manifest whose id differs from its folder, or one importing a page eagerly,
+          fails. Control: a manifest that lazy-loads its pages passes
+    open:
+      - >-
+        The split recorded no gap in the reference for a switch that turns a module off without removing its
+        code; the flag-closure test is to be built.
+      - The typed-manifest form is type-system specific and may move to react.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.structure.9
+    slug: one-framework
+    since: 0.1.0
+    rule: >-
+      A project uses exactly one UI framework; a second framework, or a client island directive in a
+      single-framework project, fails with no exception route.
+    detail: >-
+      More than one of react, astro, preact, svelte, solid and vue in the dependencies fails. A static-site
+      project with a React integration, or any `client:` directive, fails. The check is `companion
+      frameworks`. The `client:` selector runs through `astro-eslint-parser` on attribute names `client:*`;
+      the static-site plant is `<Foo client:load />` and the React integration is `@astrojs/react`.
+    level: program
+    why: >-
+      Two frameworks in one project double the toolchain and the rules that apply; the operator ruled it out.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: eslint
+        tier: "2"
+        note: >-
+          v1 class our-cli. the frameworks check of our CLI reads package.json and the source tree and fails
+          on more than one framework dependency, on a React integration in a static-site project, and on any
+          `client:` directive (an ESLint `no-restricted-syntax` selector on attribute names). Plant: a React
+          dependency added to a static-site project fails; a component tag carrying `client:load` fails.
+          Control: a project with one framework passes
+    open:
+      - The `client:` selector was run and fired; the manifest half has not been run.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: operator ruling (about 40 lines of
+        manifest check, shared with the supply-chain manifest check)
+  - id: web.structure.10
+    slug: provider-adapter
+    since: 0.1.0
+    rule: >-
+      A backend service of ours is a provider: every path, header name and field of its API appears in one
+      adapter file, and no page, part or layout holds a URL path literal.
+    detail: >-
+      A string beginning with `/` that matches the service's path prefixes outside the adapter folder fails,
+      scoped to include embedded page scripts, ratcheted. A path built by concatenation passes; that is
+      accepted. The adapter folder is `src/lib/source/` (glob `src/lib/source/**`, `.astro` virtual scripts
+      included). Plant: `fetchJSON('/api/disks')` in `lib/layout/disks.ts` fails, while the same string in
+      `src/lib/source/disks.ts` passes.
+    level: file
+    why: >-
+      Seven files in one site held eight path literals; a changed path then breaks pages the adapter never
+      saw.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          `no-restricted-syntax` on string and template literals matching the service path prefixes (rule
+          data) outside the adapter folder, scoped with files and including embedded page scripts. Plant:
+          fetching a service path literal in a layout helper fails. Control: the same string in the adapter
+          file passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: seven files and eight literals in
+        one repo; none in another
+    note: >-
+      The Go twin is the provider rule of the Go language part; only the page-side adapter is stated here.
+  - id: web.structure.11
+    slug: shared-shape-consumer-list
+    since: 0.1.0
+    rule: >-
+      A shape shared with a server has one source; the page lists the fields it reads, and that list is
+      checked against the provider's golden or schema, so an added field passes and a renamed one fails.
+    detail: >-
+      The consumer list is derived from the response type where possible. Optional fields count as misses
+      unless excepted; routes reached through a general call path must be listed; a list that shrinks without
+      a recorded reason fails; an empty list on a live consumer fails. The check runs when the provider lands.
+      The check is `companion contract`; where it lands for another repository (cross-repo) is unsettled.
+    level: file
+    why: >-
+      Pages read fields the server does not send (11 in one site, 6 in another, 6 pages in a third). A
+      symmetric name check would fail on a field the server merely added, so the check is one-way.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ford-bea
+        where: ch. 5 contracts and ch. 7 Postel's law
+        backs: rule
+      - ref: ford-sathp
+        where: ch. 13 contracts
+        backs: rule
+      - ref: b-01-evolutionary-architectures
+        where: section 5.2
+        backs: rule
+      - ref: b-05-architecture-hard-parts
+        where: section 5.2
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the contract check of our CLI: reads the page's consumer field list, reads the
+          provider's golden generated from its types, and fails on a field the page reads that the golden
+          lacks. Plant: renaming a read field in the golden fails; adding a field passes; dropping a route
+          fails; a removed optional field must fail (owed). Control: a golden that adds a field and keeps
+          every read field passes
+    open:
+      - >-
+        How the provider's land reaches a list held in another repository with no per-push pipeline is
+        unsettled.
+      - >-
+        Alternative not evaluated: consumer-driven contract tooling (a broker or files plus a verifier in Go),
+        judged heavier than a field list for single-consumer projects.
+      - The plant of a removed optional field is owed.
+      - >-
+        v1 evidence, not yet a source: A (R-05 built it for one site and its daemon as a 0.08 s script)
+    note: The Go twin is the shared-shape rule of the Go language part.
+  - id: web.structure.12
+    slug: new-site-template
+    since: 0.1.0
+    rule: >-
+      A new site starts from a template with default tokens, a one-page install, a catalogue that shows each
+      primitive's accessibility state, and an upgrade path.
+    level: program
+    why: >-
+      A new site that builds its own starting point forks the design system on day one.
+    kind: rule
+    strength: Record
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a template smoke test: generate a project from the template, build it and run its gates; the
+          generated project must carry the listed parts. Plant: a template that lacks the default tokens or
+          the install page fails the smoke test. Control: the current template passes
+    review_question: >-
+      Does the catalogue show each primitive's accessibility state, and is there a written upgrade path?
+    open:
+      - >-
+        The works-at-all half rides on the template smoke test of the sharing rules; the accessibility-state
+        content is judged.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D: one lead's view

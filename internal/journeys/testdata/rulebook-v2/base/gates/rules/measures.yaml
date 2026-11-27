@@ -1,0 +1,257 @@
+part: gates
+concern: measures
+order: 12
+title: Measures
+summary: >-
+  Numbers that the gates and the rulebook report. A number is produced by a script from the baseline or gate
+  data and never typed by hand, a metric that cannot be measured prints null with its reason, and a measure
+  with no honest limit opens a recorded decision instead of failing the build.
+rules:
+  - id: gates.measures.1
+    slug: numbers-by-script
+    since: 0.1.0
+    rule: >-
+      A number on a page, in a status page or in the rulebook is produced by a script from the baseline or
+      gate data and never typed by hand; a frozen number only falls.
+    detail: >-
+      Pages are rendered from data and the committed pages are diffed; any hand-typed number fails because the
+      rendered page differs. A scan for numerals is not used: dates, ids and versions are numerals, a page
+      with no numbers would pass, and a hand-typed number equal to a generated one would pass. Census scripts
+      count the debt with a fixed command and print the input count. Every number in a doc has the command
+      that produced it.
+    level: file
+    why: >-
+      Numbers copied by hand into the criteria Today cells had wrong totals (V-28); a reference team typed 3
+      checks as enforced where the computed count was 0.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: r-03-criteria-enforcement
+        where: R03-23
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. A number check: render every page from baseline and gate data and diff the
+          committed pages. Plant: Change one figure by hand; the diff fails. Control: A render that matches
+          passes.
+    open:
+      - Needs the page generators, which are unfinished.
+    note: Merges the number rules from both sides and the census kind.
+  - id: gates.measures.2
+    slug: null-not-zero
+    since: 0.1.0
+    rule: A metric that cannot be measured prints null with its reason, never 0.
+    detail: >-
+      The baseline format prints null with a reason; a schema test rejects a numeric 0 where the metric is
+      unmeasurable.
+    level: file
+    why: A failed measurement that prints 0 reads as perfect.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The baseline format prints null with reason; a schema test rejects a numeric 0 for
+          an unmeasurable metric. Plant: A failed measurement printing 0 fails. Control: null with a reason
+          passes.
+    open:
+      - >-
+        The baseline does this for two repos (V-61, V-62); the plant is in the baseline traps.
+  - id: gates.measures.3
+    slug: decision-point-alarm
+    since: 0.1.0
+    rule: >-
+      A process measure with no honest limit trips a decision-point alarm: crossing it opens a recorded
+      decision and does not fail the build.
+    detail: >-
+      Each threshold is data and is labelled a guess. A crossing writes an item to the decision queue; land
+      blocks until the decision is recorded. Examples: pipeline time, new-case fan-out, journey count. No
+      agent is blocked at the moment of crossing, so there is nothing to game.
+    level: process
+    why: >-
+      It fills the space between a measure that nobody reads and a gate that blocks on a guess.
+    kind: rule
+    strength: Answered
+    status: active
+    sources:
+      - ref: ford-bea
+        where: chapters 4 and 8
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 7.1
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class our-cli. Thresholds as data and a queue writer; a level set below today's value writes one
+          item and leaves the build green. Plant: A level set below today's value writes one item and leaves
+          the build green. Control: A level above today's value writes nothing.
+    review_question: Which measure crossed its threshold, and where is the recorded decision?
+    open:
+      - >-
+        Enforcement review: by its own text it stops nothing, so the writer could be tested; the land block is
+        the Answered form.
+  - id: gates.measures.4
+    slug: switch-needs-a-test
+    since: 0.1.0
+    rule: >-
+      Every boolean switch has a test for its non-default value, or a ticketed exemption.
+    detail: >-
+      Boolean switches are listed against test references in a report first (the boolean-switch-without-test
+      list).
+    level: file
+    why: A switch whose non-default value is never run is dead configuration.
+    kind: measure
+    strength: Review
+    status: proposed
+    review_question: >-
+      Which boolean switch has no test of its non-default value and no ticketed exemption?
+    open:
+      - >-
+        Report first, a list; a switch with no test is listed (plant planned). Best practice half of the
+        parameters-file row.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: gates.measures.5
+    slug: review-rounds-and-refused-pushes-are-counted
+    since: 0.1.0
+    rule: >-
+      A rule that measures review rounds or refused pushes names where the count is kept, because neither leaves a
+      record on its own.
+    detail: >-
+      Review by message leaves no review on GitHub, and a refused push is recorded nowhere. The count of review
+      rounds of a pull request is kept where the reviewer's verdict is recorded: one record per round, written by
+      the reviewer and never by the change's author. The count of refused pushes is kept by the hook that refuses
+      them, as a field in that run's time record (one JSON file a run, in the git folder, which nothing appends
+      to). Each count is a local claim and decides nothing: no stamp key, gate, land or release step reads it. A
+      measure that cannot name its place prints null with the reason (gates.measures.1).
+    level: program
+    why: >-
+      A study could not say how many rounds a pull request took or how many pushes a gate refused, as no place
+      held either number.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: birdtable-study-issue-641
+        where: item 4
+        says: >-
+          Review by message leaves no review on GitHub, and a refused push is recorded nowhere.
+        backs: rule
+    review_question: >-
+      Where is this count kept, and who writes it?
+    relates:
+      - id: gates.measures.1
+        how: see
+      - id: agents.review.6
+        how: see
+    open:
+      - >-
+        Planned check: a run's time record gains a refused-push field, and the reviewer's verdict record takes a
+        round number. Neither exists; the work is a follow-up ticket.
+  - id: gates.measures.6
+    slug: a-green-carries-its-counts
+    since: 0.1.0
+    rule: >-
+      A green report says how many tests, files or stories each member ran and the delta against the merge
+      base; a member that ran nothing is red, a count that fell against the merge base fails landing, and an
+      instrument counts as a guard only once it has been seen to fail.
+    detail: >-
+      gates.plants.8 holds that a check prints its input count and that zero inputs is not a pass unless
+      declared. This rule holds the counts per member and the comparison. The count is read from the tool's own
+      output, never from a list of files. The delta is against a count made on the merge base in the same run,
+      not against a stored report, so a test script removed from a manifest, a target changed to do nothing,
+      or a story set that stopped playing shows as a fall. A member that ran nothing is red whatever the
+      tool's exit code: a Go package with no tests makes gotestsum print `EMPTY <package>` and
+      `DONE 0 tests` and exit 0, so the tier reads that output and a member that found no test exits 1. A
+      setting of the environment that selects or skips tests (`GOFLAGS` with `-run` or `-skip`) can hide a red
+      test: when it leaves no test the zero count makes the member red, but when it leaves one (the Windows
+      run's `-run=TestPass` gave `DONE 1 tests`, exit 0) only the fall of the count against the merge base
+      shows it, and that holds only if the base ran without the flag: clearing the flag is the guard
+      (gates.command.23), the count its backstop. A new instrument (a mutation run, a
+      lint rule, a contrast check) is planted red once (gates.plants.1) before its green counts. Evidence:
+      gragas#926, Linux (comment 6883855603) and Windows (comment 6883909209).
+    level: program
+    why: >-
+      One fleet published two versions of a design system with no test script, 4 days 20 hours with 20 spec
+      files unrun and a green gate; a green with 18 story plays unrun passed review; 13 of 14 mutation runs
+      tested nothing; eleven instruments were green that had never been able to go red.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gragas-907-ticket
+        where: the table row gates.measures.6, the counts against the merge base
+        backs: rule
+      - ref: gragas-926-linux-spike
+        where: a package with no tests
+        backs: rule
+      - ref: gragas-926-windows-spike
+        where: a package with no tests, and GOFLAGS
+        backs: rule
+    review_question: >-
+      How many did each member run in this green, how does that compare with the count on the merge base,
+      and has this new instrument been seen red?
+    relates:
+      - id: gates.plants.8
+        how: see
+      - id: gates.plants.1
+        how: see
+      - id: tests.selection.8
+        how: see
+    open:
+      - >-
+        Planned check: a member's count is made on the merge base and on the head and compared in the same
+        run (gragas-new-2, gragas#928). Plant: a member whose count fell fails landing, and a package with no
+        tests is red. Control: equal or higher counts pass. No tool key is bound yet.
+  - id: gates.measures.7
+    slug: wall-time-excludes-queue-time
+    since: 0.1.0
+    rule: >-
+      A gate's wall time excludes the time it waited for a slot; queue wait and slot hold print on their own
+      lines, and a timed step records the load and whether it held a slot.
+    detail: >-
+      tests.measures.1 holds that each tier's wall time is recorded with the load beside it. This rule holds
+      what the wall time is: from the first member's start to the last member's end. The wait for a slot
+      before that is a second number, and the time the slot was held is a third. A budget (tests.measures.2)
+      is judged on the first number only. A step timed outside a slot at a high load says so, because its
+      number is inflated by an amount nobody can state.
+    level: program
+    why: >-
+      One fleet counted 11 minutes of queue as gate time against a 1.5 times limit and landed 0 of 5; its agents
+      waited at least 2,846 minutes for slots in two days, a floor because the wait was logged only at its
+      start.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this report's wall time start at the first member, and are the queue wait and the slot hold on
+      their own lines with the load?
+    relates:
+      - id: tests.measures.1
+        how: see
+      - id: tests.measures.2
+        how: see
+      - id: gates.command.29
+        how: see
+    open:
+      - >-
+        Planned check: the runner's report has the three lines and the budget line names which one it judged.
+        No tool key is bound yet; the shared runner is the work of gragas#642.

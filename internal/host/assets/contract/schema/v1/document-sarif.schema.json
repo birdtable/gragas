@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "document-sarif.schema.json",
+  "title": "SARIF 2.1.0 with the engine's extension (document)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "version",
+    "runs"
+  ],
+  "properties": {
+    "contract": {
+      "$ref": "common.schema.json#/$defs/contract",
+      "x-introduced": "1.0",
+      "x-decides": "which contract version's schema reads the document, and whether it is read or ends not ready on a newer major"
+    },
+    "version": {
+      "const": "2.1.0",
+      "x-introduced": "1.0"
+    },
+    "$schema": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tool",
+          "results"
+        ],
+        "properties": {
+          "tool": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "driver"
+            ],
+            "properties": {
+              "driver": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "$ref": "common.schema.json#/$defs/text",
+                    "x-introduced": "1.0"
+                  },
+                  "version": {
+                    "anyOf": [
+                      {
+                        "$ref": "common.schema.json#/$defs/semver"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "x-introduced": "1.0",
+                    "default": null
+                  },
+                  "rules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id"
+                      ],
+                      "properties": {
+                        "id": {
+                          "$ref": "common.schema.json#/$defs/id",
+                          "x-introduced": "1.0"
+                        },
+                        "shortDescription": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "text"
+                              ],
+                              "properties": {
+                                "text": {
+                                  "$ref": "common.schema.json#/$defs/text",
+                                  "x-introduced": "1.0"
+                                }
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "x-introduced": "1.0",
+                          "default": null
+                        }
+                      }
+                    },
+                    "x-introduced": "1.0",
+                    "default": []
+                  }
+                },
+                "x-introduced": "1.0"
+              }
+            },
+            "x-introduced": "1.0"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "ruleId",
+                "message"
+              ],
+              "properties": {
+                "ruleId": {
+                  "$ref": "common.schema.json#/$defs/id",
+                  "x-introduced": "1.0"
+                },
+                "level": {
+                  "type": "string",
+                  "enum": [
+                    "error",
+                    "warning",
+                    "note",
+                    "none"
+                  ],
+                  "x-introduced": "1.0",
+                  "default": "error"
+                },
+                "message": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "text"
+                  ],
+                  "properties": {
+                    "text": {
+                      "$ref": "common.schema.json#/$defs/text",
+                      "x-introduced": "1.0"
+                    }
+                  },
+                  "x-introduced": "1.0"
+                },
+                "locations": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "physicalLocation"
+                    ],
+                    "properties": {
+                      "physicalLocation": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "artifactLocation"
+                        ],
+                        "properties": {
+                          "artifactLocation": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "uri"
+                            ],
+                            "properties": {
+                              "uri": {
+                                "$ref": "common.schema.json#/$defs/text",
+                                "x-introduced": "1.0"
+                              }
+                            },
+                            "x-introduced": "1.0"
+                          },
+                          "region": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [],
+                            "properties": {
+                              "startLine": {
+                                "anyOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": 1
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "x-introduced": "1.0",
+                                "default": null
+                              }
+                            },
+                            "x-introduced": "1.0",
+                            "default": {}
+                          }
+                        },
+                        "x-introduced": "1.0"
+                      }
+                    }
+                  },
+                  "x-introduced": "1.0",
+                  "default": []
+                },
+                "properties": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [],
+                  "properties": {
+                    "gragas": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [],
+                      "properties": {
+                        "standing": {
+                          "anyOf": [
+                            {
+                              "$ref": "common.schema.json#/$defs/standing"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ],
+                          "description": "null means not applicable: the result is not about a rule",
+                          "x-introduced": "1.0",
+                          "default": null
+                        },
+                        "fix": {
+                          "$ref": "common.schema.json#/$defs/textOrEmpty",
+                          "x-introduced": "1.0",
+                          "default": ""
+                        },
+                        "notice": {
+                          "type": "boolean",
+                          "x-introduced": "1.0",
+                          "default": false
+                        }
+                      },
+                      "x-introduced": "1.0",
+                      "default": {}
+                    }
+                  },
+                  "x-introduced": "1.0",
+                  "default": {}
+                }
+              }
+            },
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0"
+    }
+  }
+}

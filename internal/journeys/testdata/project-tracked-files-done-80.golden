@@ -1,0 +1,11 @@
+$ gragas check --fail-on tracked-files
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Not checked
+  no rule of the pinned parts binds a tool, so no tool config was judged
+  task: a member's timeout holds only from go-task 3.53.1; this check cannot see
+  the go-task version
+
+  done       0 findings, 0 exempt, 2 not checked
+--- stderr

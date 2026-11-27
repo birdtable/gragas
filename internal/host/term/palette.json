@@ -1,0 +1,111 @@
+{
+  "$generated": "gragas-dev tokens v1 from explorer/packages/tokens/tokens.json: do not edit",
+  "grounds": {
+    "light": "#ffffff",
+    "dark": "#121210"
+  },
+  "text": {
+    "action": {
+      "light": "#0b6e8a",
+      "dark": "#5cd6f0"
+    },
+    "attn": {
+      "light": "#9a5b00",
+      "dark": "#ffc247"
+    },
+    "bad": {
+      "light": "#b42318",
+      "dark": "#ff8a80"
+    },
+    "faint": {
+      "light": "#6b6962",
+      "dark": "#8e8c83"
+    },
+    "good": {
+      "light": "#197a3e",
+      "dark": "#6fdc8c"
+    },
+    "ink": {
+      "light": "#14130f",
+      "dark": "#eceae3"
+    },
+    "muted": {
+      "light": "#5a5850",
+      "dark": "#aba99f"
+    },
+    "note": {
+      "light": "#595959",
+      "dark": "#a6a6a6"
+    },
+    "prose": {
+      "light": "#4a4943",
+      "dark": "#c4c2b9"
+    }
+  },
+  "standing": {
+    "amber": {
+      "light": "#92400e",
+      "dark": "#f2c27a"
+    },
+    "blue": {
+      "light": "#1e3a8a",
+      "dark": "#a8bbf5"
+    },
+    "green": {
+      "light": "#14532d",
+      "dark": "#93d6a9"
+    },
+    "grey": {
+      "light": "#55534d",
+      "dark": "#b5b3a9"
+    },
+    "slate": {
+      "light": "#3f4753",
+      "dark": "#c3cad6"
+    },
+    "violet": {
+      "light": "#6d28d9",
+      "dark": "#c4b5fd"
+    }
+  },
+  "marks": {
+    "blocked": {
+      "light": "#9b1c1c",
+      "dark": "#f3a3a3"
+    },
+    "trial": {
+      "light": "#55534d",
+      "dark": "#b5b3a9"
+    },
+    "unproven": {
+      "light": "#5a5850",
+      "dark": "#aba99f"
+    }
+  },
+  "observations": {
+    "absent": {
+      "light": "#6b6962",
+      "dark": "#8e8c83"
+    },
+    "as-set": {
+      "light": "#5a5850",
+      "dark": "#aba99f"
+    },
+    "excluded": {
+      "light": "#6d28d9",
+      "dark": "#c4b5fd"
+    },
+    "tighter": {
+      "light": "#14532d",
+      "dark": "#93d6a9"
+    },
+    "unmapped": {
+      "light": "#1e3a8a",
+      "dark": "#a8bbf5"
+    },
+    "weaker": {
+      "light": "#92400e",
+      "dark": "#f2c27a"
+    }
+  }
+}

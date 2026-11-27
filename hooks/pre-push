@@ -1,0 +1,7 @@
+#!/bin/sh
+# git runs this at the top of the tree, with the pushed refs on stdin. gragas-dev hook
+# pre-push runs the clone's .tools/bin/task pre-push on the tree each pushed ref carries,
+# so nothing reaches GitHub that the checks have not seen: gragas has no CI on a push or
+# a pull request (docs/checks.md, The Taskfile). Armed once per clone, by the one command
+# docs/checks.md (Setup) gives. To push past it, `git push --no-verify`, and say why.
+exec env GOFLAGS=-mod=readonly GOWORK=off go run -trimpath ./cmd/gragas-dev hook pre-push "$@"

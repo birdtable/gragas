@@ -1,0 +1,121 @@
+part: dynamodb
+concern: keys
+title: Keys and access patterns
+summary: >-
+  A DynamoDB table is designed from the questions it must answer. Keys are built in one place, every query
+  maps to a written access pattern, and the design states how hot one partition key can get.
+rules:
+  - id: dynamodb.keys.1
+    slug: keys-from-the-key-builder
+    since: 0.1.0
+    rule: >-
+      Storage keys are built only by the shared key builder; no code assembles a key string by hand.
+    detail: >-
+      Partition and sort keys, index keys and key prefixes come from functions in the store's key-building
+      layer. A string that looks like a key (an entity prefix joined with an id) anywhere else fails.
+    level: file
+    why: >-
+      Hand-built keys drift between writers and readers, and a typo returns nothing instead of failing.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: debrie-dynamodb-book
+        where: data modelling chapters
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint no-restricted-syntax on template literals and string concatenation that build a key prefix
+          outside the key-builder module. Plant: a handler that writes `USER#${id}` itself fails. Control: the
+          same key from the key builder passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          forbidigo on key-prefix string literals outside the store package. Plant: a key prefix literal in a
+          handler fails. Control: the key builder's own literal passes
+  - id: dynamodb.keys.2
+    slug: access-pattern-list
+    since: 0.1.0
+    rule: >-
+      Each table has a checked-in list of its access patterns, and every query function maps to a line on it.
+    detail: >-
+      Each line names the question and the key or index that answers it in one request. A query function in
+      the key-building layer that matches no line fails; a line with no query function is reported.
+    level: program
+    why: >-
+      A DynamoDB model is designed from its access patterns and cannot be made generic later: a new pattern
+      needs a new index or a data migration. Without the list, the next pattern is found in production as a
+      scan or a filter that reads the whole partition.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: debrie-dynamodb-book
+        where: modelling chapter
+        backs: rule
+      - ref: aws-dynamodb-docs
+        where: design guidance
+        backs: rule
+      - ref: p-03-data
+        where: section 16
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test iterates the key builder's query functions and fails when one is not named on the
+          access-pattern list. Plant: a query function on an unlisted index fails; a list line naming a
+          function that does not exist fails. Control: every query function listed passes
+    review_question: Which access pattern is not on the list, and how would it be added?
+    open:
+      - >-
+        Agents add a global secondary index to make a new query work, which locks in an unplanned pattern; the
+        review question is the guard until the test exists.
+      - >-
+        v1 evidence, not yet a source: practice (argued from the modelling guidance, no fault in our record)
+  - id: dynamodb.keys.3
+    slug: hot-partition-stated
+    since: 0.1.0
+    rule: >-
+      Each table's design note states the highest write rate one partition-key value will see and what happens
+      beyond it, and a read that must see its own write goes to the base table, not a secondary index.
+    level: program
+    why: >-
+      Hot partitions throttle even when the table's total capacity is enough, and secondary indexes update
+      asynchronously, serving only eventually consistent reads.
+    kind: instruction
+    strength: Review
+    status: active
+    sources:
+      - ref: dynamodb-atc22
+        backs: rule
+      - ref: aws-dynamodb-docs
+        where: secondary indexes
+        backs: rule
+      - ref: debrie-dynamodb-book
+        where: limits chapter
+        backs: rule
+      - ref: p-03-data
+        where: section 17
+        backs: rule
+    review_question: >-
+      What is the highest write rate any single value of this partition key will see, and what happens on a
+      read after a write through an index?
+    open:
+      - "Measure: the service's throttle counts per table, read at release."
+      - >-
+        No plant yet: a seeded table keyed on the current date, with every write on one value, must be
+        flagged.
+      - Look up current per-partition throughput figures before quoting any.
+      - >-
+        v1 evidence, not yet a source: practice (argued from the service builders' own account)
+    note: >-
+      Agents pick a key from the entity's natural fields, such as a date or a tenant, which concentrates
+      writes.

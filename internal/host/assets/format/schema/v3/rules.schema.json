@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rules.schema.json",
+  "title": "One concern file of one part: <layer>/<part>/rules/<concern>.yaml (format v3)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "part", "concern", "rules"],
+  "properties": {
+    "format": {"$ref": "common.schema.json#/$defs/format"},
+    "part": {"$ref": "common.schema.json#/$defs/part", "description": "equal to the part's folder"},
+    "concern": {"$ref": "common.schema.json#/$defs/slug", "description": "equal to the file name"},
+    "rules": {"type": "array", "minItems": 0, "items": {"$ref": "rule.schema.json"}}
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "gragas-explorer",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.15.0+sha512.b3951d6d6ff4a9f13dc7cf56cd28d2b8eb37dbcc9c68e52e1e1191873ea9f82a017287ab50baadc5ccc494f036c67c0e47eb13608c2fa36f47711b61ea128e61",
+  "engines": {
+    "node": "24.22.1"
+  },
+  "scripts": {
+    "typecheck": "node scripts/ensure-contract.ts -- pnpm --filter @gragas/contract run build && node scripts/write-nothing.ts -- node node_modules/typescript/lib/tsc.js --noEmit --composite false --incremental false --listFiles -p tsconfig.json && node scripts/write-nothing.ts -- pnpm -r run typecheck",
+    "lint": "node scripts/ensure-contract.ts -- pnpm --filter @gragas/contract run build && node scripts/write-nothing.ts -- node scripts/ensure-contract.ts -- pnpm --filter @gragas/contract run build && node scripts/write-nothing.ts -- node node_modules/eslint/bin/eslint.js --max-warnings 0 .",
+    "test": "node scripts/ensure-contract.ts -- pnpm --filter @gragas/contract run build && pnpm -r run test && vitest run",
+    "notices": "node scripts/notices.ts --write NOTICES.md",
+    "vendor-fonts": "node scripts/vendor-fonts.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@types/node": "24.19.2",
+    "@types/semver": "7.8.0",
+    "@vitest/browser-playwright": "5.0.5",
+    "@vitest/eslint-plugin": "1.6.28",
+    "eslint": "9.39.5",
+    "eslint-plugin-boundaries": "7.4.0",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-zod": "5.2.2",
+    "globals": "17.14.0",
+    "msw": "3.0.4",
+    "playwright": "1.65.0",
+    "semver": "7.8.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.0.5",
+    "zod": "4.6.7"
+  }
+}

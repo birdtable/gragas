@@ -1,0 +1,48 @@
+$ gragas help nothing
+--- stdout
+Unknown help topic [`nothing`]
+Usage:
+  gragas [flags]
+  gragas [command]
+
+Available Commands:
+  attention   List what needs the owner's attention first
+  bind        Bind a rule to the tool setting that holds it
+  cache       List or clear what gragas keeps in its cache
+  check       Validate the rulebook tree
+  conflicts   List rules whose settings disagree and offer the three resolutions
+  contract    Check documents, read fields, write a fixture
+  coverage    List the rules tools hold and those none hold
+  decision    Record a decision or supersede one, with a history entry for each change
+  explain     Explain a rule or a tool entry by what holds it
+  gen         Regenerate the generated files
+  guard       Refuse a hand edit of a lifecycle field
+  help        Help about any command
+  history     List the history of a rule or of the rulebook
+  import      Bring a guide and a tool's config in as rules, grandfathering what the config holds
+  init        Set up a project or a rulebook
+  journal     List, recover or restore runs that wrote here
+  migrate     Move a rulebook to the format this build reads
+  plugin      Prove, list, approve, add or upgrade a plugin, or say which contract this gragas speaks
+  preset      Write every tool's preset from the rulebook's bindings
+  rebind      Move a rule's binding to another tool setting
+  resolve     List the rulebook a chain resolves to, and where each entry came from
+  rule        Add or change a rule, with its history
+  source      Record or change a source, with its history
+  term        Add, change or retire a term, with its history
+  tools       List the tools the rules bind to
+  unbind      Remove a rule's binding
+  undo        Take back the last change the history records, with a new entry
+  validate    Check a rulebook and list what is wrong in it
+  version     Print this build
+
+Flags:
+      --accessible      Plain questions (ACCESSIBLE)
+      --config string   The settings file (GRAGAS_CONFIG)
+      --json            Answer in one JSON document
+      --no-color        No colour (NO_COLOR)
+      --plain           Print plainly: nothing moves
+
+Use "gragas [command] --help" for more information about a command.
+--- stderr
+--- exit 0

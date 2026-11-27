@@ -1,0 +1,19 @@
+[
+  {"name":"no for","patch":[{"op":"remove","path":"/0/for"}],"problem":"'for' is a required property"},
+  {"name":"a for that is not one","patch":[{"op":"replace","path":"/0/for","value":"cache"}],"problem":"is not one of"},
+  {"name":"no tool version","patch":[{"op":"remove","path":"/0/tool_version"}],"problem":"'tool_version' is a required property"},
+  {"name":"a tool version that is not one","patch":[{"op":"replace","path":"/0/tool_version","value":"v10"}],"problem":"does not match"},
+  {"name":"a round past 2","patch":[{"op":"replace","path":"/0/round","value":3}],"problem":"maximum"},
+  {"name":"no have","patch":[{"op":"remove","path":"/0/have"}],"problem":"'have' is a required property"},
+  {"name":"a config file with no path","patch":[{"op":"remove","path":"/0/config/0/path"}],"problem":"'path' is a required property"},
+  {"name":"bytes as both text and base64","patch":[{"op":"replace","path":"/0/config/0/data","value":{"text":"a","base64":"YQ=="}}],"problem":"oneOf"},
+  {"name":"bytes as neither","patch":[{"op":"replace","path":"/0/config/0/data","value":{}}],"problem":"'text' is a required property"},
+  {"name":"bytes with a field they do not name","patch":[{"op":"replace","path":"/0/config/0/data","value":{"text":"a","utf16":"a"}}],"problem":"Additional properties are not allowed ('utf16' was unexpected)"},
+  {"name":"a run result with no exit","patch":[{"op":"remove","path":"/1/have/0/exit"}],"problem":"'exit' is a required property"},
+  {"name":"a result with no files","patch":[{"op":"remove","path":"/1/have/1/files"}],"problem":"'files' is a required property"},
+  {"name":"a result kind that is not one","patch":[{"op":"replace","path":"/1/have/1/kind","value":"shell"}],"problem":"is not one of"},
+  {"name":"a step past 15","patch":[{"op":"replace","path":"/1/have/0/step","value":16}],"problem":"maximum"},
+  {"name":"a fixture path that is empty","patch":[{"op":"replace","path":"/1/fixtures/0","value":""}],"problem":"should be non-empty"},
+  {"name":"a null have","patch":[{"op":"replace","path":"/0/have","value":null}],"problem":"is not of type 'array'"},
+  {"name":"a tool version past 256","patch":[{"op":"replace","path":"/0/tool_version","value":"1.0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}],"problem":"maxLength"}
+]

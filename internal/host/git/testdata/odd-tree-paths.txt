@@ -1,0 +1,6 @@
+# Paths git allows in a tree but the adapter does not pass on to a caller
+# (TestAnOddPathInATreeIsRefused). A line is a path as a Go string literal,
+# then what it is.
+"a\x1b[31mb" an escape
+"a\nb" a newline
+"a\\b" a backslash

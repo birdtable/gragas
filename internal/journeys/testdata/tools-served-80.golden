@@ -1,0 +1,12 @@
+$ gragas tools
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+standin, not tested, plugin standin 1.0.0
+entry        held by
+source: bad  go.errors.4
+no preset entries read: 0 unexplained (coverage lists them)
+
+  done       1 tool, 1 entry, 1 rule held
+--- stderr

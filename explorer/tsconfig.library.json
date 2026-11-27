@@ -1,0 +1,15 @@
+{
+  "$comment": "Library mode (ts.compiler.3): a published package compiles under nodenext with composite and declarations written to dist. A package's tsconfig.build.json sets its own rootDir.",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "incremental": true,
+    "outDir": "${configDir}/dist",
+    "tsBuildInfoFile": "${configDir}/dist/.tsbuildinfo"
+  }
+}

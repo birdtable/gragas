@@ -1,0 +1,7 @@
+package journeys
+
+import "testing"
+
+func TestTermRestoreJourney(t *testing.T) {
+	t.Fatal("term restore: write its journey, run through the built binary")
+}

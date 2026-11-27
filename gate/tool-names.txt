@@ -1,0 +1,37 @@
+# The tools gragas names nowhere in its non-test Go: a tool is a plugin's. TestNoToolIsNamedInGragasGo
+# (internal/tool_names_test.go) reads this file; no name is written in its Go.
+#
+# A line is a tool, then each spelling that counts as its name: the tool's name, the program gragas runs it
+# as, and the name of the file it reads its config from. Case is not read, and a spelling counts only as a
+# whole word: in an identifier as one of its words (ESLintVersion), in a string or a comment between
+# characters that are no letter or digit. So tsc counts in TSCVersion and in "tsc", never in tsconfig, which
+# is a spelling of its own.
+#
+# A word that is also an ordinary word is no spelling. TypeScript is the language gragas generates the
+# explorer's types in, not the compiler, so it is not one; node, which ESLint and tsc run under, is no
+# tool's name. prettier is an ordinary word too, and counts: gragas's Go has no other use for it. Every tool
+# of internal/host/assets/adapters has a line here while that folder exists.
+#
+# A tool, for this file, is a program the product runs, whose config it reads or whose answer it reads, or
+# one it could come to. A tool with no place today has its line, so its
+# first mention is red: the list of places only falls, so a name could not come in later.
+#
+# The other list: source.tools in layers.yaml, which the source test (internal/source_test.go) holds
+# internal/core and internal/cli to, with the tools' config formats. The two stand until one of them is
+# left, and they differ by exactly the names of the line that starts with !: those are what gragas's
+# own Go is linted and scanned with, so a comment giving a suppression's reason by its rule code is about
+# gragas's code, not the product knowing a tool. TestTheToolListsDifferByTheLeftOut holds it.
+#
+# <tool> <spelling> ...
+ast-grep ast-grep astgrep ast_grep sgconfig
+biome biome
+eslint eslint eslintrc
+gitleaks gitleaks
+golangci-lint golangci-lint golangcilint golangci_lint golangci
+mypy mypy
+prettier prettier prettierrc
+ruff ruff
+semgrep semgrep
+staticcheck staticcheck
+tsc tsc tsconfig
+! depguard gosec govulncheck # gragas's own lint and scan, in source.tools and not here

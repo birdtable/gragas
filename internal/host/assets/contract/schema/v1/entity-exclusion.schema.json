@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-exclusion.schema.json",
+  "title": "Exclusion of a parent rule by an overlay (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "overlay",
+    "rule",
+    "number",
+    "decision",
+    "who",
+    "when"
+  ],
+  "properties": {
+    "overlay": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0"
+    },
+    "rule": {
+      "$ref": "common.schema.json#/$defs/id",
+      "x-introduced": "1.0"
+    },
+    "number": {
+      "type": "integer",
+      "minimum": 1,
+      "x-introduced": "1.0"
+    },
+    "decision": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0"
+    },
+    "who": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "when": {
+      "$ref": "common.schema.json#/$defs/timestamp",
+      "x-introduced": "1.0"
+    },
+    "lifted": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "who",
+            "when"
+          ],
+          "properties": {
+            "decision": {
+              "$ref": "common.schema.json#/$defs/slug",
+              "x-introduced": "1.0"
+            },
+            "who": {
+              "$ref": "common.schema.json#/$defs/text",
+              "x-introduced": "1.0"
+            },
+            "when": {
+              "$ref": "common.schema.json#/$defs/timestamp",
+              "x-introduced": "1.0"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    }
+  }
+}

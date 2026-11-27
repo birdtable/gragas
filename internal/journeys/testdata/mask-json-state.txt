@@ -1,0 +1,2 @@
+# the state folder the mask is built on, then the document line, then the line wanted; tab-separated, \\ is one backslash
+C:\\Users\\x\\state	"lines": ["cp -- 'C:\\\\Users\\\\x\\\\state/ROOT.copies/r1/ab12' a.txt"]	"lines": ["cp -- $STATE/ROOT.copies/r1/ab12 a.txt"]

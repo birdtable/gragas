@@ -1,0 +1,59 @@
+// Package {{.Family}} is the {{.Family}} command: fill in what it does. It lives in a package of its own
+// below internal/cli/cmd; the root joins it from the generated join_gen.go,
+// which task gen writes, so a new command is a new folder and no shared line.
+package {{.Family}}
+
+import (
+	"github.com/spf13/cobra"
+
+	"github.com/birdtable/gragas/internal/cli/kit"
+	"github.com/birdtable/gragas/internal/model"
+)
+
+// Order is the row's place in the table of spec 15.1; 0 takes the next free one.
+const Order = {{.Order}}
+
+// Row is the one declaration of {{.Family}} (cli.commands.20, .26).
+func Row() kit.Command {
+	return kit.Command{
+		Name: "{{.Family}}", Order: Order, Spec: true, Context: {{.Context}}, Ends: {{.Ends}}, State: kit.Built,
+{{- if .OptIn}}
+		OptIn: true,
+{{- end}}
+{{- if .HasThen}}
+		Then: []string{ {{.Then}} },
+{{- end}}
+{{- if .HasNotYet}}
+		NotYet: []string{ {{.NotYet}} },
+{{- end}}
+		Summary: "{{.Summary}}",
+		Examples: [2]kit.Example{
+			{Line: "{{(index .Examples 0).Line}}", Does: "{{(index .Examples 0).Does}}"},
+			{Line: "{{(index .Examples 1).Line}}", Does: "{{(index .Examples 1).Does}}"},
+		},
+{{- if .Writes}}
+		Writes: []string{ {{.Writes}} },
+{{- end}}
+		Exits:    []model.Word{ {{.Exits}} },
+		JSONKind: "{{.JSON}}",
+	}
+}
+
+// New is the cobra command, drawn through the session of the run. It is a stub
+// that refuses until it is built.
+func New(s kit.Session) *cobra.Command {
+{{- if .Group}}
+	c := &cobra.Command{Use: "{{.Family}}", Short: Row().Summary, Args: cobra.NoArgs}
+	c.AddCommand({{.Verb}}Cmd(s))
+	return c
+{{- else}}
+	return &cobra.Command{
+		Use:   "{{.Verb}}",
+		Short: Row().Summary,
+		Args:  cobra.NoArgs,
+		RunE: func(*cobra.Command, []string) error {
+			return s.Exit(s.End(kit.Ending{Word: model.Refused, What: "{{.Name}} is not built yet and it changed nothing", Next: "gragas help"}))
+		},
+	}
+{{- end}}
+}

@@ -1,0 +1,35 @@
+[
+  {
+    "target": "source",
+    "tool_version": "10.13.0",
+    "scratch": "/s",
+    "config": [
+      {
+        "path": "lint-a.config.js",
+        "data": {
+          "text": "export default [{rules:{a:[\"error\",\"always\"]}}];\n"
+        }
+      }
+    ],
+    "have": [
+      {
+        "round": 0,
+        "step": 0,
+        "kind": "run",
+        "exit": 0,
+        "cut": false,
+        "stdout": {
+          "text": "{\"rules\":{\"a\":[2,\"always\"],\"b\":[0]}}\n"
+        },
+        "stderr": {
+          "text": ""
+        },
+        "files": []
+      }
+    ],
+    "fixtures": [
+      "bad/a.ts",
+      "good/a.ts"
+    ]
+  }
+]

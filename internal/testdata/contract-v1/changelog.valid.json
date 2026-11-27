@@ -1,0 +1,24 @@
+[
+  {
+    "contract": "1.3",
+    "rulebook": "house",
+    "releases": [
+      {
+        "version": "1.2.0",
+        "date": "2026-11-01",
+        "release_note": "Two rules about errors.",
+        "entries": [
+          {
+            "release": "1.2.0",
+            "entity": "go.errors.1",
+            "change": "added",
+            "sentence": "A new rule.",
+            "consumer_action": "Run the check.",
+            "remedy": "Wrap it.",
+            "diff": "https://example.org/d"
+          }
+        ]
+      }
+    ]
+  }
+]

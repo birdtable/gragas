@@ -1,0 +1,36 @@
+$ gragas cache clear --help
+--- exit 0
+--- stdout
+
+  Removes, from the journal of this folder, every closed run
+  older than the keep setting, with the copies it kept. A run
+  that never closed is never removed, whatever its age: a
+  roll-back may need it. It also removes the scratch folders a
+  stopped run left, when no run holds them, and every folder a
+  tool keeps its caches in from one step to the next, of every
+  project of this account, which the next step fills again; a
+  step that runs meanwhile, in any project, may fail. Other
+  folders' journals are cleared when you run it there.
+  Without --apply it lists what it would remove and writes
+  nothing. A second run removes nothing.
+
+    gragas cache clear
+    gragas cache clear --apply
+
+  USAGE
+
+
+    gragas cache clear [--flags]
+
+
+  FLAGS
+
+    --accessible  Plain questions (ACCESSIBLE)
+    --apply       Write the files
+    --config      The settings file (GRAGAS_CONFIG)
+    -h --help     Help for clear
+    --json        Answer in one JSON document
+    --no-color    No colour (NO_COLOR)
+    --plain       Print plainly: nothing moves
+
+--- stderr

@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("t: 2026-01-02\nn: 010\nb: off\n")

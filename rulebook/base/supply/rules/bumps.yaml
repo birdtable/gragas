@@ -1,0 +1,115 @@
+format: 3
+part: supply
+concern: bumps
+rules:
+  - id: supply.bumps.1
+    statement: "A dependency bump is its own change: one direct bump per commit, no source file touched, after its cooldown, with the trial counts in the change."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The commit check compares the manifest and lockfile with the base: more than one direct dependency changed in one commit fails, a manifest or lockfile change together with non-manifest files fails, and the commit message carries a Trial line with the counts. For Go the scan is on go.mod with non-module files; indirect lines are left out because a module graph brings them in. A vendor family counts as one bump. There is no bump bot; the owner lane opens bumps. The diff scan for web reads package.json and the lockfile together with non-manifest files."
+      pros:
+        - "A bump mixed with source edits hides the change a reader should see, and a bump can ride inside a large refactor unseen. The known way round is hiding the bump in a refactor, which the same scan catches."
+    sources:
+      - ref: decision-16
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        backs: rule
+  - id: supply.bumps.2
+    statement: "Consumer lag behind the shared module and lockstep pairs are reported with the release as the unit, lag is not gated by a fixed window, each consumer moves its require when it is ready, and a breaking module change fixes every caller the owner keeps in the same change."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "One module version in every program. The report compares the shared module's version in each program's go.mod with the latest tag and its date, and shows each consumer's distance from the latest shared module and the pairs that release together, with the release as the unit. Nothing fails on lag: a consumer moves its require when it is ready. A change to the shared module that breaks its surface fixes, in the same change or the same coordinated release, every caller in the repositories the owner keeps, so no kept consumer is left on a broken path. The lag is reported in minors per module, the root module and each separately versioned module on their own, and a waiver whose trigger is \"until the shared module bumps\" is listed beside the lag, so the release report reads \"one module lags three minors; three waivers wait on it\". The tag-date read needs network access to a private module."
+      pros:
+        - "A consumer that lags keeps running code the owner has already replaced, so the lag is shown. A fixed window forces every consumer to the newest version on the owner's schedule, which arch.measures.6 itself names as a cause of coupling; fixing callers in the breaking change is what keeps a lagging consumer safe to move later. A pair that must always release together signals a misplaced boundary."
+    relations:
+      relates:
+        - arch.measures.6
+    sources:
+      - ref: ford-sathp
+        where: ch. 8 shared library
+        backs: rule
+      - ref: bellemare-bedm
+        where: ch. 16
+        backs: rule
+      - ref: decision-16
+        backs: rule
+      - ref: decision-65-supply
+        backs: rule
+  - id: supply.bumps.3
+    statement: "Related shared modules are tagged together, and a separately owned package has its own versioning."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - library
+    reasoning:
+      definition: "A shared root module and its sub-module are tagged together; the design-tokens package is not in that tag and defaults to its own semver. A release check that the tags match runs in the owner repository only. The deprecate-first form is the //go:fix inline directive."
+      pros:
+        - "The sub-module tags came about 64 minutes and two commits after the root tag, so the pair was not atomic."
+    sources:
+      - ref: decision-28
+        backs: rule
+      - ref: decision-35
+        backs: rule
+  - id: supply.bumps.4
+    statement: "A shared release plans who pays for each bump: consumers pay in lockstep, an upgrade comes with a codemod or a list of what changes, and a new shared rule lands as a minor with each repository recording its debt first."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: A breaking tag without a changelog section that lists what consumers change is refused. A cross-repository sweep tool opens a pull request in each repository for a codemod. Debt may not grow on a bump. The changelog tool kept is git-cliff.
+      pros:
+        - A release that does not say what consumers must change shifts the cost silently. The changelog of an earlier shared release is the shape of such a list.
+    sources:
+      - ref: ford-sathp
+        where: ch. 8
+        backs: rule
+      - ref: bellemare-bedm
+        where: ch. 16
+        backs: rule
+  - id: supply.bumps.5
+    statement: "A shared package's version range spans minors on purpose, since a caret on a 0.x version pins one minor and could never resolve the next release."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A caret range on 0.x means the next minor is a different compatible set, so the range never reaches it."
+  - id: supply.bumps.6
+    statement: A shared config carries a version that consumers can read and pin.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - A consumer cannot pin or report the distance from a shared config that does not state its version.
+  - id: supply.bumps.7
+    statement: "The shared package's check tools are regular dependencies so one version bump moves all of them; lint and compiler tools are peers with declared ranges."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "Tools declared as peers drift apart per consumer; regular dependencies move with the one bump."
+  - id: supply.bumps.8
+    statement: "A library's release clock runs from the last fix merged to its consumers' main branch, the bump in each consumer has an owner, and the hand-off is logged like a review round."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "supply.bumps.2 holds that consumer lag is reported with the release as the unit. This rule holds that the release is not done at publish. The release names the consumer's bump and who makes it, and the hand-off is a row where the hub counts rounds (gates.measures.5). A program's release clock runs from the last fix merged to published; a library's runs on to the consumers' main."
+      pros:
+        - "One organisation's design-system releases reached its main web application in 2 hours 45 minutes, 5 hours 30 minutes, and once not in 5 days, because nothing linked a publish to its consumer."
+    relations:
+      relates:
+        - supply.bumps.2
+        - gates.measures.5
+        - gates.land.18
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule

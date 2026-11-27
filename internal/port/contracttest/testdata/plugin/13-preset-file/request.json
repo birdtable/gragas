@@ -1,0 +1,1 @@
+{"contract":1,"features":[],"op":"preset","body":{"tool_version":"1.0.0","mark":"gragas","inputs":[],"entries":[{"key":"b","target":"source","trial":false,"rules":["r.b"],"severity":"warning"},{"key":"a","target":"source","trial":false,"rules":["r.a"]}]}}

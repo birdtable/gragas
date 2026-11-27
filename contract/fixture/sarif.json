@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "contract": "1.3",
+  "runs": [
+    {
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".golangci.yml"
+                },
+                "region": {
+                  "startLine": 5
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "errorlint is disabled in .golangci.yml, so the rule is not held."
+          },
+          "properties": {
+            "gragas": {
+              "fix": "Enable errorlint in .golangci.yml.",
+              "notice": false,
+              "standing": "enforced"
+            }
+          },
+          "ruleId": "go.errors.1"
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".golangci.yml"
+                },
+                "region": {}
+              }
+            }
+          ],
+          "message": {
+            "text": "nilerr is not enabled."
+          },
+          "properties": {
+            "gragas": {
+              "standing": "planned"
+            }
+          },
+          "ruleId": "base.errors.1"
+        },
+        {
+          "level": "note",
+          "message": {
+            "text": "Waiver w-old-b ended on 2026-10-01."
+          },
+          "properties": {
+            "gragas": {
+              "fix": "",
+              "notice": true,
+              "standing": null
+            }
+          },
+          "ruleId": "gragas.waiver.1"
+        },
+        {
+          "message": {
+            "text": "The baseline b-wrap is past its zero-by date."
+          },
+          "ruleId": "go.errors.1"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "gragas",
+          "rules": [
+            {
+              "id": "go.errors.1",
+              "shortDescription": {
+                "text": "Wrap an error with what was being done."
+              }
+            },
+            {
+              "id": "base.errors.1",
+              "shortDescription": null
+            },
+            {
+              "id": "gragas.waiver.1",
+              "shortDescription": {
+                "text": "A waiver is past its expiry."
+              }
+            }
+          ],
+          "version": "0.1.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

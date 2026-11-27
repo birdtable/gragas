@@ -1,0 +1,11 @@
+{
+  "gap": 2,
+  "minLast": 16,
+  "orders": [
+    {
+      "titles": ["Run", "State", "Command", "Files", "Plan"],
+      "order": ["Plan", "Files", "Command", "State"],
+      "from": "internal/cli/root/journal.go: Run 9, State 8, Command 6, Files 4, Plan 2"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+# changie base: the change-file settings gragas check holds a repository's
+# .changie.yaml to. Written by hand; a repository copies it and extends it.
+changesDir: .changes
+
+# supply.release.5: a change file in this folder is named <issue>-<kind>.
+unreleasedDir: unreleased
+
+# changie will not load a config without versionExt.
+versionExt: md
+changelogPath: CHANGELOG.md
+
+# How a batched version reads: without these changie writes an empty file.
+versionFormat: "## {{.Version}} - {{.Time.Format \"2006-01-02\"}}"
+kindFormat: "### {{.Kind}}"
+changeFormat: "* {{.Body}} (#{{.Custom.Issue}})"
+
+# The file name changie gives a change: the issue the change closes, then the
+# kind's key, which is lowercase so the name meets supply.release.5.
+fragmentFileFormat: "{{.Custom.Issue}}-{{.Kind}}"
+
+custom:
+  - key: Issue
+    type: int
+    minInt: 1
+
+kinds:
+  - label: Added
+    key: added
+  - label: Changed
+    key: changed
+  - label: Fixed
+    key: fixed
+  - label: Removed
+    key: removed

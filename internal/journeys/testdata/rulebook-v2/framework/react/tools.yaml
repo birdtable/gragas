@@ -1,0 +1,135 @@
+part: react
+tools:
+  - key: tanstack-router
+    name: "router: TanStack Router"
+    role: >-
+      The one router of a React program: typed routes, typed links and navigation, a validated search schema
+      per route, a generated route tree and a navigation blocker.
+    binding: ts
+    ships: >-
+      the router plugin and generator in the build config, and the route-tree ignore lists
+    state: chosen
+    why: >-
+      Typed destinations fail the compiler: in a trial it rejected five of five wrong usages and the other
+      router rejected none. TanStack always. Every route is on this router; the other router packages
+      are removed and banned by the package allow-list.
+    lost:
+      - name: react-router and react-router-dom
+        why: Rejected none of five wrong usages in the type trial; deleted and banned.
+    open:
+      - Version and the generator command name are read at adoption.
+      - >-
+        The ban of the alternative packages is held by the supply allow-list rule, not by a rule in this part.
+  - key: tanstack-query
+    name: "query library: TanStack Query"
+    role: >-
+      The one cache for server state: queries, infinite queries, mutations and the query client that route
+      loaders call.
+    binding: ts
+    ships: >-
+      the query lint plugin in the shared ESLint preset and the import ban of other server-state libraries
+    state: chosen
+    why: >-
+      Server state lives only here, reached through the gated hooks; no hand-made fetch cache and no second
+      library. TanStack always.
+    lost:
+      - name: swr
+        why: A second server-state store; banned by the import rule.
+      - name: apollo client and rtk-query
+        why: Same reason; they are listed in the restricted-imports ban.
+    open:
+      - >-
+        The query lint plugin version and the derived-state plugin version are fixed at adoption.
+  - key: tanstack-form
+    name: "form library: TanStack Form"
+    role: >-
+      The one form library of a React program, reached through one design-system hook module; no raw form hook
+      in domain code (no `@tanstack/react-form` import or raw `useForm` outside the design-system module), no
+      form held in plain state, no other form library.
+    binding: ts
+    ships: >-
+      the restricted-imports ban of other form libraries and of the raw hook outside the design-system module
+    state: chosen
+    why: >-
+      One pattern for fields, validation and server-error mapping. TanStack always: the earlier pick
+      of react-hook-form in the catalogue is replaced.
+    lost:
+      - name: react-hook-form with its resolvers
+        why: >-
+          Picked earlier (ruled 4 Nov, decision 9) and replaced by operator point 66, which says TanStack
+          always.
+      - name: formik, final-form and conform
+        why: Banned by the form import rule in the catalogue.
+    open:
+      - >-
+        The resolver package of the old pick no longer applies; the schema-validator form of the rule is in
+        web.forms.4 and the submit-parse detail in react.client-state.2.
+      - >-
+        Two sources disagreed on the pick (one said TanStack Form, the catalogue said react-hook-form); the
+        operator's point 66 settled it.
+      - >-
+        The rule that every form uses one pattern is held in the web part (web.forms.3); its React form, the
+        import ban, is react.client-state.2. Template-stack projects use native forms and FormData with no
+        library. This entry absorbed the web part's duplicate entry for the same pick, which was written there
+        with the doubt that it applies to the component stack only.
+  - key: tanstack-store
+    name: "client store: TanStack Store"
+    role: >-
+      Holds client state that changes, in one store; context is used only to pass values down.
+    binding: ts
+    ships: >-
+      the import ban of other client stores and a restriction on the external-store hook outside the store
+      file
+    state: chosen
+    why: Changing client state has one library and one home. TanStack always.
+    lost:
+      - name: zustand
+        why: A second client store; banned.
+      - name: redux, jotai, valtio, recoil, mobx and nanostores
+        why: Listed in the import ban for client stores.
+    open:
+      - >-
+        No bespoke store class is allowed; the half that says context is for injection has no tool.
+  - key: tanstack-table
+    name: "table library: TanStack Table"
+    role: >-
+      The one table library; every table goes through one list-table part built on it, using the
+      feature-composed hook form, never the stock feature set.
+    binding: ts
+    ships: >-
+      the import ban of alternative table libraries and a raw-table-element scan outside the list-table part
+    state: chosen
+    why: >-
+      One table part keeps columns, sorting and wrapping in one place. TanStack always.
+    lost:
+      - name: other table libraries and the old table hook
+        why: No alternative remains; the old hook is one the compiler cannot memoise.
+    open:
+      - >-
+        Pinned to the ninth major version in the source; the version is fixed at adoption.
+      - >-
+        The table-part rule itself is held by the web part's parts concern (one part per catalogued part).
+  - key: base-ui
+    name: "primitive library: Base UI"
+    role: >-
+      Unstyled accessible primitives (about twenty) that the design system builds on; hand-built comboboxes,
+      date pickers, command menus and drawers are replaced by them with the same props: in the source a
+      hand-built combobox of 416 lines and a date-picker of 371 lines (replaced by react-day-picker) go.
+    binding: ts
+    ships: the package ban list, the raw widget-role lint, and the shared parts package
+    state: chosen
+    version: >-
+      stable name `@base-ui/react`; the older `@base-ui-components/react` name is banned
+    why: >-
+      Chosen on a content-security-policy run: a style-element-disabled provider gave zero violations under
+      the policy (decision 8). A copy-in component set (shadcn) is allowed on this base when its source is
+      copied into the shared parts package.
+    lost:
+      - name: Radix, react-aria-components, Ark, Headless UI, cmdk and vaul
+        why: >-
+          Banned primitive libraries; the dialog and menu libraries that add blocked inline styles.
+      - name: sonner and the theme-transition reset
+        why: >-
+          Add styles that the policy blocks; replaced by the copied-in version (decision 30).
+    open:
+      - Never run on a real React tree.

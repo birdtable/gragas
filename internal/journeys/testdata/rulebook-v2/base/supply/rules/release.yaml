@@ -1,0 +1,475 @@
+part: supply
+concern: release
+order: 9
+title: Releases
+summary: >-
+  A release is built from a clean tagged main by one recipe after the full gate, and only the release workflow
+  on the tag publishes. It is refused on an undeclared API break, builds the same bytes from any directory,
+  carries a checksum, provenance and an SBOM where the publisher offers them and a plain-words changelog
+  entry, is tested as the bytes that ship, and is built for every operating system it ships for.
+rules:
+  - id: supply.release.1
+    slug: publish-only-from-the-release-job
+    since: 0.1.0
+    rule: >-
+      A release is built from a clean annotated tag on main by one recipe that runs the full gate first and
+      never pushes, an install is made only from such a build and reads the installed version back, and where
+      something is published only the release workflow on the tag publishes it, with publish refused unless CI
+      is set.
+    detail: >-
+      The release recipe (make release or its equivalent) refuses anything but a clean checkout of main, runs
+      the full gate unless a local stamp shows that this exact tree passed it (gates.land.1), writes or checks
+      the changelog entry (supply.release.5), tags with an annotated tag and builds. It never pushes; the
+      person pushes the tag. An install or deploy refuses a checkout or build that is not exactly a clean
+      release tag, and after installing reads the running program's version and commit back and compares them
+      with the tag. Where something is published (a package, an image, a release page), only the release
+      workflow triggered by the tag publishes it, with the publish job needing every test and build job
+      (supply.release.6); a command refuses to publish when the CI environment variable is not set, and the
+      first publish of a package is from the workflow too. There is no CI on every push and no run is
+      scheduled: each release prints the age of the last whole run, and no weekly or other scheduled run is
+      added (decision 66, which replaces decision 34). The recipe also runs non-blocking steps that need the
+      network, such as the external link check (docs.links.1): each prints its findings and never stops the
+      release.
+    level: deploy
+    why: >-
+      A shared package can otherwise publish from a laptop with whatever the laptop holds, and an install from
+      an untagged tree is a version nobody can name. The invariant three target repos share is one recipe from
+      a clean tagged main after the full gate; CI is the only place that holds the publish token.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-34
+        backs: rule
+      - ref: decision-14
+        backs: rule
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "4"
+        note: >-
+          the release recipe refuses a dirty tree, a branch other than main or a lightweight tag, and contains
+          no git push (a scan of the recipe); the install step compares the installed version with the tag; a
+          require-ci command refuses a publish unless CI is set. Plant: a release from a dirty tree is
+          refused; a publish with the CI variable unset is refused; an install from an untagged build is
+          refused. Control: a release from a clean annotated tag on main, published by the tag-triggered
+          workflow, passes
+    relates:
+      - id: gates.land.1
+        how: see
+      - id: supply.release.5
+        how: see
+      - id: supply.release.6
+        how: see
+      - id: docs.links.1
+        how: see
+      - id: supply.workflows.1
+        how: see
+    open:
+      - >-
+        Neither the workflow linter nor the security audit checks the trigger set; the policy tool reads YAML
+        1.1, so the on key arrives as the string true and the policy reads that key.
+      - The workflow-trigger half is held by supply.workflows.1.
+  - id: supply.release.2
+    slug: undeclared-api-break-refused
+    since: 0.1.0
+    rule: >-
+      A release is refused on an API break that is not declared, checked before the tag is pushed.
+    level: release
+    why: >-
+      A break the author did not declare turns every consumer's next bump into a surprise. The tag step is the
+      last moment the check can run, because the tool refuses once the tag exists. A real break was found in
+      the shared module.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "4"
+        note: >-
+          gorelease at the tag step before the tag is pushed, and apidiff for the report. Plant: removal of an
+          exported function fails. Control: a compatible change passes
+    open:
+      - >-
+        v1 evidence, not yet a source: own measure; apidiff found a real break in an exported listener
+  - id: supply.release.3
+    slug: same-bytes-from-any-directory
+    since: 0.1.0
+    rule: >-
+      A release is the same bytes from any directory: the build strips paths, and a script builds twice from
+      two paths and compares.
+    detail: >-
+      It runs on the candidate at land when release files change, and again on the shipped artifact after
+      publish as a report. The check is go build with -trimpath; a snapshot build (goreleaser build
+      --snapshot) is made twice from two directories and compared with cmp.
+    level: release
+    why: >-
+      A build that embeds its path cannot be reproduced; two hashes from two paths prove it, and the flag that
+      strips paths removes the difference.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          the release tool builds with the trim-path flag and a snapshot build is made twice from two
+          directories and the binaries compared. Plant: a build without the flag gives two hashes. Control: a
+          build with the flag gives one
+    open:
+      - A library ships no binary to build, so whether it is exempt is open.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: practice; the flag appeared in no
+        repository
+  - id: supply.release.4
+    slug: release-checksum
+    since: 0.1.0
+    rule: >-
+      Release artifacts carry a checksum; an SBOM or a signature is added when a third party verifies it, and
+      not before.
+    level: release
+    why: >-
+      A checksum lets a consumer detect corruption or substitution; heavier attestations cost work with no
+      reader until a verifier exists.
+    kind: rule
+    strength: Hard
+    status: retired
+    replaced_by: supply.release.9
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "4"
+        note: >-
+          the release tool's checksum block, and a release check that the checksum file lists every artifact.
+          Plant: a release without a checksum file, or a checksum file missing an artifact, fails. Control: a
+          complete file passes
+    relates:
+      - id: supply.release.9
+        how: see
+    open:
+      - >-
+        Half rule, since the checksum is checked by a step but whether an SBOM or signature is due is a
+        judgement no check can make because no check can say a consumer exists.
+    note: >-
+      Retired by decision 65 (D-T96): provenance and an SBOM are shipped wherever the publisher offers them,
+      not when a third party asks. The checksum half moves to supply.release.9 unchanged.
+  - id: supply.release.5
+    slug: tag-with-changelog-and-no-push
+    since: 0.1.0
+    rule: >-
+      Every release has a plain-words changelog entry that a person writes or rewrites, a tool proposes the
+      version with a named override allowed, a program with an API names its API number in the entry, and the
+      release recipe never pushes.
+    detail: >-
+      The entry is written per change (each change adds its item under Unreleased) or as a draft the release
+      recipe makes from the commits for a person to rewrite before tagging; either way a person writes the
+      words, in plain language with a bold lead and no file names, function names or internal ids. A tool
+      proposes the next version from the history since the last tag (git-cliff in the Go repos, a change-notes
+      tool in a web workspace; the tool is chosen per repo), and the recipe accepts a named override
+      (VERSION=vX.Y.Z) for a person's choice. A program with a versioned API names the API number in each
+      release's entry. The release check fails a tag whose entry is missing or still the untouched draft. The
+      recipe scan is run by a gate scanner (gatescan) and bans git push in the recipe.
+    level: release
+    why: >-
+      A tag with no entry gives consumers nothing to read, and a generated entry made of commit subjects is
+      written for the author, not the reader. A version a tool proposes is not mistyped, and an override keeps
+      the person's choice. A recipe that pushes releases without the person's last look.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "4"
+        note: >-
+          a release check that the changelog entry for the tag exists and differs from the tool's untouched
+          draft, that the version equals the tool's proposal or the named override, and a scan that bans git
+          push in the release recipe. Plant: a tag without an entry fails; an entry identical to the generated
+          draft fails; a recipe with git push fails. Control: a tag with a rewritten entry and a push-free
+          recipe passes
+      - binding: go
+        class: preset-rule
+        tool: goreleaser
+        key: changelog.disable
+        tier: "4"
+        fix: never
+        note: >-
+          gragas check reads the repository's goreleaser config and reports changelog.disable set beside
+          release notes, since the entry a person wrote would then be dropped. Plant: both set is reported.
+          Control: a config that does not disable the changelog passes
+      - binding: go
+        class: preset-rule
+        tool: changie
+        key: unreleasedDir
+        tier: "4"
+        fix: never
+        note: >-
+          gragas check reads a repository's .changie.yaml, where it has one, and reports a change file not
+          named <issue>-<kind>. The changelog tool is chosen per repo, so a repo with no .changie.yaml gets
+          no finding. Plant: a misnamed change file is reported. Control: well-named files pass
+    examples:
+      bad:
+        lang: yaml
+        code: |
+          # .goreleaser.yaml, run with --release-notes: the changelog is turned off beside it
+          changelog:
+            disable: true
+      good:
+        lang: yaml
+        code: |
+          # .goreleaser.yaml, run with --release-notes
+          changelog:
+            disable: false
+  - id: supply.release.6
+    slug: shipped-bytes-are-tested
+    since: 0.1.0
+    rule: >-
+      After the tag build and before publish, a release step unpacks the archive, runs version and one start
+      test and compares its digest with the one the tests saw; the publish job needs every test and build job,
+      the workflow has no conditional or continue-on-error, and the publishing job runs no project code.
+    detail: >-
+      In the release workflow the publish job lists every test and build job as a need and runs only when all
+      passed: no if: and no continue-on-error anywhere in the workflow, held by a test that reads the file.
+      The publish job has no checkout of the project and runs none of its code; it only promotes the artifacts
+      the build made (for example by undrafting a complete draft release). The publish job needs every job,
+      has no if: and no continue-on-error, and runs none of the module's code. For a web project the archive's
+      page is served and one start test is run. A page embedded in a daemon is tested through the daemon's
+      archive. For a deployed function the bundle is unpacked, its handler invoked from the bundle, and its
+      hash compared with the one the tests saw and with the code hash of the deployed function. A library
+      ships no binary, so the Go rule has an exemption.
+    level: release
+    why: >-
+      A bundle can differ from the source the tests ran against through bundler options or an optional
+      dependency resolved at build time. A last-modified time shows the function was updated, not that its
+      bytes are the ones that passed. In one web estate 4 of 72 faults showed only on a real server after
+      release.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: sections 11 and 23
+        backs: rule
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "4"
+        note: >-
+          a release step before publish in the shared recipe that unpacks, runs version and one start test,
+          and compares the digest. Plant: an archive with a wrong binary stops the release. Control: the right
+          archive passes
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. a release step after the build that unpacks the archive, serves its page, runs one
+          start test and compares the digest; fails before publish. Plant: an archive with a wrong file inside
+          stops the release. Control: the right archive passes
+      - binding: any
+        class: preset-config
+        tier: "4"
+        note: >-
+          a release step that unpacks the function bundle, invokes its handler and compares the hash with the
+          test run's and with the deployed code hash. Plant: a bundle with the wrong handler inside stops the
+          release. Control: the right bundle passes
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test that reads the release workflow: the publish job needs every other job, no if or
+          continue-on-error key exists, and the publish job has no checkout step. Plant: a workflow with
+          continue-on-error on the test job fails; a publish job with a checkout step fails. Control: a
+          workflow whose publish needs every job and only promotes artifacts passes
+    open:
+      - Whether this step would have caught the four faults is not traced.
+      - Whether the check runs at tier 3 or tier 4 for a function bundle is not fixed.
+  - id: supply.release.7
+    slug: every-shipped-os-compiled
+    since: 0.1.0
+    rule: >-
+      The program is compiled and vetted at push, on the one machine the gate runs on.
+    detail: >-
+      One gate step runs go vet ./... at push for each system of the project's list (arch.ports.4), by GOOS on the
+      one machine the gate runs on, as one step. It catches a compile fault only. What differs by system is the platform libraries' own proof, which is
+      run on each system by loan and is not a leg of a product's gate.
+    level: program
+    why: >-
+      A compile fault is invisible until a later tier if the push does not vet at all. (An earlier version of
+      this rule asked for a vet per shipped GOOS, because one program built only on Linux failed in six
+      packages on Linux-only calls; a product now holds no such calls.)
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          v1 class compiler. go vet ./... for each system of the list, by GOOS, on one machine. Plant: a file that does not compile fails. Control: a package
+          that compiles passes
+  - id: supply.release.8
+    slug: binary-size-recorded
+    since: 0.1.0
+    rule: Binary size is recorded as a metric, not a gate.
+    level: release
+    why: >-
+      Five standard-library imports grew a binary 4.5 percent, which a 5 percent budget passes, so a budget
+      gate would not have caught the growth that matters; the number is the value.
+    kind: measure
+    strength: Record
+    status: proposed
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class our-cli. the stripped build size recorded in the baseline, with the release failing if the
+          metric is not written
+    review_question: Was the stripped binary size written to the baseline for this release?
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: practice; one binary measured
+        16,103,074 bytes stripped
+  - id: supply.release.9
+    slug: release-ships-checksum-provenance-and-sbom
+    since: 0.1.0
+    rule: >-
+      A release carries a checksum file listing every artifact; an SBOM, provenance and a signature are added
+      the day a repo is public, and a container image is built from a base pinned by digest and runs as a
+      non-root user.
+    detail: >-
+      Every release has a checksum file listing every artifact. A repo that is not public ships no SBOM, no
+      provenance statement and no signature, and no check asks for them; the day a repo is made public its
+      release config adds them wherever the place a release is published supports them (a package registry's
+      provenance statement, a build attestation, an SBOM, a signed and notarized desktop build). An image is
+      built by the release recipe from a base image pinned by digest, runs as a non-root user with a
+      read-only filesystem except its volumes, whether the repo is public or not. What the publisher offers
+      is read from its documentation when the release is set up and recorded in the release config; a
+      publisher that adds provenance later is picked up by the next review of that config. Ruling:
+      (no SBOM or signing while private) and gragas#907's table (a checksum file now; an SBOM, provenance and
+      a signature the day a repo is public).
+    level: release
+    why: >-
+      A checksum lets a consumer detect corruption or substitution. Provenance, an SBOM and a pinned non-root
+      base cost minutes once and age well; waiting for a third party to ask is waiting to be asked why not.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+      - ref: gragas-907-ticket
+        where: the table row supply.release.9, a checksum file now
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "4"
+        note: >-
+          the release tool's checksum block and a release check that the checksum file lists every artifact; a
+          test over the release config that provenance, SBOM and signature are on for every publisher the
+          config marks as offering them once the repo is public; a Dockerfile check that the base is pinned
+          by digest and a USER line names a non-root user. Plant: a checksum file missing an artifact fails; a
+          public repo's publish without provenance on a registry marked as offering it fails; an image base
+          by tag fails. Control: a release with a complete checksum file passes, and a public repo's with
+          provenance and SBOM too
+    relates:
+      - id: supply.release.4
+        how: see
+    note: Successor of supply.release.4, whose checksum half it keeps.
+  - id: supply.release.10
+    slug: the-release-members-and-their-order
+    since: 0.1.0
+    rule: >-
+      The release tier runs from a fresh clone of the tag, never from a working checkout; the release dry run
+      is a release member with its cost listed; and a member that needs the tag says so and runs last.
+    detail: >-
+      supply.release.1 holds that a release is built from a clean annotated tag by one recipe that runs the
+      full gate first. This rule holds the members: the push tier plus the release members, all at once
+      (gates.command.17), on a clone made from the tag so no file of a working checkout reaches the build.
+      The dry run of the release tool is a member with its cost, so a broken release config is found before
+      the release and not at it. A member that needs the tag to exist (the changelog check, the publish)
+      declares it and runs after the others.
+    level: release
+    why: >-
+      One project found its broken release config only at release, because the dry run was not a member; a
+      release from a working checkout carries whatever that checkout holds.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this release run on a fresh clone of the tag, is the dry run a member with its cost, and which
+      members need the tag?
+    relates:
+      - id: supply.release.1
+        how: see
+      - id: supply.release.3
+        how: see
+      - id: gates.command.17
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the dry-run member at release with a cost, and the release recipe
+        clones the tag before it runs. No tool key is bound yet.
+  - id: supply.release.11
+    slug: a-hosted-release-workflow-maps-to-members
+    since: 0.1.0
+    rule: >-
+      A hosted release workflow maps its jobs to the members file and ends with the runner's report, installs
+      once and never per job, and a reproducible build builds each artifact twice from two clean copies and
+      compares byte for byte, one reproducibility proof for each artifact.
+    detail: >-
+      supply.workflows.5 holds that a workflow which runs gate members runs the one gate command. This rule
+      holds the release workflow's shape: each job is a member or a group of members of the release tier, the
+      last job prints the runner's report with its counts (gates.measures.6), and the install runs once into a
+      cache the jobs share. supply.release.3 holds the same bytes from any directory; this rule runs that
+      proof for each artifact, two clean copies each, the artifacts in parallel (gates.command.18).
+    level: release
+    why: >-
+      Hosted release workflows of one fleet installed per job and had no success on record in seven
+      repositories; a release that builds once cannot say its bytes are reproducible.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule
+    review_question: >-
+      Which member does each job of this release workflow run, how many times does it install, and is each
+      artifact built twice and compared?
+    relates:
+      - id: supply.workflows.5
+        how: see
+      - id: supply.release.3
+        how: see
+      - id: gates.measures.6
+        how: see
+      - id: gates.command.18
+        how: see
+    open:
+      - >-
+        Planned check: the workflow linter's job list is compared with the members file. No tool key is bound
+        yet.

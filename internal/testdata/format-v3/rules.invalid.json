@@ -1,0 +1,9 @@
+[
+  {"name": "an unknown field", "patch": [{"op": "add", "path": "/0/rules/0/size", "value": 1}], "problem": "Additional properties are not allowed ('size' was unexpected)"},
+  {"name": "a missing required field", "patch": [{"op": "remove", "path": "/0/rules/1/statement"}], "problem": "'statement' is a required property"},
+  {"name": "a wrong enum", "patch": [{"op": "replace", "path": "/0/rules/0/strength", "value": "Hard"}], "problem": "is not one of"},
+  {"name": "the status later of format v2", "patch": [{"op": "replace", "path": "/0/rules/1/status", "value": "later"}], "problem": "is not one of"},
+  {"name": "a standing written as a field", "patch": [{"op": "add", "path": "/0/rules/0/standing", "value": "enforced"}], "problem": "Additional properties are not allowed ('standing' was unexpected)"},
+  {"name": "a tier written beside the rung", "patch": [{"op": "add", "path": "/0/rules/0/bindings/0/tier", "value": "E"}], "problem": "Additional properties are not allowed ('tier' was unexpected)"},
+  {"name": "a rung above six", "patch": [{"op": "replace", "path": "/0/rules/0/bindings/0/rung", "value": 7}], "problem": "maximum"}
+]

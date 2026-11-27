@@ -1,0 +1,3 @@
+# Path patterns with an escaped dot, as a tool's allowlist writes one. One a
+# line; \\ is a backslash.
+secret\\.txt

@@ -1,0 +1,81 @@
+{
+  "bindings": [],
+  "changelog": [],
+  "contract": "1.3",
+  "decisions": [],
+  "health": {
+    "numbers": [
+      {
+        "name": "a",
+        "value": 0
+      },
+      {
+        "name": "a",
+        "value": 0
+      },
+      {
+        "name": "a",
+        "value": 0
+      },
+      {
+        "name": "a",
+        "value": 0
+      },
+      {
+        "name": "a",
+        "value": 0
+      },
+      {
+        "name": "a",
+        "value": 0
+      },
+      {
+        "name": "a",
+        "value": 0
+      }
+    ]
+  },
+  "history": [],
+  "identity": {
+    "format": 1,
+    "governance": {
+      "contribution": "open",
+      "decision_required": false,
+      "review_days": 1,
+      "trial_releases": 0
+    },
+    "kind": "base",
+    "language": "en",
+    "licences": {
+      "rules": "example"
+    },
+    "name": "example",
+    "owners": [],
+    "version": "0.0.0"
+  },
+  "release": {
+    "bump": "patch",
+    "contract": "1.3",
+    "date": "2000-01-01",
+    "format": 1,
+    "version": "0.0.0"
+  },
+  "released": false,
+  "rules": [],
+  "sources": [],
+  "structure": {
+    "kinds": [],
+    "layers": [],
+    "parts": []
+  },
+  "terms": [],
+  "tested_set": {
+    "minimum_engine": "0.0.0",
+    "tools": []
+  },
+  "versions": {
+    "contract": "1.3",
+    "engine": "0.0.0",
+    "format": 1
+  }
+}

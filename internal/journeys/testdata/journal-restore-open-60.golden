@@ -1,0 +1,9 @@
+$ gragas journal restore r3
+--- exit 5
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    run r3 has no close, so it is still open and
+  its files may be half written
+    gragas journal recover --apply
+--- stderr

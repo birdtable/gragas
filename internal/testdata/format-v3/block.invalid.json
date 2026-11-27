@@ -1,0 +1,6 @@
+[
+  {"name": "an unknown field", "patch": [{"op": "add", "path": "/0/format", "value": 3}], "problem": "Additional properties are not allowed ('format' was unexpected)"},
+  {"name": "a missing required field", "patch": [{"op": "remove", "path": "/0/anchor"}], "problem": "'anchor' is a required property"},
+  {"name": "a rule that carries its own anchor", "patch": [{"op": "add", "path": "/0/rules/0/anchor", "value": "x"}], "problem": "Additional properties are not allowed ('anchor' was unexpected)"},
+  {"name": "a wrong enum", "patch": [{"op": "replace", "path": "/0/rules/0/origin", "value": "copied"}], "problem": "is not one of"}
+]

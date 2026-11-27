@@ -1,0 +1,248 @@
+part: tests
+concern: flakes
+order: 6
+title: Reds, flakes and quarantine
+summary: >-
+  A red is never rerun to green. A result that is not reproduced is quarantined on first sight, ticketed and
+  counted, with a cap and an expiry, and its rate is recorded per test with the machine load beside it. Timing
+  assertions judge only on an undisturbed machine.
+rules:
+  - id: tests.flakes.1
+    slug: no-rerun-to-green
+    since: 0.1.0
+    rule: >-
+      A failing test is never rerun to green, and a red suite is never accepted as the new normal.
+    detail: >-
+      No count above one and no retry step or loop in a gate script or workflow, and zero retries read back
+      from the runner configs. The scan excepts the admission step by name (tests.admission.1, decision 32). A
+      count of one is required by tests.selection.6 and is allowed. A green test list with a non-zero exit is
+      classified as an infrastructure fault before any rerun (tests.flakes.5). A red suite is never
+      re-normalised: the suite is green or the cause is ticketed.
+    level: program
+    why: >-
+      Own bugs: one repo's rule. The donor reruns three times to prove a flake; this catalogue bans reruns and
+      quarantines on first sight.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-07-testing
+        where: sections 6.6 and 7.1
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. gate scan that parses Makefiles, shell gate scripts and workflow YAML and fails on
+          a count above one outside the admission step, on a rerun-fails option and on retry steps or loops
+          around the test command The scan fails on go test -count=3 (any -count=N with N above 1) and on
+          gotestsum --rerun-fails; -count=1 is required by tests.selection.6 and allowed; the scan is
+          gatescan. Plant: a Makefile line with a count of three and a workflow retry step each fail. Control:
+          a count of one passes
+      - binding: ts
+        class: preset-config
+        tier: "2"
+        note: >-
+          runner and browser-test configs read back with retries at zero, and a restricted-syntax rule on
+          numeric retry options. Plant: a config with retries above zero fails. Control: retries zero passes
+    relates:
+      - id: tests.admission.1
+        how: see
+      - id: tests.selection.6
+        how: see
+      - id: tests.flakes.5
+        how: see
+    open:
+      - >-
+        The workflow half is a policy over workflow files (verified); the Makefile and shell half needs the
+        scan, which is not built.
+  - id: tests.flakes.2
+    slug: quarantine-cap-and-expiry
+    since: 0.1.0
+    rule: >-
+      A result that is not reproduced is quarantined on first sight, ticketed and counted; the quarantined
+      test has an expiry date, by which it is fixed or deleted, and the count and oldest age are reported per
+      repo.
+    detail: >-
+      A quarantine with no clock is a way to delete a test without saying so. Quarantine is a shrink-only list
+      that does not lock landing but blocks the next proof-debt credit until ticketed; the cap and the expiry
+      follow the exemption rules of the gates part. A quarantine that is a separate suite is not covered by
+      the skip rule. Applies to repos with a flaky-test list.
+    level: program
+    why: >-
+      Fowler names the graveyard: tests left in quarantine are not helping regression coverage, and his remedy
+      is a limit on how many or how long. Neither the cap nor the expiry has a number: both are guesses until
+      a real quarantine set exists.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: fowler-non-determinism
+        backs: rule
+      - ref: p-07-testing
+        where: section 6.6
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. quarantine list as exception records with cap and expiry through the shared
+          exception parser; a count and oldest-age line per repo. Plant: an entry past its date is reported.
+          Control: an entry within its date passes
+    open:
+      - >-
+        The row should split: the ban on reruns is a rule, the quarantine cap and expiry are guesses with no
+        stopping check; the count and age line is report-only at first.
+      - >-
+        Reference conflict: the donor quarantines after three passing reruns at the same revision; this
+        catalogue quarantines on first sight and bans reruns.
+    note: >-
+      Merges our rule, the handbook's quarantine rule and the donor's flake-quarantine rule; they differ only
+      in when a test is quarantined.
+  - id: tests.flakes.3
+    slug: flake-rate-recorded
+    since: 0.1.0
+    rule: >-
+      Record, per test, how often it failed on a tree that later passed unchanged, and report the rate with
+      the machine load at the time.
+    level: program
+    why: >-
+      In one study 78 percent of flaky tests were flaky when first written, so the first sighting is early.
+      Load from parallel agents is a flake source people rarely count: our own swings of 22 and 40 percent in
+      one measurement were load noise. An agent facing a red will rerun it, so the gate must write the record.
+    kind: measure
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-07-testing
+        where: section 7.1
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. per-test history from gate records keyed by tree and load, written by the gate.
+          Plant: a fixture history with one flaky test must count it. Control: a stable history counts zero
+    open:
+      - >-
+        Measure, report only; no plant in the handbook, the plant is the fixture history from the web
+        catalogue.
+  - id: tests.flakes.4
+    slug: timing-assertions
+    since: 0.1.0
+    rule: >-
+      A test asserts counted work, never elapsed wall time; where timing is the point, it judges only on an
+      undisturbed machine or as a ratio, and fixed waits carry a reason.
+    detail: >-
+      A time budget is measured by a script at low load. A loaded box gives no verdict, which is a bounded
+      third result (an all-inconclusive run still locks). A scan for the wall-clock reading used as an
+      argument of an assertion, with the remaining uses in test files on a shrink-only count; a wait deadline
+      is legitimate and carries a marker or allow-list entry. A fixed-waits list and a flake counter exist
+      beside it. Wall-time budgets are measured by a script at low load, never asserted in a test.
+    level: function
+    why: >-
+      Own bugs: 7 of 60 sampled bugs; one project fixed three cases, and 9 load flakes in 12 days read as
+      waits, not pixels.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: analyzer
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          v1 class our-plugin. typed check in the test-hygiene plugin that a wall-clock reading is an argument
+          of an assertion call in a test; remaining uses on a shrink-only count ast-grep could match the
+          pattern but has no types, so the Go check is the typed analyzer of the testhygiene family. Plant: a
+          test that fails when elapsed time passes two seconds fails the check Planted Go form: if
+          time.Since(t0) > 2*time.Second { t.Fatal() } in a test fails. Control: a deadline passed to a wait
+          helper passes
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "2"
+        note: >-
+          eslint-plugin-playwright no-wait-for-timeout and no-networkidle at error; restricted-syntax on
+          numeric workers; retries read back at zero (Biome form is a GritQL plugin on the same calls and
+          literals) The web restricted-syntax rule is ESLint no-restricted-syntax on literal workers and
+          maxWorkers. Plant: a wait-for-timeout call and a network-idle wait each fire. Control: a spec
+          without them passes
+    open:
+      - >-
+        The wait-deadline exemption needs a marker comment or an allow list; without it the Go rule fires on
+        legitimate deadlines.
+      - >-
+        The load probe and the bounded no-verdict result are runner work, not built; its bound is still an
+        open ticket in the donor and an all-inconclusive run still locks.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own bugs"
+  - id: tests.flakes.5
+    slug: infra-fault-classified
+    since: 0.1.0
+    rule: >-
+      A green test list with a non-zero exit is classified as an infrastructure fault before it is re-run.
+    level: program
+    why: Reruns of an infrastructure fault look like reruns to green.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. runner step that classifies a green test list with a non-zero exit as an
+          infrastructure fault. Plant: a run whose tests all pass but whose exit is non-zero is classified
+          infrastructure and not rerun silently. Control: a normal green run passes
+    open:
+      - Needs the runner; not built.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: tests.flakes.6
+    slug: the-first-red-opens-the-ticket
+    since: 0.1.0
+    rule: >-
+      No rerun closes a red: the hub may rerun a red proof once on a quiet slot as a diagnostic and logs both
+      results, the first red opens the ticket whatever the rerun says, and a second red quarantines the test
+      with an owner and an expiry.
+    detail: >-
+      tests.flakes.1 holds that a failing test is never rerun to green, and tests.flakes.2 holds the
+      quarantine with its expiry. This rule holds the one rerun that is allowed and what it is for. The rerun
+      is a measurement: run alone on a quiet slot, it tells whether load exposed the fault. Its green does not
+      close anything. The ticket names the test, the load at the red and the two results. A second red of the
+      same test, in any run, moves it to the quarantine list (gates.exemptions.4), with an owner and the date
+      by which it is fixed or deleted. A quarantined race skips its test at push and nothing else: the member
+      still runs, so no member leaves push over one test, and the skip line names the test, the ticket and the
+      expiry. At release a race-kind row's test is not skipped, so the release proves the fix. The first
+      implementation is the shared module's tier quarantine list.
+    level: process
+    why: >-
+      Reruns hide what load exposes: one project's journeys flaked at load 76 to 202 and only under load; 13
+      red journeys of another were 75 of 75 green alone, and each had a cause and a fix.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      Was this red rerun, where are both results logged, did the first red open a ticket, and is this the
+      second red?
+    relates:
+      - id: tests.flakes.1
+        how: see
+      - id: tests.flakes.2
+        how: see
+      - id: gates.exemptions.4
+        how: see
+    open:
+      - >-
+        Planned check: the landing record holds at most one rerun per red with both results and a ticket id.
+        Plant: a red followed by a green with no ticket fails. Control: a red with its ticket passes. No tool
+        key is bound yet.

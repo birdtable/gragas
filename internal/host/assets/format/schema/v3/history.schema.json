@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "history.schema.json",
+  "title": "One line of history.jsonl (format v3)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "number", "kind", "entity", "after", "who", "when", "plan"],
+  "anyOf": [
+    {"properties": {"number": {"maximum": 1}}},
+    {"required": ["previous"]}
+  ],
+  "properties": {
+    "format": {"$ref": "common.schema.json#/$defs/format"},
+    "number": {"type": "integer", "minimum": 1, "description": "the sequence number; two branches may each append the next one"},
+    "previous": {"$ref": "common.schema.json#/$defs/digest", "description": "the digest of the entry before it on its branch; required from number 2 on, absent on the first entry"},
+    "kind": {"$ref": "common.schema.json#/$defs/slug", "description": "what the command did, such as promote or retire"},
+    "entity": {"$ref": "common.schema.json#/$defs/text", "description": "the entity kind and its key, such as rule:store.schemas.2"},
+    "before": {"$ref": "common.schema.json#/$defs/lifecycle", "description": "absent when the entity is new"},
+    "after": {"$ref": "common.schema.json#/$defs/lifecycle"},
+    "who": {"$ref": "common.schema.json#/$defs/text"},
+    "when": {"$ref": "common.schema.json#/$defs/timestamp"},
+    "plan": {"$ref": "common.schema.json#/$defs/digest", "description": "the digest of the plan the yes accepted"},
+    "command": {"$ref": "common.schema.json#/$defs/text", "description": "the command the yes agreed to, as a person types it, without --apply; guard staged replays it to recompute the plan digest. Absent on a line written before it was recorded"},
+    "decision": {"$ref": "common.schema.json#/$defs/slug", "description": "the decision the entry records, when the command takes one"},
+    "reverts": {"$ref": "common.schema.json#/$defs/digest", "description": "the digest of the entry an undo takes back, as previous names one; absent on every other entry"},
+    "statements": {"type": "object", "additionalProperties": {"$ref": "common.schema.json#/$defs/digest"}, "description": "the digest of each rule's statement as the conversion wrote it, keyed by rule id; on a migrate entry only, and empty when the rulebook held no rule; a key that names no rule holds nothing"}
+  }
+}

@@ -1,0 +1,13 @@
+package coreapi_test
+
+import (
+	"testing"
+
+	coreapi "github.com/birdtable/gragas/internal/core/api"
+)
+
+func TestTermRestore(t *testing.T) {
+	t.Parallel()
+	_ = coreapi.TermRestore
+	t.Fatal("term restore: write the unit test of its operation")
+}

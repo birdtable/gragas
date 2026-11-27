@@ -1,0 +1,218 @@
+format: 3
+part: web
+concern: permissions
+rules:
+  - id: web.permissions.1
+    statement: "A request is sent only when the visitor holds its permission: every read, write, route loader and prefetch goes through a gate primitive, raw query, mutation and fetch calls are banned outside the core client, the auth layer and generated code, and the gate sits at the data hook, not only at the page."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      definition: "The gate primitives are a gated query, a gated infinite query, gated parallel queries, a gated mutation and an ensure-gated loader. The raw framework calls (query, queries, infinite query, mutation) and `fetch` are banned in every source folder except the core client folder, the authz folder and the generated-output folder. Connector reads use the gated query. A tab or panel that reads gated data declares its permission. No request for a gated read is sent before the decision is allow, from a hook or from a route loader. The gated-read wrapper in the console stack is `ask(perm, load)`."
+      pros:
+        - "The permission rule is invariant 17 of the source; a read sent before the grant is known leaks data and work."
+  - id: web.permissions.2
+    statement: "Writes are gated like reads: they go through a gated mutation, and handlers use the guarded helpers, never a bare permission assert."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      pros:
+        - A write that checks its permission by hand can skip the loading and unknown cases the gate already denies.
+  - id: web.permissions.3
+    statement: "Loading, unknown and degraded permission states deny, and gates key off the user's own decision, never a view-as identity."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      definition: Checking and degraded count as deny. A hung dependency does not block unrelated pages.
+      pros:
+        - Allowing while the answer is unknown shows data to someone who may not hold the permission.
+  - id: web.permissions.4
+    statement: "A fail-open permission API is never used; a check allows only on a positive decision."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      definition: "The source named the retired helpers of one codebase (capability checks that return true while loading, and a role gate); the generic rule bans any helper that cannot say unknown."
+      pros:
+        - A fail-open helper allows when it cannot decide.
+  - id: web.permissions.5
+    statement: "Compose the catalogued gate and never hand-roll the enabled flag; branch on the gate status (forbidden, loading, error, data), never on a raw pending flag."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      pros:
+        - A raw pending flag cannot tell denied from loading.
+  - id: web.permissions.6
+    statement: "A list definition declares the permission it requires for every source kind, or an explicit public flag, and a tab or panel that reads gated data declares its permission."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      pros:
+        - A source with no declared permission is gated by nobody.
+  - id: web.permissions.7
+    statement: "Every route is gated by a capability page or an allow-list entry with a reason, including route loaders and hover preload."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      definition: "A route-list test proves the server refuses what the page hides, and the sweep covers every route. Route gating covers route loaders and `hover-preload`."
+      pros:
+        - An ungated route is reachable by URL even when its menu entry is hidden.
+  - id: web.permissions.8
+    statement: "A tab, section or panel renders and mounts only with its permission, and a hidden panel fetches nothing."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      pros:
+        - A panel that mounts hidden still requests its data.
+  - id: web.permissions.9
+    statement: A navigation item requires the same permission as its target page.
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      pros:
+        - A menu entry the visitor cannot use is a dead end and a hint of what exists.
+  - id: web.permissions.10
+    statement: "Permission descriptors come from one registry generated from the contract; no raw permission strings and no hand-added permissions."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      pros:
+        - A hand-typed permission string passes review and fails at run time.
+  - id: web.permissions.11
+    statement: "Every gated surface (page, tab, section, row, button, field, navigation entry) renders one designed state for allow, deny, loading and degraded; nothing appears then vanishes, and no denied control stays live."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      pros:
+        - "A gate that hides a control during loading shifts the layout when the decision arrives, and a control that stays live when denied invites a failing request."
+  - id: web.permissions.12
+    statement: "A gate in disable mode renders a disabled control while loading, not nothing."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      pros:
+        - "A control that is absent and then present moves the box, which the layout-shift rule forbids."
+  - id: web.permissions.13
+    statement: "The capability fan-out has a bounded timeout that yields degraded, so a hung dependency degrades one surface and blocks no unrelated page."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      pros:
+        - An unbounded wait on a permission service hangs every page behind it.
+  - id: web.permissions.14
+    statement: "With no grants, while loading and while degraded, a page fires no request except identity and session; with one grant only that permission's reads fire, and the sweep must render as many pages as there are routes."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      definition: "A browser run renders every route under no grants, while loading and degraded, and fails on any request except the identity call. The number of pages rendered must equal the route count from the router, which proves the sweep reads something."
+      pros:
+        - "One check proves every other permission rule end to end; with no sweep, a fetch before the grant is known is found in production."
+  - id: web.permissions.15
+    statement: "Permission tests use a mock identity provider with grants, degraded and loading modes, and loading models production."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      definition: "In production, loading means all service views are null; the fixture's loading mode does the same."
+      pros:
+        - A fixture whose loading differs from production proves nothing about the real unknown state.
+  - id: web.permissions.16
+    statement: No per-row fan-out of requests for a column or field the user cannot read.
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish."
+    reasoning:
+      pros:
+        - Each row costs a request that returns forbidden.
+  - id: web.permissions.17
+    statement: "A program that declares the kind no-identity has no sign-in surface: no sign-in route or form, no identity-provider client, and no stored session or token."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - no-identity
+    reasoning:
+      definition: "The kind switches the permission rules off on the project's word alone (S73), so this rule is the fact check of that word. A reviewer lists each route, each form and each outgoing call of the program and names any that asks a visitor who they are or sends proof of it. One that exists means the project is not of this kind, and the permission rules bind it again."
+      pros:
+        - "A project that declares the kind excuses itself from every permission rule; with no check of the claim, a program with a sign-in ships ungated."
+    sources:
+      - ref: gragas-spec-s73
+        where: "S73, and S61 for the kinds"
+        backs: rule

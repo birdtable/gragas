@@ -1,0 +1,40 @@
+part: aws
+concern: limits
+order: 3
+title: Concurrency limits
+summary: Concurrency caps come from shared defaults and are not used as a throttle.
+rules:
+  - id: aws.limits.1
+    slug: concurrency-caps-from-defaults
+    since: 0.1.0
+    rule: >-
+      Concurrency caps come from shared defaults: none in development, none by default in the shared
+      components, and a cap is never used as a queue throttle.
+    detail: >-
+      In Go, a daemon bounds its work with request, concurrency and queue caps from one unit template. A queue
+      consumer that needs a ceiling sets the queue maximum concurrency instead; see the consumer rule for
+      outside APIs.
+    level: deploy
+    why: >-
+      A reserved-concurrency cap used to throttle a queue starves the function other triggers need and hides
+      the real limit.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing a reserved-concurrency setting outside the shared component defaults and any
+          in the development stage, and a rule on a cap paired with a queue source. Plant: a reserved
+          concurrency on a queue-triggered function fails. Control: a queue maximum concurrency on the event
+          source passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      Related to the service rule third-party-concurrency-ceiling, which reads the queue maximum concurrency.

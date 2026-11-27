@@ -1,0 +1,200 @@
+part: react
+concern: testing
+order: 6
+title: React testing
+summary: >-
+  Specs and stories render through one harness with the app's providers and router, and tests never stub the
+  network by hand.
+rules:
+  - id: react.testing.1
+    slug: one-render-harness
+    since: 0.1.0
+    rule: >-
+      Specs and stories render through one harness; the memory router is banned outside it, stories use the
+      shared providers with a route parameter instead of their own router, and the harness registers the
+      router's types.
+    detail: >-
+      The harness builds the app with its providers and router. A test that builds a private router or imports
+      the memory router outside the harness fails. Registration of the router types in the harness keeps typed
+      links working in tests.
+    level: file
+    why: >-
+      A private router in a test hides provider and routing bugs that the real app has.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: testing-library-docs
+        where: guiding principles
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          no-restricted-imports of the memory router outside the harness module and no-restricted-syntax on a
+          router created in a story file (Biome form: `noRestrictedImports` and a GritQL plugin on the same
+          calls). Plant: a spec importing the memory router fails; a story that makes its own router fails.
+          Control: a spec that renders through the harness passes
+    open:
+      - Never run on a real React tree.
+    note: React router form of the one-behaviour-test rule in the web part.
+  - id: react.testing.2
+    slug: no-stubbed-network
+    since: 0.1.0
+    rule: >-
+      Tests do not stub the network by hand; the sanctioned mock is a request-handler mock fed by server
+      samples.
+    detail: >-
+      A lint bans `vi.mock('fetch')` and `vi.stubGlobal('fetch')` in tests (the double-quoted forms
+      `vi.stubGlobal("fetch")` and `vi.mock("...fetch")` too), and the manifest bans nock and mockttp there.
+      The request-handler mock (msw) is the sanctioned form, with handlers fed by sample responses taken from
+      the server.
+    level: function
+    why: A hand stub tests the stub; a sample from the server tests the contract.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: msw-docs
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint no-restricted-syntax on `vi.mock` of a fetch module and `vi.stubGlobal` of fetch, and a
+          manifest ban of nock and mockttp in tests (Biome form: a GritQL plugin on the same calls). Plant:
+          `vi.stubGlobal("fetch", ...)` or `vi.mock("...fetch")` in a spec fails. Control: an msw handler in
+          the same spec passes
+    open:
+      - Never run on a real React tree.
+      - "v1 evidence, not yet a source: D, and the catalogue search found no other holder"
+    note: React form of the rule on test doubles in the base tests part.
+  - id: react.testing.3
+    slug: kit-parts-render-bare
+    since: 0.1.0
+    rule: >-
+      Every exported part of the shared kit renders with no provider and no wrapper, through the component
+      render test, and its words come from the part's own defaults.
+    detail: >-
+      Component render test: `@testing-library/react`. A test renders every exported part from the catalogue
+      with no provider and no wrapper and asserts it does not throw and its words come from the part's own
+      defaults (a strings object with English defaults that the host may override in part). A part that reads
+      a context must give the context a default.
+    level: package
+    why: >-
+      The donor's design system added a provider and an English defaults object for this at its 0.13.0
+      release. A part that needs a provider breaks every host that does not mount it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - web-app
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test in the shared kit renders every exported part from the catalogue with testing-library and no
+          provider. Plant: a part that reads a context with no default fails the render. Control: a part that
+          works bare passes
+    relates:
+      - id: web.parts.14
+        how: see
+    open:
+      - >-
+        No fault in our record; built because every rule binds from adoption (decision 19). If the operator
+        would rather not build for evidence D, this becomes a best practice.
+      - Nothing to prove until a provider exists.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+    note: >-
+      The provider form of web.parts.14 (kit self-contained), moved here from the web part.
+  - id: react.testing.4
+    slug: page-story-file
+    since: 0.1.0
+    rule: >-
+      Every page has a sibling story file with the stories Default, Loading, Empty, Error, NoPermission and
+      Phone390, plus Allowed, Denied, CheckingAccess and Degraded.
+    detail: >-
+      The story-tool form of web.testing.8 (an example per page state): the sibling story file sits next to
+      the page file, and the required story names are its exports. Phone390 is the phone-width story.
+    level: file
+    why: A page with no example for a state has never been looked at in that state.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - web-app
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          There is no Allowed, Denied, CheckingAccess or Degraded state to write a story for.
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the examples check of our CLI compares each page file with its sibling story file
+          and the required story names. Plant: a page file with no sibling story, or a story file missing
+          Denied, fails. Control: a page with all ten named stories passes
+    relates:
+      - id: web.testing.8
+        how: see
+    open:
+      - The story names are the reference's.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      The story-file form of web.testing.8, moved here from the web part. Related to the shared-part example
+      rule (web parts concern) and the matrix rule (cells); this one covers pages.
+  - id: react.testing.5
+    slug: story-tool-on-the-one-runner
+    since: 0.1.0
+    rule: >-
+      The story tool is the single test runner through its Vitest addon: every story renders and its play
+      function passes in one pass, and every affected story also passes the config proof.
+    detail: >-
+      Runner addon: `addon-vitest`. The config proof is the canary brand and pseudo-locale (en-XA) rule. The
+      platform's single runner is Vitest (decision 10); this is the React stack's story-tool binding of
+      web.testing.11.
+    level: program
+    why: Two runners split the evidence and double the maintenance.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - web-app
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: vitest
+        tier: "3"
+        note: >-
+          the story tool's Vitest addon as the one runner, with a config check that no second runner is
+          configured. Plant: a second runner configured for stories fails the config check. Control: one
+          runner configured passes
+    relates:
+      - id: web.testing.11
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: The story-tool binding of web.testing.11, moved here from the web part.

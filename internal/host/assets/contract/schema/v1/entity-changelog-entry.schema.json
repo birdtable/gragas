@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-changelog-entry.schema.json",
+  "title": "Changelog entry (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "release",
+    "entity",
+    "change"
+  ],
+  "properties": {
+    "release": {
+      "$ref": "common.schema.json#/$defs/semver",
+      "x-introduced": "1.0"
+    },
+    "entity": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "change": {
+      "type": "string",
+      "enum": [
+        "added",
+        "changed",
+        "weakened",
+        "tightened",
+        "retired",
+        "restored",
+        "replaced"
+      ],
+      "x-introduced": "1.0"
+    },
+    "bump": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/bump"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "the bump kind of the release the entry shipped in; null when the engine has none for it",
+      "x-introduced": "1.1",
+      "default": null
+    },
+    "date": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/date"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "the date of the release the entry shipped in; null when the engine has none for it",
+      "x-introduced": "1.1",
+      "default": null
+    },
+    "sentence": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "description": "written by a person, display only (S75)",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "consumer_action": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "remedy": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "diff": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/url"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    }
+  }
+}

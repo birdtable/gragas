@@ -1,0 +1,43 @@
+part: service
+concern: jobs
+title: Job runs
+summary: >-
+  Services that run scheduled or background jobs record every run the same way, so one view shows what ran,
+  when, and how it ended.
+rules:
+  - id: service.jobs.1
+    slug: one-job-run-record
+    since: 0.1.0
+    rule: >-
+      A service that owns job runs records each run in one shared job-run schema, through one shared recorder,
+      and exposes them through one shared operations contract.
+    detail: >-
+      The shared operations contract serves the runs at /ops/job-runs, and every run validates against the
+      shared job-runs schema.
+    level: program
+    why: >-
+      Each service inventing its own run log leaves no single answer to what ran last night and what failed.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    unless:
+      - kinds:
+          - service
+        facets:
+          - no-jobs
+        reason: a service that owns no job runs has nothing to record
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a contract test that the service's job runs validate against the shared job-run schema and are
+          listed by the shared operations endpoint. Plant: a job that writes its own ad hoc run record fails
+          the schema test. Control: a run written by the shared recorder passes
+    note: Placed in DynamoDB by the first pass; it is a service rule whatever the store.

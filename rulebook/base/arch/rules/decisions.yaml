@@ -1,0 +1,87 @@
+format: 3
+part: arch
+concern: decisions
+rules:
+  - id: arch.decisions.1
+    statement: "A decision has a permanent id and one home the repo declares, a status, supersession links on both sides, and a link to the check that holds it or the word instruction; every cited id resolves, and one index test checks all of it."
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "Retired: decision records stay private; the public reasons are docs/reasons/. The text below is what the rule said while it was active. The repo declares one container for decisions: a file per decision (a MADR-style record with front matter validated against a JSON Schema), an entry in one append-only log amended only by dated sub-entries, or a numbered row in a design note with ids numbered across notes. Whatever the container, the invariants are the same: an id that is never reused, a status from a fixed set, supersedes and superseded-by links where a target that does not point back fails, and a check link or the word instruction on an accepted decision. A reversal is a new decision that marks the old one superseded; the old one is not edited away. Every decision id cited anywhere in the repo resolves, links are resolved by a link checker, and an accepted decision whose check file does not exist fails. One index test reads the declared container and checks all of this."
+      pros:
+        - "Decision logs are prose files in each repo, so a decision cannot be found, superseded or tied to its check. Three target repos keep decisions in three different containers with the same invariants; the invariants are what a reader relies on, the container is not."
+    sources:
+      - ref: madr
+        backs: rule
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.decisions.2
+    statement: "A structural change needs a ruled decision record before any code, with a machine-read header."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Structural means a new or split module, a new dependency edge outside an existing record's scope, a new shared package, a new element kind, an app-wide concern, a new library family, or a new gate tier or always-full check. If no door of the classification table (arch.structure.1) fits, the record is written and ruled before code. Only a ruled record may be named when gate configuration changes. A chart library is such a decision: the first project that needs one writes the record, with an earlier ruling as the recorded prior, and there is no ban and no pick now. A new rule, shared package or framework needs its change record, check and pack first."
+      pros:
+        - "A structure that appears in code first becomes the precedent; the record makes the choice visible while it is still cheap to change."
+    relations:
+      relates:
+        - arch.structure.1
+  - id: arch.decisions.3
+    statement: "The kind of change decides who rules it, and the decision record names who ruled."
+    strength: may
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "Retired: decision records stay private; the public reasons are docs/reasons/. The text below is what the rule said while it was active. A new module, slot, shared package or check is ruled by the area lead. A new library family, anything that changes a recorded operator decision, or a change to the ten-domain list's foundation and business split is ruled by the operator through the engineering manager. The record carries its ruling header."
+      pros:
+        - "A change ruled by the wrong person is not ruled; naming the ruler in the record is what lets a later reader trust it."
+    sources:
+      - ref: decision-2
+        backs: rule
+      - ref: decision-3
+        backs: rule
+      - ref: decision-28
+        backs: rule
+  - id: arch.decisions.4
+    statement: "Every decision record lists each rejected alternative with the reason it lost, a rejected item with no reason fails, and a new module, repository or shared interface answers two questions in its change."
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "Retired: decision records stay private; the public reasons are docs/reasons/. The text below is what the rule said while it was active. Each decision, in whatever container arch.decisions.1 declares, has a Rejected part listing every alternative considered, each with the reason it lost beside it. A decision with no alternative says so in one line (none considered, and why the answer was forced). The index test of arch.decisions.1 fails a decision with no Rejected part and a rejected item with no reason. Whether the alternatives were real stays review. A seeded decision record with a single design must be flagged."
+      pros:
+        - "Design it twice was written assuming hours per design; for an agent a second design costs minutes, and the first plausible design is what agents settle on. The rejected alternative is the part somebody later proposes again; without its reason the same argument is held twice."
+    relations:
+      relates:
+        - arch.decisions.1
+        - arch.structure.5
+    sources:
+      - ref: ousterhout-aposd
+        where: chapter 11
+        backs: rule
+      - ref: b-04-philosophy-of-software-design
+        where: item T10
+        backs: rule
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.decisions.5
+    statement: "An id is never the next free number taken on a branch: it is a slug, derived from content, or assigned by the landing step, and a reference to an id that has not landed is refused."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Two branches that each take the next number collide as surely as two edits of one line. Where an id has no public grammar (a decision, a note, a planned item) it is a slug, permanent and chosen once; ids already issued as numbers keep their numbers. Where it has one that must stay numeric and frozen (a rule id), the author writes a provisional form and the landing step allocates the number, rewrites every reference in the change and records the allocation in its own commit; until that exists, whoever dispatches the work assigns the number in the ticket. A number the host system already allocates (a pull request's) is safe. Counts that are ratchets are not ids: two changes moving one count meet on purpose, and the answer is to add them. Per-author ranges are not used, since they put the roster into permanent ids."
+      pros:
+        - "Own measure: two changes took the same decision number in the same week, and the rulebook's rule ids and the fourteen ports are counters of the same shape."
+    relations:
+      relates:
+        - arch.decisions.1
+    sources:
+      - ref: towncrier-fragments
+        says: "Change notes are fragments named by the change, not entries numbered in one file."
+        backs: rule
+      - ref: go-api-next
+        says: "A proposed API addition is a file named by its issue, joined at release."
+        backs: rule

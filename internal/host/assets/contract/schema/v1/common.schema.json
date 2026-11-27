@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "common.schema.json",
+  "title": "Shapes shared by the contract's schemas (contract v1)",
+  "$defs": {
+    "contract": {
+      "type": "string",
+      "pattern": "^1\\.(0|[1-9][0-9]*)$",
+      "description": "the contract version a document is written in: the major is this folder's, the minor is the document's; a reader that finds a newer major stops and names both versions"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
+    },
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "format",
+        "engine"
+      ],
+      "properties": {
+        "contract": {
+          "$ref": "#/$defs/contract",
+          "x-introduced": "1.0",
+          "x-decides": "which contract version's schema reads the document, and whether it is read or ends not ready on a newer major"
+        },
+        "format": {
+          "type": "integer",
+          "minimum": 1,
+          "x-introduced": "1.0"
+        },
+        "engine": {
+          "$ref": "#/$defs/semver",
+          "x-introduced": "1.0"
+        }
+      },
+      "description": "the three versions every report and bundle carries"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z]+\\.[a-z0-9]+(-[a-z0-9]+)*\\.[1-9][0-9]*$"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "description": "UTC, to the second"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "language": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]+)*$"
+    },
+    "url": {
+      "type": "string",
+      "pattern": "^https://[^\\s]+$"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "plain words, display only"
+    },
+    "strength": {
+      "type": "string",
+      "enum": [
+        "must",
+        "should",
+        "may"
+      ]
+    },
+    "bump": {
+      "type": "string",
+      "enum": [
+        "major",
+        "minor",
+        "patch"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "trial",
+        "active",
+        "retired"
+      ]
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "authored",
+        "imported",
+        "migrated"
+      ]
+    },
+    "rung": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 6
+    },
+    "runPoint": {
+      "type": "string",
+      "enum": [
+        "edit",
+        "commit",
+        "push",
+        "land",
+        "review",
+        "release",
+        "deploy"
+      ]
+    },
+    "targetType": {
+      "type": "string",
+      "enum": [
+        "source",
+        "config",
+        "migration",
+        "container",
+        "workflow",
+        "iac",
+        "api-spec",
+        "prose",
+        "commit",
+        "telemetry-registry",
+        "dependency",
+        "package"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "error",
+        "warning",
+        "info"
+      ]
+    },
+    "standing": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "enforced",
+        "reviewed",
+        "planned",
+        "advisory",
+        "retired"
+      ],
+      "description": "derived from status, bindings and proof; a document carries it, no person types it"
+    },
+    "standingMark": {
+      "type": "string",
+      "enum": [
+        "trial",
+        "blocked",
+        "unproven"
+      ],
+      "description": "a mark beside a standing, derived like it and never replacing it (S32)"
+    },
+    "deprecation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "since",
+        "removed_in"
+      ],
+      "properties": {
+        "since": {
+          "$ref": "#/$defs/contract",
+          "x-introduced": "1.0"
+        },
+        "removed_in": {
+          "type": "string",
+          "pattern": "^[2-9][0-9]*\\.0$",
+          "x-introduced": "1.0",
+          "description": "the major that removes the old shape, two minors after both shapes were first emitted"
+        }
+      },
+      "description": "the window of a deprecated shape: x-deprecated on a field carries this"
+    },
+    "mark": {
+      "type": "string",
+      "enum": [
+        "same",
+        "tighter",
+        "weaker",
+        "none"
+      ]
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "not run",
+        "reviewed"
+      ]
+    },
+    "textOrEmpty": {
+      "type": "string",
+      "description": "text whose absence means empty: the one text shape that takes the empty string"
+    },
+    "digestOrEmpty": {
+      "type": "string",
+      "pattern": "^(sha256:[0-9a-f]{64})?$",
+      "description": "a digest whose absence means empty: no digest"
+    }
+  }
+}

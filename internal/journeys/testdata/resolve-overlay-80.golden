@@ -1,0 +1,31 @@
+$ gragas resolve
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+layers, root first: fixture-parent, fixture-base
+entry                                     rule            layer
+golangci-lint source: wrapcheck           std.errors.1    fixture-base
+golangci-lint source: errorlint           std.errors.4    fixture-parent
+golangci-lint config: errorlint           base.errors.1   fixture-base
+golangci-lint config: nilerr              base.errors.2   fixture-base
+golangci-lint config: revive.var-naming   base.naming.1   fixture-base
+sqlfluff migration: one-change            base.targets.1  fixture-base
+workflow-lint workflow: pinned-actions    base.targets.1  fixture-base
+iac-lint iac: tagged                      base.targets.2  fixture-base
+spec-lint api-spec: documented            base.targets.2  fixture-base
+message-lint commit: subject-length       base.targets.2  fixture-base
+registry-lint telemetry-registry: named   base.targets.2  fixture-base
+package-lint package: licence-listed      base.targets.2  fixture-base
+golangci-lint config: wrapcheck           go.errors.1     fixture-base
+golangci-lint config: errorlint           go.errors.1     fixture-base
+golangci-lint source: staticcheck.SA4006  go.errors.3     fixture-base
+review prose: layout-reviewed             go.layout.1     fixture-base
+golangci-lint config: wrapcheck           go.layout.2     fixture-base
+golangci-lint dependency: depguard        go.layout.2     fixture-base
+container-lint container: one-process     go.layout.3     fixture-base
+stylelint source: field-label             web.forms.1     fixture-base
+1 column not shown: how
+
+  done       20 entries in 2 layers
+--- stderr

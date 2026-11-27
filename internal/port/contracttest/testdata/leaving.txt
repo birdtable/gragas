@@ -1,0 +1,9 @@
+# Paths that name something outside a root, one a line (escapes \\ \n \t):
+# climbing, absolute, and drive-style, which one system reads as absolute.
+# The Writer suite refuses each with ErrOutside.
+../x
+rules/../../x
+/etc/passwd
+C:/x
+C:\\x
+rules\\..\\..\\x

@@ -1,0 +1,66 @@
+format: 3
+part: code
+concern: naming
+rules:
+  - id: code.naming.1
+    statement: "Identifiers follow the language's case convention and one table of verbs and shapes per layer, and do not stutter on the package name."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "In Go names are MixedCaps and do not repeat the package name (a type UserStore in package user stutters; Store does not), underscores and initialisms follow the static-analysis style check. In the web stack identifier patterns are enforced per-layer (for example repository methods are find, list, create, update or delete) and names of classes, tokens and routes follow one table that the repo owns."
+      pros:
+        - "A fixed table lets a reader and an agent guess a name correctly; a stutter and a free spelling make the same thing two things."
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: revive
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: golangci-lint
+        target: source
+        key: staticcheck
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: code.naming.2
+    statement: "One file-name scheme is used, enforced by lint; names of files, folders and routes follow one table."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "For TypeScript files the style is kebab-case with middle extensions ignored. In Go file names are a convention with meaning in suffixes, so the narrow part is enforced: lower case and the fixed layout under cmd and internal. Names of non-code files are checked by a name linter."
+      pros:
+        - A second spelling of a file name makes every glob and every search miss half the files.
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+  - id: code.naming.3
+    statement: "Before a new name is written, the same name in other repositories is found."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Before naming or writing a helper the agent reads the shared module's listing and searches sibling clones; in the web stack the parts catalogue is queryable before a new part, and a second copy found by shape is reported in the change."
+      pros:
+        - An agent invents a name that already exists elsewhere and creates the second spelling.
+  - id: code.naming.4
+    statement: "One spelling is used for each concept across the public surface (paths, parameters, flags, JSON fields and terms)."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A flag has one meaning everywhere, and documents match the registered flags and JSON fields. The glossary half, a product term defined once and a shared word set with one definition, is held in the docs part (docs.glossary.1 and docs.glossary.3)."
+      pros:
+        - Two spellings of one concept make clients and docs guess which one is real.
+    relations:
+      relates:
+        - docs.glossary.1
+        - docs.glossary.3
+    sources:
+      - ref: code-reasons-stated
+        backs: rule

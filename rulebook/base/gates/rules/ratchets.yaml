@@ -1,0 +1,144 @@
+format: 3
+part: gates
+concern: ratchets
+rules:
+  - id: gates.ratchets.1
+    statement: "Debt is a shrink-only list: a new rule starts with today's violations frozen, and a gate fails when a cell gets worse."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Below the milestone a gate fails only when a cell gets worse; the change that needs a higher baseline cannot raise it, because the check compares the working figure with the figure at the merge base. Lowering is free. Each metric is a committed file per entry. A list may not grow without a person typing the growth switch (`--write --grow`) and a named second reader (second-reader), the stored verdict of gates.protection.1. A bulk suppression file alone is not a ratchet: it records existing violations, fails new ones and can only shrink, but it needs the registry of gates.ratchets.4 beside it."
+      pros:
+        - "Held in one Go repo (ratchet files, plant none recorded) and in two web repos (numeric baselines with the grow switch). A new rule that cannot start frozen is never adopted."
+    relations:
+      relates:
+        - gates.protection.1
+        - gates.ratchets.4
+    sources:
+      - ref: decision-38
+        backs: rule
+    bindings:
+      - tool: gragas
+        target: source
+        key: debt
+        severity: error
+        rung: 0
+        run_point: land
+  - id: gates.ratchets.2
+    statement: "A baseline is a numeric ceiling per file that only falls, and raising it needs a stored second-party verdict."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A single count hides one file growing while another shrinks (the existing file baseline in the Go repo is the `file-baseline`), so the ceiling is per file. A baseline entry that no longer applies also fails."
+      pros:
+        - "The first size ratchet at a reference team recorded one violation for a file that grew from 400 to 3,000 lines. The Go baseline files are 39, 40, 79 and 828 lines (V-24)."
+  - id: gates.ratchets.3
+    statement: "A baseline survives a rebase, a rename and a deletion without resetting, and a baseline entry for a missing file fails."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "On a missing path the ratchet helper looks up the rename in the diff against the base: if the path was renamed the entry must move with its number not raised; if deleted the entry must be removed in the same change; otherwise fail. A structural move (renaming or moving a module, package or route) rewrites the keys of every baseline and suppression list it touches and never their counts: the sum of each baseline before and after is equal and no key names a missing path. Stale suppression keys already fail in the ESLint bulk suppression file and in dependency-cruiser's known-violation list (dependency-cruiser behaves the same) -- ESLint bulk suppression file and in known-list tools."
+      pros:
+        - "Without this, a rename resets the baseline to zero and hides the debt. Not measured in Go; the web half rests on a stale entry failing (exit 2) until pruned."
+  - id: gates.ratchets.4
+    statement: "Every baseline is a count made against the merge base, with an owner, a ticket and the stage by which it is zero; growth against the merge base, or any non-zero count at the stage, fails."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "There is no stored list of baselines. The count is made on the merge base and on the head in the same run, so a count that grew fails however the change got there, and a baseline that nobody wrote down cannot be forgotten. The owner, the ticket and the zero-by stage sit in the config that owns the baseline, as a dated TODO which a lint rule turns into an error on the day. The zero check reads the current milestone and fails on anything non-zero at or past the stage; the last stage's gate fails while any count is above zero. One parent issue with sub-issues per rule drives the legacy debt to zero."
+      pros:
+        - "A ratchet that never reaches zero is a permanent exemption; whether our baselines have shrunk was never measured. A reference team's countdowns to zero paid off."
+    relations:
+      relates:
+        - gates.exemptions.4
+    sources:
+      - ref: decision-38
+        backs: rule
+  - id: gates.ratchets.5
+    statement: "A baseline at zero is deleted and its rule becomes a plain error; an empty registered baseline file that still exists fails."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "At zero, the baseline file goes and the rule is absolute; a non-empty baseline at or past its stage fails. The check fails on the empty file so the deletion is not forgotten."
+      pros:
+        - An empty baseline left in place lets the rule quietly regrow.
+  - id: gates.ratchets.6
+    statement: "No new file on a legacy path; the legacy count only shrinks and the baseline is deleted at zero."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Anything outside the declared layout is legacy, and the count of legacy files only falls. On the Go side, files outside the standard layout are counted and the count only falls. On the web side, files in no declared layer are a shrink-only list that is deleted at zero."
+      pros:
+        - A legacy area that can take new files never empties.
+  - id: gates.ratchets.7
+    statement: "Each shared package has a file-count ratchet that only shrinks, and growth needs an explicit gate-change record."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A package over its size has a written reason and the count of large files only falls; raising a shared package's ceiling is a gate change (gates.protection.1)."
+      pros:
+        - A shared package that grows without a count becomes the place everything lands.
+    relations:
+      relates:
+        - gates.protection.1
+        - gates.ratchets.2
+  - id: gates.ratchets.8
+    statement: "A review-class item carries a fingerprint; when it changes, the gate fails until a reason that resolves to a ticket or decision is recorded."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A generated port-surface file per package, diffed in the gate like the export list of a shared package. It covers exported and unexported interfaces and the parameter structs they take; a function parameter on a port goes on the fingerprint too. A `Do(op string, args ...any)` shape would freeze the surface, so it is banned. The value is a committed diff a reviewer sees, not the reason: most landings already name a ticket, so a resolving reason costs nothing. Whether the second case (a consumer broken unseen) is real stays review."
+      pros:
+        - "A port surface changed on 25 of one repo's 472 landings, 11 of another's 82 and 37 of 964 in a third; real changes by construction, so 0 false fires. Struct-only changes this form cannot see: 18, 11 and 1."
+    sources:
+      - ref: r-05-gates-on-real-code
+        where: section 3
+        backs: rule
+  - id: gates.ratchets.9
+    statement: A commit that moves or renames files changes no behaviour and carries no logic edit.
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A similarity check on renames at commit: for a commit marked as a move, every entry in the rename diff at 100 percent similarity must be a pure rename; a mixed commit fails. Moves are declared, because an unmarked move that changes behaviour passes. The known way round is moving, then editing, in two commits, which is the wanted result. A move commit is added to the blame-ignore list (`.git-blame-ignore-revs`). The thing moved is a separate change from the work that uses it."
+      pros:
+        - "Mixed moves hide the real change from a reader (principles report P-02 section 5.14). Argued, no fault of ours."
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+  - id: gates.ratchets.10
+    statement: "A module move is its own change before the change that uses it: a codemod moves the files and rewrites specifiers, mocks, citations and every baseline key in one commit, and one owner makes all moves."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The codemod moves files and rewrites import specifiers, mock strings, comment citations and every registered baseline's path keys in the same commit, with zero logic change and an entry in the blame-ignore list. One mover owns every move change at a time. A move commit may rewrite baseline keys, never their count."
+      pros:
+        - "Concurrent moves conflict, and a move mixed with logic cannot be reviewed."
+    relations:
+      relates:
+        - gates.ratchets.3
+        - gates.ratchets.9
+  - id: gates.ratchets.11
+    statement: "A fingerprint covers the fact the item answers, never the bytes of the file that holds it; an answer about an import is keyed to the import set."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The item of a reviewed answer is what was asked: that package P imports I, that a function has a given length class. The fingerprint is a digest of that fact (the sorted import list of P's non-test files, the function's class), so an unrelated edit to the same file renews nothing and a change to the fact fails the gate until a reason is recorded. Two answers about one file no longer renew together. Where the fact is the file itself, as with a size class, the file digest is right. The answer's schema names the kind of fingerprint, and a file fingerprint on an answer about an import is refused. File-level review of a wiring file is a protected-path question, not a fingerprint."
+      pros:
+        - "Own measure: 13 fingerprint renewals in three days, as many as additions, because two answers share one wiring file and every edit to it renewed both."
+    relations:
+      relates:
+        - gates.ratchets.8
+    sources:
+      - ref: bazel-build-files
+        backs: rule

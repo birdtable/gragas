@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "common.schema.json",
+  "title": "Shapes shared by the rulebook's file schemas (format v3)",
+  "$defs": {
+    "format": {
+      "const": 3,
+      "description": "the format version the file is written in; a reader that finds an older one migrates it forward and one that finds a newer one stops and names both (store.schemas.2)"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z]+\\.[a-z0-9]+(-[a-z0-9]+)*\\.[1-9][0-9]*$",
+      "description": "part.concern.number, frozen at birth"
+    },
+    "slug": {"type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"},
+    "part": {"type": "string", "pattern": "^[a-z]+$", "description": "a part's slug, the first word of a rule id"},
+    "text": {"type": "string", "minLength": 1},
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "timestamp": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$", "description": "UTC, to the second"},
+    "semver": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "language": {"type": "string", "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]+)*$"},
+    "url": {"type": "string", "pattern": "^https://[^\\s]+$"},
+    "strength": {"enum": ["must", "should", "may"]},
+    "status": {
+      "enum": ["proposed", "trial", "active", "retired"],
+      "description": "typed by people; standing is derived from the status, the bindings and their proof, and is never a field"
+    },
+    "origin": {"enum": ["authored", "imported", "migrated"]},
+    "rung": {"type": "integer", "minimum": 0, "maximum": 6, "description": "0 upstream preset, 1 configured built-in, 2 pattern, 3 own plugin or analyzer, 4 fact held by a policy tool, 5 test or kit, 6 review"},
+    "runPoint": {"enum": ["edit", "commit", "push", "land", "review", "release", "deploy"]},
+    "targetType": {"enum": ["source", "config", "migration", "container", "workflow", "iac", "api-spec", "prose", "commit", "telemetry-registry", "dependency", "package"]},
+    "severity": {"enum": ["error", "warning", "info"]},
+    "ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+    "slugs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/slug"}},
+    "kinds": {"$ref": "#/$defs/slugs", "description": "kind slugs of the rulebook's structure"},
+    "paths": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1},
+      "description": "slash-separated globs, from the project root"
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "status": {"$ref": "#/$defs/status"},
+        "owner": {"$ref": "#/$defs/text"},
+        "review_by": {"$ref": "#/$defs/date"},
+        "zero_by": {"$ref": "#/$defs/date"},
+        "replaced_by": {"$ref": "#/$defs/id"},
+        "literal": {"$ref": "#/$defs/text"}
+      },
+      "description": "the fields a history entry guards: a change to one of them is made only with its entry"
+    }
+  }
+}

@@ -1,0 +1,63 @@
+part: postgres
+concern: engine
+order: 6
+title: Engine version and contract
+summary: >-
+  The engine version is part of the contract. Tests run on the version production runs (an in-process build of
+  the same major counts, a server build for roles and connections), a version below a floor or on a known-bad
+  list fails, and a short contract suite pins what the data layer relies on.
+rules:
+  - id: postgres.engine.1
+    slug: tests-on-the-production-engine-version
+    since: 0.1.0
+    rule: >-
+      Tests run on the engine version production runs; an in-process build of the engine over the real
+      migrations counts as that engine when its major version matches production; a test of roles or
+      connections runs a server build; a version below a stated floor or on a known-bad list fails; and a
+      contract suite pins the behaviour the data layer relies on.
+    detail: >-
+      An in-process build (for example PGlite) runs store tests and gates fast over the real migrations; it
+      does not model roles, grants, connections or the superuser, so a test of those runs on a server build of
+      the same major. The in-process major is read and compared like the container's. The container's server
+      version equals the version declared in infrastructure and is compared with a floor file kept as data.
+      The contract suite covers concurrent writers on one row, retry on conflict, ordering, time-zone handling
+      and 64-bit integer width, and runs once per named engine. A container tag is never a floating one.
+      Editing the known-bad list is a protected path.
+    level: package
+    why: >-
+      An engine version is part of the contract, and a bug fixed in a later version is a fault carried until
+      the move. A neighbouring engine's write-ahead-log bug stood for years, and a company using it saw
+      corruption in its backup snapshots. Agents bump an image tag to make a build pass (inference).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: jepsen-postgresql-12-3
+        backs: rule
+      - ref: p-03-data
+        where: sections 2, 4, 7 and 24
+        backs: rule
+      - ref: decision-65-postgres
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          the container's or the in-process build's SHOW server_version compared with the version in the
+          deployment definition and with a floor file, a tag on tests that need roles or connections that
+          refuses the in-process engine, and a contract suite run once per named engine. Plant: a container
+          older than the declared version fails; an in-process build of another major fails; a role test run
+          in process fails; a version on the known-bad list fails; a contract case with two concurrent writers
+          must end with exactly one winner. Control: a matching version passes
+    relates:
+      - id: store.schemas.5
+        how: see
+    open:
+      - >-
+        The managed service's own version labelling and which minor releases carry which fixes were not
+        checked.
+      - >-
+        The neighbouring engine's incident is as reported by a news article; the company's own post-mortem was
+        not read.
+    note: The embedded-store form is store.schemas.5.

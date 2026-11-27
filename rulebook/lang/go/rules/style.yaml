@@ -1,0 +1,122 @@
+format: 3
+part: go
+concern: style
+rules:
+  - id: go.style.1
+    statement: "Interfaces are small, and a function accepts interfaces and returns concrete types."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "Practice. One repo declares 98 interfaces; their sizes were not measured; the linter flagged a 40-method port in another."
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: interfacebloat
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: go.style.2
+    statement: "A concept gets a named type, the zero value is useful, and generics come only after the same code was written several times."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "Practice; judgement. Nothing decides that a concept needs a type."
+  - id: go.style.3
+    statement: "No checks for states that cannot happen, and no wrapper or function that only forwards a call; pass-throughs are counted per package and read as a list, with no limit."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A types-aware analyser counts free functions that forward to a function of the same shape, and wrappers whose every method has the same signature as the call it forwards, with no type conversion. Dispatchers and adapters that convert types are exempt; an adapter that imports what the core may not is a seam and exempt; a fake alone does not earn the exemption."
+      pros:
+        - "Practice; no fault among the 60 sampled. Free forwarders today: 48, 12, 11, 18, 2 and 2 across six repos; 39 of the first 48 forward inside our own module, in clusters left by moves, 9 are false hits."
+    sources:
+      - ref: ousterhout-aposd
+        where: chapter 7
+        backs: rule
+  - id: go.style.4
+    statement: "The resource and context linters are on: bodyclose, noctx, and in a repo that imports the SQL package sqlclosecheck and rowserrcheck."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-database
+        reason: "A program that does not import the SQL package needs neither of the two database linters; a rule-data field marks it."
+    reasoning:
+      pros:
+        - "A leaked response body is a daemon-lifetime bug. Practice; priced in the linter trial."
+    sources:
+      - ref: harsanyi-100-go-mistakes
+        where: chapter 10
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: bodyclose
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: golangci-lint
+        target: source
+        key: noctx
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: golangci-lint
+        target: source
+        key: contextcheck
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: go.style.5
+    statement: "Go tests use the standard testing package only, every test helper calls t.Helper, a table case is named by its claim, and a test checks one behaviour."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "An assertion or mock library import in a test file is a finding (tests.doubles.2 bans mock libraries for every language). A function in a test file that takes a testing.TB, *testing.T or *testing.B and is not itself a test calls t.Helper first. A table case name says what holds (refuses a retired key), not an index or input. One behaviour per test is review."
+      pros:
+        - "A helper without t.Helper reports the failure at the helper's line, not the caller's, and a case named by its claim is the failure message a person reads first. The standard package keeps tests readable by anyone who knows Go."
+    relations:
+      relates:
+        - tests.doubles.2
+        - tests.admission.2
+    sources:
+      - ref: decision-65-go
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: thelper
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: golangci-lint
+        target: source
+        key: depguard
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: go.style.6
+    statement: "A package's tests build with every sibling package outside its declared imports unresolvable, and a suite that still passes with its subject package's non-test source removed fails as vacuous."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The Go form of the sibling-hiding resolver: a gate step lists each package's test import closure (go list -deps -test) and fails when it holds an internal package not allowed for that package's layer in the import table, so a test cannot reach a sibling the package itself may not. The subject-deleted run uses go test -overlay to replace every non-test file of the package with an empty file of the same package name; a suite that compiles and passes is vacuous. A module's tests make another module's data only through that module's exported API or their own fixtures."
+      pros:
+        - "A suite that passes with its subject deleted is the cheapest mutation test there is, and siblings unresolvable is what makes a package extractable in fact, not only by the import table."
+    relations:
+      relates:
+        - tests.isolation.13
+    sources:
+      - ref: decision-65-go
+        backs: rule

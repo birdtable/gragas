@@ -1,0 +1,29 @@
+$ gragas help version
+--- stdout
+
+  Which gragas this is: its release tag, the commit it was built
+  from, the Go release that built it, the target, and the
+  format and contract versions it reads. --json gives the same
+  as one JSON document.
+
+    gragas version
+    gragas --version
+    gragas version --json
+
+  USAGE
+
+
+    gragas version [--flags]
+
+
+  FLAGS
+
+    --accessible  Plain questions (ACCESSIBLE)
+    --config      The settings file (GRAGAS_CONFIG)
+    -h --help     Help for version
+    --json        Answer in one JSON document
+    --no-color    No colour (NO_COLOR)
+    --plain       Print plainly: nothing moves
+
+--- stderr
+--- exit 0

@@ -1,0 +1,35 @@
+{
+  "generated_by": "gragas-dev layers from layers.yaml: edit that, not this file",
+  "why": "arch.ports.8: the explorer's modules have the contexts' independence contract; a view reaches data through the selectors and words through the messages, and no view imports another",
+  "default": "disallow",
+  "elements": [
+    {"type": "contract", "pattern": "explorer/packages/contract"},
+    {"type": "tokens", "pattern": "explorer/packages/tokens"},
+    {"type": "core/data", "pattern": "explorer/packages/core/data"},
+    {"type": "core/selectors", "pattern": "explorer/packages/core/selectors"},
+    {"type": "core/messages", "pattern": "explorer/packages/core/messages"},
+    {"type": "core/formatter", "pattern": "explorer/packages/core/formatter"},
+    {"type": "core/markup", "pattern": "explorer/packages/core/markup"},
+    {"type": "core/parts", "pattern": "explorer/packages/core/parts"},
+    {"type": "core/views", "pattern": "explorer/packages/core/views/*", "capture": ["folder"]},
+    {"type": "standalone", "pattern": "explorer/packages/standalone"},
+    {"type": "element", "pattern": "explorer/packages/element"},
+    {"type": "plugin-docs", "pattern": "explorer/packages/plugin-docs"},
+    {"type": "plugin-portal", "pattern": "explorer/packages/plugin-portal"}
+  ],
+  "rules": [
+    {"from": "contract", "allow": []},
+    {"from": "tokens", "allow": []},
+    {"from": "core/data", "allow": ["contract"]},
+    {"from": "core/selectors", "allow": ["contract", "core/data"]},
+    {"from": "core/messages", "allow": []},
+    {"from": "core/formatter", "allow": []},
+    {"from": "core/markup", "allow": []},
+    {"from": "core/parts", "allow": ["tokens", "core/messages", "core/formatter"]},
+    {"from": "core/views", "allow": ["contract", "tokens", "core/data", "core/selectors", "core/messages", "core/formatter", "core/markup", "core/parts"]},
+    {"from": "standalone", "allow": ["contract", "tokens", "core/data", "core/selectors", "core/messages", "core/formatter", "core/parts", "core/views"]},
+    {"from": "element", "allow": ["contract", "tokens", "core/data", "core/selectors", "core/messages", "core/formatter", "core/views"]},
+    {"from": "plugin-docs", "allow": ["tokens", "element"]},
+    {"from": "plugin-portal", "allow": ["tokens", "element"]}
+  ]
+}

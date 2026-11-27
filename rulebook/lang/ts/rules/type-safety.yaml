@@ -1,0 +1,180 @@
+format: 3
+part: ts
+concern: type-safety
+rules:
+  - id: ts.type-safety.1
+    statement: "No explicit `any` appears in source, and none appears in a signature."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "typescript-eslint `no-explicit-any` as an error, with no exemption inside source files; the untyped rules run without type information so they work on every file kind. On `.astro` files the typed rules are switched off for the virtual script files and carried by oxlint. Use `unknown` and narrow, or a parsed type. Biome form: `noExplicitAny` at error."
+      pros:
+        - "One `any` turns off checking for everything it touches, and spreads through inference. At the donor repo 118 non-null assertions sat in one baseline (evidence C); `any` and the empty record are the worst holes at a signature."
+    sources:
+      - ref: typescript-eslint-docs
+        where: no-explicit-any
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.type-safety.2
+    statement: "No forced type assertion (`as T`, `as unknown as T`) and no non-null assertion; narrow the value or parse it."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "typescript-eslint `consistent-type-assertions` with `assertionStyle: never` (outside tests; `as const` is not flagged), `no-non-null-assertion`, and a rule against an unsafe assertion that narrows. A response from outside is never cast: it is parsed against a schema or typed by the generated client. Biome form: `noNonNullAssertion` at error and a GritQL plugin for an `as` assertion other than `as const`; the unsafe-narrowing half (`no-unsafe-type-assertion`) needs types and is ESLint-only."
+      pros:
+        - "An assertion is a claim the compiler cannot check; one wrong claim removes the safety of a whole path."
+    sources:
+      - ref: typescript-eslint-docs
+        where: consistent-type-assertions
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.type-safety.3
+    statement: "No `@ts-ignore` and no `@ts-nocheck`; `@ts-expect-error` needs a description, and any suppression carries a reason and a ticket."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "typescript-eslint `ban-ts-comment` as an error: every directive needs a description of at least 10 characters; a type-check suppression names a ticket and a reason of a minimum length; a file-wide suppression is banned. Counts of suppressions only fall, through ESLint bulk suppressions (see ts.lint-config.1). Biome form: `noTsIgnore` at error, plus a separate comment scan that fails `@ts-nocheck` and an expect-error comment with no ticket and reason."
+      pros:
+        - "A suppression with no reason is a bug that has been hidden. The same rule family covers no `any` and no unchecked cast without a reason."
+    relations:
+      relates:
+        - ts.lint-config.1
+    sources:
+      - ref: typescript-eslint-docs
+        where: ban-ts-comment
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.type-safety.4
+    statement: "A value from outside is never cast to a type; it is parsed against a schema, or typed by the generated client."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The common form is `response.json()` cast with `as T`; it is banned. The parse happens once at the edge and the rest of the code sees the parsed type. Biome form: a GritQL plugin for an `as` assertion whose operand is a `json()` call or `JSON.parse`."
+      pros:
+        - "A cast response is trusted without a check; a server change then breaks callers far from the call."
+    relations:
+      relates:
+        - ts.type-safety.2
+    sources:
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.type-safety.5
+    statement: "No `any`, unparsed `unknown`, raw JSON or untyped record appears in the exported signature of a core module; data is parsed at the adapter's edge into a named type."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "A type-aware lint over the exported signatures of files under the core path. It resolves aliases, because the known way round is a type alias over a record, so the scan looks at the underlying type. It extends the request-validation rule (one validation by the contract) and the no-`any` rule: those cover the request and the use of `any`, and not a core function that takes `unknown` or `Record<string, unknown>`. ESLint-only as a lint rule, because the scan resolves type aliases; a Biome project holds it by a separate check that reads exported signatures through the compiler API."
+      pros:
+        - "Argued, with no fault in the record. Parsed types at the boundary are what make a later adapter cheap (principles report P-01 section 19)."
+    sources:
+      - ref: p-01-core-programming
+        where: section 19
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.type-safety.6
+    statement: "Ids are branded types, so one kind of id cannot be passed where another is expected."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Each id kind is a branded string derived from its schema (the schema library's brand), declared once next to the entity. A function takes the branded type; a plain string is parsed into it at the edge."
+      pros:
+        - "Two ids are both strings; passing one for the other compiles and returns nothing or the wrong record."
+    sources:
+      - ref: wlaschin-dmmf
+        where: types as documentation
+        backs: rule
+  - id: ts.type-safety.7
+    statement: "Types are used so that a wrong program does not compile, through branded ids, exhaustive unions and parsed values."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Switches over a union are exhaustive and end in a never check; values are parsed once at the edge; ids are branded; links are typed."
+      pros:
+        - "A guidance rule with no check of its own; its parts are held by other rules (assertions, branded ids, typed destinations)."
+    sources:
+      - ref: minsky-effective-ml
+        backs: rule
+  - id: ts.type-safety.8
+    statement: "A dependency ships its own types, or a matching types package exists in the lock."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "After an install, each added direct dependency's manifest has `types`, `typings`, an exports entry with types, or a matching `@types` package is in the lock; otherwise the check fails. It reads the installed package manifests."
+      pros:
+        - "An untyped dependency brings `any` in through its imports (evidence D)."
+    sources:
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+  - id: ts.type-safety.9
+    statement: "The count of values that escape the type system (`any`, assertions, non-null assertions, suppressions) only falls."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The type-coverage tool reports the share of identifiers whose type is not `any`, and with its strict option counts casts and non-null assertions as well. The suppression counts only fall through ESLint bulk suppressions paired with a per-file count (ts.lint-config.1). In a Biome project the suppression count is the count of `biome-ignore` comments, held by the same shrink-only number."
+      pros:
+        - "The share is the measure; without it the bans above are met by moving the hole, not closing it."
+    relations:
+      relates:
+        - ts.lint-config.1
+        - ts.type-safety.1
+    sources:
+      - ref: type-coverage
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.type-safety.10
+    statement: A function exported from a module declares its return type.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Exported functions, methods of exported classes and exported arrow functions name their return type; a local function may infer it. In library mode the compiler holds it: `isolatedDeclarations` in the library base (ts.compiler.3) fails an export whose type would need inference to emit. In app mode the lint holds it. Biome form: `useExplicitType` at error. ESLint form: `@typescript-eslint/explicit-module-boundary-types` at error."
+      pros:
+        - "A declared return type is the contract the next reader builds on, and it stops an inferred type drifting under a refactor in a file the caller never sees."
+    relations:
+      relates:
+        - ts.compiler.3
+    sources:
+      - ref: typescript-handbook
+        where: isolatedDeclarations
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.type-safety.11
+    statement: "Time enters through one clock port, instants are one branded type, and Date is constructed only in the clock adapter and the file reader."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Code that needs the time takes the clock port as a parameter; `new Date()`, `Date.now()` and `performance.now()` appear only in the clock adapter, and `new Date(value)` only there and in the adapter that reads file times. Every other module carries the branded instant type, never a `Date` or a bare number. Tests use the fake clock. The two allowed paths are listed in one place. Biome form: a GritQL plugin for a `Date` construction or `Date.now()` call, with an `overrides` entry for the two listed paths. ESLint form: `no-restricted-syntax` on the same calls with the same path list."
+      pros:
+        - "A clock port is what makes every time-dependent test deterministic; a direct read of the clock is a test that passes today and fails in another timezone or at midnight."
+    sources:
+      - ref: decision-65-ts
+        backs: rule

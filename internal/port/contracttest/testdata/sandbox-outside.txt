@@ -1,0 +1,7 @@
+# Fixture and config paths a Sandbox refuses to place with ErrOutside, one a
+# line (escapes \\ \n \t): climbing, absolute, a dot and a doubled slash.
+../escape.go
+/etc/escape.go
+a/../../escape.go
+a/./b.go
+a//b.go

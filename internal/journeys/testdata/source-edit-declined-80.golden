@@ -1,0 +1,20 @@
+$ gragas source edit effective-go --locator https://go.dev/doc/effective_go#errors --attribution the Go team
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+What changes
+  effective-go: the locator goes from "https://go.dev/doc/effective_go" to
+  "https://go.dev/doc/effective_go#errors"
+  effective-go: the attribution goes from "" to "the Go team"
+  noted in the history of 3 rule(s) that cite effective-go: go.errors.1,
+  go.errors.2, go.errors.3
+
+What is written where
+  sources.yaml: sets locator, attribution of effective-go
+  history.jsonl: appends 4 entries (edit, and a note on each citing rule)
+This was a dry run and nothing was changed. Add --apply to make these changes.
+
+  declined   nothing was changed
+    gragas source edit effective-go --attribution 'the Go team' --locator
+'https://go.dev/doc/effective_go#errors' --apply
+--- stderr

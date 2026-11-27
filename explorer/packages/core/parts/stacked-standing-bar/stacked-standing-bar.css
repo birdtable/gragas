@@ -1,0 +1,51 @@
+[data-part="stacked-standing-bar"] {
+  display: grid;
+  gap: var(--gr-space-2);
+  margin: 0;
+}
+
+.gr-bar {
+  inline-size: 100%;
+  block-size: 0.75rem;
+  border-radius: var(--gr-radius-full);
+  overflow: hidden;
+}
+
+.gr-bar-track {
+  fill: var(--gr-control-border);
+}
+
+.gr-bar-segment {
+  fill: currentColor;
+  stroke: var(--gr-ground-surface);
+  stroke-width: 0.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.gr-bar-segment[data-role="violet"] {
+  color: var(--gr-standing-violet);
+}
+.gr-bar-segment[data-role="green"] {
+  color: var(--gr-standing-green);
+}
+.gr-bar-segment[data-role="blue"] {
+  color: var(--gr-standing-blue);
+}
+.gr-bar-segment[data-role="amber"] {
+  color: var(--gr-standing-amber);
+}
+.gr-bar-segment[data-role="grey"] {
+  color: var(--gr-standing-grey);
+}
+.gr-bar-segment[data-role="slate"] {
+  color: var(--gr-standing-slate);
+}
+
+.gr-bar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gr-space-2) var(--gr-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

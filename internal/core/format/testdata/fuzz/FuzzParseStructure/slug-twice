@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("format: 3\nlayers:\n  - slug: a\n    name: A\n    parts:\n      - slug: p\n        name: P\n        concerns:\n          - {slug: c, name: C}\n          - {slug: c, name: C}\nkinds: []\n")

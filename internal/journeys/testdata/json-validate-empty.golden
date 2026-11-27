@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "contract": "1.3",
+  "command": "validate",
+  "word": "done",
+  "dir": "",
+  "rules": 0,
+  "held": 0,
+  "total": 0,
+  "shown": 0,
+  "findings": [],
+  "notices": [
+    {
+      "entity": "names check",
+      "msg": "the names check did not run: no names list was given; set the names-file key or GRAGAS_NAMES_FILE"
+    }
+  ],
+  "next": "gragas rule new"
+}

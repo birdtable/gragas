@@ -1,0 +1,73 @@
+part: lambda
+tools:
+  - key: size-limit-with-bundler-plugin
+    name: size-limit with bundler plugin
+    role: >-
+      Bundles each handler entry with the build bundler and fails when it exceeds the limit declared in the
+      package manifest.
+    binding: ts
+    ships: the shared size-limit preset
+    state: chosen
+    why: It is the check that holds bundle-size-budget.
+  - key: handler-middleware-engine
+    name: handler middleware engine
+    role: >-
+      Wraps a Lambda handler in ordered before, after and error steps. Every factory in the reference estate
+      is built on it today.
+    binding: ts
+    ships: the shared runtime package wrapping it
+    state: chosen
+    why: One engine means the step order is defined once.
+    open:
+      - >-
+        In Go, the wrapping is net/http middleware inside the shared web package, with timeouts and body caps
+        set once.
+  - key: handler-router
+    name: handler router
+    role: >-
+      Sends each request inside a Lambda to its handler by method and path (the middleware http-router
+      package).
+    binding: ts
+    state: chosen
+    why: One router, inside the shared runtime.
+    open:
+      - In Go the one router is the standard library ServeMux; other routers are banned.
+  - key: small-typed-web-framework-behind-the-plugin-seam
+    name: small typed web framework behind the plugin seam
+    role: >-
+      A small typed web framework that runs on Lambda, or the cloud vendor router for gateway events, would
+      sit inside the shared runtime behind a plugin seam.
+    binding: ts
+    state: candidate
+    why: >-
+      It would replace the router if routing needs outgrow it, without reaching service code.
+    lost:
+      - name: Hono and the vendor router, used directly in services
+        why: They would sit outside the runtime and give a second owner of routing.
+    open:
+      - >-
+        Not tried. In Go none is allowed: ServeMux is the pick and Hono, chi, gin and echo are banned.
+  - key: vendor-lambda-utilities
+    name: vendor Lambda utilities
+    role: >-
+      The cloud vendor utilities for Lambda: structured JSON logs with correlation ids, metrics, tracing and
+      cached reads of secrets and parameters.
+    binding: ts
+    version: 2.36.0
+    state: chosen
+    why: >-
+      They give structured logs, metrics, tracing and cached secrets without a second implementation.
+    open:
+      - >-
+        In Go, slog with version and run id and a health document cover logs; metrics and tracing have no row.
+  - key: gradual-traffic-shift-with-automatic-rollback
+    name: gradual traffic shift with automatic rollback
+    role: >-
+      Shifts traffic to a new function version gradually and rolls back on an alarm (a deployment canary on
+      the authoriser and the token path).
+    binding: any
+    ships: a deployment preference on the function plus the rollback alarm
+    state: chosen
+    why: It limits the damage of a bad release to a fraction of traffic.
+    open:
+      - In Go, an upgrade keeps the previous binary and puts it back by itself.

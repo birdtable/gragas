@@ -1,0 +1,12 @@
+$ gragas plugin add <bundles>/lint-a/1.0.0 --apply
+--- exit 1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  failed     the plan could not be made:
+  plugins/lint-a/1.0.0 holds 1 files and
+  the lock names no lint-a@1.0.0: a
+  folder the lock does not name is no
+  plugin; move it away first: file
+  already exists
+--- stderr

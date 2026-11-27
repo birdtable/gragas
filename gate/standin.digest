@@ -1,0 +1,2 @@
+# The sha256 of standin.wasm built from internal/dev/standin by the pinned Go: -trimpath -buildvcs=false -ldflags=-buildid=. The push member standin rebuilds the module and holds it to this line; after a change of the source, or of the Go pin, write the digest the failing test logs.
+sha256:668b42274180d1a05ab4b9fb4048b3d6eb327c51a666272704e9e66d989e7caf

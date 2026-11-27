@@ -1,0 +1,207 @@
+part: service
+tools:
+  - key: spectral
+    name: Spectral
+    role: >-
+      Lints the generated API description against the shared ruleset: path casing, the operation identifier
+      pattern, security on every operation, declared error responses and paging.
+    binding: any
+    ships: >-
+      the shared contract lint ruleset, every recommended warning promoted to error plus two house rules
+      (camelCase operation identifiers, a body schema on every 4xx and 5xx response)
+    state: chosen
+    why: >-
+      It reads the generated description, so one ruleset holds every service; completeness (operation id,
+      description, success response, security) is its built-in set.
+    lost:
+      - name: Redocly CLI
+        why: A second linter for the same job; one tool per job.
+    open:
+      - >-
+        A test regenerates the list of non-error recommended rules after each upgrade; it is not yet built.
+  - key: shared-contract-lint-ruleset
+    name: shared contract lint ruleset
+    role: >-
+      The ruleset every service extends: the recommended rules with every default below error promoted to
+      error, plus the house rules. Published as one shared package.
+    binding: any
+    ships: the ruleset package and the upgrade test that lists non-error recommended rules
+    state: chosen
+    why: >-
+      One export means a rule is turned on once for every service; a per-repository ruleset diverges.
+    open:
+      - >-
+        In Go it applies only to a daemon that publishes an HTTP description; a command-line program contract
+        is its command tree.
+  - key: spectral-notmatch-override
+    name: Spectral notMatch override
+    role: >-
+      A pattern rule over paths, operation identifiers and property keys, written as an override in the
+      repository lint config over the shared base ruleset, taking the retired-word list.
+    binding: any
+    ships: >-
+      a template override file with the retired words filled from the repository glossary
+    state: chosen
+    why: It holds the retired-word rule on public names without a second tool.
+    open:
+      - Go has no description document; JSON tags are caught by the identifier scan.
+  - key: redocly-cli
+    name: Redocly CLI
+    role: >-
+      A second API description linter, installed in three of the reference repositories.
+    binding: any
+    state: replaced
+    why: >-
+      Two linters for one job give two rulesets that drift; Spectral with the shared ruleset is the one.
+    lost:
+      - name: keeping both
+        why: No check needed what the second tool found and the first did not.
+  - key: oasdiff
+    name: oasdiff
+    role: >-
+      Compares two versions of an API description, classifies each change and flags the ones that break a
+      caller (a removed field, a new required parameter).
+    binding: any
+    ships: a gate step comparing the generated description with the last release
+    state: chosen
+    why: >-
+      It is the breaking-change gate of the contract; in Go the equivalent is apidiff or gorelease at the tag.
+    open:
+      - Not yet run on a planted break.
+  - key: contract-and-schema-diff-against-the-last-release
+    name: contract and schema diff against the last release
+    role: >-
+      The category of checks that diff API descriptions, event schemas and SQL migrations against the last
+      release: oasdiff for APIs, the schema diff step for events, the migration check for SQL.
+    binding: any
+    state: chosen
+    why: Contracts and schemas are held against the last release at one gate point.
+    open:
+      - >-
+        In Go the command tree and JSON fields are diffed against the last tag and stored file versions are
+        declared; there is no API description lint.
+  - key: contract-generator-from-route-schemas
+    name: contract generator from route schemas
+    role: >-
+      Generates each service API description from its route schemas (zod-to-openapi with a thin wrapper that
+      adds the access-catalogue and mount extensions); completeness (operation id, description, success
+      response, security) is the built-in oas ruleset of the lint tool on the generated file. The wrapper is
+      openapi-gen and the extensions are x-authz and x-mount.
+    binding: ts
+    ships: the generator wrapper in the shared service runtime
+    state: chosen
+    why: >-
+      The route schemas are the one source of the contract, so the description cannot drift from the code.
+    open:
+      - >-
+        In Go the command tree and JSON shapes are written to a generated file and regenerated with no diff.
+  - key: shared-request-and-response-validator
+    name: shared request and response validator
+    role: >-
+      One validator checks every request and response against the route contract, as a step of the shared
+      bootstrap.
+    binding: ts
+    ships: the validator step in the shared service runtime
+    state: chosen
+    why: Validation happens once, at the edge, from the same contract that is published.
+    open:
+      - >-
+        Go: daemon JSON and --json output are held by a golden and a schema test instead.
+  - key: shared-authorisation-package
+    name: shared authorisation package
+    role: >-
+      The permission check, scope enforcement and field filter, as plain functions and as middleware steps.
+    binding: ts
+    ships: the package and its conformance test for the access catalogue
+    state: chosen
+    why: One owner means a permission is enforced and filtered in one way.
+    open:
+      - "Go: a daemon checks the caller by peer credentials on every request."
+  - key: shared-outbound-client-package
+    name: shared outbound client package
+    role: >-
+      One typed client per provider, generated from its contract and wrapped to add request signing, timeouts
+      and retries (openapi-fetch, a small fetch wrapper typed from the description).
+    binding: ts
+    ships: the client constructor with required timeout and the retry budget
+    state: chosen
+    why: >-
+      Every call to another service passes through one place where signing, timeouts, trace forwarding and
+      retry are written once.
+    open:
+      - >-
+        Go: a net/http client with a timeout and context in one adapter per provider; back-off is reserved.
+  - key: none-one-shared-bootstrap
+    name: "application framework: none, one shared bootstrap"
+    role: >-
+      Frameworks that own the whole application (routing, dependency injection and often infrastructure and
+      deploy) are a category to weigh; the pick is no such framework.
+    binding: any
+    state: chosen
+    why: >-
+      The shared bootstrap and shared constructs already own routing and plumbing; an application framework
+      would be a second owner.
+    lost:
+      - name: NestJS, Encore, Nitric, Amplify, Ampt
+        why: >-
+          Each owns the whole application and its deploy, against one bootstrap and shared constructs.
+    open:
+      - >-
+        In Go there is no application framework: wire by hand in main, and a framework needs its pack first.
+  - key: route-schemas-in-code
+    name: "API source: route schemas in code"
+    role: >-
+      The API is written once, as route schemas in code, and the description and clients are generated from
+      it.
+    binding: any
+    state: chosen
+    why: A second source (an interface language) is what the single-source rules forbid.
+    lost:
+      - name: Smithy and TypeSpec servers
+        why: >-
+          An interface language generating server stubs and clients is a second source beside the route
+          schemas.
+    open:
+      - In Go the types are the one source and the other side is generated from them.
+  - key: none-beyond-function-native-workflows
+    name: "durable workflow engine: none beyond function-native workflows"
+    role: >-
+      Engines that run long workflows as a separate service. The pick is none, with function-native durable
+      workflows weighed in the cloud part.
+    binding: any
+    state: unsure
+    why: A separate engine is a service and an account to run.
+    lost:
+      - name: Temporal, Inngest, Restate, DBOS
+        why: >-
+          Run as a separate service; no need has been shown that function-native durable workflows cannot
+          meet.
+    open:
+      - >-
+        Not decided: depends on whether any workflow needs more than the function-native option.
+  - key: one-shared-service-runtime
+    name: "runtime and framework: one shared service runtime"
+    role: >-
+      What a handler is built from and runs inside: the shared service bootstrap, one framework per project.
+    binding: any
+    ships: the shared bootstrap package
+    state: chosen
+    why: One runtime per kind of program means plumbing is written once.
+    open:
+      - >-
+        In Go, main is thin, run() is testable and there is no dependency-injection framework; a framework
+        enters only with its rule pack.
+  - key: shared-alarms-staged-rollout-and-flags
+    name: "runtime safeguards: shared alarms, staged rollout and flags"
+    role: >-
+      The category of controls that limit the damage when something wrong ships: alarms, canary deploys and
+      feature flags.
+    binding: any
+    state: unsure
+    why: >-
+      Alarms are held by the shared alarm component; staged rollout is a Lambda option; flags have no pick.
+    open:
+      - >-
+        In Go, a replaced program is put back when the new one does not answer healthy; there is no alarm or
+        staged rollout row for shipped programs.
+      - No pick for feature flags.

@@ -1,0 +1,14 @@
+$ gragas plugin list
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+plugin               tool           approved  note
+ast-grep@1.1.0       ast-grep       yes
+eslint@1.0.0         eslint         yes
+golangci-lint@1.0.1  golangci-lint  yes
+tsc@1.0.0            tsc            yes
+1 column not shown: digest
+
+  done       4 plugins, 4 approved
+--- stderr

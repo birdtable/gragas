@@ -1,0 +1,115 @@
+format: 3
+part: agents
+concern: tickets
+rules:
+  - id: agents.tickets.1
+    statement: "A ticket names only files, commands, symbols and rules that exist at its base when dispatched, marks what it will create, and is dispatched only when its cited anchors resolve, its gates are on the line and no open decision or escalation blocks it."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Dispatch is refused while any condition fails: an anchor (file, rule, decision) the ticket cites does not resolve at the base, a gate its done-when names is not in the gate's list, or a decision or escalation the ticket depends on is still open. A ticket is dispatchable only when its anchors resolve, its gates are on the line and no open decision or escalation blocks it. A ticket lint resolves each backticked path, command, symbol and rule id against the base of the day at dispatch and fails closed on an unresolved name. A marked name that already exists fails. The ticket template defines the mark and requires names in the Files list to be backticked. A moved-path check names a path whose basename and parent now exist elsewhere. Tickets keep their original text so a later fault can be traced, and the marked share is printed for the reader. It runs at dispatch, not at intake, because a plan written against a future layout hit on 91% of 2,296 tickets at intake."
+      pros:
+        - "The largest fault class we have: 52 of 137 faults in our run log were a ticket's false claim about the code (principles report P-09 section 4 O1). On real history it caught 11 of about 16 known name faults."
+    sources:
+      - ref: p-09-agentic-development
+        where: "sections 4 O1, 6.1 and 9.2 item 1"
+        backs: rule
+      - ref: decision-38
+        backs: rule
+      - ref: decision-65-agents
+        backs: rule
+  - id: agents.tickets.2
+    statement: "A ticket's scope lists the files and consumers its author expects to touch, a change that adds a method to a shared port lists every implementer, and at land the gap between the list and the diff blocks until it is answered."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Review asks at intake what the change's exported surface breaks. At land the diff's files are compared with the scope list, generated files left out, and the listed-touched share is printed. A mismatch blocks until the author answers with a recorded reason."
+      pros:
+        - "The second 52 of the 137 faults (104 of 137 together were ticket premise or scope). Run on real tickets the gate form did not discriminate: 74% of tickets had an unlisted file, 52% of faulted ones against 65% of clean ones."
+    sources:
+      - ref: p-09-agentic-development
+        where: "sections 4 O1, 4 O5, 6.1 and 9.2 item 1"
+        backs: rule
+  - id: agents.tickets.3
+    statement: "A done-when names a check, and the land step proves the check ran: a named test that runs zero tests fails, and the output is kept."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The land step runs the named check on the tree, reads the number of tests run and fails on zero. Evidence that the test can go red comes from the deliberate break on the tree, not from a red run on the base, because a new test cannot compile against a base that lacks what it calls. A make-line gate in a done-when is an exit code only and counts as no red evidence. A diff that changes behaviour and carries no test change states why not."
+      pros:
+        - "Eight faults were a done-when that could not hold or turn red, and 4 of 15 drives could not turn a test red. 6 of 159 named tests never existed, and a Go run on an unknown name exits 0. Red on the base gave 0 of 12 real tickets (7 no tests, 4 compile failures, 1 green). 85 of 280 gate lines are make lines."
+    sources:
+      - ref: p-09-agentic-development
+        where: "sections 4 O1, 4 O3 and 9.2 items 1 and 4"
+        backs: rule
+      - ref: p-07-testing
+        where: section 10.2 item 2
+        backs: rule
+  - id: agents.tickets.4
+    statement: "A change arrives with its statement of purpose and the proof it was run, a change with neither is refused before anyone reads it, and tests changed in the same diff are listed first."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The land check reads the change text for a purpose line and a verdict tied to the tree. A purpose line equal to the ticket title fails, the change summary orders test files first, and the verdict hash must equal the tree. Form is a commit linter (empty body, trailer exists); the tree binding is ours."
+      pros:
+        - "Reading cost is what agents raise, so the cost moves to the submitter; practitioner consensus, not a measurement. Nothing refuses a change for missing evidence today."
+    sources:
+      - ref: p-09-agentic-development
+        where: "sections 9.2 item 5, 5.6 and 9.3"
+        backs: rule
+  - id: agents.tickets.5
+    statement: "A change has one concern, planned as a ticket before work starts and sized for one review, an issue opens with the owner's dated words and has Today, Want, Security (when a border is touched), Done when and Design, and diff size and post-land rework are shown together per ticket."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "An issue title is a claim about what should be true. The body opens with the owner's words and their date, then the sections Today, Want, Security (when the change touches a trust border), Done when and Design; the issue form holds the sections and a check refuses an issue without them. The title is a claim, and the body has the owner's dated words. A page archetype or a dialog per ticket for the web part, planned first through the issue form and the plan gate. A pull request template whose lines mirror the gates (spec regenerated, glossary term added, decision linked, what was reused, a new dependency justified) fixes the shape. No size limit is set: a ceiling would be met by splitting, which the rework count beside it exposes. A change over the size line blocks until answered, with rework shown beside it."
+      pros:
+        - "Practitioner consensus, not a measurement; a size ceiling is a guess and splitting beats it."
+    sources:
+      - ref: p-02-enforcement-and-measure
+        where: sections 5.13 and 7.2 item 2
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 9.3
+        backs: rule
+      - ref: decision-65-agents
+        backs: rule
+  - id: agents.tickets.6
+    statement: "A done claim carries an artefact naming its question; a picture decides nothing alone and measured numbers decide."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - Three pictures were read as fine in one repository before one was measured (in one project).
+  - id: agents.tickets.7
+    statement: A fault found by a person becomes a planted check or a journey before its ticket closes.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - Five recurrence pairs in one record show a fault fixed without a plant returns.
+    sources:
+      - ref: agents-reasons-stated
+        backs: rule
+  - id: agents.tickets.8
+    statement: "Every bug and gap found is a row with a permanent id in one register, code, tests and docs cite it by that id, an open row links its issue, and a test checks both."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The register is one file in the repo. An id is never reused or renumbered; a closed row stays with its outcome. Nothing found lives only in a chat, a session transcript or a commit message. The test fails an open row with no issue link and a cited register id that has no row (docs.links.2 resolves the citation)."
+      pros:
+        - "A fault that lives only in a chat is found again by the next person at full cost, and an id that moves breaks every comment and test that cited it."
+    relations:
+      relates:
+        - docs.links.2
+    sources:
+      - ref: decision-65-agents
+        backs: rule

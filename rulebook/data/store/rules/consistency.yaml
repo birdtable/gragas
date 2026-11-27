@@ -1,0 +1,99 @@
+format: 3
+part: store
+concern: consistency
+rules:
+  - id: store.consistency.1
+    statement: "A lock is a kernel advisory lock, non-blocking by default, with a deadline on any blocking wait; the order of two locks is written and tested; it is taken only through the platform's lock package, and any failure other than held stops the run."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - library
+          - not-lock-owner
+        reason: Only the owner carries the lock implementation.
+    reasoning:
+      definition: "forbidigo (type-aware) bans Flock and FcntlFlock calls outside the lock package, with a plain-text check for the raw system-call number and the four planted files kept as the fixture pair; a depguard row bans the third-party flock module, with an owner-lock rule that exempts the lock package's own path. A test checks that the claim fails when the lock folder is unwritable. The atomic-write package's own two calls are exempt."
+      pros:
+        - Fourteen production files call flock directly. In two programs the claim function treats every error except held as success. A trial planted four lock forms and the pattern flagged 2 of 4.
+    sources:
+      - ref: p-03-data
+        where: sections 2 to 4
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        backs: rule
+  - id: store.consistency.2
+    statement: "A lock that guards correctness across hosts hands out a monotonically increasing fencing token, and the store checks it on the write."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "It applies where a lease or lock stands between two hosts and a double execution would corrupt data and not merely waste work. The write that follows is rejected by the store if the token is older than one it has seen. Most answers are a conditional write on a revision (store.consistency.3), which makes the question cost nothing."
+      pros:
+        - "A lease can expire during a pause while the holder goes on writing; the same shape appears when an invocation is frozen and thawed or an at-least-once delivery runs the same work twice (inference, not measured; no case from the estate)."
+    relations:
+      relates:
+        - store.consistency.3
+    sources:
+      - ref: kleppmann-ddia
+        where: distributed locks and fencing tokens
+        backs: rule
+      - ref: p-03-data
+        where: section 23
+        backs: rule
+  - id: store.consistency.3
+    statement: "A mutation carries a version precondition; compare-and-set puts the version in the condition, and a conflict is a typed outcome distinct from not found."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-store
+        reason: There is nothing to mutate.
+    reasoning:
+      definition: "Both read as zero rows affected unless told apart. The test asserts the stale write's values are absent, so a retry that re-reads and overwrites fails. The request carries the revision in its body. Not-found and conflict are different typed outcomes (not-found for a missing row, a conflict for a stale one)."
+      pros:
+        - An update without the version in its condition overwrites a newer write silently.
+    sources:
+      - ref: p-03-data
+        where: section 23
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 7
+        backs: rule
+  - id: store.consistency.4
+    statement: "The intent is written before the effect and a record that cannot be written stops the effect; no message is published inside a database transaction (transactional outbox)."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - read-only
+        reason: There is no effect to precede.
+    reasoning:
+      definition: "The run record is opened after the lock is taken, so a refused second run writes no record. The outbox writes the row in the transaction and publishes after commit; whether a message can go out for a change that then rolls back is a review question."
+      pros:
+        - "One program opens its run record before it takes the library lock, so a refused run writes its own record."
+    sources:
+      - ref: bellemare-bedm
+        where: ch. 4 liberating data using outbox tables
+        backs: rule
+      - ref: p-03-data
+        where: section 21
+        backs: rule
+  - id: store.consistency.5
+    statement: "Every outward effect goes through a wrapper that records it, and a program is run from one package."
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "depguard owner-exec on the process package, forbidigo on os.StartProcess and syscall.ForkExec outside the runner (both run a program without the process package, and os itself cannot be banned), and the security analyser's rule for a variable command. The runner package, proposed, has a context, a timeout, no shell and an output cap. Counts on macOS: the process package appears in 90 production files across seven repositories (24, 20, 11 and 13 in four of them)."
+      pros:
+        - An effect outside the wrapper is invisible to the record and to the journal that precedes effects.
+    relations:
+      relates:
+        - store.consistency.4
+    replaced_by: cli.process.1

@@ -1,0 +1,10 @@
+name: rules
+order: 480
+context: P
+ends: listing
+summary: "List the rules that apply to this project"
+examples:
+  - {line: "gragas rules", does: "list them"}
+  - {line: "gragas rules --json", does: "as one JSON document"}
+exits: ["done"]
+json: rules

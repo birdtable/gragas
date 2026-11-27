@@ -1,0 +1,56 @@
+  gragas validate                              list the findings and notices
+  gragas validate --json                       as one JSON document
+  gragas migrate --name rb --owner me          show the plan
+  gragas migrate --name rb --owner me --apply  carry it out
+  gragas rule new                              add a draft rule
+  gragas rule retire <id>                      retire a rule and keep its id
+  gragas term new                              define a term
+  gragas term retire <slug>                    retire a term nothing uses
+  gragas source new                            record a source
+  gragas source edit <slug>                    change a source
+  gragas decision new                          record a decision
+  gragas decision supersede <slug>             supersede a decision by a new one
+  gragas undo                                  show the plan
+  gragas undo --entry 12 --apply               carry it out
+  gragas guard edit                            judge an edit on standard input
+  gragas guard staged                          judge the staged change
+  gragas import <folder>                       show the plan
+  gragas import <folder> --apply               carry it out
+  gragas attention                             list it
+  gragas attention --json                      as one JSON document
+  gragas history                               list the entries
+  gragas history <id>                          list the entries for one rule
+  gragas bind <id> --key <entry>               show the plan
+  gragas bind <id> --apply                     carry it out
+  gragas rebind <id> --to-key <new>            show the plan
+  gragas rebind <id> --apply                   carry it out
+  gragas unbind <id> --key <entry>             show the plan
+  gragas unbind <id> --apply                   carry it out
+  gragas conflicts                             list them
+  gragas conflicts --json                      as one JSON document
+  gragas coverage                              list it
+  gragas coverage --json                       as one JSON document
+  gragas tools                                 list them
+  gragas tools --json                          as one JSON document
+  gragas plugin test <folder>                  run the checks over one bundle
+  gragas plugin contract --json                say the contract number and features, as one JSON document
+  gragas resolve                               list it
+  gragas resolve --json                        as one JSON document
+  gragas explain <id>                          say what holds a rule
+  gragas explain <tool> <key>                  say which rules hold it
+  gragas preset                                show the preset files that are new or differ
+  gragas preset --check                        name each file that differs, writing nothing
+  gragas init --kind rulebook                  show the plan for a rulebook
+  gragas init --kind rulebook --apply          write it
+  gragas check                                 list the findings
+  gragas check --json                          as one JSON document
+  gragas contract validate <file>              check a document
+  gragas contract fields rule                  list the rule entity's fields
+  gragas version                               say which build this is
+  gragas version --json                        as one JSON document
+  gragas journal list                          list the runs
+  gragas journal recover --apply               roll an interrupted run back
+  gragas cache list                            list it
+  gragas cache clear --apply                   clear it
+  gragas gen                                   list the files out of date
+  gragas gen --apply                           write them

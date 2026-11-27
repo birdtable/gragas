@@ -1,0 +1,37 @@
+# The push's journey tests (gragas#970): one per command in the tree, as
+# docs/commands.md lists them under "In the tree", each line a command and
+# the one test of internal/journeys that runs it with the built binary. The
+# push member journeys-smoke runs these and no other (task journeys-smoke); the
+# release member tests-heavy runs every journey test.
+# TestTheSmokeListHoldsTheCommandsOfTheTree (internal/smoke_list_test.go), run
+# by the push member gate-lists, holds the list to the commands: a command with
+# no line, a line with no command, or a test that is not there is red.
+validate TestTheValidateGoldens
+rule TestRuleNewApplyWritesTheRuleItsSourceAndDecisionAndOneHistoryLine
+term TestANewTermWithALiteralIsWrittenOnceAndAStatementMayUseIt
+history TestTheHistoryGoldens
+coverage TestTheCoverageGoldens
+tools TestTheToolsGoldens
+init TestInitThenValidateEndsDoneWithZeroRules
+check TestTheGoldensHoldTheExemptionsCheck
+help TestTheGoldensHoldWhatAPersonReads
+version TestHelpAndVersionJSONAtThreeWidths
+journal TestTheJournalGoldens
+cache TestTheCacheListGoldens
+gen TestGenWritesOnlyWithApplyRecordsTheRunAndIsSafeTwice
+guard TestTheGuardEditGoldens
+contract TestValidateOnEachGoldenEndsDoneAndOnAPlantedOneFindings
+migrate TestMigrateGoldens
+attention TestTheAttentionGoldens
+source TestTheDryRunsOfTheSourceWordsAreGoldensAtThreeWidths
+conflicts TestTheConflictsGoldens
+decision TestTheDryRunsOfTheDecisionWordsAreGoldensAtThreeWidths
+import TestImportOfAGuideIsAPlanThenFilesAndASecondRunIsANoOp
+bind TestTheDryRunsOfTheBindWordsAreGoldensAtThreeWidths
+explain TestTheExplainAndResolveGoldens
+undo TestUndoWalksBackOneEntryAtATime
+rebind TestBindUnbindWriteOneRecordAndOneHistoryLineEachAndTheSecondRunHasNothingToDo
+unbind TestBindUnbindWriteOneRecordAndOneHistoryLineEachAndTheSecondRunHasNothingToDo
+resolve TestTheExplainAndResolveGoldens
+preset TestPresetJSONSaysWrittenOnlyForARunThatEndedDone
+plugin TestThePluginTestGoldens

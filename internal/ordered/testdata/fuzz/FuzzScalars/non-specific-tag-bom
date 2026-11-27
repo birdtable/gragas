@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("\xef\xbb\xbfa: ! yes\r\nb: ! true\r\n")

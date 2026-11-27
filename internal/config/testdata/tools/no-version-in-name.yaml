@@ -1,0 +1,3 @@
+version: 1
+tools:
+  eslint: {root}/opt/eslint

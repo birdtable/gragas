@@ -1,0 +1,32 @@
+part: sst
+concern: alarms
+order: 4
+title: Shared alarms
+summary: Every service gets the same alarms from one shared component.
+rules:
+  - id: sst.alarms.1
+    slug: shared-alarm-component
+    since: 0.1.0
+    rule: >-
+      One shared component gives every service the same alarms on errors, throttles and latency.
+    detail: In Go, a daemon serves one health document and is bounded and supervised.
+    level: deploy
+    why: Alarms written per service are missing where the failure is.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          an infrastructure rule failing a service stack that does not instantiate the shared alarm component,
+          and a unit test that the component creates the three alarm types. Plant: a stack without the
+          component fails. Control: a stack using it passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      The service obligation to use it is the service rule born-with-same-alarms; one check holds both.

@@ -1,0 +1,8 @@
+$ gragas rule promote go.errors.1 --decision decide-promote-go-errors-1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    go.errors.1 is in trial and no release has gone by since it
+  entered, so it stays there (S24)
+    promote it again after a release has gone by
+--- stderr

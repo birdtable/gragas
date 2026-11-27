@@ -1,0 +1,2 @@
+go test fuzz v1
+string("[{\"id\":42,\"tag_name\":\"v1.2.3\",\"draft\":true,\"assets\":[{\"name\":\"checksums.txt\",\"dig")

@@ -1,0 +1,13 @@
+$ gragas contract validate bad.json
+--- exit 1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Findings
+about   what is wrong, and the fix
+bundle  schema at top: Additional properties are not allowed ('was' was
+        unexpected)
+bundle  schema at adapters_used: 'none' is not of type 'array'
+
+  findings   bundle, contract 1.3, 2 findings
+--- stderr

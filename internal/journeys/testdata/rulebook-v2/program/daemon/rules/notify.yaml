@@ -1,0 +1,90 @@
+part: daemon
+concern: notify
+order: 8
+title: Notifications
+summary: >-
+  A daemon's notifications are a contract with a person's attention: one closed list of events with a
+  versioned payload, held equal to an example file, sent through channels behind an interface, and sent only
+  on a change, with a quiet baseline, a rate limit, quiet hours and no timer of their own.
+rules:
+  - id: daemon.notify.1
+    slug: closed-event-list
+    since: 0.1.0
+    rule: >-
+      A daemon's outward events are one closed list with a versioned payload, pushed through channels behind
+      an interface, and documented per event in an example file that the gate holds equal to what the daemon
+      sends.
+    detail: >-
+      Each event names its subject, its data and the version of its payload. The channel interface has one
+      adapter per kind (a push service, a webhook, a kind added later); the event list does not change when a
+      channel is added. The example file lists every event with a sample payload, and a test renders every
+      event through the real encoder and compares it with the file in both directions, so an event sent but
+      not documented, or documented but never sent, fails.
+    level: program
+    why: >-
+      A notification channel is a contract nobody tests unless the list is closed and held to its document; a
+      silent drift is found by a person who missed an alert.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    unless:
+      - facets:
+          - no-notify
+        reason: A daemon that sends no notification has no event list.
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that encodes every event in the closed list and compares the set and each payload with the
+          example file, both ways. Plant: an event added in code and missing from the example file fails, and
+          a field renamed in code fails. Control: a list equal to the example file passes
+  - id: daemon.notify.2
+    slug: changes-only-quiet-baseline
+    since: 0.1.0
+    rule: >-
+      A notification is sent only on a change; when no earlier state is readable the first run sets a silent
+      baseline; sends are limited per subject and event; quiet hours hold back all but a bad event; and
+      notifying rides an existing run, never a new timer.
+    detail: >-
+      A fresh install or a lost state file sends nothing on its first pass and records what it saw. The rate
+      limit is a stated count per subject, event and day (for example one). Quiet hours are the owner's
+      setting; an event marked bad passes through them. The check that may notify runs inside a run the daemon
+      already makes (a request, a scheduled job that exists for its own reason), so notifying adds no wake-up
+      (daemon.lifecycle.5).
+    level: program
+    why: >-
+      Noise is what gets a channel muted in its second month, and a timer added only to notify costs idle
+      power every hour for an alert that seldom comes.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    unless:
+      - facets:
+          - no-notify
+        reason: A daemon that sends no notification has nothing to rate.
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a table test: an unchanged state sends nothing, a fresh install sends nothing, a second send within
+          the limit is dropped, a quiet-hour good event is held and a bad one passes; and the timer analyser
+          of daemon.resilience.6 finds no timer in the notify package. Plant: a fresh install that sends a
+          notification for every subject fails, and a notify package with its own ticker fails. Control: a
+          change after a baseline sends one notification passes
+    relates:
+      - id: daemon.lifecycle.5
+        how: see

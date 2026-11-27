@@ -1,0 +1,240 @@
+format: 3
+part: arch
+concern: shared
+rules:
+  - id: arch.shared.1
+    statement: "Shared code lives in a small, named set of shared modules with one owner lane, and no other shared module exists."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The set is named in rule data: the shared library modules (for example one for plumbing and one for the terminal look) and any separate private package for design tokens. All of them have one owner lane. A package managed by agents, with the operator only advising, versions on its own semver and not in lockstep with the others. A scan of the module files across repositories finds shared modules outside the named set."
+      pros:
+        - "Every extra shared module is another place a copy can hide and another owner to find. The shared module exists; its owner lane is a new platform lane that cannot be created until the roster change is allowed."
+    sources:
+      - ref: decision-5
+        backs: rule
+      - ref: decision-28
+        backs: rule
+      - ref: decision-35
+        backs: rule
+  - id: arch.shared.2
+    statement: "The shared package holds mechanism, not product knowledge; policy and domain words stay in the program, and the API is small functions and structs."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Domain logic, product sentences and a page's own layout stay in the project whatever the copy count. In Go an AST test over the shared module's identifiers and string literals runs against a deny-list of program and domain words (tool names from the workspace, domain words) and a scan finds repository names. The shared module carries no program's domain."
+      pros:
+        - "A shared module with product words in it is a program in disguise; one shared style file (style.go) carried photo words. The shared kit has no repository names today."
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+  - id: arch.shared.3
+    statement: "A step copied into a second repository moves to the shared module, and the census count of copies only falls."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A census (the step-copies measure, a go test that regenerates the census and diffs it against the committed one) hashes every known shared step across the repositories and counts copies and versions; the count per step has a shrink-only ratchet. Clones across repositories are reported. Engines such as a clone detector are candidates. Copies found by hashing are also counted for design tokens and parts on the web side."
+      pros:
+        - "One census found 42 hand copies (223,170 bytes) of what the shared UI module holds, and named a shared package for 31 of the 51 steps. Copies diverge silently."
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+  - id: arch.shared.4
+    statement: "A second copy found by shape is reported in the change, which either moves it or lists it as independent with a reason."
+    strength: should
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The clone detector runs with identifiers and literals ignored (a renamed copy shows 0 clones by default) with a minimum of 5 lines and 30 tokens; looser similarity and embedding modes exist and were not run. The report is advice; the gate is the ban on the primitive in arch.shared.8."
+      pros:
+        - "A copy found only by name is missed once renamed; the shape is what repeats."
+    relations:
+      relates:
+        - arch.shared.8
+  - id: arch.shared.5
+    statement: "A copy that must differ is listed as independent with a reason and a removal date, and a copy that diverged is reported."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A census class named independent needs a named reason, and every allowed copy has a removal date that fails once it passes. A copy that diverged is reported when only one of its copies changed in 90 days (a git log per copy file); the next change to a diverged copy is blocked until answered. The count only falls. Clones not on the list fail. In Go the list is the shrink-only baseline file: one row per deliberate copy, with the path, a metric of lines, a ticket and the date by which it is zero. The divergence report reads the list of copies taken from another repository (arch.shared.6)."
+      pros:
+        - "12 of 20 UI steps were independent copies in one census, and 14 independent steps in a Go census; without a reason list a divergence cannot be told from drift."
+    relations:
+      relates:
+        - arch.shared.4
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+  - id: arch.shared.6
+    statement: "A file that must stay a copy is checked byte for byte against its origin in the gate, and a shared file reaches every consumer through a manifest of path and hash, and copies are counted by the step-copies census."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Root configs are byte-equal to the template and an edited one fails; a config read by meaning is validated by meaning (an .npmrc is last value wins, and the pnpm-workspace file is compared to the expected key map). Each holder has a manifest of path: sha256, a changed hash re-runs the readers, and the check sits inside the path agents take, with a per-repo ceiling that only falls. A repo copy of a canonical root file is diffed against the shared config package: each repo's copy is a one-line extends or re-export, a pre-push job diffs it, and a template update reconciles drift once the template exists. For a copy taken from another repository the list is one file with one row per copy: the path here, the original, what may differ and why. A repository test reads the list through the shared module's list reader and compares each pair; a difference the row allows passes and any other fails. The first rows are two test-isolation helpers copied from another program."
+      pros:
+        - "One repo's drift check fails and sits outside the gate (7 of 25 whole-file entries fail); five versions of a pre-push hook exist in five repos; three byte-equal things were found in one census."
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+  - id: arch.shared.7
+    statement: "A shared rule or look changes once, in its package, and reaches projects by a version bump; it is imported, never copied."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - daemon
+        reason: no terminal output
+      - kinds:
+          - library
+        reason: no terminal output
+    reasoning:
+      definition: "No project holds a copy of the shared rule file or of a module file; declared differences (a program's own brand, banner art) stay allowed. A one-line wrapper is allowed and a 78-line copy is not. In Go the terminal look comes from the shared UI module, with no colour literal or escape string outside it and no terminal-detection package outside it (a program can still paint with raw escape strings through the formatting package or detect a terminal with x/term, which is not banned today)."
+      pros:
+        - "Only one program imports the shared UI module (30 non-test files); the others copy. Three byte-equal things and 12 independent steps were found in one census."
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: depguard
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: arch.shared.8
+    statement: "Every shared export that replaces a hand copy is protected twice: a ban on the primitive outside its owner with a shrink-only allow list, and an advisory shape rule that points at the export to use."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The ban is the gate. The shape rule is advice and does not stop a rebuild by itself, because a name search cannot find a copy (copies are called Put, replaceOnce or enqueue). The message names the export to use and old copies stay on a per-file count that only falls. The shape rule has a planted copy under a different name, its known bypasses kept as fixtures (a helper that makes the temp file, a file create call, a root rename, a method-value alias of the rename call, link-then-remove) and its measured rates beside it. Locking, atomic writes, paths and the daemon helper come from the shared module, not a local copy. An export without both halves is planned. A known bypass is a helper in a ban-free package that calls an allowed primitive. In Go the ban rows are not hand-kept: they are generated from the registry of arch.shared.15, one forbidigo or depguard row per primitive with the export in its message, and the exclusion list of each ban is the shrink-only allow list. The bans at adoption are the file-write primitives (rename, temp file, write file, create, open for write) outside the write owners; the digest primitives and the hex encoding of a sum outside the digest owner; the raw stat of a path outside the trust owners; running the version-control program outside its owners; and the golden update flag outside the one golden helper. The shape rule stays advice; the restructured copy it cannot see is made visible by the trailer of agents.discovery.6."
+      pros:
+        - "13 hand-written replace-a-file bodies sit outside the owner and 14 production files call flock directly; a name search found none of the copies and a clone detector found 0 clones; the shape rule flagged 1 of 6 planted forms of the atomic write and missed all five restructured copies, so per-export bans are the gate."
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+  - id: arch.shared.9
+    statement: "Each port and shared package's public surface is listed in one generated file per tag with a stability mark (stable, experimental, internal) on every export, held both ways against the code, and a change to the surface or a mark fails until a reason is recorded."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The listing is regenerated and diffed in the owner repository (for Go, a short doc listing per package); a test that the listing's tag equals the pinned version, and a program reads the listing for the version it pins. A surface is few, typed and closed. Every export carries one mark: stable (kept until a recorded break), experimental (said so at the export site too) or internal (not reachable from outside the package). The register and the code agree both ways: an export with no mark fails, a mark with no export fails, and an internal export reachable from outside fails. For a published web package the surface is its exports map with one subpath per unit, no root barrel on a package with more than one unit, and every entry resolving in the packed tarball. The reason must resolve to a ticket or a second case. Width per part is printed and does not gate because a limit would be a guess. The interface comment is a review question (see code.comments)."
+      pros:
+        - "The shared Go package's surface is 181 lines and 6.9 KB; the list read at the version one repo pins has no UI and no door entry. In the trial, 25 landings in one repo and 11 in another were real port changes. A surface with no stability mark promises everything to every reader; the mark is what lets an experimental export change without a break."
+    sources:
+      - ref: ousterhout-aposd
+        where: chapter 13
+        backs: rule
+      - ref: b-01-evolutionary-architectures
+        where: section 5.2 item 4
+        backs: rule
+      - ref: b-04-philosophy-of-software-design
+        where: section 7 item 4
+        backs: rule
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.shared.10
+    statement: "A new shared package or part enters the shared layer only when entry conditions hold: two live consumers, one concern, a named owner and a line in the generated listing."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "For a web module: two or more consumers today; no single module's entity rule; imports only the kernel, generated types, the design system and packages; a named kernel package with a README naming its purpose, allowed imports and owner; a catalogue row and tests. For a shared part: published criteria, holds no single surface's rule, and the fan-in threshold (3 surfaces) is rule data with its reason, not a repo's choice. Test helpers go in a testkit package in the root module. Anything else stays in the program."
+      pros:
+        - "A shared item with one consumer pays for the shared layer's cost and none of its value."
+    sources:
+      - ref: ford-sathp
+        where: chapter 8
+        backs: rule
+      - ref: ousterhout-aposd
+        where: chapter 11
+        backs: rule
+      - ref: p-08-splitting
+        where: section 18
+        backs: rule
+  - id: arch.shared.11
+    statement: "A piece moves up one step at a time (page, the site's shared/ folder, then a shared package), and stack-free code moves when a second project needs it."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "Stack-free code moves on any framework. A part moves by the three-copy rule inside a site; across sites it needs a second live consumer on the same framework, after its fault has recurred. Domain logic, product sentences and a page's own layout never move. A new package or repository names the driver that a folder or namespace cannot meet (arch.structure.5)."
+      pros:
+        - Skipping a step creates a shared package for something that has one user.
+    relations:
+      relates:
+        - arch.structure.5
+        - arch.structure.1
+    sources:
+      - ref: ford-sathp
+        where: "chapters 3, 6 and 7"
+        backs: rule
+      - ref: p-08-splitting
+        where: section 11
+        backs: rule
+  - id: arch.shared.12
+    statement: "A shared item whose consumers drop to one moves back into that consumer, or names a second as a recorded exit."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A module two or more modules need moves to the shared layer; one that drops to a single consumer moves back. The structure check fails a shared item with fewer than two consumers. A step used by one program again returns to it, since a step moves up only on two holders."
+      pros:
+        - A shared item kept for one consumer is shared in name only.
+  - id: arch.shared.13
+    statement: "A shared pattern, marker or behaviour-deciding value has one exported definition that others import."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A shared value or pattern is defined once in the shared module and copied byte for byte only by listing (arch.shared.6). A threshold or limit is a named constant in one configuration module, so the same number is not typed in two view files. The same value in two exported constants blocks until answered."
+      pros:
+        - "Two copies of a pattern drift apart and the program silently splits into two behaviours; one threshold lived in four places in one repo."
+    relations:
+      relates:
+        - arch.shared.6
+  - id: arch.shared.14
+    statement: "A shared source has a named owner, one home, a stated version and a place to ask with a response time, named before it is called adopted."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Each shared repository has an owner file with the owner, home, version, ask channel and response time; the sync check verifies every shared dependency repository has a valid one at its pinned tag. The tokens package is managed by agents and the operator only advises."
+      pros:
+        - "Two shared UI sources have no owner file; a shared source with no one to ask is abandoned the first time it needs a change."
+    sources:
+      - ref: decision-2
+        backs: rule
+      - ref: decision-28
+        backs: rule
+      - ref: decision-35
+        backs: rule
+  - id: arch.shared.15
+    statement: "Every capability that more than one package or program needs is one row in a registry, and the lint bans, the instruction block and the export listing's shared column are rendered from it."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The registry is one file, one row per line, sorted. A row has the capability, the owner package, the export, the shared module's package and export if it has one, the primitives the capability owns, a status (local, shared or later) and the tag since which it is shared. A repository test fails a row whose owner does not exist, a primitive with no rendered ban, a ban with no row, and a shared-module row whose export is not in the pinned tag's package listing. The owner column is held to the owners that the layer table already names, so the two files cannot disagree. A ban nobody can find is not read, and an instruction nobody enforces is not followed; one file is both, and the generator writes the ban rows into the generated part of the lint config and the instruction block into the agents' file. Removing a row narrows a gate, so the registry is a protected path."
+      pros:
+        - "Own measure: the atomic write exists six times in one Go program and the digest of a file twelve times, each added by a builder who did not see the earlier one; the shared module's own instruction file states the second-copy rule, and nothing in this program enforced it."
+    relations:
+      relates:
+        - arch.shared.8
+        - agents.discovery.1
+    sources:
+      - ref: decision-16
+        backs: rule

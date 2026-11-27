@@ -1,0 +1,28 @@
+format: 3
+part: daemon
+concern: deploy
+rules:
+  - id: daemon.deploy.1
+    statement: "A deployed stack the program writes names its image by tag and its update check compares the running digest with the registry; every port it opens binds loopback and is published only through the private network's serve, never publicly; and a change to shared network or identity policy that reaches other devices is printed for the owner to apply, never applied by the program."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+        - cli
+    exemptions:
+      - kinds:
+          - no-stack
+        reason: "A program that writes no deployed stack has no image, port or shared policy to place."
+    reasoning:
+      definition: "The tag is the image's moving tag; the update check reads the registry's digest for it (within the daily budget of daemon.outbound.2) and reports what would change. Exact pins stay the rule for code dependencies (supply.install.4); a stack's image is not a code dependency. A port bound to 0.0.0.0 or a public address, or published through a public relay, is refused when the stack is written. Shared policy is anything another device or person reads: the private network's access list, its DNS, an identity provider's groups. The program prints the exact lines and where they go."
+      pros:
+        - "A home server that pins images never updates, which is worse than a tag plus a digest check that says what changed. Loopback plus the private network's serve makes a written stack safe by construction, and printing shared policy keeps a program from reaching past its own machine."
+    relations:
+      relates:
+        - daemon.outbound.2
+        - supply.install.4
+    sources:
+      - ref: decision-65-daemon
+        backs: rule

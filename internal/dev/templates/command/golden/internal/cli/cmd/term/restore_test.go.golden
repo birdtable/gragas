@@ -1,0 +1,18 @@
+package term_test
+
+import (
+	"os"
+	"testing"
+
+	"github.com/birdtable/gragas/internal/cli/cmd/term"
+	configtest "github.com/birdtable/gragas/internal/config/testing"
+)
+
+// TestMain starts from the shared test setup.
+func TestMain(m *testing.M) { os.Exit(configtest.Main(m)) }
+
+func TestTermRestoreTranscript(t *testing.T) {
+	t.Parallel()
+	_ = term.New
+	t.Fatal("term restore: write its golden transcript test")
+}

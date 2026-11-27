@@ -1,0 +1,3 @@
+go test fuzz v1
+byte('\x05')
+[]byte("{\n  \"contract\": \"1.3\",\n  \"proposal\": {\n    \"change\": {\n      \"anatomy\": \"example\"\n    },\n    \"opened\": \"2000-01-01\",\n    \"slug\": \"example\",\n    \"state\": \"open\",\n    \"target\": \"example\"\n  }\n}\n")

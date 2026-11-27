@@ -1,0 +1,159 @@
+format: 3
+part: tests
+concern: journeys
+rules:
+  - id: tests.journeys.1
+    statement: "Each journey declares what it exercises, and a change selects the journeys whose declared inputs it touches; every command, route or page has a journey."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "End-to-end journeys of a CLI or a daemon (the built binary run script-style, an install and start under the init system, a request and its answer) and browser journeys declare their inputs: commands, routes, packages, config files, build inputs, source paths. A change selects the journeys whose declared inputs it touches or whose inputs depend on what it touched. The journey map is a file; the command tree (CLI) and the route table (daemon) are the complete list, and a test fails when a leaf command or route has no journey, a journey has no declared inputs, a journey sits in no entry or a glob matches nothing. A flow that spans CLI, daemon and page has one cross-program journey, run when any touched program changes; its declared programs list is the selector's cross-repo input. A consumer contract comes first, so a journey covers only what the contract cannot see. Unplaced paths pick all (tests.selection.2); the plan is printed and carries a hash and a freshness date per map entry. Every cross-service flow has a journey, run when any program it touches changes."
+      pros:
+        - "Operator direction: end-to-end tests must be scoped. One repo's browser reach map selected 7 of 41 journey files for a one-card change; none of the repos declares inputs per journey, and the land step runs the whole acceptance suite."
+    relations:
+      relates:
+        - tests.selection.2
+        - tests.selection.5
+    sources:
+      - ref: decision-18
+        backs: rule
+  - id: tests.journeys.2
+    statement: "The real built binary runs in a script-style test with its own home, temp folder and environment, and only the acceptance package and its sub-packages run it."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no binary to run.
+    reasoning:
+      definition: "A shared harness runs the binary (testscript-style or the shared UI test matrix) and one built-binary test exists per program. A program that is only a library has no binary and is exempt. A sub-package of the acceptance package is for a journey that needs a run of its own, as one that runs in a containment which wraps its whole test binary and so cannot hold the other journeys."
+      pros:
+        - "Own measure: one repo has the acceptance package; three others carry drifting copies of the client harness. A harness each repo copies drifts."
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapter 8
+        backs: rule
+  - id: tests.journeys.3
+    statement: "A binary or page under a gate check records the tree and toolchain it came from, and a check on a stale or unstamped build is refused."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Go stamps the revision and the modified flag into the binary (build info); the script test asserts the stamp equals the tree under test and a missing stamp fails. A page build carries the same stamp."
+      pros:
+        - "A gate that runs yesterday's binary proves yesterday's tree. The check is the stale-build plant, not the stamp itself."
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 23
+        backs: rule
+  - id: tests.journeys.4
+    statement: "Each journey declares a stated risk naming what a cheaper test cannot see, an owner and its place in a capped list; the cap is an alarm and not a limit."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A schema check on the journey list requires risk, owner and the cheaper-test reason, and fails a journey with none. Identical risk text across journeys is reported. The cap is a guess and only alarms. A cross-program journey lists its programs. A consumer contract comes first. An end-to-end journey records the risk it covers, an owner and why a cheaper test cannot see it."
+      pros:
+        - "Journeys are the dearest tests and the rule that every flow has a journey grows the list by one per producer-consumer pair. Authoring is now free, so upkeep is the limit. One repo's journeys are 35 minutes serial for one family (not re-timed). Estate record: 39 journeys in the reference baseline, run only by hand."
+    relations:
+      relates:
+        - tests.journeys.1
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapters 8.1.2 and 8.3.1
+        backs: rule
+  - id: tests.journeys.5
+    statement: "An integration or journey test follows one longest path per scenario, and edge cases go to unit or contract tests."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "Agents write an integration test per branch unless told, and that is a structural cause of slow suites."
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapter 8.1
+        backs: rule
+  - id: tests.journeys.6
+    statement: "Journeys run on the shipped tree, with no internal stubs and in a development environment only, and leave nothing behind; every created marker is torn down, referents first."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A journey with stubs proves the stubs; one that leaves records breaks the next run. Binds to the tree through the verdict (tests.selection.7)."
+    relations:
+      relates:
+        - tests.selection.7
+  - id: tests.journeys.7
+    statement: "A program that writes users' files is killed at many points of a write and recovered in a crash-injection run at release, with a short run at push."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The release run kills the program at a stated number of points across each write path and checks that every recovery leaves the old file or the new one and never a half. The push run kills at a smaller number of points chosen to cover every path once, and takes seconds. A program that writes no user file has no crash-injection member. The number of points is data on the member, and a path added to the write code adds its points in the same change."
+      pros:
+        - "A torn write is found only by the kill that lands in it, and a run long enough to find them all does not belong in a push; the release already runs everything a release alone proves."
+    relations:
+      relates:
+        - tests.journeys.6
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+  - id: tests.journeys.8
+    statement: "A screen is held to one golden width read by a person, and at the narrower widths to properties: no line wider than the screen, nothing cut off, the same rows in the same order."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The golden at the standard width is the oracle a person approved. At each narrower width a check runs the same command and asserts the three properties on its output, so a width adds a few lines of data and no golden file. A property that fails prints the width, the row and the measure. The widths are data on the check, and a screen that is new adds its rows to the standard golden only. A column a table leaves out and marks is not cut off only when the width forces it out: the lowest of the table's drop order, in that order, never the first column, and no more than the width leaves no room for."
+      pros:
+        - "Three goldens of the same screen at three widths triple the review of every change and say the same thing three times; the properties catch the same breakage and never need a hand read."
+    relations:
+      relates:
+        - tests.generated.5
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+  - id: tests.journeys.9
+    statement: "The long crash-injection run at release is 400 kill points and 100 recoveries spread over several child processes, each with its own root; a program that writes only its own records takes atomic-write tests instead and is exempt from the crash members."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "tests.journeys.7 holds that a program which writes users' files is killed and recovered at release with a short run at push. This rule holds the long run's size and shape. The points are split across children so the run uses the pool (gates.command.27) and each child writes under its own root, so a kill in one cannot touch another's files. A program whose files are its own records (a cache, a journal) proves atomic writes (cli.commands.23) and lists no crash member."
+      pros:
+        - "The crash run of one project is 400 and 100 by ruling; run in one child it is a serial member that sets the release time."
+    relations:
+      relates:
+        - tests.journeys.7
+        - cli.commands.23
+        - cli.commands.3
+        - gates.command.27
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+  - id: tests.journeys.10
+    statement: "A journey that needs a virtual machine, a container runtime or a device is a journeys member at release or on demand, skipped with its reason where the host lacks the runtime and listed every run; a container leg for a second platform is a release member, and the long or costly set is on demand."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "gates.command.30 holds that a member says where it can run and that a skip is red at land and release unless a dated exemption names the machine. This rule places the journeys that need a machine the gate's host may not have: at release where the host has the runtime, on demand for the long set (gates.command.26), and never at push. A platform the project claims is proved by a run on it (gates.command.16); a container leg is one way to run one."
+      pros:
+        - "Three projects of one organisation had journeys that need a virtual machine, a container runtime or a device, and each needed somewhere to say the host lacked it without a quiet pass."
+    relations:
+      relates:
+        - gates.command.30
+        - gates.command.26
+        - gates.command.16
+        - tests.journeys.2
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule

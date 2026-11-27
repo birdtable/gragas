@@ -1,0 +1,55 @@
+format: 3
+part: arch
+concern: templates
+rules:
+  - id: arch.templates.1
+    statement: "A template per kind lays down configs, scripts and gates, records its answers and version in a file, and a deleted synced file fails the sync check."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "One template exists per kind of project. The sync tool writes the version and the source hash to a lock file, so a later update can replay it and so a vendored copy shows where it came from. The tool is one Go command in the same binary as the checks, not an external template engine."
+      pros:
+        - "A template that does not record its version cannot be updated, and a project that has drifted from it cannot be told apart from one that chose to."
+    sources:
+      - ref: decision-3
+        backs: rule
+      - ref: decision-4
+        backs: rule
+  - id: arch.templates.2
+    statement: "A new program, command, package, page, part or surface comes from a generator or golden example, and the gate accepts what it writes."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The generator scaffolds the folder, entry files, registry entry and test stubs, and one reference program is the first file an agent opens. The gate is a self-check that runs the generator into a temporary copy of the repository and then the lint, type check and layer rule over the result, which must pass. Hand-made files are allowed as long as they pass. A hyphenated name is a fixed plant. Come-from-a-generator cannot be forced; the mechanism proves only that the generator's output passes. In Go a scaffold creates a new program, command or package with a thin main and a gate-clean layout."
+      pros:
+        - "A page generator failed one repo's own gate on a hyphenated page name. There is no Go scaffold or reference program, and an agent copying an old program copies its faults."
+    sources:
+      - ref: p-09-agentic-development
+        where: section 7.2
+        backs: rule
+  - id: arch.templates.3
+    statement: "The template installer asks exactly three questions (name, version range of the shared package, runtime major) and has no yes or no switches for optional file groups."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Optional file groups are separate kinds, not switches, so two projects of one kind have the same shape. In the ruled Go form the questions become the kind pack and a module path."
+      pros:
+        - Each switch doubles the number of shapes a gate must accept.
+    relations:
+      relates:
+        - arch.templates.1
+  - id: arch.templates.4
+    statement: "On template update, files the repository owns are written once and left alone, managed files are rewritten, and a test checks that no byte-equal file is on the skip list."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The sync tool rewrites managed files and leaves repo-owned local fields; copies that must differ are listed as independent (arch.shared.5). A byte-equal file on the skip list is a managed file that was never updated."
+      pros:
+        - "An update that overwrites owned files is not used, and one that skips managed files drifts."
+    relations:
+      relates:
+        - arch.shared.5

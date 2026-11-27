@@ -1,0 +1,16 @@
+# The -race time of each group of the repository's own checks, as measured.
+# A group whose -race time is over the line runs without -race at push and is in the
+# Taskfile's NO_RACE_PUSH; every other group keeps -race.
+# test-uncached runs every group under -race at release. Each group has a row, so a new
+# one is measured before it is placed (TestNoRacePushIsTheGroupsOverTheLine).
+#
+# Measured at f1ec151b: linux-amd64, 20 CPUs, a fresh clone, -count=1,
+# load (1 min) 34.45 before the run, so the figures are upper bounds. Seconds.
+line 15
+./internal 44.618
+./internal/repo/docs 6.315
+./internal/repo/explorer 2.643
+# gatetest: the plain time, a lower bound under -race (its -race run was cancelled)
+./internal/repo/gatetest 31.560
+./internal/repo/gocode 5.178
+./internal/repo/rulebook 17.180

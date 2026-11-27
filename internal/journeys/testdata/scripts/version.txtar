@@ -1,0 +1,9 @@
+# The first script of gragas: the built binary says
+# the version it was stamped with, and says it the same on every system.
+exec gragas version
+stdout v1.2.3
+
+# A word it does not know is refused, with a word on stderr and no output.
+! exec gragas no-such-command
+! stdout .
+stderr .

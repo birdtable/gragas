@@ -1,0 +1,51 @@
+format: 3
+part: daemon
+concern: logging
+rules:
+  - id: daemon.logging.1
+    statement: "A daemon's logs have a level and a time; hold no secret, sign-in code, token, prompt, conversation, device or address; mark a field reported by an untrusted peer as reported; and go where the service manager reads them or to a capped, rotated file in the daemon's run folder that a caller can neither grow without bound nor forge. The log line is designed, not built."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "A capped file has a stated size and rotation (for example 1 MiB) and refusals are rate-limited per peer, so a caller cannot fill the disk through the log. A value from a peer is written as a field, never spliced into the message, and control sequences are stripped. The list of things never logged is a list in the logging package that a canary test walks; a new kind of sensitive value is added to the list, not to each call."
+      pros:
+        - "Practice; a secret in a log outlives the process that wrote it, and a program that runs agents handles prompts and conversations that are as private as a secret. A log a caller can grow or forge is an attack on the disk or the record."
+    relations:
+      relates:
+        - go.logging.2
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.logging.2
+    statement: "Journal lines carry a priority prefix under JOURNAL_STREAM, and none without it."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      pros:
+        - "Evidence T; the test is planned (fix A9)."
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+  - id: daemon.logging.3
+    statement: "An audit record is an append-only file the program owns, the service manager's journal may hold a copy but is never the record, and a daemon answers a person in plain words, writing the underlying tool's own words only to its log."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "The audit file lives in the program's state folder, is opened for append only, and survives a journal rotation. A tool's raw error (a service manager's message, a library's text) goes to the log with the command that produced it; the answer to the person says what happened and what to do in the program's own words."
+      pros:
+        - "An audit record that rotates away with the journal is not an audit, and a raw tool message shown to a person is noise at best and a leak of internals at worst."
+    sources:
+      - ref: decision-65-daemon
+        backs: rule

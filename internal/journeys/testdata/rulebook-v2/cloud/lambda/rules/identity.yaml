@@ -1,0 +1,66 @@
+part: lambda
+concern: identity
+order: 2
+title: Function identity and grants
+summary: >-
+  Each function runs under its own pinned role name with the shared baseline grants, and further permissions
+  come only through managed policy ARNs on the role.
+rules:
+  - id: lambda.identity.1
+    slug: grants-through-managed-policy-arns
+    since: 0.1.0
+    rule: >-
+      Function permissions are granted only through managed policy ARNs on the role, never through a
+      standalone policy attachment.
+    detail: >-
+      In Go, a unit runs with its own identity and sandbox from one template, and CI tokens are scoped.
+    level: deploy
+    why: >-
+      A standalone attachment lies outside the role definition, so the role cannot be read as the full list of
+      what a function may do.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule over the infrastructure code failing a standalone role policy attachment or inline
+          policy on a function role. Plant: a function role built with an attachment resource fails. Control:
+          managed policy arns on the role pass
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: lambda.identity.2
+    slug: pinned-role-name-and-baseline
+    since: 0.1.0
+    rule: >-
+      Every function has a pinned role name from one table and receives the shared baseline grants.
+    detail: >-
+      A function with no entry in the role-name table fails, so a new function cannot be deployed with a
+      generated role name. In Go, a daemon unit has its own identity and sandbox from one template.
+    level: deploy
+    why: >-
+      A generated role name changes on replacement and breaks everything that names it, and a function without
+      the baseline misses logging and tracing grants.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule over the infrastructure code failing a function whose logical name is absent from the
+          role-name table or whose role omits the baseline policy. Plant: a function added with no role-name
+          entry fails. Control: a function in the table with the baseline passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

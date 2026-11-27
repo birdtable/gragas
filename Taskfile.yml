@@ -1,0 +1,1356 @@
+# The gate's tiers, run by go-task (the pinned copy in .tools/bin, tools.yaml).
+# One command per tier: task pre-commit, task pre-push, task full, task release. pre-commit
+# lists tools-check, then pre-commit-members, whose deps run side by side.
+# pre-push lists tools-check, then pre-push-members,
+# then the budget: the commit-level members, and the commit's that read the tree,
+# are the deps of pre-push-members, which go-task runs side by side.
+# full holds every other member, the same way: landing
+# runs the push tier and then full. No tier runs task tools, which needs the network.
+# release lists tools-check, then release-members, the
+# push and full members but test, and its own, as deps. Without failfast go-task lets every dep finish and
+# returns the first error, so every red member prints and names itself. Every
+# member that starts a process tree carries a timeout, so a hung member ends
+# red instead of holding the run. No member is backgrounded with &.
+#
+# In full, test runs -race, unshuffled and from Go's test cache;
+# secrets runs gitleaks over origin/main..HEAD (secrets-scan); journeys-smoke runs the list in
+# internal/journeys/smoke.txt. -count=1 belongs to the release tier
+# (test-uncached, gate-tests, test-heavy and secrets-full),
+# and in the push and full to two members alone, whose tests read what Go's test cache cannot
+# see: os-code (git merge-base, and the census's go list of std) and subset-build (go list). Each says so on its line.
+version: "3"
+
+vars:
+  TOOLS: "{{.ROOT_DIR}}/.tools/bin"
+  # The go tools, built from tools/go.mod's tool block into .tools/bin, pinned by tools/go.sum (supply.install.10). golangci-lint is
+  # not among them: upstream ships release binaries only, so its one pin is the sha256 of tools.yaml, and gragas-dev fetch holds it.
+  GO_TOOLS: [task=github.com/go-task/task/v3/cmd/task, gitleaks=github.com/zricethezav/gitleaks/v8, govulncheck=golang.org/x/vuln/cmd/govulncheck, go-licenses=github.com/google/go-licenses/v2, dupl=github.com/mibk/dupl, hatch=github.com/birdtable/hatch/cmd/hatch]
+  # The gate's own program, built once by each tier's first step (gate-build) and run by every gate call after it
+  # a member that ran go run instead hashed gragas-dev's whole import graph at its start, and fourteen
+  # of them at once on a cold cache took more than the minute a gate call has.
+  GATE: "{{.TOOLS}}/gragas-dev{{exeExt}}"
+  # A tier is judged by the CPU time of its own process tree (hatch `budget --cpu`): the tier's members run under hatch, which holds
+  # their user plus system time to the row's cpu_limit, the same on a quiet machine and a loaded one. The row's wall limit is the hang guard only: hatch kills a
+  # tier still running at ten times it. No load excuse: the room is not the tier's cost. hatch's line names the wall time and the load beside the CPU time.
+  BUDGET_ROW: '(?m)^  - id: (?P<id>\S+)\n(?:    [a-z_]+: .*\n)*?    limit: (?P<limit>[0-9]+)\n'
+  BUDGET_CPU_ROW: '(?m)^  - id: (?P<id>\S+)\n(?:    [a-z_]+: .*\n)*?    cpu_limit: (?P<limit>[0-9]+)\n'
+  BUDGET: "{{.TOOLS}}/hatch{{exeExt}} budget --cpu --cpu-row '{{.BUDGET_CPU_ROW}}' --budgets gate/budgets.yaml --row '{{.BUDGET_ROW}}' --prefix tier- --window 1 --advice 'move the heaviest member to the next tier, never skip it'"
+  # The files tools-check reads, each from the repository root: the lock the go tools are built against, and the file pinning the release tools.
+  LOCK_FILE: tools/go.sum
+  PINS_FILE: tools.yaml
+  # the folders task tools installs with pnpm, frozen; tools-check holds each node_modules to its pnpm-lock.yaml
+  PNPM_TREES: explorer,tools/.node
+  # The release programs of tools.yaml that tools-check holds to their sha256 pins (each is fetched by task tools).
+  RELEASE_TOOLS: golangci-lint node ast-grep goreleaser changie vale pnpm
+  # Every system of the list (arch.ports.4), this list.
+  CROSS: [linux/amd64, linux/arm64, darwin/arm64, windows/amd64, freebsd/amd64]
+  # What explorer-format lists over, and the root boards rebuilds in; a plant sets either on the command line.
+  FORMAT_DIRS: explorer docs/explorer-boards/gen
+  BOARDS_ROOT: .
+  # The root generated-presets holds through the pinned plugins; a plant sets it on the command line to a copy.
+  PRESET_ROOT: .
+  # What format lists over, and the one misformatted file it must list (its exact path as gofmt prints it).
+  GOFMT_DIRS: .
+  # The SPDX allowlist licences reads.
+  LICENCES_FILE: gate/licences.txt
+  # Skipping a member whose inputs are the base's: go-task's status: runs git, and writes no checksum or stamp,
+  # so a run that is killed or red leaves nothing behind that a later run could take for a pass. A member is skipped only when
+  # every input path equals SKIP_BASE's and no untracked file lies under it, which holds when the base passed the member.
+  # It is off by default: SKIP_UNCHANGED is 0 here, which outranks the environment and a .env. hooks/pre-push turns it on with
+  # a command-line var, and only when no pushed ref is main (the push that lands runs whole); the release passes 0, and any
+  # --force, gentle or not, runs every member.
+  # The paths are variables, and Taskfile.yml is one of them; a test holds each list to what go list says the module reads.
+  SKIP_BASE: origin/main
+  SKIP_UNCHANGED: "0"
+  # The commit's skip is off here too, declared where gragas check reads it: the commit's call passes STAGED_ONLY 1
+  # down to its four members and the push's passes 0, so this default decides nothing and the environment cannot turn it on.
+  STAGED_ONLY: "0"
+  # The commit needs no network (supply.install.10): pre-commit passes NO_NETWORK "1" down every call to the members, and the
+  # file's env: reads it for GOPROXY. go-task 3.54.0 gives a called task the file's env:, never the calling task's, so the
+  # setting is a var each caller forwards (a test holds that every commit member does) and the file env: turns it into off.
+  NO_NETWORK: "0"
+  # Files go build, vet and test read besides the .go files: the embedded folders (a test names any new one).
+  EMBED_DIRS: internal/cli/planned internal/dev/templates/command internal/host/assets internal/host/term internal/config/vars_system.txt internal/port/contracttest/testdata
+  GO_INPUTS: "'*.go' go.mod go.sum Taskfile.yml {{.EMBED_DIRS}}"
+  EXPLORER_INPUTS: explorer presets/prettier tools.yaml .node-version Taskfile.yml
+  # What the commit's four members read: the commit runs one only when a path of its inputs is staged (the commit's call
+  # passes STAGED_ONLY=1 down to them and the push's passes 0, so the environment decides nothing). The Go files and modules, of any module in the tree.
+  STAGED_GO_INPUTS: "'*.go' '*go.mod' '*go.sum' Taskfile.yml"
+  STAGED_FORMAT_INPUTS: "{{.FORMAT_DIRS}} presets/prettier tools.yaml .node-version Taskfile.yml"
+  STAGED_BOARDS_INPUTS: docs/explorer-boards explorer/core tools.yaml .node-version Taskfile.yml
+  EXPLORER_TEST_INPUTS: "{{.EXPLORER_INPUTS}} internal/testdata/contract-v1 internal/host/assets/contract/fixture gate/licences.txt gate/subsets.json docs/explorer-boundaries.json docs/spec.md gate/budgets.yaml gate/baselines.yaml tools/.node/pnpm-workspace.yaml .github/workflows"
+  # The modules whose zip holds no LICENSE, each passed over by a row that names its licence; no wildcard.
+  LICENCES_SOURCES: gate/licence-sources.txt
+  # The module tree go-licenses reads; a plant names its own on the command line (internal/licences_member_test.go).
+  LICENCES_TREE: .
+  LICENCES_INPUTS: "{{.GO_INPUTS}} {{.LICENCES_FILE}} {{.LICENCES_SOURCES}} 'gate/*-LICENSE' LICENSE"
+  # What os-code reads: every Go file of the tree and the allowlist, over the module's own inputs; a test holds the list to the tests it runs.
+  # gate/os-api.txt and .golangci.yml are what TestEveryIdentifierThatDiffersBySystemIsDecided reads; the
+  # toolchain the census runs is go.mod's, in GO_INPUTS. gate/os-knowledge-allowlist.txt is what the three OS-knowledge
+  # tests read, so a change to that list alone runs the member.
+  OS_CODE_INPUTS: "{{.GO_INPUTS}} gate/os-code-allowlist.txt gate/os-api.txt gate/os-knowledge-allowlist.txt .golangci.yml"
+  # What standin reads: every Go file, which holds the stand-in's source and what it imports (the codec, the
+  # model, the port) and the host (internal/host/plugin) C24 runs against, the toolchain in go.mod, and the digest the tree holds.
+  STANDIN_INPUTS: "{{.GO_INPUTS}} gate/standin.digest"
+  STANDIN_RUN: ^(TestTheStandinModuleIsTheOneTheTreeHolds|TestAChangedStandinSourceIsRedAgainstTheHeldDigest)$
+  # C24's two modules: an endless loop ends within the time limit, an allocation loop at the memory limit.
+  C24_RUN: ^(TestC24AnEndlessLoopEndsWithinTheTimeLimit|TestC24AnAllocationLoopEndsAtTheMemoryLimit)$
+  # What the lint of the diff reads: the Go inputs, the config the lint renders from and the pin of the tool.
+  LINT_INPUTS: "{{.GO_INPUTS}} .golangci.yml lint layers.yaml tools.yaml"
+  GOFMT_CANARY: testdata/gofmt-canary.go
+  # The repository the secret scan reads; a plant names its clone on the command line (internal/secrets_test.go).
+  SECRETS_DIR: "{{.ROOT_DIR}}"
+  # The heavy packages, by import path: hatch tests packages drops an exact import path, and go test takes one as it takes ./x.
+  HEAVY: github.com/birdtable/gragas/cmd/gragas-dev github.com/birdtable/gragas/cmd/gragas-new github.com/birdtable/gragas/internal/journeys
+  # The groups of the repository's own checks that the push's test runs without -race: only those whose
+  # measured -race time in gate/race-push.txt is over the line a test holds. They read the tree and start no
+  # goroutine of their own to race; the other groups keep -race at push. test-uncached keeps -race on every group.
+  NO_RACE_PUSH: github.com/birdtable/gragas/internal github.com/birdtable/gragas/internal/repo/rulebook github.com/birdtable/gragas/internal/repo/gatetest
+  # The test packages full's members run without -race, which warm compiles so: test's NO_RACE_PUSH, the journeys of
+  # journeys-smoke and journeys-goldens.
+  WARM_PLAIN: >-
+    {{.NO_RACE_PUSH}} ./internal/journeys
+  # The one -timeout every go test of the gate passes, so a run under load ends with the hung test's stacks
+  # and never at go test's own default. Sized from the slowest package, the root ./internal alone, with room, and
+  # under the task timeout of test, landing-goldens and gate-tests. The earlier limit killed that package by
+  # construction, not only under load. The measured time is in the run record of the change that set it, since a
+  # measured time is not kept in prose (docs.freshness.4).
+  TEST_TIMEOUT: 20m
+  # Every test member runs go test through hatch tests, which judges the run itself: red when go test
+  # fails or a test fails, when no test ran (a -run that matches nothing exits 0 in go test) and when every test
+  # skipped, and the whole run is killed, tree and all, at HATCH_TIMEOUT. A member passes go test's own -timeout after
+  # the --, so a hung test still ends with its stacks. hatch holds the test stream and prints it on a red. Each member
+  # spells {{.TOOLS}}/hatch{{exeExt}} tests itself, since the tier audit reads a command's text and expands no var.
+  # hatch's --timeout counts from go test's start, the build included, and go test's -timeout from each test binary's:
+  # at one value hatch always ended the run first, and a hung test ended with no stacks. So
+  # HATCH_TIMEOUT is TEST_TIMEOUT and a share for the build, under the task timeout of test, landing-goldens and
+  # gate-tests: go test's timeout fires first and prints the stacks.
+  HATCH_TIMEOUT: 22m
+  HATCH_TESTS_FLAGS: --timeout {{.HATCH_TIMEOUT}} --red-when failed,none-ran,all-skipped --green-word done --red-word failed
+  # The gate's own packages (the gate's tests).
+  GATE_PKGS: ./cmd/gragas-dev ./cmd/gragas-new
+  # The journey smoke list: one test per command, in internal/journeys/smoke.txt (the lines of two fields), read with the shell's own loop.
+  SMOKE_RUN:
+    sh: |
+      alt=""
+      while read -r a b c || [ -n "$a" ]; do case $a in [a-z]*) [ -n "$b" ] && [ -z "$c" ] && alt="$alt|$b" ;; esac; done < internal/journeys/smoke.txt
+      echo "^(${alt#|})\$"
+  # The golden tests: the tests of internal/journeys that read a golden, one name to a line in internal/journeys/goldens.txt
+  # (a test holds it to the sources), run by the push member journeys-goldens so a drifted golden is red at push.
+  GOLDEN_RUN:
+    sh: |
+      alt=""
+      while read -r a || [ -n "$a" ]; do case $a in Test*) alt="$alt|$a" ;; esac; done < internal/journeys/goldens.txt
+      echo "^(${alt#|})\$"
+  # The list tests (a gate list not updated): the tests that hold a list of the gate to the sources it
+  # names, run by the push member gate-lists, so a new command with no line in smoke.txt, a golden test not in goldens.txt,
+  # a serial package that no longer is one, or a class of gate/left.yaml whose catch is gone is red at push and not at landing.
+  # A tool's name in non-test Go that gate/tool-name-places.txt does not list is red here too; its
+  # read of the list at the merge base is not keyed by the test cache, so a base that moves alone reruns nothing, and the
+  # list's own change, which is in the tree, always does. TestTheToolListsDifferByTheLeftOut holds the names file to
+  # source.tools of layers.yaml here too: a tool added to one list alone is red
+  # at push, not at landing.
+  LISTS_RUN: ^(TestTheSmokeListHoldsTheCommandsOfTheTree|TestTheSerialPackagesAreTheLintsExclusion|TestAListedPackageStillHasASerialTest|TestEveryClassLeftHasItsCatch|TestTheGoldensListNamesEveryTestThatReadsAGolden|TestGateListsRunsAtPushAndRunsRealTests|TestNoToolIsNamedInGragasGo|TestAToolNameIsRedInEachPlace|TestTheToolListsDifferByTheLeftOut|TestTheTreesSuppressionsAreTheListsOwn)$
+  # t.TempDir reads TMPDIR, and Go's test cache keys a package on the value of every variable its tests
+  # read: a run with a fresh temp folder misses for every package that makes a temp file. The cached
+  # members export one folder in the commands (a task's env: does not override the caller's TMPDIR).
+  # The folder is os.TempDir()/gragas-<uid>/tmp (Windows: gragas\tmp), made at 0700 by cmd/gragas-tmp, which
+  # checks its way from / down with internal/host/trust first: stable, and outside the work tree and the Go
+  # module. A parent its group can write (a 775 ~/.cache) fails the step with the trust message.
+  STABLE_TMP: |
+    gragas_tmp=$(go run -trimpath ./cmd/gragas-tmp) || exit 1
+    export TMPDIR="$gragas_tmp" TMP="$gragas_tmp" TEMP="$gragas_tmp"
+  # A caller's go environment reaches every go command of a member (GOFLAGS -run, -skip or -short empties a run; GOWORK,
+  # GOTOOLCHAIN and GOPROXY change what is built and from where), and go-task 3.54.0 lets the caller's value win over env:. So
+  # the env: below sets the four, and the first step of each tier refuses a caller's value that is not the Taskfile's (GOPROXY
+  # may also be off, as pre-commit sets it), before any member runs. GOTOOLCHAIN is go.mod's toolchain line, named (a test holds the two
+  # together): auto is no pin, and local would run the machine's older go (govulncheck found go1.27.3's net/http fault where
+  # go1.27.4 is clean). A variable the caller sets empty is refused too: it beats env:.
+  GOFLAGS_GUARD: |
+    guard() { [ "$2" = "$3" ] || [ "$2" = "${4:-$3}" ] || { echo "$1 is '$2', not the Taskfile's '$3': a caller's go environment would reach every member and can empty the run; unset it" >&2; exit 1; }; }
+    guard GOFLAGS "${GOFLAGS:-}" -mod=readonly
+    guard GOTOOLCHAIN "${GOTOOLCHAIN:-}" go1.27.4
+    guard GOWORK "${GOWORK:-}" off
+    guard GOPROXY "${GOPROXY:-}" "https://proxy.golang.org,direct" off
+  # A test member writes no file: hatch tests holds the run's stream in memory. None may go under .tools/bin:
+  # Go's test cache keys a test that stats or opens a directory on its modification time, and a file made and removed in
+  # .tools/bin on every run moved it, so every run missed for the packages that read .tools/bin
+  # (internal/repo/docs). A member that ran no test is red, whatever emptied the run. hatch tests packages lists the module but the heavy ones.
+  SELECTION: go-test-cache
+  SELECTION_MEASURED_SECONDS: "101"
+  # The release's folder of two clones. SNAPSHOT=1 makes the recipe a dry
+  # release at any sha: task release-recipe SNAPSHOT=1. It is also how the release tier runs at a sha that is not main,
+  # a detached worktree's included: task --force release SNAPSHOT=1, with NAMES_NOT_ASKED=1 off the
+  # release machine.
+  RELEASE_DIR: "{{.ROOT_DIR}}/.tools/release"
+  SNAPSHOT: '{{.SNAPSHOT | default ""}}'
+
+env:
+  GIT_OPTIONAL_LOCKS: "0"
+  GOFLAGS: -mod=readonly
+  GOTOOLCHAIN: go1.27.4
+  GOWORK: "off"
+  GOPROXY: '{{if eq .NO_NETWORK "1"}}off{{else}}https://proxy.golang.org,direct{{end}}'
+
+# tests.selection.1, declared: push runs the whole suite through Go's test cache, so a
+# package whose inputs did not change is replayed, not re-run. The setting and the
+# measured whole-suite time are read by internal/taskfile_test.go. The time is the
+# push's tests member on a loaded machine (1m41s at 15 CPUs, load 38); no quiet run
+# is on record, so the push budget is not met and is not claimed.
+tasks:
+  default:
+    desc: List the tasks
+    cmds:
+      - "{{.TOOLS}}/task{{exeExt}} --list"
+
+  # ---- the three tiers (cumulative) ----
+
+  # The tiers' first step: gragas-dev built once from the tree under test, alone, so no member hashes its
+  # import graph at its own start and no gate call of a member waits on a compile. It comes before tools-check, which
+  # is itself a gragas-dev command; the binary is built by go from this tree, not a download a pin holds. The step limit of a
+  # gate call stays: it times a call, not a compile, and this step has its own limit. Its line is printed at its end.
+  # The guard is gate-build's first command: a caller's GOFLAGS, GOWORK, GOTOOLCHAIN or GOPROXY is
+  # refused before a build leaves a program the pins did not make.
+  gate-build:
+    desc: Build .tools/bin/gragas-dev from this tree, the program every gate call of the tiers runs
+    vars:
+      START: '{{now | unixEpoch}}'
+    cmds:
+      - cmd: "{{.GOFLAGS_GUARD}}"
+        timeout: 1m
+      - cmd: 'go build -trimpath -o "{{.TOOLS}}/gragas-dev{{exeExt}}" ./cmd/gragas-dev'
+        timeout: 5m
+      - cmd: 'echo "lap: gate-build built gragas-dev in $(( {{now | unixEpoch}} - {{.START}} )) s"'
+        timeout: 1m
+        silent: true
+
+  pre-commit:
+    desc: The check-only members, as the pre-commit hook runs them (no network)
+    vars:
+      NO_NETWORK: "1"
+      START: '{{now | unixEpoch}}'
+    cmds:
+      - task: gate-build
+        vars: {NO_NETWORK: "1"}
+        timeout: 5m
+      - task: tools-check
+        vars: {NO_NETWORK: "1"}
+        timeout: 1m
+      - cmd: '{{.BUDGET}} --tier pre-commit --since {{.START}} -- {{.TASK_EXE}} pre-commit-run NO_NETWORK=1'
+        timeout: 9m
+
+  # What hatch runs under the budget: a command line can only start a task that is not internal, so each
+  # tier's members have one public door, and its first command is tools-check, so no .tools/bin program runs unchecked
+  # however the door is reached (supply.install.10). The members stay internal deps, side by side, after it.
+  pre-commit-run:
+    desc: "The commit's members under tools-check: what the tier's budget line runs, not a task to run alone"
+    cmds:
+      - task: tools-check
+        vars: {NO_NETWORK: "1"}
+        timeout: 1m
+      - task: pre-commit-members
+        vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
+        timeout: 9m
+
+  # The commit's members, run side by side as go-task deps, after tools-check, which they read the tools of.
+  # commit-checks is the part the push shares; secrets-staged reads the stage and is the commit's alone.
+  pre-commit-members:
+    internal: true
+    deps:
+      - task: commit-checks
+        vars: {STAGED_ONLY: "1", NO_NETWORK: "{{.NO_NETWORK}}"}
+      - task: secrets-staged
+        vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
+
+  commit-checks:
+    internal: true
+    deps:
+      - task: format
+        vars: {STAGED_ONLY: "{{.STAGED_ONLY}}", NO_NETWORK: "{{.NO_NETWORK}}"}
+      - task: explorer-format
+        vars: {STAGED_ONLY: "{{.STAGED_ONLY}}", NO_NETWORK: "{{.NO_NETWORK}}"}
+      - task: boards
+        vars: {STAGED_ONLY: "{{.STAGED_ONLY}}", NO_NETWORK: "{{.NO_NETWORK}}"}
+      - task: tidy
+        vars: {STAGED_ONLY: "{{.STAGED_ONLY}}", NO_NETWORK: "{{.NO_NETWORK}}"}
+
+  pre-push:
+    desc: "What a push must pass: the commit-level members, the build, vet, the lint of the diff and the secrets; full has the rest"
+    vars:
+      START: '{{now | unixEpoch}}'
+    cmds:
+      - task: gate-build
+        timeout: 5m
+      # tools-check stays first and alone: the members run the tools it pins, and a member on an unpinned tool is worse than the time it saves (gragas#1349).
+      - task: tools-check
+        timeout: 1m
+      - cmd: '{{.GATE}} lap reset'
+        timeout: 1m
+        silent: true
+      # The members' wall times, slowest first, printed when the tier ends, green or red: a defer runs after the budget line.
+      - defer: '{{.GATE}} lap report'
+        timeout: 1m
+        silent: true
+      - cmd: '{{.BUDGET}} --tier pre-push --since {{.START}} -- {{.TASK_EXE}} pre-push-run SKIP_UNCHANGED={{.SKIP_UNCHANGED}}'
+        timeout: 16m
+
+  pre-push-run:
+    desc: "The push's members under tools-check: what the tier's budget line runs, not a task to run alone"
+    cmds:
+      - task: tools-check
+        timeout: 1m
+      - task: pre-push-members
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+        timeout: 15m
+
+  # The push members, run together as go-task deps. Without --failfast a red dep does not stop the
+  # others, so one run reports every red member; the tier ends red when any is. The push holds the commit-level
+  # checks alone: push-checks and the lint of the diff. Every other member is full's,
+  # which landing and release run. commit-checks (the commit's members that read the tree, not the stage) is a
+  # push check; secrets-staged reads the stage, which a push leaves empty, and secrets scans the
+  # pushed commits. tools-check is before them and the budget line after. task tools is no member of a push: it
+  # needs the network and installs pnpm packages, so a person runs it when tools-check names it.
+  pre-push-members:
+    internal: true
+    deps:
+      - task: push-checks
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+      - task: lint-diff
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+
+  # The commit-level members a push runs and the release runs again, whole. lint-diff is the push's alone: the
+  # release and full run the whole-tree lint.
+  push-checks:
+    internal: true
+    deps:
+      - task: commit-checks
+        vars: {STAGED_ONLY: "0", SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+      - task: generated-files
+        vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
+      - task: os-code
+        vars: {NO_NETWORK: "{{.NO_NETWORK}}", SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+      - task: build
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+      - task: secrets
+      - task: vet
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+      - task: gate-lists
+      - task: standin
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+
+  # Every member the push leaves out: the lander runs it on the merged tree (task
+  # landing), the release runs its members.
+  # tools-check is first and alone and the budget line last, as in the push.
+  full:
+    desc: "Every member the push leaves out: landing runs full on the release machine; a tag needs task release green on the release machine"
+    vars:
+      START: '{{now | unixEpoch}}'
+    cmds:
+      - task: gate-build
+        timeout: 5m
+      # tools-check stays first and alone: the members run the tools it pins, and a member on an unpinned tool is worse than the time it saves.
+      - task: tools-check
+        timeout: 1m
+      - cmd: '{{.BUDGET}} --tier full --since {{.START}} -- {{.TASK_EXE}} full-run SKIP_UNCHANGED={{.SKIP_UNCHANGED}}'
+        timeout: 56m
+
+  full-run:
+    desc: "Full's members under tools-check: what the tier's budget line runs, not a task to run alone"
+    cmds:
+      - task: tools-check
+        timeout: 1m
+      - task: full-members
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+        timeout: 55m
+
+  # The cold compile of full's tests is a cost of its own, apart from their run: full cold was far over its line and full warm far under on one tree, so
+  # its line timed the compile. warm compiles every test package full's members run, -race as test runs them, with go
+  # list -export, which compiles a test package and every package it imports into Go's build cache and links and runs
+  # nothing: what is left to full is each test's link and run. landing runs it after the push tier, right before full;
+  # release right before its members. Its own budget line is tier-warm's.
+  warm:
+    desc: "Compile every test package full runs, -race as test runs them, and run none: full's budget then times the tests, not a cold compile"
+    # Internal: a command line cannot start it, and its own budget line is run by warm-members, which starts with tools-check, so
+    # warm never runs a hatch nothing has checked (the release runs each member once).
+    internal: true
+    vars:
+      START: '{{now | unixEpoch}}'
+    cmds:
+      - cmd: '{{.BUDGET}} --tier warm --since {{.START}} -- {{.TASK_EXE}} warm-members'
+        timeout: 16m
+
+  # The compile alone: go list -export -test builds a test package's archive and its imports', never the test
+  # binary, so nothing links and nothing runs. The journeys' TestMain builds go build -trimpath ./cmd/gragas, and
+  # -trimpath is in every compile's cache key, so that closure is compiled with it too;
+  # its -ldflags reach only the link. go test's vet pass is left to full, a check it makes. The release's
+  # test-uncached runs NO_RACE_PUSH with -race, which warm compiles without it: that compile is the release's line's
+  # alone.
+  warm-members:
+    cmds:
+      - task: tools-check
+        timeout: 1m
+      - cmd: |
+          {{.STABLE_TMP}}
+          go list -export -test -deps -race $({{.TOOLS}}/hatch{{exeExt}} tests packages {{.NO_RACE_PUSH}}) >/dev/null || exit 1
+          go list -export -test -deps {{.WARM_PLAIN}} >/dev/null || exit 1
+          go list -export -deps -trimpath ./cmd/gragas >/dev/null
+        timeout: 30m
+
+  full-members:
+    internal: true
+    deps:
+      - task: full-checks
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+      - task: test
+
+  # Every full member but test, which the release tier leaves out: test-uncached runs the same packages again,
+  # -race, shuffled, from nothing. The release tier takes these, push-checks and its own.
+  # wide-packages is the first, so it runs beside them.
+  full-checks:
+    internal: true
+    deps:
+      - task: wide-packages
+      - task: rulebook
+      - task: gate-registry
+      - task: vuln
+      - task: licences
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+      - task: lint
+      - task: journeys-smoke
+      - task: journeys-goldens
+      - task: explorer-typecheck
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+      - task: explorer-lint
+      - task: explorer-test
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+      - task: subset-build
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+
+  # The lander's merged-tree check: the lander runs it on the merged tree before it lands. It is the push tier and
+  # then full, each whole with its budget line, so every
+  # member the push used to run runs on the merged tree before main; warm between them compiles full's
+  # tests, so full's line times their run, not a cold compile. Then the golden journeys
+  # afresh: full's journeys-goldens may come from Go's test cache, and a cached journeys run replays green
+  # over a broken gragas. Neither ever passes -update.
+  # It begins with gragas-dev landing begin: the tree is merged with a main it names, and the lander runs landing check
+  # right before the merge, which refuses when origin/main is no longer that main.
+  landing:
+    desc: "The lander's merged-tree check: the push tier, warm, full, the golden journeys afresh"
+    cmds:
+      - task: gate-build
+        timeout: 5m
+      - cmd: '{{.GATE}} landing begin --base {{.LANDING_BASE | default "main"}}'
+        timeout: 1m
+      - task: pre-push
+        timeout: 15m
+      - task: warm
+        timeout: 17m
+      - task: full
+        timeout: 60m
+      - task: landing-goldens
+        timeout: 15m
+
+  release:
+    desc: "What a tree must pass before a tag: the guard, the push tier and what moved out of it"
+    # The release never skips a member whose inputs are the base's: it runs with --force, which this holds.
+    preconditions:
+      - sh: '[ "{{.CLI_FORCE}}" = true ]'
+        msg: "release: run it as task --force release, so no member is skipped as unchanged"
+    vars:
+      START: '{{now | unixEpoch}}'
+    cmds:
+      - task: gate-build
+        timeout: 5m
+      # release-body is a child process: a variable of this command line reaches it only if it is passed on, and the two the
+      # release is run with off main and off the release machine are SNAPSHOT (the guard's) and NAMES_NOT_ASKED (names').
+      - cmd: '{{.BUDGET}} --tier release --since {{.START}} -- {{.TASK_EXE}} release-body --force SNAPSHOT={{.SNAPSHOT}} NAMES_NOT_ASKED={{.NAMES_NOT_ASKED | default ""}}'
+        timeout: 131m
+
+  # What the release's CPU budget judges: tools-check and the guard first (the guard runs changie from .tools/bin), then warm and the members, one tree under hatch budget --cpu.
+  # warm keeps its own line inside it. It is the one place the release runs the guard and the check, because a command line can start it too: it
+  # holds the --force the release's members need, as release does.
+  release-body:
+    desc: "The release's guard, tools-check, warm and members: what the tier's budget line runs, not a task to run alone"
+    preconditions:
+      - sh: '[ "{{.CLI_FORCE}}" = true ]'
+        msg: "release-body: run it as task --force release-body, so no member is skipped as unchanged"
+    cmds:
+      - task: tools-check
+        timeout: 1m
+      - task: release-guard
+        timeout: 2m
+      - task: warm
+        timeout: 17m
+      - task: release-members
+        timeout: 113m
+
+  # The release's members run side by side as go-task deps: the push's (push-checks), full's
+  # (full-checks) and the ones only a release proves. Not test: test-uncached covers its packages, and a release
+  # runs neither the push tier nor full whole, so neither one's budget line is judged inside it.
+  release-members:
+    internal: true
+    deps:
+      - task: push-checks
+        vars: {SKIP_UNCHANGED: "0"}
+      - task: full-checks
+        vars: {SKIP_UNCHANGED: "0"}
+      - task: test-uncached
+      - task: gate-tests
+      - task: test-heavy
+      - task: names
+      - task: secrets-full
+      - task: pty
+      - task: self-check-issues
+
+  # ---- the release recipe: the tier, then the recipe's own steps ----
+
+  release-recipe:
+    desc: "The release short of the publish: one fetch, the release tier, the cross build, crash injection, two goreleaser builds compared and unpacked; SNAPSHOT=1 at any sha"
+    cmds:
+      - task: release-fetch
+      - task: release
+      - task: cross
+      - task: crash
+      - task: release-build
+
+  release-publish:
+    desc: "From the annotated tag: one fetch, the tools check, the guard, two builds compared and unpacked with the first a draft release, then the draft published"
+    cmds:
+      - task: gate-build
+        timeout: 5m
+      - task: release-fetch
+      # every pinned tool is its sha256 before the guard runs .tools/bin's hatch and the build hands goreleaser the token; the build holds goreleaser to its pin itself too
+      - task: tools-check
+      - task: release-guard-tagged
+      - task: release-build
+        vars: {PUBLISH: "1"}
+      - task: release-undraft
+
+  # ---- pre-commit members ----
+
+  tools:
+    desc: Fetch the modules of every system of CROSS into the module cache, build the go tools into .tools/bin when one is missing or is not the pinned build, fetch the pinned golangci-lint, node, ast-grep, goreleaser, changie, vale and pnpm releases, and check node against .node-version; a tool that is not there fails the tier (supply.install.10)
+    cmds:
+      - task: gate-build
+        timeout: 5m
+      - cmd: "{{.GOFLAGS_GUARD}}"
+        timeout: 20m
+      # The tests read the module graph of every system of CROSS with GOPROXY off, so the cache holds each system's modules,
+      # not only this machine's: a module one system alone imports, as go-socket's go-winio on windows, is fetched here, as
+      # release-fetch does.
+      - for: {matrix: {PLATFORM: {ref: .CROSS}}}
+        cmd: GOOS={{index (splitList "/" .ITEM.PLATFORM) 0}} GOARCH={{index (splitList "/" .ITEM.PLATFORM) 1}} GOFLAGS=-mod=readonly go mod download
+        timeout: 20m
+      - task: tools-go
+        timeout: 20m
+      # A go tool whose file is not the sha256 tools.yaml pins for this system fails the run, as a release tool does at its fetch (supply.provenance.7).
+      - cmd: '{{.GATE}} tools-check --platform {{OS}}/{{ARCH}} --lock {{.LOCK_FILE}} --pins {{.PINS_FILE}} --bin {{.TOOLS}} --go {{range $i, $e := .GO_TOOLS}}{{if $i}},{{end}}{{splitList "=" $e | first}}{{end}}'
+        timeout: 20m
+      - cmd: "{{.GATE}} fetch golangci-lint --platform {{OS}}/{{ARCH}}"
+        timeout: 20m
+      - cmd: "{{.GATE}} fetch node --platform {{OS}}/{{ARCH}}"
+        timeout: 20m
+      - cmd: "{{.GATE}} fetch ast-grep --platform {{OS}}/{{ARCH}}"
+        timeout: 20m
+      - cmd: "{{.GATE}} fetch goreleaser --platform {{OS}}/{{ARCH}}"
+        timeout: 20m
+      - cmd: "{{.GATE}} fetch changie --platform {{OS}}/{{ARCH}}"
+        timeout: 20m
+      - cmd: "{{.GATE}} fetch vale --platform {{OS}}/{{ARCH}}"
+        timeout: 20m
+      # node's version, held to .node-version with each side's space trimmed, so Windows's carriage return is none.
+      - cmd: "{{.GATE}} tools-check --platform {{OS}}/{{ARCH}} --bin {{.TOOLS}} --node-version .node-version"
+        timeout: 20m
+      - cmd: "{{.GATE}} fetch pnpm --platform {{OS}}/{{ARCH}}"
+        timeout: 20m
+      - task: tools-pnpm
+        timeout: 40m
+      # The place step creates the folder and installs exactly these two (the headless
+      # shell and WebKit; Playwright adds its ffmpeg): never into a folder that exists
+      # and fails the pin, so a half placed or differing set is never mixed with a new one;
+      # the pin check after it then refuses that folder, and a person removes it by hand.
+      - cmd: "{{.GATE}} browsers --platform {{OS}}/{{ARCH}} --unmeasured-ok >/dev/null 2>&1 || test -e .tools/playwright || (cd explorer && PLAYWRIGHT_BROWSERS_PATH=\"{{.ROOT_DIR}}/.tools/playwright\" \"{{.TOOLS}}/node{{exeExt}}\" node_modules/playwright/cli.js install chromium-headless-shell webkit)"
+        timeout: 20m
+      # A system whose row says unmeasured places no browser and ends here green with one line; the members
+      # that run a browser call browsers without the flag and refuse it by name.
+      - cmd: "{{.GATE}} browsers --platform {{OS}}/{{ARCH}} --unmeasured-ok"
+        timeout: 20m
+
+  # The pnpm installs of task tools, the explorer's and tools/.node's, each to its frozen lock. The pre-push hook runs this
+  # alone in the tree it checks a pushed commit that is not the clean HEAD in, with pnpm_config_store_dir set to the store
+  # the clone's own install recorded and pnpm_config_offline=true, so the tree has its own node_modules and fetches
+  # nothing. The flags stay in the hook's environment: each line here ends on its frozen install.
+  tools-pnpm:
+    desc: The explorer's and tools/.node's pnpm installs, frozen to their locks; the pre-push hook runs it from the store alone in the tree it checks a pushed commit in
+    cmds:
+      - cmd: '{{.GATE}} pnpm -C explorer --tools "{{.TOOLS}}" -- install --frozen-lockfile --ignore-scripts'
+        timeout: 20m
+      - cmd: '{{.GATE}} pnpm -C tools/.node --tools "{{.TOOLS}}" -- install --frozen-lockfile --config.dangerously-allow-all-builds=false --config.strict-dep-builds=true'
+        timeout: 20m
+
+  tools-go:
+    desc: The go tools' part of task tools, which runs it, with no download once the tools module is in the module cache. Each tool of GO_TOOLS that is missing from .tools/bin, is not built from tools/go.sum or is not the sha256 tools.yaml pins is removed and built again with the stated build, so a changed file whose build ID go still reads as current is replaced rather than kept (supply.install.10)
+    cmds:
+      - cmd: "{{.GOFLAGS_GUARD}}"
+        timeout: 20m
+      # gragas-dev tools-go holds each tool as tools-check does and, for one that fails, removes the file and runs the stated
+      # build of tools.yaml's header: the row's ldflags (read from it, written nowhere else), -trimpath, and an environment that
+      # fixes what else reaches the file, so two machines of one system print one sha256. The file goes first: go
+      # reads the build ID inside an existing target and, when that is current, writes nothing. It was a sh loop
+      # with grep and rm, and is Go so it runs the same on every system.
+      # One call a tool, as for: takes GO_TOOLS whether it is the list above or a word list of the command line.
+      - for: {var: GO_TOOLS}
+        cmd: "{{.GATE}} tools-go --platform {{OS}}/{{ARCH}} --lock {{.LOCK_FILE}} --pins {{.PINS_FILE}} --bin {{.TOOLS}} {{.ITEM}}"
+        timeout: 20m
+
+  tools-check:
+    silent: true
+    desc: Every go tool is in .tools/bin and built from the module, version and sum tools/go.sum pins, golangci-lint, node, ast-grep, goreleaser, changie, vale and pnpm are the sha256 tools.yaml pins, and each pnpm tree's node_modules is the install of its pnpm-lock.yaml; red when one is missing or is not, never an install (supply.install.10)
+    cmds:
+      - cmd: "{{.GOFLAGS_GUARD}}"
+        timeout: 1m
+      - cmd: '{{.GATE}} tools-check --platform {{OS}}/{{ARCH}} --lock {{.LOCK_FILE}} --pins {{.PINS_FILE}} --bin {{.TOOLS}} --pnpm={{.PNPM_TREES}} --go {{range $i, $e := .GO_TOOLS}}{{if $i}},{{end}}{{splitList "=" $e | first}}{{end}} {{.RELEASE_TOOLS}}'
+        timeout: 1m
+
+  # The one sanctioned way to arm a clone. It takes no variable and names one path, this
+  # repository's own hooks folder: .claude/settings.json refuses an agent the bare command, and this task must not become a
+  # way to set another path. It never replaces a different path a person set; it stops and says so. It holds no template: a
+  # variable of the command line (ROOT_DIR=) or of the environment (GIT_DIR) must not point it at another repository, so it
+  # runs where go-task runs it, the Taskfile's folder, and stops unless git's top level there is that folder.
+  hooks:
+    desc: Arm this clone, the one sanctioned way - core.hooksPath is set to this repository's own hooks folder and to nothing else; once per shared clone, its worktrees inherit it
+    cmds:
+      - cmd: |
+          [ -z "${GIT_DIR:-}${GIT_WORK_TREE:-}${GIT_COMMON_DIR:-}${GIT_CONFIG:-}${GIT_CONFIG_PARAMETERS:-}${GIT_CONFIG_COUNT:-}" ] || { echo "hooks: GIT_DIR, GIT_WORK_TREE, GIT_COMMON_DIR, GIT_CONFIG, GIT_CONFIG_PARAMETERS or GIT_CONFIG_COUNT is set: it could point git at another repository or another config, so nothing is armed: unset it" >&2; exit 1; }
+          top="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+          [ -n "$top" ] && [ "$top" -ef . ] || { echo "hooks: git's top level here ('${top:-none}') is not the folder of this Taskfile: nothing is armed; run it from the clone's own Taskfile" >&2; exit 1; }
+          for h in pre-commit pre-push; do
+            [ -f "hooks/$h" ] && [ ! -L "hooks/$h" ] || { echo "hooks: hooks/$h is not a regular file of this repository: nothing is armed" >&2; exit 1; }
+          done
+          now="$(git config --local --get core.hooksPath || true)"
+          case "$now" in
+            ""|hooks) ;;
+            *) echo "hooks: core.hooksPath is already '$now', not hooks: this task sets hooks alone and never replaces another path; a person looks at it first" >&2; exit 1 ;;
+          esac
+          git config --local core.hooksPath hooks
+          echo "hooks: armed: pre-commit and pre-push of hooks/ run in this clone and its worktrees (task armed proves it)"
+        timeout: 1m
+
+  armed:
+    desc: Is this clone armed - core.hooksPath is exactly hooks, and both hooks are committed as programs, so git runs them
+    cmds:
+      - cmd: |
+          [ -z "${GIT_DIR:-}${GIT_WORK_TREE:-}${GIT_COMMON_DIR:-}${GIT_CONFIG:-}${GIT_CONFIG_PARAMETERS:-}${GIT_CONFIG_COUNT:-}" ] || { echo "armed: GIT_DIR, GIT_WORK_TREE, GIT_COMMON_DIR, GIT_CONFIG, GIT_CONFIG_PARAMETERS or GIT_CONFIG_COUNT is set: it could point git at another repository or another config, so what it reads is not this clone's: unset it" >&2; exit 1; }
+          top="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+          [ -n "$top" ] && [ "$top" -ef . ] || { echo "armed: git's top level here ('${top:-none}') is not the folder of this Taskfile: run it from the clone's own Taskfile" >&2; exit 1; }
+          now="$(git config --local --get core.hooksPath || true)"
+          [ "$now" = hooks ] || { echo "armed: core.hooksPath is '${now:-unset}', not hooks, so no hook runs in this clone. Run: task hooks" >&2; exit 1; }
+          for h in pre-commit pre-push; do
+            case "$(git ls-files -s "hooks/$h")" in
+              "100755 "*) ;;
+              *) echo "armed: hooks/$h is not committed as a program (mode 100755), so git would skip it" >&2; exit 1 ;;
+            esac
+          done
+          echo "armed: pre-commit and pre-push run in this clone: pre-commit runs task pre-commit, pre-push runs task pre-push"
+        timeout: 1m
+
+  format:
+    desc: The pinned toolchain's gofmt lists nothing but its canary (a walk that read nothing is red)
+    vars:
+      INPUTS: "{{.STAGED_GO_INPUTS}}"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.STAGED_ONLY}}" = 1 ] && [ -z "$(git diff --cached --name-only -- {{.INPUTS}})" ]'
+    cmds:
+      - cmd: '{{.GATE}} lap begin {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - defer: '{{.GATE}} lap end {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - cmd: |
+          out="$(go run cmd/gofmt -l {{.GOFMT_DIRS}})" || { echo "$out"; echo "format: gofmt failed" >&2; exit 1; }
+          seen=""; bad=""
+          while read -r f; do
+            # gofmt names a file by the system's own separator, and the canary is named in the
+            # slash form: a line is read in the slash form, with no carriage return.
+            f="${f%$'\r'}"
+            f="${f//\\//}"
+            case "$f" in
+              "") ;;
+              # One listed path is the canary: a second that reads as its name, as a file named
+              # with a \ folds to it, is named and red.
+              {{.GOFMT_CANARY}}) [ -z "$seen" ] || { echo "$f"; bad=1; }; seen=1 ;;
+              *) echo "$f"; bad=1 ;;
+            esac
+          done <<EOF_LIST
+          $out
+          EOF_LIST
+          [ -n "$seen" ] || { echo "format: gofmt did not list its canary {{.GOFMT_CANARY}}: it read nothing, or the canary is gone" >&2; exit 1; }
+          [ -z "$bad" ]
+        timeout: 1m
+
+  # The seven generated-file checks read the tree and write nothing, so they run side by side as deps: the
+  # commit's longest member was seven commands in a row. A red check does not stop the others, and each names itself.
+  # The seventh, generated-presets, writes only a temp folder of its own run, never the tree.
+  generated-files:
+    desc: Every generated file is current, the seven checks side by side
+    deps:
+      - task: generated-commands
+        vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
+      - task: generated-layers
+        vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
+      - task: generated-tokens
+        vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
+      - task: generated-rulebook
+        vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
+      - task: generated-surface
+        vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
+      - task: generated-docs
+        vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
+      - task: generated-presets
+        vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
+
+  generated-commands:
+    internal: true
+    cmds:
+      - cmd: "{{.GATE}} gen commands --check"
+        timeout: 3m
+
+  generated-layers:
+    internal: true
+    cmds:
+      - cmd: "{{.GATE}} layers --check"
+        timeout: 3m
+
+  generated-tokens:
+    internal: true
+    cmds:
+      - cmd: "{{.GATE}} tokens --check"
+        timeout: 3m
+
+  generated-rulebook:
+    internal: true
+    cmds:
+      - cmd: go run -trimpath ./cmd/gragas-generate --check
+        timeout: 3m
+
+  generated-surface:
+    internal: true
+    cmds:
+      - cmd: "{{.GATE}} surface --check"
+        timeout: 3m
+
+  generated-docs:
+    internal: true
+    cmds:
+      - cmd: go run -trimpath ./cmd/gragas-docs --check
+        timeout: 3m
+
+  # The presets through the plugins tools.yaml pins: gragas-dev holds plugins/lock.yaml to the pins,
+  # approves each by its pinned digest in a state folder it makes for this run, never the account's, and runs
+  # gragas preset --check through them. A plugin missing, a digest off its pin and a changed bundle are red. A plant
+  # sets PRESET_ROOT on the command line to a copy holding tools.yaml, plugins/, rulebook/ and presets/. changie,
+  # goreleaser and gragas are hand_written_presets, so preset --check names them and compares golangci-lint's file
+  # alone. It is a member of generated-files since golangci-lint@1.0.1
+  # makes the committed file byte for byte. A pinned plugin's manifest that asks for the mark has its file open with
+  # it: the mark taken away would make a copy-once file the project's, and this gate refuses that.
+  generated-presets:
+    desc: The presets are what the plugins tools.yaml pins make, approved in a state folder of this run alone
+    cmds:
+      - cmd: "{{.GATE}} preset-plugins -C {{shellQuote .PRESET_ROOT}}"
+        timeout: 3m
+
+  gen:
+    desc: Regenerate every generated file (task generated-files checks them)
+    cmds:
+      - task: gate-build
+        timeout: 5m
+      - cmd: "{{.GATE}} gen commands"
+        timeout: 5m
+      - cmd: "{{.GATE}} layers"
+        timeout: 5m
+      - cmd: "{{.GATE}} tokens"
+        timeout: 5m
+      - cmd: go run -trimpath ./cmd/gragas-generate
+        timeout: 5m
+      - cmd: "{{.GATE}} surface"
+        timeout: 5m
+      - cmd: go run -trimpath ./cmd/gragas-docs
+        timeout: 5m
+
+  explorer-format:
+    desc: Prettier (the pinned copy of tools/.node, default options, reading only) lists nothing over the explorer and the boards' scripts (ts.cycle.1)
+    vars:
+      INPUTS: "{{.STAGED_FORMAT_INPUTS}}"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.STAGED_ONLY}}" = 1 ] && [ -z "$(git diff --cached --name-only -- {{.INPUTS}})" ]'
+    cmds:
+      - cmd: '{{.GATE}} lap begin {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - defer: '{{.GATE}} lap end {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - cmd: "{{.TOOLS}}/node{{exeExt}} tools/.node/node_modules/prettier/bin/prettier.cjs --no-editorconfig --list-different {{.FORMAT_DIRS}}"
+        timeout: 2m
+
+  boards:
+    desc: The boards' scripts rebuild canvas/ and the parts seed byte for byte in a copy of the tree, with the pinned node (pages.cycle.4)
+    vars:
+      INPUTS: "{{.STAGED_BOARDS_INPUTS}}"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.STAGED_ONLY}}" = 1 ] && [ -z "$(git diff --cached --name-only -- {{.INPUTS}})" ]'
+    cmds:
+      - cmd: '{{.GATE}} lap begin {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - defer: '{{.GATE}} lap end {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - cmd: "{{.GATE}} boards check --node {{.TOOLS}}/node{{exeExt}} -C {{.BOARDS_ROOT}}"
+        timeout: 2m
+
+  tidy:
+    desc: go mod tidy would change nothing in the root and tools modules
+    vars:
+      INPUTS: "{{.STAGED_GO_INPUTS}}"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.STAGED_ONLY}}" = 1 ] && [ -z "$(git diff --cached --name-only -- {{.INPUTS}})" ]'
+    cmds:
+      - cmd: '{{.GATE}} lap begin {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - defer: '{{.GATE}} lap end {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - cmd: go mod tidy -diff
+        timeout: 2m
+      - cmd: cd tools && go mod tidy -diff
+        timeout: 2m
+
+  # gragas carries no operating-system code. The check reads every Go file as text and
+  # fails a name that ends in a system, a //go:build line that names one, runtime.GOOS, a /proc/ path or a sysctl call,
+  # unless the file is in gate/os-code-allowlist.txt, which only shrinks. It reads the whole tree, so no staged-input status.
+  # It holds gate/os-api.txt too: every standard-library identifier that differs by system, from a census
+  # of the toolchain go.mod names, has one line there, as ban (with the lint row that refuses it), allow or later.
+  os-code:
+    desc: No Go file carries operating-system code the allowlist does not list, and every std identifier that differs by system is decided
+    vars:
+      INPUTS: "{{.OS_CODE_INPUTS}}"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.SKIP_UNCHANGED}}" = 1 ]'
+      - git diff --quiet {{.SKIP_BASE}} -- {{.INPUTS}}
+      - '[ -z "$(git ls-files --others --exclude-standard -- {{.INPUTS}})" ]'
+    cmds:
+      - cmd: '{{.GATE}} lap begin {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - defer: '{{.GATE}} lap end {{.TASK}}'
+        timeout: 1m
+        silent: true
+      # A renamed test makes -run match nothing and go test exits 0, so the count of tests that ran is held above zero (as landing-goldens does).
+      # TestAChangeThatAddsAnAdapterFileTouchesNoGo is the hold that a change that adds a file under the adapters folder touches no Go.
+      # Its inputs are in the list already: every Go file, and internal/host/assets, the embedded folder the adapters are in (EMBED_DIRS).
+      # -count=1 stays at push: TestNoNewOsCode holds the allowlist, and
+      # TestEveryIdentifierThatDiffersBySystemIsDecided the later lines of gate/os-api.txt, to the one git show reads at
+      # the merge base with origin/main, and Go's test cache keys on the files a test opens, never on what a git or a go
+      # list it runs reads, so a cached pass would outlive a fetch that moves the base or a new toolchain.
+      # TestNoNewOsKnowledge holds gate/os-knowledge-allowlist.txt to the list at the same base, and with
+      # the two tests that plant its kinds and its list it runs here.
+      - cmd: |
+          {{.STABLE_TMP}}
+          {{.TOOLS}}/hatch{{exeExt}} tests {{.HATCH_TESTS_FLAGS}} -- -count=1 -timeout {{.TEST_TIMEOUT}} -run '^(TestNoNewOsCode|TestTheOsCodeCheckSeesEachKindRed|TestTheOsCodeAllowlistOnlyShrinks|TestTheOsCodeAllowlistNamesItsRows|TestEveryIdentifierThatDiffersBySystemIsDecided|TestAChangeThatAddsAnAdapterFileTouchesNoGo|TestNoNewOsKnowledge|TestTheOsKnowledgeCheckSeesEachKindRed|TestTheOsKnowledgeListIsExact)$' ./internal
+        timeout: 30m
+
+  secrets-staged:
+    desc: gitleaks over what the commit's stage adds or changes
+    cmds:
+      - task: secrets-scan
+        vars: {SCAN: staged, NO_NETWORK: "{{.NO_NETWORK}}"}
+        timeout: 3m
+
+  # The one secret scan. secrets-staged, secrets and secrets-full run it, and so do the plants of
+  # internal/secrets_test.go: no member and no test holds a copy of the command line. SCAN is staged (what the
+  # stage adds or changes), tree (every tracked file as it is, staged or not) or a revision range of git log.
+  #
+  # The pass is gragas-dev secrets, whose doc holds the reasons that were here: it reads only
+  # what git tracks, names its revisions so no runner's own ref is read, refuses a .gitleaksignore, a path
+  # holding gitleaks.toml other than the root .gitleaks.toml, a shallow clone and a grafts file, runs git with no system or global config and no replace objects, and is red on a
+  # line git wrote to gitleaks's stderr and on a count of commits scanned that is not git's own log's.
+  #
+  # Two passes. useDefault brings gitleaks' default rules and the default config's global allow-list (go.sum,
+  # go.mod, .svg, .png, .pdf, .bin, the lock files, any gitleaks.toml), which 8.30.1 appends to every config that
+  # extends it and has no key to drop (config/config.go:487). So a second pass reads the private-key config file:
+  # the private-key rule alone, with no allow-list. Both configs are named by absolute path, because gitleaks skips
+  # the file that is its --config path (detect/detect.go:296), and a path of the scanned tree is never absolute.
+  # The pass runs GATE, the binary gate-build made, and reads SECRETS_DIR by -C.
+  secrets-scan:
+    desc: "One pass of the secret scan: SCAN=staged, tree or a revision range"
+    requires:
+      vars: [SCAN]
+    cmds:
+      - cmd: '{{.GATE}} secrets --scan "{{.SCAN}}" --gitleaks "{{.TOOLS}}/gitleaks{{exeExt}}" --config "{{.ROOT_DIR}}/.gitleaks.toml" --config "{{.ROOT_DIR}}/.gitleaks-key.toml" -C "{{.SECRETS_DIR}}"'
+        timeout: 10m
+
+  # ---- pre-push members ----
+
+  build:
+    desc: Build ./bin/gragas, stamped, cgo off
+    vars:
+      INPUTS: "{{.GO_INPUTS}}"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.SKIP_UNCHANGED}}" = 1 ]'
+      - git diff --quiet {{.SKIP_BASE}} -- {{.INPUTS}}
+      - '[ -z "$(git ls-files --others --exclude-standard -- {{.INPUTS}})" ]'
+    cmds:
+      - cmd: '{{.GATE}} lap begin {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - defer: '{{.GATE}} lap end {{.TASK}}'
+        timeout: 1m
+        silent: true
+      # Built in the stable temp folder and placed: a build that writes bin/gragas again moves its modification time, which Go's
+      # test cache reads for the tests that stat it, so five packages missed on every push. place leaves the
+      # file alone when it holds the bytes already, and removes the build.
+      - cmd: |
+          gragas_tmp=$(go run -trimpath ./cmd/gragas-tmp) || exit 1
+          out="$gragas_tmp/gragas-build-$$"
+          CGO_ENABLED=0 go build -trimpath \
+            -ldflags="-X main.version=$(git describe --tags --match 'v*' --abbrev=7 2>/dev/null || echo v0.0.0-dev) -X main.commit=$(git rev-parse --short=7 HEAD)" \
+            -o "$out" ./cmd/gragas || exit 1
+          {{.GATE}} place "$out" bin/gragas
+        timeout: 5m
+
+  rulebook:
+    desc: Validate the rulebook with gragas check
+    cmds:
+      - cmd: go run ./cmd/gragas check
+        timeout: 30m
+
+  # Only the release machine holds the private list, and only its release run is asked to read it. A release
+  # run off that machine passes NAMES_NOT_ASKED=1, and the member then says so on its line and reads
+  # nothing: never red for a list that is not there by design, and never an unannounced pass. Where the settings file's
+  # names-file key names a list, -not-asked is refused and the member is red: the machine that owes the check cannot
+  # skip it. The variable is not read, so it neither refuses the flag nor names the list. It reads the
+  # rulebook folder, not the root: the root also holds the testdata books, and a folder with more than one
+  # rulebook.yaml is not ready.
+  names:
+    desc: The rulebook's public text holds no name on the private list (the settings file's names-file key; the variable is not read); with NAMES_NOT_ASKED=1, a line saying it was not asked, refused where the settings name a list
+    cmds:
+      - cmd: go run ./cmd/gragas-names -C rulebook{{if .NAMES_NOT_ASKED}} -not-asked{{end}}
+        timeout: 5m
+
+  scan-names:
+    desc: The hashed-names scan over the tracked files, by hand; no tier runs it
+    cmds:
+      - task: gate-build
+        timeout: 5m
+      - cmd: "{{.GATE}} scan names"
+        timeout: 5m
+
+  secrets:
+    desc: gitleaks over the commits past origin/main
+    cmds:
+      - cmd: '{{.GATE}} lap begin {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - defer: '{{.GATE}} lap end {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - task: secrets-scan
+        vars: {SCAN: origin/main..HEAD}
+        timeout: 5m
+
+  gate-registry:
+    desc: Hold gate/ to its schemas and to the tree
+    cmds:
+      - cmd: "{{.GATE}} gate check"
+        timeout: 3m
+
+  # vuln, licences and vet run their systems side by side, one dep for each system of the list. A red system
+  # ends the member red and is named: the line it prints says the member and the system.
+  vuln:
+    desc: govulncheck on each system of the list, side by side
+    deps:
+      - task: vuln-system
+        for: {matrix: {PLATFORM: {ref: .CROSS}}}
+        vars: {PLATFORM: "{{.ITEM.PLATFORM}}"}
+
+  vuln-system:
+    internal: true
+    cmds:
+      - cmd: |
+          GOOS={{index (splitList "/" .PLATFORM) 0}} GOARCH={{index (splitList "/" .PLATFORM) 1}} CGO_ENABLED=0 {{.TOOLS}}/govulncheck{{exeExt}} ./... || { echo "vuln: {{.PLATFORM}} is red" >&2; exit 1; }
+        timeout: 5m
+
+  licences:
+    desc: go-licenses on each system of the list, side by side
+    deps:
+      - task: licences-system
+        for: {matrix: {PLATFORM: {ref: .CROSS}}}
+        vars: {PLATFORM: "{{.ITEM.PLATFORM}}", SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+
+  licences-system:
+    internal: true
+    vars:
+      INPUTS: "{{.LICENCES_INPUTS}}"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.SKIP_UNCHANGED}}" = 1 ]'
+      - git diff --quiet {{.SKIP_BASE}} -- {{.INPUTS}}
+      - '[ -z "$(git ls-files --others --exclude-standard -- {{.INPUTS}})" ]'
+    cmds:
+      - cmd: |
+          ids="$({{.GATE}} licences list {{.LICENCES_FILE}})" || { echo "licences: the allowlist {{.LICENCES_FILE}} cannot be read" >&2; exit 1; }
+          ignore="$({{.GATE}} licences ignore {{.LICENCES_SOURCES}} {{.LICENCES_FILE}})" || { echo "licences: the sources {{.LICENCES_SOURCES}} or the takes rows of {{.LICENCES_FILE}} cannot be read" >&2; exit 1; }
+          [ -n "$ids" ] || { echo "licences: the allowlist {{.LICENCES_FILE}} names no licence" >&2; exit 1; }
+          # go-licenses is built -trimpath, so it cannot find GOROOT itself and takes every package for the standard library.
+          GOROOT="$(go env GOROOT)"
+          export GOROOT GOOS={{index (splitList "/" .PLATFORM) 0}} GOARCH={{index (splitList "/" .PLATFORM) 1}} CGO_ENABLED=0
+          cd "{{.LICENCES_TREE}}" || { echo "licences: the tree {{.LICENCES_TREE}} cannot be entered" >&2; exit 1; }
+          # Fail closed: a report that lists no known dependency read nothing.
+          listed="$({{.TOOLS}}/go-licenses{{exeExt}} report ./... --ignore "$ignore" 2>/dev/null)" || { echo "licences: {{.PLATFORM}} report is red" >&2; exit 1; }
+          case "$listed" in
+            *go.yaml.in/yaml/v3,*) ;;
+            *) echo "licences: {{.PLATFORM}} report lists no known dependency (go.yaml.in/yaml/v3): it read nothing" >&2; exit 1 ;;
+          esac
+          {{.TOOLS}}/go-licenses{{exeExt}} check ./... --allowed_licenses="$ids" --ignore "$ignore" || { echo "licences: {{.PLATFORM}} is red" >&2; exit 1; }
+        timeout: 5m
+
+  vet:
+    desc: go vet for every system of the list, side by side
+    deps:
+      - task: vet-system
+        for: {matrix: {PLATFORM: {ref: .CROSS}}}
+        vars: {PLATFORM: "{{.ITEM.PLATFORM}}", SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+
+  vet-system:
+    internal: true
+    vars:
+      INPUTS: "{{.GO_INPUTS}}"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.SKIP_UNCHANGED}}" = 1 ]'
+      - git diff --quiet {{.SKIP_BASE}} -- {{.INPUTS}}
+      - '[ -z "$(git ls-files --others --exclude-standard -- {{.INPUTS}})" ]'
+    cmds:
+      - cmd: '{{.GATE}} lap begin {{.TASK}}-{{.PLATFORM}}'
+        timeout: 1m
+        silent: true
+      - defer: '{{.GATE}} lap end {{.TASK}}-{{.PLATFORM}}'
+        timeout: 1m
+        silent: true
+      - cmd: |
+          GOOS={{index (splitList "/" .PLATFORM) 0}} GOARCH={{index (splitList "/" .PLATFORM) 1}} CGO_ENABLED=0 go vet ./... || { echo "vet: {{.PLATFORM}} is red" >&2; exit 1; }
+        timeout: 10m
+
+  # One lint run: TestNoFileIsLeftOut holds that go list ignores no file under any system of the list, so
+  # the one run reads every file that a run of each system would, and the five-system vet stays as the cross-compile smoke.
+  lint:
+    desc: golangci-lint with .golangci.yml, one run over every file (a test holds that go list leaves none out under any system of the list)
+    cmds:
+      - cmd: "{{.TOOLS}}/golangci-lint{{exeExt}} config verify"
+        timeout: 10m
+      - cmd: |
+          CGO_ENABLED=0 {{.TOOLS}}/golangci-lint{{exeExt}} run --allow-parallel-runners ./... || { echo "lint is red" >&2; exit 1; }
+        timeout: 10m
+
+  # The push's lint: the same one run, reporting only the findings of the
+  # files changed since the merge base with origin/main (--whole-files: a function-level finding
+  # sits on the func line, which a change inside the body leaves out of every hunk). The whole-tree lint is full's.
+  lint-diff:
+    desc: golangci-lint with .golangci.yml, one run, of the lines changed since the merge base with origin/main
+    cmds:
+      - cmd: "{{.TOOLS}}/golangci-lint{{exeExt}} config verify"
+        timeout: 10m
+    deps:
+      - task: lint-diff-system
+        vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
+
+  lint-diff-system:
+    internal: true
+    vars:
+      INPUTS: "{{.LINT_INPUTS}}"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.SKIP_UNCHANGED}}" = 1 ]'
+      - git diff --quiet {{.SKIP_BASE}} -- {{.INPUTS}}
+      - '[ -z "$(git ls-files --others --exclude-standard -- {{.INPUTS}})" ]'
+    cmds:
+      - cmd: '{{.GATE}} lap begin {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - defer: '{{.GATE}} lap end {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - cmd: |
+          CGO_ENABLED=0 {{.TOOLS}}/golangci-lint{{exeExt}} run --allow-parallel-runners --new-from-merge-base origin/main --whole-files ./... || { echo "lint-diff is red" >&2; exit 1; }
+        timeout: 10m
+
+  test:
+    desc: Every package, the heavy ones too, unshuffled, cached; -race but on the repository's checks (NO_RACE_PUSH)
+    cmds:
+      - cmd: |
+          {{.STABLE_TMP}}
+          {{.TOOLS}}/hatch{{exeExt}} tests {{.HATCH_TESTS_FLAGS}} -- -race -timeout {{.TEST_TIMEOUT}} \
+            $({{.TOOLS}}/hatch{{exeExt}} tests packages {{.NO_RACE_PUSH}}) || exit 1
+          {{.TOOLS}}/hatch{{exeExt}} tests {{.HATCH_TESTS_FLAGS}} -- -timeout {{.TEST_TIMEOUT}} \
+            {{.NO_RACE_PUSH}}
+        timeout: 45m
+
+  wide-packages:
+    desc: Tell, before the members, when the push changed a package more than half of the module depends on; the tier's footer prints the push's time
+    cmds:
+      - cmd: "{{.GATE}} wide origin/main"
+        timeout: 2m
+
+  journeys-smoke:
+    desc: One journey test for each command in the tree, the list in internal/journeys/smoke.txt, from Go's test cache
+    cmds:
+      - cmd: |
+          {{.STABLE_TMP}}
+          {{.TOOLS}}/hatch{{exeExt}} tests {{.HATCH_TESTS_FLAGS}} -- -timeout {{.TEST_TIMEOUT}} -run '{{.SMOKE_RUN}}' ./internal/journeys
+        timeout: 30m
+
+  # The plugin path at push: the stand-in rebuilt from its source and held to the digest the tree
+  # holds, and C24's two modules held to the host's limits. The first runs with -count=1: Go's test cache keys on the files a
+  # test reads, never on the packages the stand-in imports or the toolchain that builds it, so a cached pass would outlive both.
+  # The second is cached: it reads no file and its host is compiled into the test binary, which the cache keys on.
+  standin:
+    desc: standin.wasm built from its source is the digest the tree holds, and C24's two modules are held to the host's limits
+    vars:
+      INPUTS: "{{.STANDIN_INPUTS}}"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.SKIP_UNCHANGED}}" = 1 ]'
+      - git diff --quiet {{.SKIP_BASE}} -- {{.INPUTS}}
+      - '[ -z "$(git ls-files --others --exclude-standard -- {{.INPUTS}})" ]'
+    cmds:
+      - cmd: '{{.GATE}} lap begin {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - defer: '{{.GATE}} lap end {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - cmd: |
+          {{.STABLE_TMP}}
+          {{.TOOLS}}/hatch{{exeExt}} tests {{.HATCH_TESTS_FLAGS}} -- -count=1 -timeout {{.TEST_TIMEOUT}} -run '{{.STANDIN_RUN}}' ./internal
+        timeout: 25m
+      - cmd: |
+          {{.STABLE_TMP}}
+          {{.TOOLS}}/hatch{{exeExt}} tests {{.HATCH_TESTS_FLAGS}} -- -timeout {{.TEST_TIMEOUT}} -run '{{.C24_RUN}}' ./internal/host/plugin
+        timeout: 25m
+
+  gate-lists:
+    desc: The list tests of the gate (smoke.txt, goldens.txt, the serial packages, gate/left.yaml), from Go's test cache, at push
+    cmds:
+      - cmd: |
+          {{.STABLE_TMP}}
+          {{.TOOLS}}/hatch{{exeExt}} tests {{.HATCH_TESTS_FLAGS}} -- -timeout {{.TEST_TIMEOUT}} -run '{{.LISTS_RUN}}' ./internal ./internal/journeys
+        timeout: 30m
+
+  journeys-goldens:
+    desc: The journey tests that compare a command's output with a golden, the list in internal/journeys/goldens.txt, from Go's test cache
+    cmds:
+      - cmd: |
+          {{.STABLE_TMP}}
+          {{.TOOLS}}/hatch{{exeExt}} tests {{.HATCH_TESTS_FLAGS}} -- -timeout {{.TEST_TIMEOUT}} -run '{{.GOLDEN_RUN}}' ./internal/journeys
+        timeout: 30m
+
+  landing-goldens:
+    desc: The golden journeys again at landing, compared afresh and never rewritten (no -update)
+    cmds:
+      - cmd: |
+          {{.STABLE_TMP}}
+          {{.TOOLS}}/hatch{{exeExt}} tests {{.HATCH_TESTS_FLAGS}} -- -count=1 -timeout {{.TEST_TIMEOUT}} -run '{{.GOLDEN_RUN}}' ./internal/journeys
+        timeout: 30m
+
+  # The contract's dist, placed once for the explorer's three members. They run side by side in
+  # full, and the three package scripts each begin with this same step; were it a build in each, one that finds the dist
+  # stale would write it while another member's write-nothing wrapper watches, and that member would go red on writes no
+  # command of its own made. run: once makes the three share one run, so each script's own step finds the dist current
+  # and writes nothing. ensure-contract.ts builds only when an output is missing or older than an input.
+  explorer-contract:
+    internal: true
+    run: once
+    desc: Place the explorer contract's dist, only when it is stale, once for the members that read it
+    cmds:
+      - cmd: '{{.GATE}} pnpm -C explorer --tools "{{.TOOLS}}" --program node -- scripts/ensure-contract.ts -- "{{.TOOLS}}/pnpm{{exeExt}}" --filter @gragas/contract run build'
+        timeout: 5m
+
+  explorer-typecheck:
+    desc: Type-check the explorer workspace, incrementally; the pinned node runs each package's tsc, and the build info is written to .tools/cache/tsc, which git ignores (never in the tree). The pre-push hook links .tools into its throwaway tree, so branches and trees share that cache between pushes; tsc keys each file by content, so a stale entry is rechecked, not trusted
+    deps: [explorer-contract]
+    vars:
+      INPUTS: "{{.EXPLORER_INPUTS}}"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.SKIP_UNCHANGED}}" = 1 ]'
+      - git diff --quiet {{.SKIP_BASE}} -- {{.INPUTS}}
+      - '[ -z "$(git ls-files --others --exclude-standard -- {{.INPUTS}})" ]'
+    cmds:
+      - cmd: |
+          cache="{{.ROOT_DIR}}/.tools/cache/tsc"; tsc="{{.ROOT_DIR}}/explorer/node_modules/typescript/lib/tsc.js"
+          for d in explorer explorer/packages/*/; do
+            [ -f "$d/tsconfig.json" ] || continue
+            name=${d%/}; name=${name//\//-}
+            (cd "$d" && "{{.TOOLS}}/node{{exeExt}}" "{{.ROOT_DIR}}/explorer/scripts/write-nothing.ts" --root "{{.ROOT_DIR}}/explorer" -- "{{.TOOLS}}/node{{exeExt}}" "$tsc" --noEmit --composite false --incremental --tsBuildInfoFile "$cache/$name.tsbuildinfo" --listFiles -p tsconfig.json) || exit 1
+          done
+        timeout: 5m
+
+  explorer-lint:
+    desc: Lint the explorer workspace, typed, every rule an error, no warning allowed
+    deps: [explorer-contract]
+    cmds:
+      - cmd: '{{.GATE}} pnpm -C explorer --tools "{{.TOOLS}}" -- run lint --concurrency="${GATE_WEIGHT:-auto}"'
+        timeout: 5m
+
+  explorer-test:
+    desc: Run the explorer workspace's tests, whole in every tier. Never a changed-only run, because conformance.test.ts reads the Go contract fixtures outside vitest's module graph, so a changed-only run would miss a contract change
+    deps: [explorer-contract]
+    vars:
+      INPUTS: "{{.EXPLORER_TEST_INPUTS}}"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.SKIP_UNCHANGED}}" = 1 ]'
+      - git diff --quiet {{.SKIP_BASE}} -- {{.INPUTS}}
+      - '[ -z "$(git ls-files --others --exclude-standard -- {{.INPUTS}})" ]'
+    cmds:
+      - cmd: "{{.GATE}} browsers --platform {{OS}}/{{ARCH}}"
+        timeout: 5m
+      - cmd: '{{.GATE}} pnpm -C explorer --tools "{{.TOOLS}}" --env "PLAYWRIGHT_BROWSERS_PATH={{.ROOT_DIR}}/.tools/playwright" -- run test'
+        timeout: 10m
+
+  subset-build:
+    desc: Check the subset build links nothing gate/subsets.json forbids
+    vars:
+      INPUTS: "{{.GO_INPUTS}} gate/subsets.json"
+    status:
+      - '[ "{{.CLI_FORCE}}" != true ] && [ "{{.SKIP_UNCHANGED}}" = 1 ]'
+      - git diff --quiet {{.SKIP_BASE}} -- {{.INPUTS}}
+      - '[ -z "$(git ls-files --others --exclude-standard -- {{.INPUTS}})" ]'
+    cmds:
+      # -count=1 stays at push: the test reads each build through go list -deps, and Go's test cache keys
+      # on the files a test opens, never on what a go command it runs reads, so a cached pass would outlive a new import.
+      - cmd: go test -count=1 -timeout {{.TEST_TIMEOUT}} -run TestEachGoSubsetLinksNothingItsRowForbids ./internal
+        timeout: 30m
+
+  # ---- release members ----
+
+  gate-tests:
+    desc: The gate's own packages, no race detector, run again; no path filter
+    cmds:
+      - cmd: |
+          {{.TOOLS}}/hatch{{exeExt}} tests {{.HATCH_TESTS_FLAGS}} -- -count=1 -timeout {{.TEST_TIMEOUT}} {{.GATE_PKGS}}
+        timeout: 30m
+
+  test-uncached:
+    desc: The release's run of test again, -race, shuffled, nothing from Go's test cache
+    cmds:
+      - cmd: |
+          {{.TOOLS}}/hatch{{exeExt}} tests {{.HATCH_TESTS_FLAGS}} -- -race -shuffle=on -count=1 -timeout {{.TEST_TIMEOUT}} \
+            $({{.TOOLS}}/hatch{{exeExt}} tests packages {{.HEAVY}})
+        timeout: 30m
+
+  secrets-full:
+    desc: gitleaks over every commit of HEAD, and over every tracked file as it is
+    cmds:
+      - task: secrets-scan
+        vars: {SCAN: HEAD}
+        timeout: 10m
+      - task: secrets-scan
+        vars: {SCAN: tree}
+        timeout: 10m
+
+  test-heavy:
+    desc: The heavy packages' tests, -count=1, shuffled
+    cmds:
+      - cmd: go test -shuffle=on -count=1 -timeout {{.TEST_TIMEOUT}} {{.HEAVY}}
+        timeout: 30m
+
+  # Each issue a row of docs/self-check.md names is open: it asks GitHub (gh), so it is a release member and no commit or push reads it.
+  # TestGragasAuditsItself holds the half that reads no network, that the rows and the findings of gragas check on gragas are equal.
+  self-check-issues:
+    desc: Each issue a row of docs/self-check.md names is open (asks GitHub through gh; red on a closed or a missing issue)
+    cmds:
+      - task: gate-build
+        timeout: 5m
+      - cmd: "{{.GATE}} self-check issues"
+        timeout: 3m
+
+  release-guard:
+    desc: "A clean tree, main the remote's main, and the version changie batched last not a tag yet; with SNAPSHOT=1, a clean tree and a branch not behind its remote, or a detached HEAD at any sha"
+    cmds:
+      - cmd: >-
+          {{if .SNAPSHOT}}{{.TOOLS}}/hatch{{exeExt}} tag --remote origin --snapshot{{else}}{{.TOOLS}}/hatch{{exeExt}} tag --remote origin --branch main "$({{.TOOLS}}/changie{{exeExt}} latest)"{{end}}
+        timeout: 2m
+
+  # ---- the recipe's own steps ----
+
+  cross:
+    desc: Build for every system of the list
+    cmds:
+      - for: {matrix: {PLATFORM: {ref: .CROSS}}}
+        cmd: GOOS={{index (splitList "/" .ITEM.PLATFORM) 0}} GOARCH={{index (splitList "/" .ITEM.PLATFORM) 1}} CGO_ENABLED=0 go build ./...
+        timeout: 10m
+
+  release-fetch:
+    desc: "The recipe's one step with the network open: the modules of every system .goreleaser.yaml builds"
+    cmds:
+      - for: {matrix: {PLATFORM: {ref: .CROSS}}}
+        cmd: GOOS={{index (splitList "/" .ITEM.PLATFORM) 0}} GOARCH={{index (splitList "/" .ITEM.PLATFORM) 1}} GOFLAGS=-mod=readonly go mod download
+        timeout: 10m
+      # the download holds each zip to go.sum; the build reads the unpacked
+      # folders, so they are held to it too
+      - cmd: go mod verify
+        timeout: 10m
+
+  release-guard-tagged:
+    desc: HEAD is the annotated tag of the version changie batched last, clean, and the remote's tag is the same commit
+    cmds:
+      - cmd: >-
+          {{.TOOLS}}/hatch{{exeExt}} tag --remote origin --tagged "$({{.TOOLS}}/changie{{exeExt}} latest)"
+        timeout: 2m
+
+  release-build:
+    desc: "goreleaser twice, from two clean clones of HEAD, each clone's files: sources first held to plain files, never a link, the second with a cold build cache; the two checksum files compared, then the first folder unpacked, each binary held to the one built and the host's started (behind the network block on Linux), with what it found recorded in unpack.json beside the clones (supply.release.6, .11); PUBLISH=1 makes the first a draft release"
+    env:
+      GOPROXY: "off"
+      GOFLAGS: -mod=readonly
+    cmds:
+      # gragas-release build (cmd/gragas-release/build.go) empties the folder,
+      # clones, runs sources, goreleaser twice, compare and verify; it was a
+      # sh script of rm, mkdir and a clone loop
+      - cmd: go run -trimpath ./cmd/gragas-release build -out '{{.RELEASE_DIR}}' -goreleaser '{{.TOOLS}}/goreleaser{{exeExt}}' -systems '{{join "," .CROSS}}'{{if .PUBLISH}} -publish -tag "$('{{.TOOLS}}/changie{{exeExt}}' latest)" -notes '{{.ROOT_DIR}}/.changes'{{end}}
+        timeout: 20m
+
+  release-undraft:
+    desc: Publish, by its id, the one draft of the tag whose assets are the checksum file verify read and its archives, by name and sha256 both ways
+    cmds:
+      - cmd: |
+          set -eu
+          tag=$('{{.TOOLS}}/changie{{exeExt}}' latest)
+          list='{{.RELEASE_DIR}}/releases.json'
+          gh api --paginate 'repos/{owner}/{repo}/releases' > "$list"
+          id=$(go run -trimpath ./cmd/gragas-release draft "$list" "$tag" '{{.RELEASE_DIR}}/a/dist/checksums.txt')
+          gh api -X PATCH "repos/{owner}/{repo}/releases/$id" -F draft=false > /dev/null
+          echo "release-undraft: $tag published, the draft $id, which holds the bytes verify read"
+        timeout: 2m
+
+  crash:
+    desc: Crash injection at 400 seeded boundaries, 100 recoveries in their roll-back, and every boundary of each writing command of gate/crash.json
+    env:
+      CRASH_POINTS: "400"
+    cmds:
+      - cmd: go test -count=1 -timeout {{.TEST_TIMEOUT}} -run '^(TestACrash(AtAnyBoundaryLeavesTheRootBeforeOrAfterThePlan|InsideTheRollBackIsRolledBackAgain)|TestEveryWritingCommandKilledAtABoundaryIsBeforeOrAfter)$' ./internal/journeys
+        timeout: 30m
+
+  # The pty journeys are built only where a pty is (their file's build line), so on another system go test ran none and
+  # said ok. The member asks the build, not the system's name: when go test lists neither journey here,
+  # it prints that it was not asked, and when it lists them it runs them.
+  pty:
+    desc: The pty journeys at 60 and 40 columns; where they are not built, a line saying they were not asked
+    cmds:
+      - cmd: |
+          run='^(TestThePtyJourneysHoldAtNarrowWidths|TestTheNarrowPropertiesFindEachBreak)$'
+          listed=$(go test -timeout {{.TEST_TIMEOUT}} -list "$run" ./internal/journeys) || { echo "$listed" >&2; exit 1; }
+          case "$listed" in
+            *TestThePtyJourneysHoldAtNarrowWidths*) ;;
+            *) echo "pty: not asked: the pty journeys are not built for $(go env GOOS), so none ran here"; exit 0 ;;
+          esac
+          go test -count=1 -timeout {{.TEST_TIMEOUT}} -run "$run" ./internal/journeys
+        timeout: 30m

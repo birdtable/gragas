@@ -1,0 +1,10 @@
+name: signals
+order: 120
+context: R
+ends: listing
+summary: "List the signals about the rules that need a look"
+examples:
+  - {line: "gragas signals", does: "list them"}
+  - {line: "gragas signals --json", does: "as one JSON document"}
+exits: ["done", "not ready"]
+json: signals

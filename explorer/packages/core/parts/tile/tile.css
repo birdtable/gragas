@@ -1,0 +1,31 @@
+[data-part="tile"] {
+  display: inline-grid;
+  gap: var(--gr-space-1);
+  min-width: 8rem;
+  margin: 0;
+  padding: var(--gr-space-3) var(--gr-space-4);
+  background: var(--gr-ground-surface);
+  border: 1px solid var(--gr-control-border);
+  border-radius: var(--gr-radius-md);
+}
+
+[data-part="tile"] dd {
+  margin: 0;
+}
+
+.gr-tile-label {
+  color: var(--gr-text-muted);
+  font-size: 0.8125rem;
+}
+
+.gr-tile-value {
+  color: var(--gr-text-ink);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 2rem;
+}
+
+.gr-tile-note {
+  color: var(--gr-text-muted);
+  font-size: 0.8125rem;
+}

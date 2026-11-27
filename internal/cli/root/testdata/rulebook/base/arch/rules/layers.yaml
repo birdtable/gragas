@@ -1,0 +1,111 @@
+part: arch
+concern: layers
+order: 1
+title: Layers
+summary: Code is split into named layers and imports run one way.
+rules:
+  - id: arch.layers.1
+    slug: imports-run-one-way
+    since: 0.1.0
+    rule: Imports run one way through named layers.
+    why: An upward import makes layers unreplaceable.
+    kind: rule
+    strength: Hard
+    level: file
+    status: active
+    sources:
+      - ref: a-book
+        where: chapter 3
+        says: Dependencies point one way.
+        backs: rule
+    examples:
+      bad:
+        lang: go
+        code: |
+          import "app/internal/cli" // from the core
+      good:
+        lang: go
+        code: |
+          import "app/internal/port"
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: layer-test
+        key: layercheck
+        tier: "1"
+        fix: never
+        note: "A layer test reads the import graph. Plant: an upward import fails. Control: a downward import passes."
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: "a boundary rule | with a pipe"
+    relates:
+      - id: arch.layers.5
+        how: see
+    open:
+      - pick the layer table format
+  - id: arch.layers.2
+    slug: layer-count-reported
+    since: 0.1.0
+    rule: The count of layer breaches is reported on every run.
+    why: A count that is not seen grows.
+    kind: measure
+    strength: Lens
+    level: program
+    review_question: Did the breach count fall or hold?
+    status: active
+    sources:
+      - ref: a-book
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tier: "4"
+        note: a census counts the breaches
+  - id: arch.layers.3
+    slug: old-layer-rule
+    since: 0.1.0
+    rule: An old wording of the layer rule.
+    why: Kept so the id is never reused.
+    kind: rule
+    strength: Review
+    review_question: Is the old wording still quoted anywhere?
+    level: file
+    status: retired
+    replaced_by: arch.layers.1
+  - id: arch.layers.4
+    slug: name-the-layer
+    since: 0.1.0
+    rule: Name the layer a new package belongs to when you add it.
+    why: An agent places code where the name says.
+    kind: instruction
+    strength: Review
+    level: package
+    review_question: Does the new package name its layer?
+    status: active
+    sources:
+      - ref: a-book
+        where: chapter 4
+        backs: rule
+    unless:
+      - paths: ["**/*_test.go"]
+        reason: test helpers sit beside the code they test
+      - kinds: [library]
+        reason: a library names its layers in its own docs
+  - id: arch.layers.5
+    slug: breach-count-falls
+    since: 0.1.0
+    rule: The count of layer breaches only falls.
+    why: A ratchet keeps old breaches from growing.
+    kind: rule
+    strength: Lens
+    level: program
+    status: proposed
+    review_question: Did the breach count rise in this change?
+    checks:
+      - binding: any
+        class: fact
+        tier: "3"
+        note: "A ratchet file holds the count. Plant: a raised count fails."
+    open:
+      - Proposed for lack of a source (decision 47).

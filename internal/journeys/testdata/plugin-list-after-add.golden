@@ -1,0 +1,12 @@
+$ gragas plugin list
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+plugin        tool    approved  note
+lint-a@1.0.0  lint-a  no
+lint-b@2.0.0  lint-a  no
+1 column not shown: digest
+
+  done       2 plugins, 0 approved
+--- stderr

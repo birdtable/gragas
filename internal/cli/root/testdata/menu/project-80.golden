@@ -1,0 +1,5 @@
+  check    Check a project against its rules, or a rulebook against its gate
+
+  help     Show the help of a command
+  version  Say which build this is
+  gen      Say which generated files are out of date, and write them

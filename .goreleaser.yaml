@@ -1,0 +1,75 @@
+# gragas's release: goreleaser builds the archives of every system and
+# their checksum file. Taskfile.yml runs it: release-build builds twice from
+# two clean clones and compares the two checksum files (supply.release.11),
+# and release-publish makes a draft from the annotated tag, which the unpack
+# step checks before the draft is published (supply.release.6). The targets
+# are the Taskfile's CROSS, held to it by internal/taskfile_test.go.
+version: 2
+project_name: gragas
+
+builds:
+  - id: gragas
+    main: ./cmd/gragas
+    binary: gragas
+    env:
+      - CGO_ENABLED=0
+      - GOTOOLCHAIN=local
+      - GOWORK=off
+      - GOFLAGS=-mod=readonly
+    flags:
+      - -trimpath
+      - -buildvcs=false
+    ldflags:
+      - -X main.version=v{{ .Version }} -X main.commit={{ .ShortCommit }}
+    # The file times of the binary are the commit's, so two builds of one
+    # commit are the same bytes (supply.release.3).
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    targets:
+      - linux_amd64_v1
+      - linux_arm64
+      - darwin_arm64
+      - windows_amd64_v1
+      - freebsd_amd64_v1
+
+archives:
+  - id: gragas
+    ids: [gragas]
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    wrap_in_directory: true
+    builds_info:
+      owner: root
+      group: root
+      mode: 0o755
+      mtime: "{{ .CommitDate }}"
+    # The licence, the notice and one notice per linked module, from
+    # go-licenses' report (the licences member checks it and fails a hand edit).
+    files:
+      - src: LICENSE
+        info: &file
+          owner: root
+          group: root
+          mode: 0o644
+          mtime: "{{ .CommitDate }}"
+      - src: NOTICE
+        info: *file
+      - src: notices/gragas.txt
+        info: *file
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+snapshot:
+  version_template: "0.0.0-snapshot"
+
+# The notes are changie's (.changes/<tag>.md), passed with --release-notes.
+changelog:
+  disable: true
+
+# A draft is made, and replaces any draft an earlier run left for the tag, so
+# the repository holds one draft of it: the one release-undraft holds to the
+# checksum file verify read, then publishes by its id.
+release:
+  draft: true
+  replace_existing_draft: true

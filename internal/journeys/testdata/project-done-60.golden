@@ -1,0 +1,38 @@
+$ gragas check --fail-on tool-config
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Findings
+kind           about           what is wrong, and the fix
+tier-contract  Taskfile.yml:2  gates.command.1 (task
+                               pre-commit): no task
+                               pre-commit
+tier-contract  Taskfile.yml:2  gates.command.1 (task
+                               pre-push): no task pre-push
+tier-contract  Taskfile.yml:2  gates.command.1 (task full):
+                               no task full
+tier-contract  Taskfile.yml:2  gates.command.1 (task
+                               release): no task release
+tier-contract  Taskfile.yml:2  gates.command.1 (task land
+                               landing): no task landing:
+                               the land job, which runs
+                               pre-push then full on the
+                               merged tree before main
+tier-contract  hooks/pre-push  gates.hooks.1 (task pre-push
+                               hook): there is no pre-push
+                               hook file (hooks/pre-push,
+                               .githooks/pre-push,
+                               .husky/pre-push)
+
+Not checked
+  systems: none declared in .gragas/systems, so one build
+  and one lint member are asked for
+  names: no list named, so the names check did not run
+  gragas names rules were not checked: no rule of the
+  rulebook binds the names key, so the names check did not
+  run
+  gragas counts rules were not checked: no rule of the
+  rulebook binds a count key, so the counts did not run
+
+  done       6 findings, 0 exempt, 4 not checked
+--- stderr

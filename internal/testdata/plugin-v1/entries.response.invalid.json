@@ -1,0 +1,8 @@
+[
+  {"name":"an unknown field","patch":[{"op":"add","path":"/0/later","value":1}],"problem":"Additional properties are not allowed ('later' was unexpected)"},
+  {"name":"an entry with no on","patch":[{"op":"remove","path":"/0/entries/1/on"}],"problem":"'on' is a required property"},
+  {"name":"an entry with an empty key","patch":[{"op":"replace","path":"/0/entries/0/key","value":""}],"problem":"should be non-empty"},
+  {"name":"a severity that is not the engine's","patch":[{"op":"replace","path":"/0/entries/0/severity","value":"warn"}],"problem":"is not one of"},
+  {"name":"an entry field it does not name","patch":[{"op":"add","path":"/0/entries/0/note","value":"x"}],"problem":"Additional properties are not allowed ('note' was unexpected)"},
+  {"name":"a null severity","patch":[{"op":"replace","path":"/0/entries/0/severity","value":null}],"problem":"is not one of"}
+]

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "identity.schema.json",
+  "title": "rulebook.yaml: a rulebook's identity (format v3)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "name", "version", "kind", "language", "licences", "owners", "governance"],
+  "properties": {
+    "format": {"$ref": "common.schema.json#/$defs/format"},
+    "name": {"$ref": "common.schema.json#/$defs/slug"},
+    "version": {"$ref": "common.schema.json#/$defs/semver", "description": "declared once at init for the first release; every later release computes its own"},
+    "kind": {"enum": ["base", "overlay", "companion", "fork", "archived"]},
+    "licences": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rules"],
+      "properties": {
+        "rules": {"$ref": "common.schema.json#/$defs/text", "description": "an SPDX expression"},
+        "checker_code": {"$ref": "common.schema.json#/$defs/text"},
+        "presets": {"$ref": "common.schema.json#/$defs/text"}
+      }
+    },
+    "language": {"$ref": "common.schema.json#/$defs/language", "description": "the authoritative language"},
+    "docs_url": {"$ref": "common.schema.json#/$defs/url", "description": "the base URL of the published pages"},
+    "explorer_url": {"$ref": "common.schema.json#/$defs/url", "description": "optional: the base URL of an explorer the owner hosts"},
+    "extends": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rulebook", "version"],
+      "properties": {
+        "rulebook": {"$ref": "common.schema.json#/$defs/text", "description": "the short name, or a full location"},
+        "version": {"$ref": "common.schema.json#/$defs/semver", "description": "the pin"},
+        "source": {"$ref": "common.schema.json#/$defs/text"},
+        "content_hash": {"$ref": "common.schema.json#/$defs/digest", "description": "the content hash of the pinned release, given by the maintainer (init asks for it)"}
+      }
+    },
+    "imports": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rulebook", "version", "parts"],
+        "properties": {
+          "rulebook": {"$ref": "common.schema.json#/$defs/text"},
+          "version": {"$ref": "common.schema.json#/$defs/semver"},
+          "source": {"$ref": "common.schema.json#/$defs/text"},
+          "parts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "common.schema.json#/$defs/part"}},
+          "content_hash": {"$ref": "common.schema.json#/$defs/digest", "description": "the content hash of the pinned release, given by the maintainer (init asks for it)"}
+        }
+      }
+    },
+    "owners": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "common.schema.json#/$defs/text"}},
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contribution", "decision_required", "trial_releases", "review_days"],
+      "properties": {
+        "contribution": {"enum": ["open", "proposals", "closed"]},
+        "checker_publishers": {"type": "array", "uniqueItems": true, "items": {"$ref": "common.schema.json#/$defs/text"}, "description": "who may publish checker code"},
+        "checker_second_reviewer": {"type": "boolean"},
+        "checker_proof": {"enum": ["isolated", "sandboxed"], "description": "the proof level third-party checker code must reach"},
+        "decision_required": {"type": "boolean"},
+        "trial_releases": {"type": "integer", "minimum": 1, "description": "the longest a trial lasts, in releases"},
+        "review_days": {"type": "integer", "minimum": 1, "description": "the default cadence of review-by"}
+      }
+    },
+    "tested": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min_engine"],
+      "properties": {
+        "tools": {"$ref": "#/$defs/versions"},
+        "plugins": {"$ref": "#/$defs/versions"},
+        "kits": {"$ref": "#/$defs/versions"},
+        "adapters": {"$ref": "#/$defs/versions"},
+        "min_engine": {"$ref": "common.schema.json#/$defs/semver"}
+      },
+      "description": "proposed by prove and fixed at the release's yes"
+    },
+    "hand_written_presets": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "common.schema.json#/$defs/slug"}, "description": "the tools whose presets the rulebook's owners write by hand: no plugin is asked to rank or write them"},
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "statement_words": {"type": "integer", "minimum": 1},
+        "reasoning_words": {"type": "integer", "minimum": 1}
+      }
+    }
+  },
+  "$defs": {
+    "versions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "version"],
+        "properties": {
+          "name": {"$ref": "common.schema.json#/$defs/slug"},
+          "version": {"$ref": "common.schema.json#/$defs/text"}
+        }
+      }
+    }
+  }
+}

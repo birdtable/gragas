@@ -1,0 +1,98 @@
+part: code
+concern: format
+order: 1
+title: Formatting and static analysis
+summary: >-
+  One formatter and one editor configuration across every project, checked by what the tool prints and not by
+  its exit status, and the language's vet and static analysis passing in the lint gate. These are the floor
+  every file meets before any other rule is read.
+rules:
+  - id: code.format.1
+    slug: formatter-clean
+    since: 0.1.0
+    rule: >-
+      Code is clean under one formatter and one import-order tool, checked by the tool's output and not by its
+      exit status.
+    detail: >-
+      One formatter and one editor configuration are used across projects. In Go the code is gofmt- and
+      goimports-clean, and the check is that the formatter and the standalone import-order tool print nothing
+      (the formatter's list mode exits 0 on findings, so the exit status is not read); the import-order check
+      uses the standalone tool, not the lint runner's formatter, which measured 141 CPU-seconds cold. In the
+      web stack formatting is one command and the format check is in the gate, with a class-order plugin in
+      the shared config. A tree-wide formatting commit is made once, in a quiet window, and listed in the
+      blame-ignore file.
+    level: word
+    why: >-
+      Unformatted code makes every diff noisy and every review slower; the floor items are cheap and run in
+      every Go lint config. The one-time format commit has no blame-ignore row in Go today.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "0"
+        note: >-
+          a Taskfile member of the push tier that runs the gragas format check (the gragas command, no library) and a tier-0 or tier-1 hook: test -z "$(gofmt -l .)" and test -z
+          "$(goimports -l .)" using the standalone goimports. Plant: a file with bad indentation fails the
+          output test. Control: a formatted tree passes
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          one formatter (Prettier or Biome, not ruled) with EditorConfig, one format command in the gate, a
+          class-order plugin in the shared config, and a blame-ignore file for the one tree-wide formatting
+          commit. Plant: an unformatted file fails the format command. Control: a formatted tree passes
+    open:
+      - >-
+        Which web formatter (Prettier or Biome) is not ruled; no row names a shared editor configuration yet.
+      - >-
+        The blame-ignore list for a tree-wide formatting commit is a gap in the Go sources.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "v1 evidence, not yet a source: own measure (a floor item)"
+  - id: code.format.2
+    slug: vet-and-static-analysis-pass
+    since: 0.1.0
+    rule: The language's vet and static analysis pass in the lint gate.
+    detail: >-
+      In Go the lint runner runs the vet analyzers at their defaults and the static-analysis suite (all of its
+      correctness, simplification and style groups, with the six non-default style checks off), from one
+      shared configuration pinned by version. In the web stack the equivalent is the type check and the lint
+      gate named in the web part.
+    level: function
+    why: >-
+      These are the cheapest finders of real mistakes (a wrong print verb, a deprecated call); they run in six
+      repositories today.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: govet
+        tier: "1"
+        fix: auto
+        note: >-
+          golangci-lint govet (default analyzers) and staticcheck (all SA, S, ST and QF groups, the six
+          non-default ST checks off) in the shared config, pinned by version (golangci-lint 2.15.0, 16 Oct
+          2026, GPL-3.0). Plant: a printf with the wrong verb fails; a deprecated ioutil call fails. Control:
+          a clean file passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: staticcheck
+        tier: "1"
+        fix: auto
+        note: Held by the golangci preset, whose comment on staticcheck names this rule.
+    open:
+      - Both tools were planted in the shared lint trial.
+      - "v1 evidence, not yet a source: own measure (six repositories run it)"

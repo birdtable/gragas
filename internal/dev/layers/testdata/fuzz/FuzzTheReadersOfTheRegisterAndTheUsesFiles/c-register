@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("part: go\nlibraries:\n  - key: yaml\n    job: j\n    use: {module: go.yaml.in/yaml/v3, version: v3.0.6, package: p}\n    scope: anywhere\n    replaces:\n      - {name: gopkg.in/yaml.v3, why: w}\n    ban: {deny: [gopkg.in/yaml.v3]}\n    gap: g\n    source: https://github.com/yaml/go-yaml\n    state: chosen\ndropped: []\n")

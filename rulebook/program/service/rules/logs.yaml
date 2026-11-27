@@ -1,0 +1,69 @@
+format: 3
+part: service
+concern: logs
+rules:
+  - id: service.logs.1
+    statement: "There is no raw console output; logs are structured JSON, bare (no extra wrapper), and carry a correlation id and an event number on every line; and the set of top-level log field names is a committed contract compared with a real emitted line in the gate."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The field-name contract is a committed list of the top-level keys a line may carry. The gate runs the program, captures a real line and fails when a key is added, removed or renamed without the list changing in the same change. In Go, a daemon logs with slog, every line carries a version and run id, level and time, and there is no log.Fatal outside main."
+      pros:
+        - "Unstructured lines cannot be searched or joined across services, and a line without a correlation id cannot be placed in a request. A log field renamed by accident breaks every dashboard and metric filter silently."
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.logs.2
+    statement: "The logger redacts secret keys and never logs request or response bodies, and redaction is proved by planting a value in each redacted field and reading the real emitted line."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The redacted keys are one configured list (for example authorization, token, secret, key, password, cookie). The proof drives the real logger and output, not a mock, with a canary value in every listed key, and fails when the canary appears. A key added to the list is proved by the same test. In Go, a secret is never printed and no secret reaches the log."
+      pros:
+        - "Logs are copied to more places than the data they come from, and a secret or a body in them outlives every other control."
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.logs.3
+    statement: "A request the service rejects (validation failure, refused permission) is logged at warn, not error."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - A client mistake logged at error floods the alarms meant for service faults.
+  - id: service.logs.4
+    statement: "No logger is constructed outside the runtime package; one owner creates the logger."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, one slog handler with version and run id, level and time."
+      pros:
+        - A second logger gives a second format and misses the redaction.
+  - id: service.logs.5
+    statement: Each log metric filter matches a log line the code really emits.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, every claim in a rule resolves to a file or command that exists."
+      pros:
+        - "A filter written against a line that is never emitted counts nothing, and the alarm on it never fires."

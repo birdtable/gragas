@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"ended\": \"findings\", \"msg\": \"x\", \"data\": {\"files\": [{\"path\": \"presets/x/x.yml\", \"tool\": \"x\", \"state\": \"differs\", \"first\": \"line 2\"}], \"owned\": [\"presets/y/y.yml\"], \"hand_written\": [\"z\"], \"compared\": 1}}")

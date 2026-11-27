@@ -1,0 +1,676 @@
+part: arch
+concern: layers
+order: 2
+title: Layers, boundaries and import rules
+summary: >-
+  Code is divided into named layers and modules, and which may import which is written down as data and
+  checked by a tool. Imports run one way, every file sits in one layer, cycles are refused, a module is
+  reached only through its public entry, and the rules are generated from one declared graph rather than typed
+  by hand.
+rules:
+  - id: arch.layers.1
+    slug: imports-run-one-way
+    since: 0.1.0
+    rule: >-
+      Imports run one way through named layers; a lower layer never imports a higher one, and the failure
+      message gives the reason.
+    detail: >-
+      The layer order is fixed and written as a table in rule data: folder or package globs mapped to layers,
+      and the allowed edges between layers. Entry code does not import storage code. Infrastructure code never
+      imports application source. Shared kernels and libraries never import a module or the application shell.
+      Inside a module the same holds one level down (pages above components, model and api). Each forbidden
+      edge carries a message that names why the edge is forbidden. Breaches present at adoption sit in a
+      baseline of one file per entry (one-file-per-entry) that only shrinks, and a baseline line that no
+      import makes any more also fails.
+    level: file
+    why: >-
+      A layer that imports upward makes the layers unreplaceable and unreadable one at a time. In Go the layer
+      test exists in two repos and the table counts breaches in four (7, 1, 1 and 1 at baseline). In the web
+      stack the rule existed as a text rule (check-layers.mjs) in two repos, with no fault traced to a missed
+      breach.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          a layer test in the companion Go checks: the layer table in rule data (package globs to layer,
+          allowed layer edges), direct imports loaded per package with go/packages, any edge not in the table
+          fails, and the breach baseline is one file per entry that only shrinks. Plant: an entry package
+          importing database/sql fails and the test lists the edge. Control: the same import from the store
+          layer passes
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint with eslint-plugin-boundaries 7.4.1 rule boundaries/dependencies (the replacement for the
+          deprecated element-types), element types generated from the layer table, a per-edge message naming
+          the reason; imports in .ts, .tsx and, through astro-eslint-parser, in .astro frontmatter and
+          <script> blocks (the glob **/*.astro/*.{js,ts} must be listed). Plant: a file in the lowest layer
+          importing from a page file fails, in a .ts file, in .astro frontmatter and in an .astro script
+          block; the same import pointing down passes. Control: the same import pointing down passes
+    open:
+      - >-
+        Nobody has seen the Go layer test fail (no plant recorded), so the plant must be run once per repo
+        when it is adopted, and adopting repos need the baseline generated once from today.
+      - >-
+        The ESLint plugin option mode file is deprecated and untested in 7.4.1, measured under the former
+        14-day window; pin the version outside tools.yaml's window and re-run the plants. The
+        text-rule fallback stays until the plugin passes the 10 plants on both sites.
+      - >-
+        A rule with no plant on an Astro script block is a hole. In one repo 2 of the 4 plants were missed by
+        its own gate, and in another the 82 self cases of the text rule do not run in its gate.
+      - >-
+        v1 evidence, not yet a source: own measure (Go layer tests in two repos, breaches in four); A for the
+        rule existing in the web stack
+  - id: arch.layers.2
+    slug: boundary-rules-are-tooled
+    since: 0.1.0
+    rule: >-
+      Import rules are enforced by a lint rule or a repository test, never by convention.
+    detail: >-
+      The lint configuration is generated from the same layer table as the layer test (files globs, list-mode,
+      allow and deny lists, each with a reason) and a byte check of the rendered file proves it matches the
+      table. One shared import-boundary preset ships with a few error rules and an empty list for later rules,
+      and the layer check is one program every site imports.
+    level: package
+    why: >-
+      A rule that only a reader knows is not held; the lint rule is the part that keeps working when the
+      author is an agent. Only one Go repo enables the lint rule today.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          golangci-lint depguard v2 rules rendered from the layer table into the lint file (files globs,
+          list-mode, deny and allow with reasons), with a byte check of the rendered file. Plant: the extended
+          planted imports (82 of 82 bans fired) and a layer breach in one file. Control: an allowed import
+          passes
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          the shared import-boundary preset (four error rules and an empty list for later rules) loaded by
+          every repo's boundary checker. Plant: a layer breach in one file fails under the shared preset.
+          Control: an allowed import passes
+    open:
+      - >-
+        depguard is GPL-3.0 and its own releases are far apart (v2.0.0 in March 2023, last push 2 Nov 2026);
+        golangci-lint keeps it current inside its releases.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "v1 evidence, not yet a source: own measure; the lint rule runs in one repo"
+  - id: arch.layers.3
+    slug: every-file-in-one-layer
+    since: 0.1.0
+    rule: >-
+      Every source file belongs to exactly one declared layer or element, a file in none fails, and the
+      boundary checker counts the files it parsed against the tracked source files and exits as could-not-run
+      on any shortfall.
+    detail: >-
+      Inside a module only the declared slots exist; a sub-module folder exists only if the module's manifest
+      lists it. Configuration that is data sits outside every element and is read only by the kernel and the
+      application element. A package that sits in no row of the layer table fails the layer test. The checker
+      compares the number of source files it read with the tracked source files of the same kinds (from the
+      version control index); a file it skipped, could not parse or never saw makes the run exit 2 (could not
+      run), never a pass.
+    level: file
+    why: >-
+      A file outside every layer escapes every boundary rule, so the table says nothing about it. A checker
+      that silently parses fewer files than exist passes the files it never read.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          eslint-plugin-boundaries rule boundaries/no-unknown-files against the layer table of arch.layers.1.
+          Plant: a new file in an undeclared folder fails. Control: a file inside a declared layer passes
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          the layer test of arch.layers.1 fails a package that sits in no row of the layer table. Plant: a new
+          package under no listed glob fails. Control: a package in a listed row passes
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. the boundary checker prints the count of files parsed and the count of tracked
+          source files, and exits 2 when the first is smaller. Plant: a tracked file with a syntax error the
+          parser skips makes the run exit 2. Control: a run that parsed every tracked file exits 0
+    open:
+      - >-
+        Where the plugin cannot read an .astro file, the text rule layerOf in check-layers.mjs stays as the
+        fallback.
+      - >-
+        In one repo the text rule is held but its self cases do not run in the repo's gate.
+  - id: arch.layers.4
+    slug: no-import-cycles
+    since: 0.1.0
+    rule: >-
+      There are no import cycles between modules, across or inside a layer; a known cycle only leaves the
+      list.
+    detail: >-
+      Cycles are refused between modules, between parts of one module and inside one part. A cycle found at
+      adoption goes on a baseline that only shrinks. The Go compiler already refuses package cycles, so the Go
+      side is held by the compiler and by the shared-library rule (arch.layers.7); the web stack needs a tool.
+      Cycles that pass through .astro files are invisible to the stock tools, so a graph step extracts imports
+      from .astro frontmatter and <script> blocks with the Astro compiler (@astrojs/compiler), joins them with
+      the TypeScript module graph, finds strongly connected components and holds the count of cyclic groups
+      from rising (shrink-only). The same graph serves the declared-edge check and the merge-candidate report.
+    level: file
+    why: >-
+      A cycle makes two modules one module that cannot be moved, tested or replaced separately. One web repo
+      has 11 cycle groups (68 files) and another 3 (40 files), all legal under their gates; at the donor a
+      reviewer found a test and storybook cycle that no script did.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: dependency-cruiser
+        tier: "2"
+        note: >-
+          import-x/no-cycle 4.17.1 with the TypeScript resolver, or dependency-cruiser 18.7.2 no-circular with
+          --ignore-known (shrink only), for .ts and .tsx. Plant: two .ts modules importing each other fail.
+          Control: an acyclic pair passes
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. companion graph: imports from .astro frontmatter and <script> blocks (parsed with
+          @astrojs/compiler) joined with the TypeScript module graph, strongly connected components, and the
+          count of cyclic groups only falls (shrink-only). Plant: a.astro importing b.ts which imports a.astro
+          fails once the graph step exists. Control: an acyclic pair passes
+      - binding: go
+        class: preset-config
+        tier: "0"
+        note: >-
+          v1 class compiler. the Go compiler refuses a package import cycle; cycles across modules are closed
+          by arch.layers.7. Plant: two packages importing each other fail to build. Control: an acyclic pair
+          builds
+    relates:
+      - id: arch.layers.7
+        how: see
+    open:
+      - >-
+        Neither import-x nor dependency-cruiser sees an edge out of an .astro file (both tried); the graph
+        step is to be built and the criterion proposes splitting this into a .ts rule (tool-ready) and an
+        .astro rule (once the graph exists).
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A (11 cycle groups in one repo, 68
+        files)
+  - id: arch.layers.5
+    slug: reach-a-module-by-its-entry
+    since: 0.1.0
+    rule: >-
+      A module is reached from outside only through its one public entry; no deep import and no relative path
+      across modules.
+    detail: >-
+      A module exposes a few named entry files (public API, pages for the router, manifest, test helpers for
+      tests on a declared edge) and nothing else is importable. The public entry (index.ts) re-exports no
+      internal layer (handler, repository, action, core). No deep relative imports. A module that two or more
+      modules need moves to the shared layer and moves back when one consumer remains (arch.shared.12). A
+      module that must add something to another module's screen registers a typed contribution with the host
+      and never imports upward; an optional dependency is reached only through such slots, and a direct import
+      is allowed only downward along a declared edge. Route files (routes/**) only wire a page and are held to
+      a thin-route line limit set in rule data. In Go, a package is importable from outside only through its
+      exported surface, with internal/ guarding the rest.
+    level: file
+    why: >-
+      A deep import turns every internal file into a public API, so no module can change its inside. Boundary
+      plugins fired on 10 of 10 Astro plants but have never been run on React.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+        - service
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: eslint
+        tier: "2"
+        note: >-
+          v1 class our-cli. a generator reads the graph file (modules, public entry, allowed contributions)
+          and writes the eslint-plugin-boundaries configuration, a drift check regenerates and diffs it, and
+          max-lines on route files (limit in rule data) holds the thin-route line. Plant: a module importing
+          another module's inner file fails; a route file over the limit fails. Control: the same call through
+          the entry passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          depguard or a layer-table repo test bans reaching into another package's internals; internal/
+          folders guard the rest. Plant: a package importing another package's internal folder fails. Control:
+          the same call through the exported surface passes
+    relates:
+      - id: arch.shared.12
+        how: see
+    open:
+      - The generator has never been run on React; it fired on Astro only.
+      - >-
+        The criterion's source marked this React-only; it is general and the part split keeps it here.
+  - id: arch.layers.6
+    slug: no-foreign-source-paths
+    since: 0.1.0
+    rule: No code imports another package's source or build-output paths.
+    detail: >-
+      A package is imported by its published name and exported surface, never by a path into its source tree
+      or its build output. In Go there is no replace directive and no workspace file, and the public surface
+      is listed per tag.
+    level: file
+    why: >-
+      A path into another package's source or output fixes that package's layout as a public contract and
+      bypasses its versioning.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          a restricted-paths import rule that bans patterns of the form <scope>/*/src/** and
+          <scope>/*/dist/**. Plant: an import of a package's src/ or dist/ path fails. Control: an import by
+          the published name passes
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          a repo test fails any replace directive or workspace file, and the exported surface is compared
+          against the per-tag listing (arch.shared.9). Plant: a go.mod with a replace directive fails.
+          Control: a go.mod with no replace directive passes
+    open:
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: arch.layers.7
+    slug: shared-code-reaches-no-product
+    since: 0.1.0
+    rule: >-
+      A module that others depend on stays extractable, so it imports no program package and reaches into no
+      sibling module, checked against an allow-list.
+    detail: >-
+      A shared library package imports no program package. Each library package lists its allowed dependencies
+      in rule data, and the closure of its dependencies must stay inside that list. The shared layer's core
+      imports nothing from the domain modules (core/** imports nothing from domains/**; the entry re-exports
+      no @core). Making the shared code a separate module makes a program import impossible at compile time.
+    level: package
+    why: >-
+      A library that imports a program cannot be extracted, versioned or reused. In the Go kit, 7 of 8
+      packages import no other in-module package and one imports 2, so the rule is cheap to hold.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: go-review-r-02-donor-section-gap
+        where: section 3.9
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          a test per library package runs go list -deps filtered to the module and requires each result to be
+          on the library's allow-list in rule data, plus a depguard rule for the direct import; a separate
+          module for the library makes the import impossible at compile time. Plant: a library package
+          importing a program's command package fails and the test lists it. Control: a library package
+          importing only the standard library passes
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          boundary rule that the shared layer and libraries import no module, shell or sibling module. Plant:
+          a shared package importing a domain module fails. Control: a domain module importing the shared
+          package passes
+    open:
+      - "v1 evidence, not yet a source: own measure (a two-line test)"
+  - id: arch.layers.8
+    slug: modules-import-along-declared-edges
+    since: 0.1.0
+    rule: >-
+      A module imports another only along an edge declared in one graph; the graph is acyclic, foundation
+      never depends on business, and a new edge is an explicit gated change.
+    detail: >-
+      The graph names modules or surfaces and their edges. A new edge is a one-line edit to the graph file
+      whose commit trailer names it. The threshold at which this binds (6 modules) is rule data with its
+      reason, not a repo's choice. Edges are checked against real imports, so a manifest's declared dependency
+      list equals the cross-module imports found. In Go the layer table lists the allowed edges and a repo
+      test checks them.
+    level: program
+    why: >-
+      Undeclared edges grow until every module can reach every other; declaring them makes each new coupling a
+      visible decision.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+        - service
+    sources:
+      - ref: p-01-core-programming
+        where: five-list item 1
+        backs: rule
+      - ref: r-04-seams
+        where: section 5
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: eslint
+        tier: "2"
+        note: >-
+          v1 class our-cli. boundary rules generated from the graph file (the generator of arch.layers.5);
+          alternative, companion surfaces, builds the surface graph from the TypeScript module graph (.ts and
+          .tsx) and the Astro compiler (@astrojs/compiler, .astro files read through astro-eslint-parser) and
+          fails on an undeclared edge or a cycle; the cycle check of arch.layers.4 stays. Plant: a direct
+          import between two surfaces with no declared edge fails. Control: the same call through a declared
+          edge passes
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          the layer-table test of arch.layers.1 with allowed edges as data. Plant: an import between two
+          packages on an edge not in the table fails. Control: an import on a listed edge passes
+    open:
+      - >-
+        Note, 8 Nov 2026: a folder pattern declares a family of edges once and is one reviewed edge; the
+        layer tests and the import linter hold every package under it (arch.layers.14).
+      - >-
+        The structure script is planned; the generated-boundaries alternative is about 50 lines of generator.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+  - id: arch.layers.9
+    slug: layer-lists-are-derived
+    since: 0.1.0
+    rule: >-
+      The module graph is declared in one file, the layer check is one program every site imports, and
+      boundary rules, test projects and structure checks are generated from that file, never hand-written or
+      typed by hand.
+    detail: >-
+      The graph file is protected gate config. Each site passes its own parameter file to the shared check,
+      and the lists the check uses are derived from the tree or from the graph file. A rule that names files
+      by hand is a finding: a rule object holding more than 3 literal source paths fails (3 is a guess,
+      ratcheted down from 19). A second copy of the shared check in a site's scripts folder is found by
+      scanning for the shared file name and by a clone detector that ignores identifiers and literals against
+      the shared source. A drift check regenerates and diffs the output.
+    level: program
+    why: >-
+      Two sites' layer-check scripts differ by 1314 lines; hand-typed lists drift from the tree and a copied
+      check drifts from its origin.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: r-04-seams
+        where: section S-7
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: jscpd
+        tier: "1"
+        note: >-
+          v1 class our-cli. one check-layers (hand-written lists are the finding) in the companion tool with a
+          per-site parameter file; a scan of site scripts/ folders for the shared file name plus jscpd 5.4.2
+          with --ignore-identifiers --ignore-literals --threshold 0 against the shared source; a rule object
+          with more than 3 literal source paths fails. Plant: 10 lines of the shared check copied under
+          renamed identifiers into site scripts/ fail (jscpd run on a renamed pair finds 0 by default and
+          exits 1 with --ignore-identifiers). Control: a site that only passes its parameter file passes
+      - binding: go
+        class: preset-config
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          the layer table is one file from which the depguard rows are generated, the gate config is a
+          protected path, and a byte check proves the render. Plant: a hand-edited depguard row that differs
+          from the table fails the byte check. Control: the rendered file passes
+    open:
+      - >-
+        Note, 8 Nov 2026 (shared-files layout): one file stays one file. The file is restructured so a
+        family of packages is a folder pattern (arch.layers.14), every list is one entry per line and
+        sorted, and the prose each package says it holds is rendered from the package’s own doc comment
+        (arch.structure.10); the linter’s import rows become a wholly generated file. If the file still
+        changes in more than one landing in four after that, the fallback is one file per layer joined by a
+        generator, which needs a note on this rule first.
+      - "v1 evidence, not yet a source: A (two sites' scripts differ by 1314 lines)"
+  - id: arch.layers.10
+    slug: tests-obey-the-same-imports
+    since: 0.1.0
+    rule: >-
+      Tests and stories obey the same import rules as code, production code never imports a test file or
+      fixture, no stand-in kind is in non-test source, and no release recipe or config carries a test build
+      tag.
+    detail: >-
+      A test cannot reach what its code cannot. Cross-module fixtures come from a testing entry on a declared
+      edge. Specs and stories sit next to the file they test and no new __tests__ folder is added. In Go the
+      compiler refuses an import of a _test file from another package, and the layer rules cover test files. A
+      stand-in (a fake adapter, a test registry entry) is defined only in test source or a test-only package
+      that production code cannot import; a test may register one (arch.ports.16). A build tag that exists
+      only for tests never reaches a release: a test reads the release recipe, the release workflow and the
+      build config and fails on any such tag.
+    level: file
+    why: >-
+      A production import of a fixture ships test data, and a test that reaches around the entry hides a
+      coupling. A test tag in a release build ships the stand-in in place of the real adapter.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          boundaries elements for test and fixture paths: boundaries/dependencies with from: production,
+          disallow: [test, fixture]; test files follow the same layer table. Plant: a page importing
+          fixtures/world.ts fails. Control: a test importing a part passes
+      - binding: go
+        class: preset-config
+        tier: "0"
+        note: >-
+          v1 class compiler. the Go compiler refuses to import a _test file from another package, and the
+          layer test covers test files. Plant: a package importing a _test file fails to build. Control: a
+          test file importing its own package builds
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test that reads the release recipe, the release workflow and the build config for any build tag on
+          the test-only tag list, and a source test that no stand-in type is declared in non-test,
+          non-testing-package source. Plant: a release build line carrying a test-only tag fails; a fake
+          adapter declared in a production file fails. Control: a release recipe with no test tag passes
+    relates:
+      - id: arch.ports.16
+        how: see
+  - id: arch.layers.11
+    slug: types-only-layer-has-no-runtime
+    since: 0.1.0
+    rule: A package declared types-only exports no runtime value.
+    detail: >-
+      A shared vocabulary layer holds declarations only: in Go a shared types package has no init, no side
+      effect and no mutable state.
+    level: package
+    why: >-
+      A runtime value in the vocabulary layer drags behaviour into every module that only wanted a type.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          a boundary rule that a types-only element exports only type declarations. Plant: a runtime export
+          added to the types-only package fails. Control: a type-only export passes
+      - binding: go
+        class: preset-rule
+        tier: "1"
+        note: >-
+          a lint rule banning init functions and package-level mutable variables in a package listed as
+          types-only. Plant: an init function in a types-only package fails. Control: declarations only pass
+    open:
+      - The exact tool for the Go side is not chosen.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: arch.layers.12
+    slug: every-file-has-an-owner
+    since: 0.1.0
+    rule: >-
+      Every source file, test and story has exactly one owner, each module has at least one test and one
+      story, and a module's declared dependency list equals its real cross-module (cross-domain) imports.
+    detail: >-
+      An owner is a module manifest, the application, the kernel or a library; tests outside the source tree
+      belong to the tooling or infrastructure owner. In Go each package sits in one layer row and each shared
+      package has a named owner; every package with logic has at least one test.
+    level: program
+    why: >-
+      Ownership and a truthful manifest are what let a change find its readers and a reviewer find who rules
+      it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - web-app
+        - service
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. the structure check compares each manifest's dependency list with the imports
+          found, and fails a file with no owner or a module with no test or story. Plant: a manifest missing a
+          dependency its code imports fails. Control: a manifest equal to the real imports passes
+    open:
+      - >-
+        The Go half (a test for every package with logic) is recorded as a gap in the sources; no check is
+        chosen.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: arch.layers.13
+    slug: separable-part-has-a-subset-binary
+    since: 0.1.0
+    rule: >-
+      Where a design says a part must stay separable, a subset binary that registers only that part is built
+      in every gate run and fails when it links a forbidden package.
+    detail: >-
+      The design names the part and the packages it may not link. The gate builds a second binary that
+      registers only that part and compares its linked packages with the forbidden list (supply.intake.2 holds
+      the per-binary closure). The build runs in the local gate (make check and the pre-push hook), never only
+      in a hosted job. A part's own trusted binary (a guest) is the same case: its link list is
+      the proof of the trust line.
+    level: program
+    why: >-
+      A part declared separable stays separable only while something builds it alone; the first import across
+      the line otherwise goes unseen until somebody tries to split it.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+      - ref: operator-points
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          the gate builds each subset binary named in rule data and lists its linked packages (go list -deps),
+          failing on any package on that binary's forbidden list. Plant: a subset binary that imports a host
+          package fails the gate. Control: the subset binary linking only its allowed packages passes
+    relates:
+      - id: supply.intake.2
+        how: see
+  - id: arch.layers.14
+    slug: families-by-pattern
+    since: 0.1.0
+    rule: >-
+      The layer table names a family of packages by folder pattern, and a package that joins a family is no
+      new line in the table.
+    detail: >-
+      A pattern is a path with one trailing ellipsis (a folder and everything below it), not an expression
+      (gates.registry.8). It appears on the layer row that owns the family and in the lists of what may import
+      it, so a new adapter, context or tool under the family adds no line anywhere. A pattern is one reviewed
+      edge (arch.layers.8): the layer tests and the import linter hold every package under it to the row. The
+      table stays one file (arch.layers.9). A row that lists a package a pattern on the same row already
+      covers is refused, so the table cannot grow back a line per package.
+    level: program
+    why: >-
+      Own measure: in three days a layer table was edited in 42 commits, and the entry rows' import lists took
+      10 hunks because each new adapter added a name to them. With a pattern for the adapter family the same
+      lists take none.
+    kind: rule
+    strength: Hard
+    status: proposed
+    sources:
+      - ref: bazel-build-files
+        backs: rule
+      - ref: golangci-lint-config-file
+        says: >-
+          The linter reads one configuration file and has no include or extends, so the import rows it needs
+          are generated from the layer table rather than split by the tool.
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        fix: never
+        note: >-
+          the layer table's own test fails a row that lists a package a pattern on the same row covers, and a
+          package under a pattern with no row to hold it. Plant: a package listed by name beside the pattern
+          that covers it fails. Control: the package covered by the pattern alone passes
+    relates:
+      - id: arch.layers.8
+        how: see
+      - id: arch.layers.9
+        how: see
+      - id: gates.registry.8
+        how: see
+    open:
+      - >-
+        Proposed until the layer table accepts patterns on host, dev and core rows and in the entry rows'
+        lists. That is step 1 of gragas#477; the first pattern, for command packages, is in step 1 to 3 of
+        gragas#444. It has no tool key to bind to until then.

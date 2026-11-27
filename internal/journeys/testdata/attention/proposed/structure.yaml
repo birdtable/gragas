@@ -1,0 +1,11 @@
+format: 3
+layers:
+  - slug: language
+    name: Language
+    parts:
+      - slug: go
+        name: Go
+        concerns:
+          - slug: errors
+            name: Errors
+kinds: []

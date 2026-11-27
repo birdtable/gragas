@@ -1,0 +1,294 @@
+part: go
+concern: errors
+order: 2
+title: Errors, panics and exits
+summary: >-
+  Go returns errors as values, so the language needs its own rules: every error is handled or returned,
+  wrapped with %w and context, handled once, panics are for programmer errors, only main exits and endings are
+  mapped to exit codes in one place, and an error is typed again after it crosses a boundary.
+rules:
+  - id: go.errors.1
+    slug: no-swallowed-errors
+    since: 0.1.0
+    rule: Every error is handled or returned; nothing is swallowed.
+    detail: >-
+      The linter checks type assertions and blank assignments in non-test code; suppressions are counted by
+      the suppression ratchet of the gates part.
+    level: function
+    why: >-
+      Own bugs: 3 of 60 sampled bugs. The linter is on everywhere with 235 suppressions in one repo.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: harsanyi-100-go-mistakes
+        where: chapter 7, mistake 53 (not handling an error)
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: errcheck
+        tier: "1"
+        fix: never
+        note: >-
+          golangci-lint errcheck with check-type-assertions and check-blank on for non-test code. Plant:
+          os.Remove(path) with the result dropped fails, and an unchecked type assertion fails. Control: the
+          handled form passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: ineffassign
+        tier: "1"
+        fix: never
+        note: >-
+          Held by the golangci preset (default: standard turns it on): most of what it reports is an err
+          overwritten before it is read, which is an error swallowed
+    open:
+      - "The plant was never recorded in a repo: run it once per repo at adoption."
+  - id: go.errors.2
+    slug: wrap-with-w
+    since: 0.1.0
+    rule: >-
+      An error is wrapped with %w and context saying what was being done, and compared with errors.Is or
+      errors.As.
+    level: function
+    why: Practice; a wrapped error compared with == silently stops matching.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: errorlint
+        tier: "1"
+        fix: auto
+        note: >-
+          golangci-lint errorlint (errorf %w, comparison, type assertion on wrapped errors); wrapcheck stays
+          off because it contradicts do not annotate when it adds nothing. Plant: fmt.Errorf("read: %v", err)
+          fails, and err == io.EOF on a wrapped error fails. Control: %w and errors.Is pass
+    review_question: Does this wrapped error say what was being done, not only that it failed?
+    open:
+      - >-
+        Half: the %w and comparison half is the rule; the context half is review. The plant exists from an
+        earlier linter trial.
+  - id: go.errors.3
+    slug: panics-for-programmer-errors
+    since: 0.1.0
+    rule: >-
+      Panic is for programmer errors only and never crosses a package's API, and an unchecked type assertion
+      is banned.
+    detail: >-
+      A panic outside main and tests sits on a one-file-per-entry allow list that only shrinks. A type
+      assertion without the ok check is an unchecked error return. Whether a panic crosses a package API is
+      review.
+    level: function
+    why: "Own measure: panics outside main in our repos: 6 (20 in all), 8, 3, 2, 5 and 0."
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: forbidigo
+        tier: "1"
+        fix: never
+        note: >-
+          golangci-lint forbidigo with type analysis on the builtin panic outside main and tests with a
+          shrink-only allow list; errcheck check-type-assertions for the unchecked assertion (forcetypeassert
+          was skipped as a duplicate) forbidigo runs with analyze-types: true. Plant: panic("boom") fails, and
+          x := v.(string) fails. Control: a panic in a path excluded by the exclusion rules passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: errcheck
+        tier: "1"
+        fix: never
+        note: Held by the golangci preset, whose comment on errcheck names this rule.
+    review_question: Can this panic reach a caller of the package's API?
+    open:
+      - Run with golangci-lint 2.14.0. Whether a panic crosses a package API is review.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+  - id: go.errors.4
+    slug: only-main-exits
+    since: 0.1.0
+    rule: >-
+      Only main calls os.Exit or a fatal log; a command returns its ending as a value (an exit status, or a
+      typed result or error mapped to one in one place); and every refusal is testable in process.
+    detail: >-
+      An exit call or a fatal log call outside main is a finding; the linter's per-rule cap is off so repeats
+      are not hidden. Test files are excluded by path (a test main may call exit). A command function is func
+      Verb(...) int or returns a typed ending or error; either way exactly one function maps endings and
+      errors to the exit codes of cli.exit.1, by word or type, never by message. A test calls each command in
+      process and reads its ending.
+    level: function
+    why: >-
+      Own measure: 0 exits outside the main package everywhere today; a library that exits cannot be tested or
+      reused. The part that protects is the lint: no exit outside main, so every path is testable in process.
+      Both Go target programs return an ending because a refusal is a value they print on three surfaces, and
+      forcing an error type in between adds a layer with no reader.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It has no main package.
+    sources:
+      - ref: decision-65-go
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: revive
+        tier: "1"
+        fix: auto
+        note: >-
+          golangci-lint revive deep-exit plus forbidigo as a second net, with max-issues-per-linter and
+          max-same-issues set to zero so repeats are not hidden; an ast-grep count of functions that map to
+          exit codes, which must be one. Plant: os.Exit(3) and log.Fatalf in a non-main package each fail; a
+          second switch from error to exit code in a command package fails the count. Control: main calling
+          os.Exit with the code from the one mapping function passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: forbidigo
+        tier: "1"
+        fix: never
+        note: Held by the golangci preset, whose comment on forbidigo names this rule.
+    relates:
+      - id: cli.exit.1
+        how: see
+    open:
+      - Test main calling exit is legal in old Go, so test files are path-excluded.
+  - id: go.errors.5
+    slug: error-string-style
+    since: 0.1.0
+    rule: >-
+      Error strings follow one style (lowercase, no trailing punctuation), and any exception is written down
+      once.
+    level: word
+    why: >-
+      Practice. The ruling on style is open: the linter rule is disabled in three configs today, and a repo
+      that keeps sentence-style errors lists the exception once in rule data.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: staticcheck
+        tier: "1"
+        fix: auto
+        note: >-
+          golangci-lint staticcheck ST1005 enabled once the style is ruled, with a written exception list in
+          rule data. Plant: errors.New("Cannot open file.") fails. Control: errors.New("cannot open file")
+          passes
+    open:
+      - >-
+        Blocked on the style ruling (conflict C-15); the mechanism is ready once settled.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: go.errors.6
+    slug: nil-flows-checked
+    since: 0.1.0
+    rule: >-
+      Nil flows (a map lookup or a nil pointer followed by a field read) are checked, advisory, with a count
+      that only falls.
+    level: function
+    why: >-
+      Practice. Findings today: 206 in one repo and 106 in another; 75 tracker issues of the tool mention
+      false positives.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          nilaway with the module included, run at tier 3; findings ratcheted per package against a baseline
+          file that only falls; the tool pinned by pseudo-version in a tools module Invocation: nilaway
+          -include-pkgs=<module> ./... Plant: a map lookup then field read and a nil pointer then field read
+          give two findings. Control: the guarded forms give none
+    open:
+      - >-
+        Advisory plus a ratchet: the count cannot rise, nothing else fails. It fails the rule definition only
+        if the ratchet is skipped.
+      - The tool has no tagged release (pushed Oct 2026, source says).
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: go.errors.7
+    slug: handle-once
+    since: 0.1.0
+    rule: >-
+      Each error is handled once, logged or returned and not both; a new sentinel or typed error exists only
+      when a caller branches on it.
+    level: function
+    why: >-
+      Practice; no fault in our record. Run on two repos: 0 real hits, so adoption debt is zero where tried.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tier: R
+        note: >-
+          errlogreturn as a standalone analyzer or a plugin: reports a function where one error reaches a
+          logger and a return on the same path; conservative, so log and return on different branches pass.
+          Plant: slog.Error then return fmt.Errorf in one branch reports both lines. Control: a function that
+          only returns passes, and a boundary function that logs then returns an exit code passes
+    review_question: >-
+      Does a caller branch on this sentinel or typed error, and is the error both logged and returned here?
+    open:
+      - >-
+        Half: the log-and-return half is the rule; sentinel-only-when-branched is review.
+      - >-
+        The tool is days-old in practice (first release Oct 2026): pin the version and keep the plant as its
+        selftest. Four other repos not run.
+  - id: go.errors.8
+    slug: errors-typed-across-boundaries
+    since: 0.1.0
+    rule: >-
+      An error crossing a process or wire boundary travels as a word from a closed list plus detail and is
+      typed again on the other side, and callers compare with errors.Is or errors.As, never the message.
+    detail: >-
+      The wire form is a word and a detail field; the receiving side maps the word back to the sentinel or
+      typed error of the closed list, and an unknown word becomes one typed unknown error carrying it. A
+      comparison of err.Error() or a strings.Contains on an error message is a finding.
+    level: function
+    why: >-
+      Typing an error again after a flattening joint keeps callers off message strings that change; it is the
+      Go side of the one refusal value of cli.errors.2.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-go
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rules for err.Error() compared with == or passed to strings.Contains, HasPrefix or
+          EqualFold, plus a round-trip test per boundary encoding every word and decoding it back to errors.Is
+          equality. Plant: if err.Error() == "busy" fails; a word added to the list with no decode case fails
+          the round-trip test. Control: errors.Is(err, ErrBusy) after a wire round trip passes
+    relates:
+      - id: cli.errors.2
+        how: see

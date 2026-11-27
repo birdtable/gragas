@@ -1,0 +1,132 @@
+format: 3
+part: gates
+concern: hooks
+rules:
+  - id: gates.hooks.1
+    statement: "The pre-push hook is installed and runs the whole gate on the pushed tree within its measured time budget, and a range it cannot resolve fails closed."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The pre-push hook runs the one gate command (make check or its equivalent) on what is being pushed: every member, including the root-file structural check (the managed files equal their template), the tests uncached, the scans and the cross-OS builds. It is the gate, not a sample of it: no hosted job on push repeats or replaces it. Its wall time is measured against the budget of gates.hooks.4; a member too slow for that budget moves to the release workflow, never out of every gate. When the pushed range cannot be resolved the hook fails; it never falls back to \"nothing to check\". The hook runner reads one committed file for both pre-commit and pre-push."
+      pros:
+        - "With no push CI a push that skips the gate moves the failure straight to main. A hook that runs a subset leaves the rest of the gate with no tier at all."
+    relations:
+      relates:
+        - gates.hooks.4
+    sources:
+      - ref: decision-4
+        backs: rule
+      - ref: decision-65-gates
+        backs: rule
+      - ref: operator-points
+        backs: rule
+  - id: gates.hooks.2
+    statement: "The hooks are installed, executable and arm themselves at the first gate run; a repo cannot be left unarmed without a check noticing."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The check (`make armed`, a make target that exists in five repos, run inside `check` and on the pre-push path; the land job runs `check-install` and the setup step `prepare` installs the hooks; the shared standing check is called `check-armed`) reads the hooks path setting, the executable bit in the index, and that the hook text names the gate. Hook installation fails closed outside a git repo or when a hooks path override is set, and hooks arm at the first gate run because package install scripts are off. The setup step (`prepare`) installs them and the land job runs the same install check (`check-install`). A hooks-path override is refused."
+      pros:
+        - Five Go repos have the hook and five different versions of it (V-66). An unarmed repo looks the same as an armed one until a bad push goes through.
+    sources:
+      - ref: decision-4
+        backs: rule
+  - id: gates.hooks.3
+    statement: "The pre-commit hook is check-only and cheap: it runs the supply-chain config check, in parallel, and never rewrites files."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The commit-time hook runs only quick config checks and the staged-file lint. It writes nothing; fixing is done on write, not at commit. The setup step installs the hook, and the land job runs the install check."
+      pros:
+        - A commit hook that formats or runs a long list slows every commit and gets bypassed.
+  - id: gates.hooks.4
+    statement: "The pre-push hook runs the whole gate, its wall time is measured and reported against a budget, and a check too slow for it moves to the release workflow, never to a push or pull-request workflow or a hosted land job."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The budget is a number in the repo's gate config with its reason (the targets run their whole gate in about a minute). The pre-push wrapper measures the hook's wall time on every run and reports it with the budget, and the gate fails when the measured time stays over the budget for the recorded number of runs. The fix for an over-budget hook is to make a member faster or to move that member to the release workflow on the tag (the crash-injection run and the dry build are the usual cases), where it still blocks the release; fuzz and the heavy race run are on demand and block nothing (tests.generated.6, tests.runners.6). A member never moves to a workflow triggered by push or pull request, or to a hosted land job, and never out of every gate. The pre-commit hook stays check-only and cheap (gates.hooks.3)."
+      pros:
+        - "Heavy hooks invited `--no-verify` at a reference team, so the time is measured, not guessed. With no push CI the only place a slow check can go and still bind is the release."
+    relations:
+      relates:
+        - gates.hooks.3
+    sources:
+      - ref: decision-39
+        backs: rule
+      - ref: decision-65-gates
+        backs: rule
+      - ref: operator-points
+        backs: rule
+  - id: gates.hooks.5
+    statement: "The bypass flags are refused: no `--no-verify`, no `LEFTHOOK=0` or equivalent, and no skipped hook."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Committed agent settings deny `git commit` and `git push` with `--no-verify` or `-n` and a hook-disable environment variable (done for one repo); the land step recomputes the verdict so a push that skipped the hook still fails at land. A count of bypass attempts from the session and run log is a report. A skipped test is counted by the suppression ratchet (gates.exemptions.5)."
+      pros:
+        - "Heavy hooks invited the bypass at a reference team; a bypass that nobody can see makes the hook a suggestion."
+    relations:
+      relates:
+        - gates.exemptions.5
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+  - id: gates.hooks.6
+    statement: "A repo's hook file extends the shared hook template; its job list includes the shared jobs."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The repo's hook file may add jobs but must contain the shared ones. The check reads the hook file by meaning, not by bytes."
+      pros:
+        - A repo that edits the hook file removes a job and nobody sees it.
+  - id: gates.hooks.7
+    statement: Secrets are scanned at commit by a shared standing gate.
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "One of the three standing gates shared across repos (the others are the armed hook and the pipefail check): a secret scanner runs at commit time over the staged changes."
+      pros:
+        - A secret reaching history cannot be removed by a later commit.
+    replaced_by: supply.secrets.1
+  - id: gates.hooks.8
+    statement: "A builder's pre-push hook may run the commit tier plus build, vet, lint and the selected tests, with the whole push tier run on another machine when the push lands and on the train candidate."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The whole tier still runs on every pushed head and on the candidate before main moves, so nothing reaches the default branch unseen; a branch on the remote may be red for a few minutes. A pull request with a red whole run is sent back. The whole-tier proof at landing is run by the landing step itself, never read from another machine's report, as nothing at landing reads a stamp. Adopting this rule replaces the wording of gates.hooks.1 and gates.hooks.4 (\"runs the whole gate\"), which are retired or reworded in the same change."
+      pros:
+        - "After the concurrency and parallelism rules a push is about 50 seconds and the hook is no longer the bottleneck of the day; a lighter hook would cut the builder's wait to about 15 seconds at the price of a red branch for a few minutes."
+    relations:
+      relates:
+        - gates.hooks.1
+        - gates.hooks.4
+        - tests.selection.16
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+  - id: gates.hooks.9
+    statement: "The pre-push hook runs the push tier and does nothing else, the logic lives in the runner, a push from a hosted workflow never runs the local hook, and a known hole in the bypass deny is a finding."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "gates.hooks.1 and .4 hold that the hook runs the whole gate within its budget, and gates.hooks.5 that the bypass flags are refused. This rule holds the shape of the hook: one line that calls the runner with the tier's name. A loop, a substitution or a check written in the hook itself is logic the runner should hold, and it is not measured, not stamped and not shared. A tag push made by a hosted workflow does not run the local hook again, because the tag's tree is the tree the release tier proves. Where a project has no paid hosted check, the hook is the only check, and a hole in the deny (a spelling of the bypass the deny does not match) is a finding to close, not a note. The hook body is a single exec of the runner (`exec task pre-push`), so it has no shell of its own to differ by system."
+      pros:
+        - "One hook with a quadratic shell substitution cost 374 seconds of a 391 second push and 210 seconds of every commit; four publishes ran the gates twice, 403 seconds, because the tag push re-fired the hook; and a deny written after a bypass came 9 hours 15 minutes later with a hole in it."
+    relations:
+      relates:
+        - gates.hooks.1
+        - gates.hooks.4
+        - gates.hooks.5
+        - agents.guards.2
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule

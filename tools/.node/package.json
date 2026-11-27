@@ -1,0 +1,14 @@
+{
+  "name": "gragas-tools-node",
+  "private": true,
+  "description": "The node tools of tools.yaml, each at one exact version. task tools installs them from pnpm-lock.yaml alone, and tools.yaml pins the digest of the installed folder.",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": "24.22.1"
+  },
+  "devDependencies": {
+    "eslint": "10.13.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3"
+  }
+}

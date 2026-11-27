@@ -1,0 +1,53 @@
+[
+  {
+    "format": 3,
+    "name": "house",
+    "version": "1.0.0",
+    "kind": "base",
+    "licences": {"rules": "CC-BY-4.0", "checker_code": "Apache-2.0", "presets": "MIT"},
+    "language": "en",
+    "docs_url": "https://example.com/house/",
+    "explorer_url": "https://example.com/house/explorer/",
+    "extends": {"rulebook": "parent", "version": "2.1.0", "source": "https://example.com/parent.git", "content_hash": "sha256:ab78351089603a19341bd2b875a5f7348d516b1d60335727c5e54c1e62131640"},
+    "imports": [{"rulebook": "other", "version": "0.4.2", "source": "https://example.org/other.git", "parts": ["go", "tests"], "content_hash": "sha256:b77b6a5859c584ff1f1acf5fc4f59e3d19d9a213e8bcf5a944a130fb0b3fa6c2"}],
+    "owners": ["alex"],
+    "governance": {
+      "contribution": "open",
+      "checker_publishers": ["alex"],
+      "checker_second_reviewer": true,
+      "checker_proof": "isolated",
+      "decision_required": true,
+      "trial_releases": 2,
+      "review_days": 180
+    },
+    "tested": {
+      "tools": [{"name": "golangci-lint", "version": "2.15.0"}],
+      "plugins": [{"name": "gragas-plugin", "version": "1.2.0"}],
+      "kits": [{"name": "gragas-kit", "version": "0.9.0"}],
+      "adapters": [{"name": "golangci-lint", "version": "3"}],
+      "min_engine": "1.0.0"
+    },
+    "budgets": {"statement_words": 30, "reasoning_words": 200},
+    "hand_written_presets": ["lint-a", "lint-b"]
+  },
+  {
+    "format": 3, "name": "house-overlay", "version": "0.1.0", "kind": "overlay",
+    "licences": {"rules": "MIT"}, "language": "en", "owners": ["alex"],
+    "governance": {"contribution": "proposals", "checker_proof": "sandboxed", "decision_required": false, "trial_releases": 1, "review_days": 90}
+  },
+  {
+    "format": 3, "name": "house-companion", "version": "0.1.0", "kind": "companion",
+    "licences": {"rules": "MIT"}, "language": "de", "owners": ["alex"],
+    "governance": {"contribution": "closed", "decision_required": false, "trial_releases": 1, "review_days": 90}
+  },
+  {
+    "format": 3, "name": "house-fork", "version": "3.0.0", "kind": "fork",
+    "licences": {"rules": "MIT"}, "language": "en-GB", "owners": ["alex"],
+    "governance": {"contribution": "open", "decision_required": false, "trial_releases": 1, "review_days": 90}
+  },
+  {
+    "format": 3, "name": "house-old", "version": "9.9.9", "kind": "archived",
+    "licences": {"rules": "MIT"}, "language": "en", "owners": ["alex"],
+    "governance": {"contribution": "closed", "decision_required": false, "trial_releases": 1, "review_days": 90}
+  }
+]

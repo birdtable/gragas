@@ -1,0 +1,321 @@
+format: 3
+part: service
+concern: contract
+rules:
+  - id: service.contract.1
+    statement: "The API contract is regenerated from code and diffed in the gate against the committed copy and against the contract at the merge base with the main branch, so editing or deleting the committed file does not pass a break."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The contract document is never hand-edited: the gate regenerates it from the route schemas and fails on any difference from the committed file; the file is written with LF line ends and compared byte for byte, so a checkout that changes line ends is a difference too. The same gate regenerates the contract at the merge base and applies the compatibility check of service.contract.2 between the two, so a change that edits the code and the committed file together is still compared with what main had. A missing committed file fails. In Go, the command tree and public surface are generated to a file and compared the same way."
+      pros:
+        - "A contract written by hand drifts from the code it describes, and a generated client built from it then lies. A gate that the same change can edit is not a gate; the merge base is the copy the change cannot touch."
+    relations:
+      relates:
+        - service.contract.2
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.contract.2
+    statement: "A program declares whether its readers are owned or independent, and its contract changes by that mode. With owned readers a break is allowed only when it raises the one contract number in the same change and every known reader changes with it, nothing is kept for an old reader, and a missing field is an error, never defaulted. With independent readers no change breaks the last released contract, a removal or change of meaning is deprecated for one minor release before removal, and below 1.0 such a change is at least a minor release with an entry that says what to rename."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+        - cli
+    reasoning:
+      definition: "The mode is one declared value per program, with no default: a program with no declaration fails the gate. Owned readers are readers the same owner deploys in step (its own CLI, page or sibling program); independent readers are any the owner cannot change (a published library, a public API). With owned readers the contract carries one integer raised in the change that removes a path or field, retypes a field or changes a permission; an addition does not raise it; the gate fails when the shape loses or changes anything and the number did not move. There is no deprecation window, no field marked going and no old-and-new fallback. With independent readers the gate compares the contract with the last release and fails on a change that breaks a caller (a removed field, a new required parameter, a changed type) unless the item was marked deprecated in a release at least one minor earlier. In Go, a removed flag or field or a changed exit code fails and an undeclared API break refuses the release."
+      pros:
+        - "A silent break reaches callers that were never told. Owners of every reader found that a compatibility layer is where their bugs lived; a publisher to readers it will never see must give them notice. One rule with a declared mode stays true for both and keeps the check mechanical."
+    relations:
+      relates:
+        - cli.output.4
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.contract.3
+    statement: "The contract is linted for path casing, operation identifiers, security on every operation, declared error responses and paging."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The shared lint ruleset also holds two house rules: each operation identifier is camelCase so generated client names stay stable, and every 4xx and 5xx response declares a body schema. Operation names in the contract follow one table. The ruleset applies to a daemon that publishes an HTTP description; a command-line program contract is its command tree."
+      pros:
+        - Names and error shapes that vary across operations make generated clients unstable and error handling per call.
+    sources:
+      - ref: p-03-data
+        where: section 16
+        backs: rule
+  - id: service.contract.4
+    statement: "The contract lint set extends the recommended rules, every recommended rule that defaults below error is promoted to error, and a test regenerates that list so a tool upgrade that adds a warning turns the suite red."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - "A rule left at warn is read by nobody; a new warning arriving with an upgrade must not slip in unseen."
+  - id: service.contract.5
+    statement: "A request is validated once at the boundary against the route contract, and the handler receives only typed, validated input."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "One validator checks every request, and the response, against the route contract. In Go, input is parsed once at the edge, unknown keys are refused, outside paths are confined and exit codes are tested; daemon JSON output is held by a golden and a schema test."
+      pros:
+        - Validation repeated or skipped inside handlers leaves paths that accept what the contract says they must not.
+  - id: service.contract.6
+    statement: No operation returns a status code its contract does not declare.
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - A caller written from the contract cannot handle an outcome it was never told about.
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+  - id: service.contract.7
+    statement: Every mutating request carries a version precondition (the revision it was based on) and an idempotency key.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "A write based on stale state is refused as a conflict. The key lets a retry be told from a new request. In Go, a write command is safe to run twice, but there is no stale-write precondition on shared state yet."
+      pros:
+        - "Without a precondition a late retry overwrites newer state; without a key a retry doubles the effect."
+  - id: service.contract.8
+    statement: "A repeated idempotency key replays the stored outcome; the same key with a different request conflicts (409). One shared helper proves it by calling every writing operation and every event consumer twice."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The helper walks the operationId of every operation with a write method, taking the route list from the contract and the consumer list from the subscription definitions, never from the author. It runs each operation and consumer twice against the real store with the same input and asserts the state equals one run, counting calls to test doubles at unmanaged edges (mail, a marketplace, a publish). The same key with a changed body must return the conflict. The cost decides the tier: tier 2 if the container fixture is fast enough, otherwise tier 4; it has not been timed."
+      pros:
+        - "The middleware that implements idempotency can be satisfied by a package nobody applied. In the reference estate both toolkits had the middleware and one service did not use it. Exactly-once delivery does not exist, only at-least-once with idempotent handling."
+    sources:
+      - ref: p-03-data
+        where: section 20
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 7
+        backs: rule
+  - id: service.contract.9
+    statement: No GET request changes state.
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The shared twice-helper also calls every GET and checks the state is unchanged; a GET handler that appends a log line, writes a row or sends a call fails."
+      pros:
+        - "Caches, prefetchers and retries call GET freely; a GET with effects turns each of them into a write."
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+  - id: service.contract.10
+    statement: "A program declares one casing for its JSON fields, query parameters and machine values, with no implied default, and a lint on the generated contract holds every name to it; parameters are typed and defaulted in the contract, GET carries no body, an absent field is omitted, times are RFC 3339 and durations are the strings a person types."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+        - cli
+    reasoning:
+      definition: "The casing is one declared value per program (for example lowerCamelCase or lower_snake_case), read by the lint; a program with no declaration fails, and the rulebook names no default. Machine values are enum members, error codes (service.errors.2), status values (store.schemas.3), event fields (service.events.4) and permission parts (service.authz.1). A field the platform has no such thing as is omitted; null is used only for a value that could not be read, with its reason. A casing added later is one more value the lint accepts; the rule does not change."
+      pros:
+        - "What a reader needs is consistency within one program's contract; an estate-wide casing would break working contracts for no reader's benefit, and an implied default lets a program skip the decision."
+    relations:
+      relates:
+        - service.errors.2
+        - store.schemas.3
+        - service.events.4
+        - service.authz.1
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.contract.11
+    statement: "There is one contract document per exposure tier, each with its own access mode."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The internal document sets one internal access mode on every operation and the public document sets none, so a route cannot sit in the wrong tier by accident. In Go there is one command tree file per program and each daemon reach is stated."
+      pros:
+        - One document for both tiers makes the access mode a per-route guess.
+  - id: service.contract.12
+    statement: Every operation has a one-sentence summary.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - "The summary is what generated documentation and client method comments show; none means the operation is described by its path alone."
+  - id: service.contract.13
+    statement: "Public names (routes, operation identifiers, property keys) avoid the words the product has retired."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The check reads the retired-word list and runs over the contract paths, operation identifiers and property keys. In Go, flag, command and JSON field names are held to the same list."
+      pros:
+        - "A retired word in a public name outlives every rename in docs and code, because callers cannot change it."
+  - id: service.contract.14
+    statement: "A consumer imports the producer type of an API or event, or translates it at its own edge; it never copies another service names or enums."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "A copied enum drifts silently when the producer adds a value. In Go, one domain reaches another only through an interface the caller declares, so names are translated at that edge."
+      pros:
+        - A copy of another service names looks like a type but is a second source of truth.
+  - id: service.contract.15
+    statement: "A consumer of another of your programs pins the provider's published examples at a named commit, runs its real parsers over every one, checks its pin against the provider's main branch before a release, and an empty example set on a live consumer fails."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+        - cli
+        - web-app
+    reasoning:
+      definition: "The provider publishes one example answer per path or event, generated from its own tests. The consumer copies them at a commit it names, and its tests run the same parser the program runs on each example, so a field the consumer reads that is renamed, removed or retyped fails in the consumer's own build. Before a release the consumer compares its pin with the provider's main and fails when they differ without a new pin. The provider can then retire what no one reads, and a change in what someone does read, which a plain diff reports as harmless, is caught. A field list alone is weaker than parsing the examples and does not satisfy the rule."
+      pros:
+        - "A generated client depends on the whole response schema, so the provider cannot tell which fields anyone reads and with no window before cutover can retire nothing. Consumer-driven contracts let the provider learn what its consumers use; the article limits the idea to one enterprise or a closed community, which is the case here. Such a test runs on the other party rhythm of change and should raise a task more often than it breaks a build."
+    sources:
+      - ref: robinson-consumer-driven-contracts
+        backs: rule
+      - ref: bellemare-bedm
+        where: ch. 3 (explicit schemas and compatibility types)
+        backs: rule
+      - ref: p-07-testing
+        where: section 4.11
+        backs: rule
+      - ref: decision-65-service
+        backs: rule
+  - id: service.contract.16
+    statement: "Delete, cancel, close, release and ensure-style commands return success when the goal state already holds, and the operation description says so; a stale revision stays a conflict and a thing that never existed stays not found."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The line drawn: define away operation semantics, never input errors. The form is callee-only, stated on the operation and not decided at the caller, so it cannot become a swallow in the caller. A measure goes beside it: a count of handlers that catch a duplicate or a not-found and continue; that count signals swallowing dressed as ensure."
+      pros:
+        - "Without the rule each handler decides whether already-done is an error, and agents decide differently. Argued from the technique of defining errors out of existence, which works where no caller needs the information and fails on untrusted input; no case from the reference estate."
+    sources:
+      - ref: ousterhout-aposd
+        where: defining errors out of existence
+        backs: rule
+  - id: service.contract.17
+    statement: "Where a command effects in another service complete after the response, the operation description says so and says how a caller learns it is done: an event, a status resource, or never needed."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - "A caller reads a 200 as done; a command that writes the database first and the event second is read-after-write for its own service only, so another service may still act on stale state. Argued from the treatment of requests within an event-driven flow."
+    sources:
+      - ref: bellemare-bedm
+        where: ch. 13 (handling requests within an event-driven workflow)
+        backs: rule
+  - id: service.contract.18
+    statement: "A provider names no consumer in its shipped code, examples or config and never reads a consumer's code or tests, and a repository test holds the list of reader names out."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+        - cli
+    reasoning:
+      definition: "A consumer is named only as a reader in the provider's docs. The provider keeps a list of the names of its known readers (programs, pages, tools) in its test data, and a whole-word test over shipped code, examples and config refuses any of them. A reader added later is one more name in the list."
+      pros:
+        - "A provider that names its consumer has made the consumer part of its contract, and every reader after the first inherits a shape made for someone else. Rules already stop a consumer naming its provider loosely; nothing stopped the reverse."
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.contract.19
+    statement: "An answer and a config carry meaning only (a name, number, sentence, state or permission), never layout or styling, no field is named for where a reader draws it, and a whole-word test over every field name refuses place words."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+        - cli
+    reasoning:
+      definition: "Presentation is an icon, a colour, a tile, a card order or a heading. The place-word list starts with short, tile, card, heading, tab and bar, and it also refuses the word kinds that name drawn text by suffix (figure_text, phrase, text) in the program's declared casing. The list lives in one file and grows by entry; a field named after a place on a page is renamed before merge."
+      pros:
+        - "A field named tile is a contract with one page's layout, and the page will change; meaning-only answers are what let a second reader (a CLI, an agent) use the same answer."
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.contract.20
+    statement: "A numeric field names its unit in its key; where a reader would format it the answer also carries the formatted text from the one formatter; and a sentence in an answer travels with the numbers it was built from, with a test that fails when the two disagree."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+    reasoning:
+      definition: "The unit is a suffix in the program's declared casing (for example memory_mb, cpu_pct, uptime_s, power_watts), and a bare numeric key with no unit fails unless it is a count or an id. The formatted text sits beside the raw number (memory_mb and memory). The server computes order, totals, peaks and their times, sentences and downsampling; a number a reader still has to work out is a defect in the answer (web.structure.4 holds the page side)."
+      pros:
+        - "A unit in the field name is the cheapest way never to ship a number in the wrong unit, and a sentence tested against its inputs stays honest after a formula changes."
+    relations:
+      relates:
+        - web.structure.4
+    sources:
+      - ref: decision-65-service
+        backs: rule

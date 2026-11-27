@@ -1,0 +1,509 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contract/plugin/v1/manifest.schema.json",
+  "title": "plugin.yaml, the manifest of a plugin bundle: read before any code loads, shown at approval, strict",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "needs",
+    "name",
+    "version",
+    "tool",
+    "tool_versions",
+    "targets",
+    "provides",
+    "extends",
+    "warning",
+    "programs",
+    "wasm"
+  ],
+  "properties": {
+    "contract": {
+      "const": 1,
+      "description": "the plugin contract; the engine speaks exactly one"
+    },
+    "needs": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 64,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+        "maxLength": 64
+      },
+      "description": "features beyond the base; contract 1 starts with none. An engine without one refuses the plugin at open (ErrFeature). The features: cache-vars, a grant's cache_vars; a manifest that holds cache_vars needs it, and one that needs it holds cache_vars in a grant, or the opener refuses it"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 64,
+      "description": "the bundle's folder"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "description": "the plugin's own version, its folder below the name: three whole numbers with no leading zero, so semver orders it",
+      "maxLength": 256
+    },
+    "tool": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 64,
+      "description": "the name a binding uses"
+    },
+    "tool_versions": {
+      "type": "string",
+      "pattern": "^(>=|>|<=|<|=)(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)( (>=|>|<=|<|=)(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*))?$",
+      "description": "the tool versions served: one comparator, or a lower and an upper bound. It judges the grant whose id is tool, and no other; the opener refuses a manifest with no such grant",
+      "maxLength": 256
+    },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "source",
+          "config",
+          "migration",
+          "container",
+          "workflow",
+          "iac",
+          "api-spec",
+          "prose",
+          "commit",
+          "telemetry-registry",
+          "dependency",
+          "package"
+        ]
+      }
+    },
+    "provides": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "plan",
+          "entries",
+          "findings",
+          "rank",
+          "preset"
+        ]
+      },
+      "description": "at least one; an op outside it is answered unsupported (C15)"
+    },
+    "extends": {
+      "type": "boolean",
+      "description": "false: the preset is copied once"
+    },
+    "warning": {
+      "type": "boolean",
+      "description": "false: the tool has no warning level"
+    },
+    "config_loads_code": {
+      "type": "boolean",
+      "description": "true: the tool's config can load code, a plugins key of a data config among them, so the engine reads every config of the tool at the sandboxed level, whatever its extension. It only tightens. Absent is false: a .json, .yml or .yaml config is read isolated, any other sandboxed"
+    },
+    "preset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "inputs",
+        "mark"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "maxLength": 4096,
+          "pattern": "^\\.{0,2}[A-Za-z0-9_-][A-Za-z0-9._-]*(/\\.{0,2}[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
+          "description": "the preset file, where the engine writes what preset returns. Held to the adapter format's relative: slash-separated, no leading slash, no drive, no backslash, no step that is . or .., and only letters, digits, ., _, - and /.",
+          "$ref": "#/$defs/shown"
+        },
+        "inputs": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 4096,
+            "pattern": "^\\.{0,2}[A-Za-z0-9_-][A-Za-z0-9._-]*(/\\.{0,2}[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
+            "$ref": "#/$defs/shown"
+          },
+          "description": "the files handed to preset as inputs, each held to the adapter format's relative"
+        },
+        "mark": {
+          "type": "boolean",
+          "description": "true: the mark stands in the first line of every preset file"
+        },
+        "readback": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "description": "what the tool's config cannot say of a preset entry, so the read-back of plugin test's C23 compares only what a preset can say. It only narrows the read-back side: a preset entry that is dropped or changed on read-back is red whatever this holds, and a key read back that is neither in the preset nor in defaults is red. Absent where the config holds all of an entry (C23 compares value, options and severity of each)",
+          "properties": {
+            "severity": {
+              "type": "boolean",
+              "description": "false: the tool's config holds no severity, so C23 compares none, and a plugin that declares it and reads a severity back from its own preset fails C23. true is what an absent member means, and is the same as leaving it out"
+            },
+            "defaults": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "uniqueItems": true,
+              "description": "the keys the tool turns on by itself, which C23 leaves out of the entries it reads back and the preset does not hold, and only those. In byte order, each once; an empty list is refused, leave the key out",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "$ref": "#/$defs/shown"
+              }
+            }
+          }
+        }
+      }
+    },
+    "wiring": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "import": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "at",
+            "form"
+          ],
+          "properties": {
+            "at": {
+              "type": "string",
+              "maxLength": 1024,
+              "pattern": "^(/([^~/{}$`\\\\]|~[01])*)*$",
+              "description": "where the project's config names the config it extends: a JSON pointer, a plain lookup with no expression's character and no control character",
+              "$ref": "#/$defs/ascii"
+            },
+            "form": {
+              "enum": [
+                "string",
+                "list"
+              ]
+            }
+          }
+        },
+        "install": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9@._/:,=+-]+$"
+          },
+          "description": "the tool's own documented install, literal words; the engine prints it and never runs it"
+        }
+      },
+      "description": "how a project wires a preset in; absent where the tool needs neither an import nor an install"
+    },
+    "resolve_from": {
+      "type": "string",
+      "maxLength": 4096,
+      "pattern": "^\\.{0,2}[A-Za-z0-9_-][A-Za-z0-9._-]*(/\\.{0,2}[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
+      "description": "the folder, relative to the config set, that a run links into the scratch folder so the tool resolves what the config imports. A folder of the project the tool then loads code from: a trust input of its own, shown at approval Held to the adapter format's relative: slash-separated, no leading slash, no drive, no backslash, no step that is . or .., and only letters, digits, ., _, - and /.",
+      "$ref": "#/$defs/shown"
+    },
+    "counted": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "what the engine's repository count reads of the tool: the lists of its config whose items exclude code from it, the values that loosen it past its default (by their texts, or unless the default), the word of a Go comment that silences it at its line, and whether its reader takes keys without their case. Absent where the tool has none of them. The engine counts the items at each path in each of the tool's config files, and in Go files each comment that is // and the word; the // and the Go file are the engine's",
+      "properties": {
+        "exclusions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "description": "key paths, from the config's root, to the lists whose every item excludes code from the tool, each path once",
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 16,
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "pattern": "^[a-z0-9][a-z0-9_-]*$"
+            }
+          }
+        },
+        "loosening": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "description": "values of the config that exclude more than the tool's default: each at a key path, from the config's root, each path once. With unless, a value loosens when it is there, not null, and anything but unless, a value with no text (a mapping, a float) too; with values, when its text is one of them, which is right only for a tool that reads a value as its exact text. A value's text is a string as it is, true or false, an integer in decimal, or a list as its items' texts in [ ] joined by \", \". A null or an absent key counts nothing and is no error",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "at",
+                  "values"
+                ],
+                "properties": {
+                  "at": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 16,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 128,
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "values": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 16,
+                    "uniqueItems": true,
+                    "description": "the texts of the values at the key that loosen the tool past its default: a string as it is, true or false, an integer in decimal",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 32,
+                      "pattern": "^[a-z0-9][a-z0-9-]*$"
+                    }
+                  }
+                },
+                "description": "a value that loosens when its text is one of values: for a tool that reads a value as its exact text"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "at",
+                  "unless"
+                ],
+                "properties": {
+                  "at": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 16,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 128,
+                      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                    }
+                  },
+                  "unless": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "pattern": "^(|\\[\\]|[a-z0-9][a-z0-9-]*)$",
+                    "description": "the tool's default, as a value's text: any value there that is not null and either has no text (a mapping, a float) or whose text is anything else loosens the tool"
+                  }
+                },
+                "description": "a value that loosens whenever it is anything but the default, a value with no text too: for a tool whose reader casts a value's spelling"
+              }
+            ]
+          }
+        },
+        "directive": {
+          "type": "string",
+          "maxLength": 32,
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "the word that, after // at the start of a Go comment, silences the tool at its line"
+        },
+        "fold_keys": {
+          "type": "boolean",
+          "description": "whether the tool reads a config's keys without their case: each step of a path then matches a key in any case, and two keys of one mapping that differ only in case are a loosening row. Absent is false"
+        }
+      }
+    },
+    "programs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "description": "the grants: every program the plugin may ever ask the engine to run. No two alike; an id given twice is the opener's to refuse, since a screen that shows the first and a run that takes the last is the hole",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "versions",
+              "version_argv"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/grantId"
+              },
+              "versions": {
+                "$ref": "#/$defs/versions"
+              },
+              "version_argv": {
+                "$ref": "#/$defs/versionArgv"
+              },
+              "version_pattern": {
+                "$ref": "#/$defs/versionPattern"
+              },
+              "cache_vars": {
+                "$ref": "#/$defs/cacheVars"
+              }
+            },
+            "description": "a program found in the settings and the machine tools file alone: the pinned places, the safest form"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "versions",
+              "version_argv",
+              "path"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/grantId"
+              },
+              "versions": {
+                "$ref": "#/$defs/versions"
+              },
+              "version_argv": {
+                "$ref": "#/$defs/versionArgv"
+              },
+              "version_pattern": {
+                "$ref": "#/$defs/versionPattern"
+              },
+              "cache_vars": {
+                "$ref": "#/$defs/cacheVars"
+              },
+              "path": {
+                "type": "string",
+                "maxLength": 4096,
+                "pattern": "^\\.{0,2}[A-Za-z0-9_-][A-Za-z0-9._-]*(/\\.{0,2}[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
+                "description": "one place the program is looked for, below the project, with no system's suffix (host adds it); a pinned find never takes it. Held to the adapter format's relative: slash-separated, no leading slash, no drive, no backslash, no step that is . or .., and only letters, digits, ., _, - and /.",
+                "$ref": "#/$defs/shown"
+              }
+            },
+            "description": "a program also looked for at one place below the project"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "versions",
+              "version_argv",
+              "manifest",
+              "script_at",
+              "interpreter"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/grantId"
+              },
+              "versions": {
+                "$ref": "#/$defs/versions"
+              },
+              "version_argv": {
+                "$ref": "#/$defs/versionArgv"
+              },
+              "version_pattern": {
+                "$ref": "#/$defs/versionPattern"
+              },
+              "cache_vars": {
+                "$ref": "#/$defs/cacheVars"
+              },
+              "manifest": {
+                "type": "string",
+                "maxLength": 4096,
+                "pattern": "^\\.{0,2}[A-Za-z0-9_-][A-Za-z0-9._-]*(/\\.{0,2}[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
+                "description": "an interpreted script: the package manifest that names it, relative to the project and never under a .bin folder (the opener holds the folder). Held to the adapter format's relative: slash-separated, no leading slash, no drive, no backslash, no step that is . or .., and only letters, digits, ., _, - and /.",
+                "$ref": "#/$defs/shown"
+              },
+              "script_at": {
+                "type": "string",
+                "maxLength": 1024,
+                "pattern": "^(/([^~/{}$`\\\\]|~[01])*)+$",
+                "description": "an interpreted script: the JSON pointer of its path in that manifest. The value there is a string, relative to the manifest's folder, and stays inside it by its spelling and through links; the schema cannot see that value, so the opener holds it. A JSON pointer, a plain lookup with no expression's character and no control character.",
+                "$ref": "#/$defs/ascii"
+              },
+              "interpreter": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                "maxLength": 64,
+                "description": "an interpreted script: the program that runs it; the engine puts the script first"
+              }
+            },
+            "description": "an interpreted script a package manifest names, run by its interpreter with the script first; all three fields together"
+          }
+        ],
+        "description": "one grant: one of three forms, a variant; at most one of path and the script fields, and the script fields all three or none"
+      },
+      "uniqueItems": true
+    },
+    "wasm": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "the digest of plugin.wasm",
+      "maxLength": 71
+    }
+  },
+  "$defs": {
+    "shown": {
+      "type": "string",
+      "pattern": "^[^\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}]*$",
+      "description": "text a person reads or a path names: no control (Cc: C0 and C1, U+009B, the one-character CSI, among them), no format character (Cf: the bidirectional overrides and isolates, U+200B, U+FEFF and the rest), and no line or paragraph separator (Zl, Zp), so what a screen prints is what the field holds. The class is defined by the Unicode categories, not a list of ranges, so a format character a list misses is refused too"
+    },
+    "grantId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 64,
+      "description": "the grant's id, which a run step names as its program"
+    },
+    "versions": {
+      "type": "string",
+      "pattern": "^(>=|>|<=|<|=)(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)( (>=|>|<=|<|=)(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*))?$",
+      "description": "the versions of this program the plugin serves, as name@version is looked up in the settings and the tools file; for the grant whose id is tool, the manifest's tool_versions judges it",
+      "maxLength": 256
+    },
+    "versionArgv": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "pattern": "^[A-Za-z0-9@._/:,=+-]+$"
+      },
+      "description": "the argv after which the program prints its version"
+    },
+    "versionPattern": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "where the version stands in what it prints, as a pattern with one group in RE2, Go's regexp dialect, so it is linear in the capped output and a look-ahead is refused at open; absent, the first major.minor.patch No control character; whether it compiles and has one group is the opener's.",
+      "$ref": "#/$defs/ascii"
+    },
+    "cacheVars": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 5,
+        "maxLength": 64,
+        "pattern": "^([A-Z][A-Z0-9_]*)?CACHE[A-Z0-9_]*$"
+      },
+      "description": "the environment variables through which the program reads where to keep its cache, by name alone (the feature cache-vars). The engine points each name at a folder of its own choosing; a plugin cannot rely on that folder being shared between steps, kept between runs, or empty. Nor can it trust what the folder holds: a step of the same grant over the same project, run over another branch or tree, may have written it, as with any shared build cache, so a program keeps nothing there that a later run takes on trust. A name is capitals, digits and _, starts with a capital and holds CACHE; a name the engine sets itself is the opener's to refuse. Shown at approval, and part of what an approval is a yes to; an empty list is refused, leave the key out. Since 1.0, contract 1 with the feature cache-vars"
+    },
+    "ascii": {
+      "type": "string",
+      "pattern": "^[\\x20-\\x7e]*$",
+      "description": "printable ASCII alone (U+0020 to U+007E), for a field that is neither a path nor text a person reads: a pointer into a package manifest or a config, and an RE2 pattern; so no look-alike letter, filler or invisible character can stand in one"
+    }
+  }
+}

@@ -1,0 +1,231 @@
+part: agents
+concern: discovery
+order: 2
+title: Finding what exists before writing
+summary: >-
+  An agent learns what already exists before it writes: it reads the glossary and the listing of shared
+  exports, searches sibling repositories, and asks the type checker for callers rather than text. The tools it
+  uses for this run offline, pinned, and never write to the tree.
+rules:
+  - id: agents.discovery.1
+    slug: look-before-writing
+    since: 0.1.0
+    rule: >-
+      Before writing a helper or naming something, the agent reads the glossary and the listing of shared
+      exports and searches the sibling repositories for what already exists.
+    detail: >-
+      The answer must be reachable without a network. Standards and decisions are found by text search on a
+      checkout. Code search across the other repositories of the organisation is by local clones first, and
+      the repository host's own search covers the rest. A new helper that duplicates an export of the shared
+      kit is caught by the reuse scan in the code part; this rule makes the agent look first. The listing of
+      shared exports is the registry of arch.shared.15 rendered into the instruction file, so what the agent
+      must read exists at a path.
+    level: process
+    why: >-
+      Reinvention comes from a limited view of the repository: a name search found none of three atomic
+      writers where the type-checked lookup found them, and the census shows 42 hand copies of shared helpers.
+    kind: instruction
+    strength: Session
+    status: active
+    sources:
+      - ref: agents-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: hook
+        tier: R
+        note: >-
+          the agent's own session record (the hook log) shows the kit listing was read and the sibling clones
+          searched before a new helper landed. Plant: a session that lands a new helper with no listing read
+          in its log is flagged. Control: a session whose log shows the listing read passes
+    review_question: >-
+      Did the agent read the kit listing and search the sibling repositories before writing this helper?
+    open:
+      - No program sees what an agent read; the session record is the only evidence.
+      - No eval has been run on the question set.
+      - >-
+        v1 evidence, not yet a source: own bugs (census of 42 hand copies of shared helpers)
+    note: >-
+      Merges the Go lookup rows, the UI second-copy rows and the reference's search-other-repos and
+      read-the-glossary rules.
+  - id: agents.discovery.2
+    slug: tool-use-is-measured
+    since: 0.1.0
+    rule: Whether agents use the lookup tools is measured, not assumed.
+    detail: >-
+      A question set with known answers is asked with and without the guidance and scored; the hook log of
+      each session records whether the lookup tool answered.
+    level: process
+    why: A tool nobody uses prevents nothing.
+    kind: measure
+    strength: Session
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class record. the session record counts lookups by tool per session and reports it in the weekly
+          digest. Plant: a session with no lookup recorded is counted as none. Control: a session with a
+          lookup is counted
+    review_question: >-
+      Do agents answer the known-answer questions better with the guidance than without it?
+    open:
+      - Building the eval is a project, not a check; none has been run.
+      - >-
+        What would change it: a measured fault class the lookup tools were meant to prevent.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: agents.discovery.3
+    slug: type-checked-lookup-ready
+    since: 0.1.0
+    rule: >-
+      The agent's environment has a type-checked lookup and diagnostics tool for each language, and a
+      preflight fails when it is missing.
+    detail: >-
+      For Go the language server is on the path with its plugin enabled; for TypeScript the language server or
+      the native compiler server is on the path, with its version read. After each edit the agent sees type
+      errors and can find references by type instead of text. Hosts must pass the preflight (decision 17).
+    level: program
+    why: >-
+      A language server found 28 of 28 callers of one function where grep found the same plus 4 fixture
+      strings; limited views of the repository cause reinvention.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-17
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 6.2
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. a preflight row in the host check runs command -v gopls with a version check and
+          reads the plugin as enabled in the agent settings. Plant: gopls removed from the path fails the
+          preflight. Control: gopls present passes
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. a companion preflight row per pack checks typescript-language-server or tsgo on
+          the path and reads the version. Plant: the language server removed from the path fails the
+          preflight. Control: the language server present passes
+    open:
+      - The Go plugin was not run in the first trial; the preflight is proposed.
+      - >-
+        A report of lookups by tool per session is planned; presence is enforced, use is a report.
+  - id: agents.discovery.4
+    slug: type-checked-answer-bounded
+    since: 0.1.0
+    rule: >-
+      Where an agent needs callers or implementations it uses a type-checked answer, and an answer is bounded
+      in size, at about 20 KB.
+    level: function
+    why: >-
+      A language-server tool returned 112,914 bytes for one file, which fills the context for no gain.
+    kind: instruction
+    strength: Session
+    status: proposed
+    checks:
+      - binding: any
+        class: hook
+        tier: R
+        note: >-
+          the hook log shows whether the language server answered, and the tool wrapper checks the byte size
+          of each answer. Plant: a wrapped tool answer larger than the bound is cut or flagged. Control: an
+          answer under the bound passes through
+    review_question: >-
+      Did the agent ask the type checker for callers or implementations, or search text?
+    open:
+      - >-
+        No program sees which instrument an agent chose; only the hook log and the wrapper's size check exist.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: agents.discovery.5
+    slug: knowledge-tools-offline-pinned
+    since: 0.1.0
+    rule: >-
+      A knowledge tool runs with no network and no account, is pinned to an exact version, has a licence a
+      company may use, and never writes to the source tree.
+    detail: >-
+      Exact pin: the tools file names an exact version and no range. Licence: a licence check with an allow
+      list. No writes: run the tool, then the working tree is clean. No network: a sandboxed run.
+    level: program
+    why: >-
+      A knowledge tool that reaches out or writes breaks the offline and clean-tree guarantees; one tool is
+      pinned today by exact npm version (ast-grep 0.51.1).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "3"
+        note: >-
+          three checks in the tools-file gate, an exact version pin, a licence check (go-licenses check with
+          an allow list), and git status --porcelain empty after the run; no-network by a sandboxed run.
+          Plant: a tool whose licence is not on the list fails; a run that writes a file into the tree fails.
+          Control: a pinned tool under an allowed licence with a clean tree passes
+    open:
+      - >-
+        Half held: pin, licence and no-write are mechanical; no-network needs a sandbox whose macOS form was
+        not tried.
+      - A hosted library-docs service breaks the offline rule and is not used.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: practice (a licence checker was
+        planted with an allow list)
+  - id: agents.discovery.6
+    slug: helper-names-its-search
+    since: 0.1.0
+    rule: >-
+      A change that adds an exported function outside a registry owner and that calls a registry primitive
+      or has a capability word in its name carries a trailer that names what the builder read and why none
+      of it fits.
+    detail: >-
+      The trailer is `Reuse:`. It names the registry rows and the shared module's package listing the
+      builder read, and says why none fits. The capability words are write, lock, digest, sum, walk, trust,
+      golden and isolate. The ban half of arch.shared.8 catches the primitive; this rule catches the copy
+      that was restructured so that the ban cannot see it, by making the builder say what they looked at.
+      It is cheaper than a hook-log check of what the agent read, which agents.discovery.1 proposes and
+      nobody runs. The standard line of the dispatch note, and the instruction block rendered from the
+      registry, ask for the same three reads: the registry file, the shared module's listing at the pinned
+      tag, and a search of the repository for the primitive.
+    level: process
+    why: >-
+      The ban on a primitive misses a helper that wraps it under another name; a sentence a builder can write
+      without reading anything is weak evidence, but it makes the omission visible to the reviewer, which is
+      what a Record rule is for.
+    kind: rule
+    strength: Record
+    status: proposed
+    sources:
+      - ref: agents-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tool: gragas
+        tier: "2"
+        fix: never
+        note: >-
+          the dev gate over the diff against the base: a new exported function outside a registry owner whose
+          body calls a registry primitive or whose name matches a capability word, with no Reuse trailer in
+          the commits, fails at pre-push. Plant: a new Put(path, bytes) in a dev package with no trailer
+          fails. Control: the same function with a trailer passes
+    relates:
+      - id: agents.discovery.1
+        how: see
+      - id: arch.shared.8
+        how: see
+    review_question: >-
+      Which registry row did you read, and what in it did not fit?
+    open:
+      - >-
+        Proposed until the registry and the diff check exist: the registry is step G1 of the shared-code
+        proposal (gragas#513). The trailer check has no step and no ticket yet: it is a check of the dev gate over
+        the diff against the base, run at pre-push, and it needs the registry first.

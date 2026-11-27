@@ -1,0 +1,89 @@
+part: cli
+concern: cycle
+order: 9
+title: A screen in the development cycle
+summary: >-
+  What a program that draws a screen adds to the push moment of the development cycle: one golden per output
+  at the width a person reads, narrow widths as properties, a pty journey that reads until its final frame,
+  and goldens for the accessible and plain modes where they differ. These lines add members to the core
+  moments and never a moment of their own.
+rules:
+  - id: cli.cycle.1
+    slug: one-golden-width-and-narrow-properties
+    since: 0.1.0
+    rule: >-
+      A screen has one golden per output at the width a person reads, 80 columns for a terminal, updated only
+      by a person reading the diff, and the narrower widths are properties: no line wider than the screen,
+      nothing cut off, the same rows in the same order.
+    detail: >-
+      tests.journeys.8 holds the rule for any screen; this line is its terminal form and the member that holds
+      it at push. The 80 column golden is the hand-read oracle. The 60 and 40 column runs check the three
+      properties and keep no file, so an output change is one diff to read, not three. For a web screen a
+      parity check against the generated pages fills the golden. cli.commands.15 and cli.look.8 named goldens
+      at three widths; a ruling replaced the two narrow goldens with the properties, and this rule holds where
+      they conflict.
+    level: program
+    why: >-
+      One project kept goldens at 80, 60 and 40 columns; each output change meant three diffs nobody read, and
+      the 60 and 40 goldens went stale on the main branch unnoticed.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    review_question: >-
+      Which width is this screen's golden, who updated it last and did they read the diff, and are the narrow
+      widths checked as properties with no file?
+    relates:
+      - id: tests.journeys.8
+        how: see
+      - id: cli.commands.15
+        how: conflicts
+        wins: this
+      - id: cli.look.8
+        how: conflicts
+        wins: this
+    open:
+      - >-
+        cli.commands.15 and cli.look.8 still say three widths of goldens; they are not edited here because
+        their ids carry the pty journey list and the component goldens, and the conflict rows above say which
+        rule holds. A later change retires or rewords them.
+      - >-
+        Planned check: the journeys member has one golden file per output and the property run for the narrow
+        widths, held by a test over the testdata folder. No tool key is bound yet.
+  - id: cli.cycle.2
+    slug: a-pty-journey-reads-until-its-final-frame
+    since: 0.1.0
+    rule: >-
+      A pty journey reads until its expected final frame or the program's exit, never for a fixed time, and
+      the accessible and plain modes have goldens of their own where they differ from the default.
+    detail: >-
+      A journey that reads for a fixed time misses its golden under load and passes with time to spare on a
+      quiet host, which is two answers for one tree. It waits on the condition: the frame it expects, or the
+      exit (tests.runners.8, tests.isolation.6). The accessible and plain modes change what is drawn, so each
+      has its own golden where the output differs and shares the default's where it does not.
+    level: program
+    why: >-
+      One project's pty control missed its golden under load, at load 76 to 202 on one platform and only under
+      load; the fix was to read until the frame, not longer.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    review_question: >-
+      What does this pty journey wait on, and do the accessible and plain modes have their own goldens where
+      the output differs?
+    relates:
+      - id: tests.runners.8
+        how: see
+      - id: tests.isolation.6
+        how: see
+      - id: cli.output.5
+        how: see
+    open:
+      - >-
+        Planned check: a scan of journey files for a fixed read time, and the golden list per mode. No tool key
+        is bound yet; the read-until-frame change is gragas#649.

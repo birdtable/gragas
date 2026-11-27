@@ -1,0 +1,707 @@
+part: web
+concern: tokens
+order: 2
+title: Tokens and styling
+summary: >-
+  Every colour, size, shadow and font comes from one token source; stylesheets and class names carry no
+  literals, and one colour keeps one meaning.
+rules:
+  - id: web.tokens.1
+    slug: one-token-document
+    since: 0.1.0
+    rule: >-
+      Every colour, font, shadow and size a design names comes from one token document, used by version, in
+      which each token has a role, a meaning, a usage note and a value for every mode.
+    detail: >-
+      The document lives in a separate private tokens package in the house list format and generates the CSS
+      and the Go constants; the Go terminal-look package consumes the generated Go. Token names follow the
+      naming table. The check is `companion tokens check`. The alternatives `@terrazzo/cli` and
+      `@terrazzo/plugin-lint` (and Style Dictionary) read only the interchange format.
+    level: package
+    why: >-
+      Drift between copies of a palette is the failure this prevents; it is weak as a fault weight in our
+      record (1 of 144 faults is token drift) and strong as the operator's aim.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. the tokens check of our CLI validates the token package source against a JSON
+          Schema (ajv 8): every token has a role, meaning and usage and a value for each mode, and names match
+          the naming table. The schema is ours because the format is a list format, not the design-token
+          interchange format. Plant: a token with no usage, or with a missing dark value, fails. Control: a
+          complete token passes
+    open:
+      - >-
+        Whether the roles are well chosen is judgement. Alternatives that read only the interchange format
+        (Terrazzo, Style Dictionary) were not taken because the ruled format is not that format (decision 5).
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A as the operator's aim; weak as
+        fault weight (1 of 144 is token drift)
+  - id: web.tokens.2
+    slug: sites-pin-tokens-by-version
+    since: 0.1.0
+    rule: >-
+      A site depends on the token source by version, the version in each lock equals the one in the project
+      record, and a version bump is the only way to change the tokens a site uses.
+    detail: >-
+      The source carries generated output, a contrast test and a literal scan. The generated CSS and Go equal
+      the tokens package output (generate-then-check). The contrast test and literal scan live in the tokens
+      package and in the styling checks.
+    level: release
+    why: >-
+      The drift between sites is measured and small on colour; the version pin keeps it that way.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the sync check of our CLI: the tokens package version in each lock equals the
+          version in the project record, and generated CSS and Go equal the tokens package output. Plant:
+          editing a generated token file makes the sync check fail. Control: the unedited generated files pass
+    open:
+      - The tokens package is not built; the home and format were ruled in decision 5.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: the drift is measured and small
+        on colour
+  - id: web.tokens.3
+    slug: no-colour-literal
+    since: 0.1.0
+    rule: >-
+      No colour literal appears outside the generated token file, in CSS, markup or script, in any colour
+      notation.
+    detail: >-
+      Covers hex, named colours, `rgb`, `rgba`, `hsl`, `hsla`, `hwb`, `lab`, `lch`, `oklab`, `oklch`, `color`
+      and `color-mix`, in stylesheets, embedded style blocks and script strings, class names included (no raw
+      palette classes). Inline `style` is banned. Hex and token values live only in the token files and the
+      per-brand token files. Current hits are fixed in the same change; there is no baseline. Stylelint 17
+      runs over `.css`, `<style>` blocks of `.astro` (through `postcss-html`) and CSS in `.tsx`, with
+      `ignoreFiles` set to the generated token file only. The colour functions are `rgb rgba hsl hsla hwb lab
+      lch oklab oklch color color-mix`. Script strings are caught by `no-restricted-syntax` on string literals
+      that are a `#` and 3 to 8 of `[0-9a-f]`, nothing else; inline style by html-validate `no-inline-style` on templates, and on
+      components by the React style-prop ban, react.components.4.
+    level: file
+    why: >-
+      A regex that matched only hex and five functions reported zero literals and missed named colours and
+      four more functions, so zero was zero of the shapes it looked for. Both sites were at zero; one palette
+      file holds 42 distinct hex values inside token definitions, which the rule allows.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          Stylelint 17 core rules over CSS, embedded style blocks and CSS in components: `color-no-hex`,
+          `color-named: never`, `function-disallowed-list` for the colour functions, ignoring only the
+          generated token file; ESLint `no-restricted-syntax` on string literals that match a hex or a colour
+          function, plus `no-restricted-properties` on the style prop and the HTML validator's no-inline-style
+          rule. Plant: a hex, a named colour, `oklch()`, `color-mix()` and `rgb()` each in a stylesheet, an
+          embedded style block and a script string must fail. Control: the same value inside the generated
+          token file passes
+    relates:
+      - id: react.components.4
+        how: see
+    open:
+      - >-
+        Not planted: SVG colour attributes (`fill="#fff"`), `hsl()`, `hwb()`, `lab()`, `color()`; they sit in
+        the same disallowed-list.
+      - Stylelint 18 is blocked by two plugin peers; stay on 17.16.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: both sites at zero; one palette
+        file holds 42 hex values inside token definitions, which the rule allows
+  - id: web.tokens.4
+    slug: scale-values
+    since: 0.1.0
+    rule: >-
+      Spacing, font size and radius come from a scale, and a literal that repeats a scale step is refused;
+      arbitrary layout-only values pass only from an allow-list.
+    detail: >-
+      Hand CSS: the value of `padding*`, `margin*`, `gap`, `font-size` and `border-radius` must be a token
+      variable; `px` is banned where a rem scale applies. Utility classes: the theme drops the default scale,
+      and numeric steps not in the token scale are banned (the framework accepts any number as a step, so
+      `p-13` is valid without a ban). Layout-only arbitrary values (a grid template, a calc width, a max
+      width) pass only from a data file of allowed values. Legacy type sizes and arbitrary pixel sizes fail.
+      Brand values arbitrary in a class string are zero. Utility side: the theme drops the default scale with
+      `--spacing-*: initial` and `better-tailwindcss/no-restricted-classes` bans numeric steps outside the
+      token scale. The allowed value form is `var(--space-*|--text-*|--radius-*)`.
+    level: file
+    why: >-
+      One site holds 1,172 spacing, 502 type-size and 241 radius literals as a baseline; none is traced to a
+      fault on its own, so this is a rule held by the aim, not by a fault.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          Stylelint `declaration-property-value-allowed-list` (or stylelint-declaration-strict-value) on the
+          properties above, `unit-disallowed-list` for px, and a utility-class lint rule with a negative-list
+          regex banning numeric steps outside the token scale. Plant: `padding: 13px` and `p-13` fail;
+          `padding: var(--space-3)` and `p-3` pass (when 3 is a token step). Control: a token-scale value
+          passes
+    open:
+      - >-
+        Depends on a scale that does not exist yet; the scale is derived from the data, and px versus rem is
+        open.
+      - >-
+        Baseline for existing literals: Stylelint `--suppress` (experimental) or a px ratchet already held at
+        453 in one site. The reference allowed no baseline (current hits fixed in the same change); the two
+        positions conflict and the baseline wins until the scale exists.
+      - A regex without a negative list flagged the clean `p-3`.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: baseline counts only; no fault
+        traced to a raw px alone
+  - id: web.tokens.5
+    slug: elevation-tokens
+    since: 0.1.0
+    rule: >-
+      Shadow is a token; the framework's default shadow classes and arbitrary shadow values fail.
+    detail: >-
+      No default shadow utility classes (small, medium, large); use the elevation tokens. Banned classes:
+      `shadow-sm`, `shadow-md`, `shadow-lg`.
+    level: file
+    why: >-
+      A terminal has no shadows, but a web page that picks its own loses the one elevation scale.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          the utility-class lint rule banning the default shadow classes and arbitrary shadow values in a
+          class string. Plant: a class string using a default shadow class fails. Control: an elevation-token
+          shadow passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.tokens.6
+    slug: logical-properties
+    since: 0.1.0
+    rule: >-
+      New code uses direction-neutral properties; old CSS is held by a baseline that only falls, and canvas
+      screens are exempt.
+    detail: >-
+      Hand CSS uses logical properties (`margin-inline-start`). Utility classes use start and end forms
+      (`ms-`, `me-`, `ps-`, `pe-`, `start-`, `end-`, `text-start`, `rounded-s`), never `ml-`, `mr-`, `pl-`,
+      `pr-`, `left-`, `right-`, `text-left`, `rounded-l`. Utility side:
+      `better-tailwindcss/enforce-logical-properties` (it flagged `ml-4` and named `ms-4`, in `.tsx` and
+      `.astro`) plus the `no-restricted-classes` regex for `left-`, `right-` and `text-left`.
+    level: file
+    why: >-
+      No fault is traced and no right-to-left language is planned; kept as a rule because every rule applies
+      from adoption (decision 19). Counts depend on the instrument.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - facets:
+          - canvas
+        reason: a canvas does not mirror, so physical coordinates are the correct model
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          stylelint-use-logical with a baseline of known violations for hand CSS; the utility-class lint's
+          enforce-logical rule plus a regex ban on left, right and text-left classes. Plant: `margin-left:
+          1rem` and `ml-4` fail; `margin-inline-start` and `ms-4` pass. Control: the logical forms pass
+    open:
+      - Support of the logical-properties plugin for Stylelint 18 is unread.
+      - >-
+        The baseline of old physical properties uses Stylelint suppressions, which are experimental.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D: no fault traced; counts depend on
+        the instrument
+  - id: web.tokens.7
+    slug: important-and-outline-need-reason
+    since: 0.1.0
+    rule: >-
+      `!important` and `outline: none` each need a stated reason, and an outline is never removed without a
+      visible focus ring in its place.
+    detail: >-
+      The focus ring is a token applied on `:focus-visible` and never hidden. An allowed use carries a reason
+      comment (`reportDescriptionlessDisables`). Debt is held by a count baseline. Stylelint writes
+      `stylelint-suppressions.json`; `--prune` must run in the same change as a fix. The outline entry is
+      `outline` mapped to `["none","0"]`; both rules also fired in `.astro` `<style>` blocks. The utility form of
+      outline removal is `outline-none`.
+    level: file
+    why: >-
+      The counts are 9 `!important` and 102 `outline: none` in one site; hiding the keyboard position leaves a
+      keyboard user with no way to see where they are.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          Stylelint 17.16 core `declaration-no-important` and `declaration-property-value-disallowed-list` for
+          `outline: none` and `0`, with `reportDescriptionlessDisables` so an allowed use needs a reason; debt
+          through Stylelint's `--suppress` file. Plant: `color: red !important` with no reason fails; with a
+          description passes; `outline: none` fails. Control: a described exception passes
+    open:
+      - >-
+        Stylelint suppressions are experimental; slack after a fix is the weak spot (a stale entry exits 0,
+        where ESLint's exits 2), so the prune step must run in the same change as a fix.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C: 9 and 102"
+  - id: web.tokens.8
+    slug: contrast-from-tokens
+    since: 0.1.0
+    rule: >-
+      Every text and status pair passes a contrast of 4.5 to 1, and 3 to 1 for large text and parts, on every
+      ground it may sit on, in both modes, by a pure test computed from the tokens.
+    detail: >-
+      WCAG AA in both themes for every foreground and background token pair. The test iterates the token
+      document, so a new role is covered; it also computes APCA Lc and prints it beside the ratio. It runs on
+      any change to the token source. The generator ships the test, and the terminal side generates its own
+      contrast test from the same table.
+    level: package
+    why: >-
+      Measured faults: a muted role at 4.29 and 4.49 on light, good 4.32, attention 4.24, white on the dark
+      `bad` role 2.77; the Go test covers 4 of 9 colours. Colour contrast is 89.1 percent of axe WCAG failures
+      in generated pages.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: wcag-22
+        where: success criteria 1.4.3 and 1.4.11
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tool: vitest
+        tier: "1"
+        note: >-
+          v1 class shared-code. a vitest test in the tokens package computes the WCAG ratio for each text and
+          status role against every ground in its `on` list in both modes (colorjs.io or culori, version to
+          check); the test is generated for the Go side too. Plant: lowering the muted role on light to 4.29
+          fails; a new role with no `on` list fails. Control: the passing value passes
+    open:
+      - The colour library version is not yet chosen.
+      - "v1 evidence, not yet a source: A and B: five measured pairs below the threshold"
+    note: >-
+      Held with the grounds rule next; the accessibility concern relies on this check for colour.
+  - id: web.tokens.9
+    slug: roles-declare-grounds
+    since: 0.1.0
+    rule: >-
+      A text or status role says which grounds it may sit on, and the contrast check reads that list.
+    detail: >-
+      The schema makes the `on` field required for any role of kind text or status; a role whose `on` is wider
+      than its checked grounds fails. The muted text role (`dim`) placed on the `web-page` ground is the case
+      it catches.
+    level: package
+    why: >-
+      A check with an `on` list would have found the muted role placed on the page ground.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. the contrast test reads the `on` field per role and the schema makes it
+          required. Plant: removing the page ground from the muted role's `on` list while the CSS places it
+          there fails. Control: an `on` list that matches the CSS passes
+    open:
+      - >-
+        Trialled once (it caught the muted role on the page ground). Whether a page uses a role on a ground
+        not in `on` needs a usage scan, which is not built; the usage half is review.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+  - id: web.tokens.10
+    slug: generated-outputs-not-edited
+    since: 0.1.0
+    rule: >-
+      CSS and Go that carry a token are generated from the document and say so; nobody edits the output.
+    detail: >-
+      Outputs carry a "generated, do not edit" banner (header grep). The check regenerates both outputs in
+      memory and compares with the committed files byte for byte. The loop is generate-then-check, run as
+      `companion gen --check`.
+    level: file
+    why: >-
+      A copy of the palette was edited once in one commit of 614; 15 values lived in five places.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. the generate-with-check mode of our CLI regenerates the CSS and Go outputs from
+          the token source and compares with the committed files, plus a banner header grep. Plant:
+          hand-editing one colour in the generated CSS fails; regenerating passes. Control: freshly
+          regenerated files pass
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: the copy was edited once; the
+        compare is about 20 lines
+  - id: web.tokens.11
+    slug: modes-from-one-name-set
+    since: 0.1.0
+    rule: >-
+      Light and dark come from the same token names, written once; an explicit choice beats the system setting
+      and the choice is stored.
+    detail: >-
+      Every token name present in light is present in dark and the reverse. With no stored choice the page
+      follows the system; a stored choice overrides it and survives a reload; the theme control is the only
+      module touching the storage key. Browser journey details: `colorScheme: dark` with no stored choice; the
+      theme control (`ThemeControl`) is the only module touching the `localStorage` key.
+    level: package
+    why: >-
+      Storage is byte-equal in two sites, but only one has the stored choice; the other follows the system and
+      has no control.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a name-set comparison in the tokens test, plus a browser journey: dark colour scheme with no stored
+          choice follows the system, the stored choice overrides it and survives a reload, and
+          `no-restricted-syntax` bans the key string outside the theme control. Plant: deleting a dark value
+          fails the name-set test; a page that ignores the stored choice fails the journey. Control: a
+          complete pair and a page honouring the stored choice pass
+    open:
+      - The journey needs browser binaries installed.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: storage byte-equal in two sites;
+        the shared kit already has a scheme check (trialled)
+  - id: web.tokens.12
+    slug: fonts-self-hosted
+    since: 0.1.0
+    rule: >-
+      Fonts are self-hosted and the content security policy allows no external font host.
+    detail: >-
+      Two nets. The built output is scanned for font-face sources and link hrefs with a host other than self;
+      and a journey fails any request whose origin is not the app's. `font-src 'self'` is asserted from the
+      response header. Net one is `companion dist-scan`, which reads built `dist/` for `@font-face` `src:`
+      urls and `<link>` hrefs naming another host.
+    level: deploy
+    why: >-
+      One site had all 24 smoke pictures differ because of font loading; it ships 72 font files, 777.6 KB.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. a built-output scan of our CLI for font sources or links to another host, and a
+          browser-journey request listener that fails a third-party origin. Plant: a built page with a
+          hosted-fonts link fails the scan; a third-party font request in a journey fails the listener.
+          Control: a page with only same-origin fonts passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: one site's smoke pictures all
+        differed; both nets are small
+  - id: web.tokens.13
+    slug: style-scoping-declared
+    since: 0.1.0
+    rule: >-
+      Styles are scoped by a mechanism the project declares; the mechanism is a parameter, and hand-written
+      CSS is scoped by a class prefix.
+    level: file
+    why: >-
+      One site had 4 class-collision cases; the utility framework makes scoping moot once a site migrates.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          Stylelint core `selector-class-pattern` with the project prefix set in the shared preset. Plant: a
+          class without the project prefix in hand CSS fails. Control: a prefixed class passes
+    open:
+      - >-
+        Needed only for hand-written CSS until a site moves to the utility framework (decision 29); then it
+        falls away.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: 4 class-collision cases
+  - id: web.tokens.14
+    slug: differences-recorded
+    since: 0.1.0
+    rule: >-
+      A deliberate difference from the shared token source is recorded in a differences file with an owner,
+      reason, date and way back, and goes to the owner as a proposal.
+    detail: >-
+      Each overridden token has one entry and each entry has an overridden token; an entry for a token no
+      longer overridden fails. Whether the reason is good is review. Part of `companion tokens check`; the
+      differences file is `token-differences.json`.
+    level: package
+    why: >-
+      One site has about 20 differences and its ruling to send its palette as proposals has no recipient.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. the tokens check compares the project's override list with a differences file (ajv
+          schema). Plant: an overridden token with no entry fails; an entry for a token no longer overridden
+          fails. Control: an overridden token with an entry passes
+    open:
+      - >-
+        No fault in our record; built because every rule binds from adoption (decision 19). If the operator
+        would rather not build for evidence D, this becomes a best practice.
+      - "Half holds: presence is a rule, the reason is review."
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D: about 20 differences, no
+        recipient
+  - id: web.tokens.15
+    slug: theme-from-tokens
+    since: 0.1.0
+    rule: >-
+      A project styles through tokens from the token document as CSS custom properties, with one declared
+      scoping mechanism: CSS Modules, or one utility-class framework whose theme is generated from the token
+      document and holds no colour, size or font of its own. A second mechanism or utility framework is
+      banned, and a colour, size or font not from the tokens fails under either mechanism.
+    detail: >-
+      The mechanism is the project's declared parameter (web.tokens.13); tokens are the invariant. Under CSS
+      Modules a stylesheet lint allows only token variables for colour, size and font, and a utility-class
+      framework in the dependencies fails. Under a utility framework the rest of this detail applies. A
+      mechanism added later states its own lint for the same invariant; the rule does not change.
+      Class-variant and class-merge helpers (`cva`, `clsx`, `tailwind-merge`) are allowed. A colour, size or
+      font that is not from the theme in a class string fails (`bg-[#fff]`, `p-[13px]`, `[color:red]`); the
+      default palette is cleared. Layout-only arbitrary values pass from a lint-checked allow-list data file.
+      Inline style is banned. The theme file is generated and compared (generate-then-check), and a stylesheet
+      on it allows only token variables. A new brand token is added to the brand layer with a canary value.
+      Class-string lint covers framework templates and embedded script strings. Migrating a site's old CSS is
+      per-repository adoption work, not a foundation rule. Lint plugin: `eslint-plugin-better-tailwindcss`
+      with `no-restricted-classes` (arbitrary-value regex `\[.+\]`), `no-unknown-classes` and
+      `no-conflicting-classes`; the default palette is cleared with `--color-*: initial`. Inline style:
+      html-validate `no-inline-style` (template stack); the component-stack ban is react.components.4. Works
+      on `.tsx` and `.astro` class strings. A calc width such as `w-[calc(100%-var(--sidebar))]` passes only
+      from the allow-list. Layout-only arbitrary values such as `grid-cols-[...]` also pass only from the
+      allow-list. The theme file is checked with `companion gen --check` and the `@theme` block allows only
+      `var(--token)` values; the dependency check is `companion deps` over `package.json`, with `cva`, `clsx`
+      and `tailwind-merge` off the ban list.
+    level: package
+    why: >-
+      No project used it at first; proposed to carry the earlier lint requirement and widened by decision 29
+      to cover both frameworks. The targets style two ways over the same tokens, so the mechanism is a
+      parameter and the tokens are what the rule holds.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-web
+        backs: rule
+      - ref: decision-9
+        backs: rule
+      - ref: decision-29
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "2"
+        note: >-
+          for CSS Modules, stylelint with a declaration-value rule that allows only token variables for
+          colour, size and font properties; the dependency check of our CLI fails a utility-class framework
+          when the declared mechanism is CSS Modules, and a second mechanism in either case. Plant: a module
+          stylesheet with `color: #fff` fails; adding a utility framework to a CSS Modules project fails.
+          Control: a module stylesheet using only `var(--token)` values passes
+      - binding: ts
+        class: preset-rule
+        tier: "2"
+        note: >-
+          the utility-class lint plugin on class strings (`no-restricted-classes` with regexes for arbitrary
+          values except an allow-list data file, plus unknown and conflicting class rules); the dependency
+          check of our CLI fails any other utility framework in the dependencies; the generate-with-check on
+          the theme file; the inline-style ban (react.components.4 on the component stack). Plant:
+          `bg-[#fff]`, `p-[13px]` and `[color:red]` in a component and in a template class string each fail;
+          `bg-surface` passes; a calc width passes only if on the allow-list; adding a second utility
+          framework to the dependencies fails; editing a colour in the theme file fails the compare. Control:
+          a class string using only theme classes passes
+    relates:
+      - id: web.tokens.13
+        how: see
+      - id: react.components.4
+        how: see
+    open:
+      - >-
+        The lint plugin read class and class-list in templates and className in components, but did not read
+        class strings in template frontmatter arrays or script string literals; script-side literals need a
+        `no-restricted-syntax` selector.
+      - >-
+        The manifest check is shared with the one-framework rule and the supply-chain manifest rule.
+  - id: web.tokens.16
+    slug: class-strings-valid
+    since: 0.1.0
+    rule: >-
+      Utility classes are known, non-conflicting, not duplicated and in one consistent order, with one format
+      command.
+    level: file
+    why: Unknown and conflicting classes fail silently in the browser.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          the utility-class lint's unknown, conflicting, duplicate and ordering rules, with one format
+          command. Plant: a class string with two conflicting padding classes fails; a duplicate class fails.
+          Control: an ordered, unique string passes
+    open:
+      - >-
+        Run on both components and templates; a planted hit and a clean twin are required in each.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.tokens.17
+    slug: tokens-defined-and-read
+    since: 0.1.0
+    rule: Every token read is defined, and every token defined is read.
+    detail: >-
+      The check collects every `var(--x)` read in CSS, templates and components and every utility class that
+      resolves to a theme variable, and compares with the token source. An undefined read fails; an unread
+      definition fails, with a rising-count baseline. The check is `companion tokens used`, reading `.astro`
+      and `.tsx` as well as CSS.
+    level: package
+    why: >-
+      One site has 6 unread tokens; another reads 14 defined only by a user stylesheet.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. the tokens-used check of our CLI, with Stylelint
+          `stylelint-value-no-unknown-custom-properties` for the undefined direction. Plant: reading
+          `var(--ghost)` fails; defining a token nothing reads fails. Control: a token both defined and read
+          passes
+    open:
+      - >-
+        The utility framework emits only used theme variables unless the theme is declared static, so the
+        class-to-variable mapping needs the compiler API or a build-output scan.
+      - The maintained status of the Stylelint plugin is not checked.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: 6 unread in one site, 14
+        read-only in another
+  - id: web.tokens.18
+    slug: new-token-source-first
+    since: 0.1.0
+    rule: A new token enters the source first, with a value in every mode.
+    detail: >-
+      A token missing a mode fails the schema (`required` light and dark), and the vendored token names are
+      compared with the source. The schema line is `required: [light, dark]`.
+    level: package
+    why: A token added in the page only is the start of drift.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          the tokens schema requires a value for every mode, so a token missing a mode fails the tokens check.
+          Plant: adding a token with only a light value fails. Control: a token with both modes passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.tokens.19
+    slug: terminal-and-web-same-roles
+    since: 0.1.0
+    rule: The terminal and the web read the same colour roles from one generator.
+    detail: >-
+      A test parses both generated outputs (CSS custom properties and Go constants) and asserts the same role
+      names with equal resolved values; the Go side consumes the generated file only.
+    level: package
+    why: >-
+      Seven of seven spike builds imported the same CSS unchanged; the two sources disagree on whether the Go
+      output is generated.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test in the tokens package compares the role names and resolved values of the CSS and Go outputs.
+          Plant: removing a role from the Go output only fails. Control: regenerated outputs pass
+    open:
+      - One source says the output is Go, another says CSS only.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C: 7 of 7 spike builds; the test is
+        about 30 lines
+  - id: web.tokens.20
+    slug: colour-one-meaning
+    since: 0.1.0
+    rule: >-
+      A colour keeps one meaning across the app, taken from role tokens: relation roles use their own role
+      tokens, destructive uses the destructive token, and green means health only.
+    detail: "Example of a role token: the requires relation (`--color-relation-requires`)."
+    level: file
+    why: A colour that means two things in two places teaches the reader nothing.
+    kind: rule
+    strength: Review
+    status: proposed
+    review_question: >-
+      Does any colour on this screen mean something other than what its role says, or carry status alone?
+    open:
+      - >-
+        The source names the product's own chip part; it was generalised to roles. No check exists; a usage
+        scan of role tokens is not built.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.tokens.21
+    slug: browser-targets-declared
+    since: 0.1.0
+    rule: >-
+      Browser targets are declared once and read by the bundler, the style lint and the script lint; a feature
+      outside them fails.
+    detail: >-
+      One targets file (a browser list or a Baseline year) is read by the bundler, the Stylelint baseline
+      plugin, the ESLint CSS baseline rule and a script compatibility rule. The targets file is a
+      `browserslist` file or a Baseline year, and the passing twin is a widely-available feature.
+    level: program
+    why: >-
+      No target is stated anywhere in the foundation today; the two-engine test checks the outcome but states
+      no target.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          one targets file read by the bundler, `stylelint-plugin-use-baseline`, ESLint `@eslint/css`
+          use-baseline, and `eslint-plugin-compat` or `eslint-plugin-baseline-js` for scripts. Plant: a CSS
+          feature newer than the declared Baseline year fails. Control: a widely available twin passes
+    open:
+      - Three plugins disagree on what counts; pick one per language and plant each.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D: the browser-list file has no hit
+        anywhere in the foundation

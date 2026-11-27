@@ -1,0 +1,41 @@
+format: 3
+layers:
+  - slug: core
+    name: Core
+    aliases: [foundation]
+    parts:
+      - slug: base
+        name: Base
+        aliases: [root]
+        owners: [alex]
+        concerns:
+          - slug: errors
+            name: Errors
+            aliases: [faults]
+          - slug: naming
+            name: Naming
+          - slug: targets
+            name: Targets
+  - slug: language
+    name: Language
+    parts:
+      - slug: go
+        name: Go
+        owners: [alex]
+        concerns:
+          - slug: errors
+            name: Errors
+          - slug: layout
+            name: Layout
+      - slug: web
+        name: Web
+        concerns:
+          - slug: forms
+            name: Forms
+kinds:
+  - slug: service
+    name: Service
+    description: A program that runs until it is stopped.
+  - slug: library
+    name: Library
+    description: Code other programs import.

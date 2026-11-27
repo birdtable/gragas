@@ -1,0 +1,200 @@
+format: 3
+part: arch
+concern: layers
+rules:
+  - id: arch.layers.1
+    statement: "Imports run one way through named layers; a lower layer never imports a higher one, and the failure message gives the reason."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The layer order is fixed and written as a table in rule data: folder or package globs mapped to layers, and the allowed edges between layers. Entry code does not import storage code. Infrastructure code never imports application source. Shared kernels and libraries never import a module or the application shell. Inside a module the same holds one level down (pages above components, model and api). Each forbidden edge carries a message that names why the edge is forbidden. Breaches present at adoption sit in a baseline of one file per entry (one-file-per-entry) that only shrinks, and a baseline line that no import makes any more also fails."
+      pros:
+        - "A layer that imports upward makes the layers unreplaceable and unreadable one at a time. In Go the layer test exists in two repos and the table counts breaches in four (7, 1, 1 and 1 at baseline). In the web stack the rule existed as a text rule (check-layers.mjs) in two repos, with no fault traced to a missed breach."
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+  - id: arch.layers.2
+    statement: "Import rules are enforced by a lint rule or a repository test, never by convention."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The lint configuration is generated from the same layer table as the layer test (files globs, list-mode, allow and deny lists, each with a reason) and a byte check of the rendered file proves it matches the table. One shared import-boundary preset ships with a few error rules and an empty list for later rules, and the layer check is one program every site imports."
+      pros:
+        - "A rule that only a reader knows is not held; the lint rule is the part that keeps working when the author is an agent. Only one Go repo enables the lint rule today."
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+  - id: arch.layers.3
+    statement: "Every source file belongs to exactly one declared layer or element, a file in none fails, and the boundary checker counts the files it parsed against the tracked source files and exits as could-not-run on any shortfall."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Inside a module only the declared slots exist; a sub-module folder exists only if the module's manifest lists it. Configuration that is data sits outside every element and is read only by the kernel and the application element. A package that sits in no row of the layer table fails the layer test. The checker compares the number of source files it read with the tracked source files of the same kinds (from the version control index); a file it skipped, could not parse or never saw makes the run exit 2 (could not run), never a pass."
+      pros:
+        - "A file outside every layer escapes every boundary rule, so the table says nothing about it. A checker that silently parses fewer files than exist passes the files it never read."
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.layers.4
+    statement: "There are no import cycles between modules, across or inside a layer; a known cycle only leaves the list."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Cycles are refused between modules, between parts of one module and inside one part. A cycle found at adoption goes on a baseline that only shrinks. The Go compiler already refuses package cycles, so the Go side is held by the compiler and by the shared-library rule (arch.layers.7); the web stack needs a tool. Cycles that pass through .astro files are invisible to the stock tools, so a graph step extracts imports from .astro frontmatter and <script> blocks with the Astro compiler (@astrojs/compiler), joins them with the TypeScript module graph, finds strongly connected components and holds the count of cyclic groups from rising (shrink-only). The same graph serves the declared-edge check and the merge-candidate report."
+      pros:
+        - "A cycle makes two modules one module that cannot be moved, tested or replaced separately. One web repo has 11 cycle groups (68 files) and another 3 (40 files), all legal under their gates; at the donor a reviewer found a test and storybook cycle that no script did."
+    relations:
+      relates:
+        - arch.layers.7
+  - id: arch.layers.5
+    statement: "A module is reached from outside only through its one public entry; no deep import and no relative path across modules."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+        - service
+    reasoning:
+      definition: "A module exposes a few named entry files (public API, pages for the router, manifest, test helpers for tests on a declared edge) and nothing else is importable. The public entry (index.ts) re-exports no internal layer (handler, repository, action, core). No deep relative imports. A module that two or more modules need moves to the shared layer and moves back when one consumer remains (arch.shared.12). A module that must add something to another module's screen registers a typed contribution with the host and never imports upward; an optional dependency is reached only through such slots, and a direct import is allowed only downward along a declared edge. Route files (routes/**) only wire a page and are held to a thin-route line limit set in rule data. In Go, a package is importable from outside only through its exported surface, with internal/ guarding the rest."
+      pros:
+        - "A deep import turns every internal file into a public API, so no module can change its inside. Boundary plugins fired on 10 of 10 Astro plants but have never been run on React."
+    relations:
+      relates:
+        - arch.shared.12
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+  - id: arch.layers.6
+    statement: "No code imports another package's source or build-output paths."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A package is imported by its published name and exported surface, never by a path into its source tree or its build output. In Go there is no replace directive and no workspace file, and the public surface is listed per tag."
+      pros:
+        - "A path into another package's source or output fixes that package's layout as a public contract and bypasses its versioning."
+  - id: arch.layers.7
+    statement: "A module that others depend on stays extractable, so it imports no program package and reaches into no sibling module, checked against an allow-list."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A shared library package imports no program package. Each library package lists its allowed dependencies in rule data, and the closure of its dependencies must stay inside that list. The shared layer's core imports nothing from the domain modules (core/** imports nothing from domains/**; the entry re-exports no @core). Making the shared code a separate module makes a program import impossible at compile time."
+      pros:
+        - "A library that imports a program cannot be extracted, versioned or reused. In the Go kit, 7 of 8 packages import no other in-module package and one imports 2, so the rule is cheap to hold."
+    sources:
+      - ref: go-review-r-02-donor-section-gap
+        where: section 3.9
+        backs: rule
+  - id: arch.layers.8
+    statement: "A module imports another only along an edge declared in one graph; the graph is acyclic, foundation never depends on business, and a new edge is an explicit gated change."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+        - service
+    reasoning:
+      definition: "The graph names modules or surfaces and their edges. A new edge is a one-line edit to the graph file whose commit trailer names it. The threshold at which this binds (6 modules) is rule data with its reason, not a repo's choice. Edges are checked against real imports, so a manifest's declared dependency list equals the cross-module imports found. In Go the layer table lists the allowed edges and a repo test checks them."
+      pros:
+        - "Undeclared edges grow until every module can reach every other; declaring them makes each new coupling a visible decision."
+    sources:
+      - ref: p-01-core-programming
+        where: five-list item 1
+        backs: rule
+      - ref: r-04-seams
+        where: section 5
+        backs: rule
+  - id: arch.layers.9
+    statement: "The module graph is declared in one file, the layer check is one program every site imports, and boundary rules, test projects and structure checks are generated from that file, never hand-written or typed by hand."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The graph file is protected gate config. Each site passes its own parameter file to the shared check, and the lists the check uses are derived from the tree or from the graph file. A rule that names files by hand is a finding: a rule object holding more than 3 literal source paths fails (3 is a guess, ratcheted down from 19). A second copy of the shared check in a site's scripts folder is found by scanning for the shared file name and by a clone detector that ignores identifiers and literals against the shared source. A drift check regenerates and diffs the output."
+      pros:
+        - "Two sites' layer-check scripts differ by 1314 lines; hand-typed lists drift from the tree and a copied check drifts from its origin."
+    sources:
+      - ref: r-04-seams
+        where: section S-7
+        backs: rule
+  - id: arch.layers.10
+    statement: "Tests and stories obey the same import rules as code, production code never imports a test file or fixture, no stand-in kind is in non-test source, and no release recipe or config carries a test build tag."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A test cannot reach what its code cannot. Cross-module fixtures come from a testing entry on a declared edge. Specs and stories sit next to the file they test and no new __tests__ folder is added. In Go the compiler refuses an import of a _test file from another package, and the layer rules cover test files. A stand-in (a fake adapter, a test registry entry) is defined only in test source or a test-only package that production code cannot import; a test may register one (arch.ports.16). A build tag that exists only for tests never reaches a release: a test reads the release recipe, the release workflow and the build config and fails on any such tag."
+      pros:
+        - "A production import of a fixture ships test data, and a test that reaches around the entry hides a coupling. A test tag in a release build ships the stand-in in place of the real adapter."
+    relations:
+      relates:
+        - arch.ports.16
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.layers.11
+    statement: A package declared types-only exports no runtime value.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A shared vocabulary layer holds declarations only: in Go a shared types package has no init, no side effect and no mutable state."
+      pros:
+        - A runtime value in the vocabulary layer drags behaviour into every module that only wanted a type.
+  - id: arch.layers.12
+    statement: "Every source file, test and story has exactly one owner, each module has at least one test and one story, and a module's declared dependency list equals its real cross-module (cross-domain) imports."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+        - service
+    reasoning:
+      definition: "An owner is a module manifest, the application, the kernel or a library; tests outside the source tree belong to the tooling or infrastructure owner. In Go each package sits in one layer row and each shared package has a named owner; every package with logic has at least one test."
+      pros:
+        - Ownership and a truthful manifest are what let a change find its readers and a reviewer find who rules it.
+  - id: arch.layers.13
+    statement: "Where a design says a part must stay separable, a subset binary that registers only that part is built in every gate run and fails when it links a forbidden package."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The design names the part and the packages it may not link. The gate builds a second binary that registers only that part and compares its linked packages with the forbidden list (supply.intake.2 holds the per-binary closure). The build runs in the local gate (make check and the pre-push hook), never only in a hosted job. A part's own trusted binary (a guest) is the same case: its link list is the proof of the trust line."
+      pros:
+        - "A part declared separable stays separable only while something builds it alone; the first import across the line otherwise goes unseen until somebody tries to split it."
+    relations:
+      relates:
+        - supply.intake.2
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+      - ref: operator-points
+        backs: rule
+  - id: arch.layers.14
+    statement: "The layer table names a family of packages by folder pattern, and a package that joins a family is no new line in the table."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A pattern is a path with one trailing ellipsis (a folder and everything below it), not an expression (gates.registry.8). It appears on the layer row that owns the family and in the lists of what may import it, so a new adapter, context or tool under the family adds no line anywhere. A pattern is one reviewed edge (arch.layers.8): the layer tests and the import linter hold every package under it to the row. The table stays one file (arch.layers.9). A row that lists a package a pattern on the same row already covers is refused, so the table cannot grow back a line per package."
+      pros:
+        - "Own measure: in three days a layer table was edited in 42 commits, and the entry rows' import lists took 10 hunks because each new adapter added a name to them. With a pattern for the adapter family the same lists take none."
+    relations:
+      relates:
+        - arch.layers.8
+        - arch.layers.9
+        - gates.registry.8
+    sources:
+      - ref: bazel-build-files
+        backs: rule
+      - ref: golangci-lint-config-file
+        says: "The linter reads one configuration file and has no include or extends, so the import rows it needs are generated from the layer table rather than split by the tool."
+        backs: rule

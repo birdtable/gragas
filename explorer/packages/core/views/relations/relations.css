@@ -1,0 +1,55 @@
+[data-view="relations"] {
+  display: grid;
+  gap: var(--gr-space-4);
+}
+
+.gr-relations-question {
+  margin: 0;
+  color: var(--gr-text-muted);
+}
+
+.gr-relations-svg {
+  width: 100%;
+  max-width: 40rem;
+  height: auto;
+  border: 1px solid var(--gr-control-border);
+  border-radius: var(--gr-radius-md);
+}
+
+.gr-relations-svg line {
+  stroke: var(--gr-control-border);
+  stroke-width: 1;
+}
+
+.gr-relations-svg circle {
+  fill: var(--gr-text-muted);
+}
+
+.gr-relations-svg text {
+  fill: currentcolor;
+  font-size: 11px;
+  text-anchor: middle;
+}
+
+.gr-relations-list {
+  display: grid;
+  gap: var(--gr-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gr-relations-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gr-space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.gr-relations-kind,
+.gr-relations-note {
+  color: var(--gr-text-muted);
+  font-size: 0.8125rem;
+}

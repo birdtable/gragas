@@ -1,0 +1,2 @@
+go test fuzz v1
+string("[{\"name\":\"gragas\",\"path\":\"dist/gragas_linux_amd64_v1/../../../etc/passwd\",\"goos\":\"linux\",\"goarch\":\"amd64\",\"type\":\"Binary\"}]")

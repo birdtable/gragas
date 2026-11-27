@@ -1,0 +1,6 @@
+[
+  {"name":"an unknown field","patch":[{"op":"add","path":"/0/later","value":1}],"problem":"Additional properties are not allowed ('later' was unexpected)"},
+  {"name":"no file","patch":[{"op":"replace","path":"/0/files","value":[]}],"problem":"should be non-empty"},
+  {"name":"a file as bytes, not text","patch":[{"op":"replace","path":"/0/files/0","value":{"path":"a.js","data":{"text":""}}}],"problem":"'text' is a required property"},
+  {"name":"a preset file with a field it does not name","patch":[{"op":"add","path":"/0/files/0/mode","value":493}],"problem":"Additional properties are not allowed ('mode' was unexpected)"}
+]

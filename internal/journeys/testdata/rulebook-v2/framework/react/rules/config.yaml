@@ -1,0 +1,53 @@
+part: react
+concern: config
+order: 8
+title: Configuration and environment
+summary: >-
+  The React form of the web part's typed environment rule: what a page reads from the environment is declared
+  in one typed schema module, and only the bundler's public-prefixed names reach the bundle.
+rules:
+  - id: react.config.1
+    slug: typed-env-public-prefix
+    since: 0.1.0
+    rule: >-
+      A variable a page reads is declared in a typed schema module, environment access outside that module
+      fails, and only `VITE_`-prefixed names reach the bundle.
+    detail: >-
+      The same `no-restricted-syntax` rule as web.delivery.8 on `import.meta.env` member access outside the
+      typed schema module; the bundler (Vite) exposes only `VITE_` names, which is the framework side. The
+      outcome scan of the built output (`dist/`) is the no-secret-in-bundle rule of the web part.
+    level: file
+    why: >-
+      The React twin of the template-stack rule. `VITE_` and `import.meta.env` had 0 hits in the catalogue, so
+      the rule is held for the absence.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint `no-restricted-syntax` on `import.meta.env` member access outside the typed schema module;
+          Vite's public prefix (Biome form is a GritQL plugin on the same member access). Plant:
+          `import.meta.env.TOKEN` read in a component fails. Control: an environment read through the schema
+          module passes
+    relates:
+      - id: web.delivery.8
+        how: see
+    open:
+      - >-
+        The two source rows were twins for two frameworks; this is the component-stack form, moved from
+        web.delivery.8.
+      - >-
+        v1 evidence, not yet a source: D, and V for the absence (no hits in the catalogue)
+      - "v1 reference, not yet a source: framework environment-variable guides"
+    note: >-
+      The component-stack form of web.delivery.8 (typed environment schema), moved here from the web part.

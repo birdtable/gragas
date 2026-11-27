@@ -1,0 +1,23 @@
+# The places gragas's non-test Go names a tool today (a tool is a plugin's), one line to each time a name
+# stands there: <path> <identifier|string|comment> <what stands there> # <reason and what removes it>, in
+# plain words that name no issue by its number.
+# An identifier is written whole; a string or a comment gives the word as it stands. The names are those of
+# gate/tool-names.txt. The dev tools, the packages devTools() names (internal/dev_closed_test.go), are not read:
+# they build and run the gate's own tools.
+#
+# TestNoToolIsNamedInGragasGo (internal/tool_names_test.go) holds it: a name the list does not hold is red,
+# a line whose name is gone is red until it is taken off, and a line the list at the merge base lacks is red,
+# so the list only falls. A place is removed by changing the Go, then taking its line off; never by a line
+# added. When the last line goes, the file goes and the test stays.
+internal/core/audit/audit.go comment gitleaks # the secrets scanner's config file, read by the config checker; it leaves, stays by a recorded exception or is made general
+internal/core/audit/extend.go comment gitleaks # the secrets scanner's [extend] rules, which the config checker follows; it leaves, stays by a recorded exception or is made general
+internal/core/audit/extend.go comment gitleaks # the secrets scanner's [extend] rules, which the config checker follows; it leaves, stays by a recorded exception or is made general
+internal/core/audit/tomlkeys.go comment gitleaks # the secrets scanner's [extend] read, in the config checker; it leaves, stays by a recorded exception or is made general
+internal/core/rulebook/standing.go comment golangci-lint # golangci-lint's standard linters as a Go list; they become the plugin's data
+internal/core/rulebook/standing.go string staticcheck # golangci-lint's standard linters as a Go list; they become the plugin's data
+internal/host/toml/toml.go comment gitleaks # the secrets scanner's config file, the one the TOML reader is for; it leaves, stays by a recorded exception or is made general
+internal/model/adapter.go comment golangci-lint # golangci-lint's fold, in a comment; the file gives way to the contract types
+internal/model/adapter.go comment ast-grep # ast-grep's rule files, the example of a file read, in a comment; the file gives way to the contract types
+internal/model/adapter.go comment sgconfig # ast-grep's project config, the same example; the file gives way to the contract types
+internal/model/adapter.go comment golangci-lint # golangci-lint's place for a list's options, the example of options_at, in a comment; the file gives way to the contract types
+internal/port/legacy/legacy.go comment gitleaks # the secrets scanner's config file, on the config checker's port; it leaves, stays by a recorded exception or is made general

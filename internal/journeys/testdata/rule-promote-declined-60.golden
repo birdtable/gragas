@@ -1,0 +1,20 @@
+$ gragas rule promote go.errors.1 --decision-title Try it --decision-text Let it run a release.
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+What changes
+  go.errors.1: proposed, then trial. A must goes through
+  trial before it is active
+  add decision decide-promote-go-errors-1
+
+What is written where
+  language/go/rules/errors.yaml: sets status of go.errors.1
+  decisions.yaml: adds decision decide-promote-go-errors-1
+  history.jsonl: appends one entry (promote)
+This was a dry run and nothing was changed. Add --apply to
+make these changes.
+
+  declined   nothing was changed
+    gragas rule promote go.errors.1 --decision-text 'Let it
+run a release.' --decision-title 'Try it' --apply
+--- stderr

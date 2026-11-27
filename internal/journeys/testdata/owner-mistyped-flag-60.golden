@@ -1,0 +1,6 @@
+$ gragas gen --aply
+--- stdout
+--- stderr
+error: unknown flag: --aply
+       did you mean `gragas gen --apply`?
+--- exit 2

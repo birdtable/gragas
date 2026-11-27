@@ -1,0 +1,289 @@
+part: py
+concern: cycle
+order: 1
+title: Python in the development cycle
+summary: >-
+  What a Python project adds to the moments of the development cycle: the formatter and the linter as checks
+  at commit, pins that are exact or hashed, a venv rebuilt only when the pins change, a byte-compile and an
+  import smoke at push, tests with workers and a type check, a replay golden, and the vulnerability and
+  secrets scans. These lines add members to the core moments and never a moment of their own. Two lines were
+  not measured on the host that studied them and say so.
+rules:
+  - id: py.cycle.1
+    slug: format-and-lint-as-checks-at-commit
+    since: 0.1.0
+    rule: >-
+      At commit the formatter runs in check mode and the linter runs without fixing; neither rewrites a file.
+    detail: >-
+      The formatter's check mode lists the files that differ and exits non-zero; the linter reports and does
+      not fix. Both read and never write (gates.command.28), so they run beside the other commit members
+      inside the commit hook's seconds. The fix is the same tool in write mode, run by the person. Their cost
+      was not measured on the host that studied the stack.
+    level: program
+    why: >-
+      A hook that rewrites files is the opposite of a check, and a formatter in write mode races the members
+      beside it.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: ruff-formatter
+        where: The Ruff Formatter, ruff format --check
+        says: >-
+          ruff format --check /path/to/file.py will avoid writing any formatted files back, and instead exit with a
+          non-zero status code
+        backs: check
+      - ref: ruff-linter
+        where: The Ruff Linter, ruff check
+        says: >-
+          It accepts a list of files or directories, and lints all discovered Python files, optionally fixing any
+          fixable errors.
+        backs: check
+    review_question: >-
+      Do this commit tier's format and lint members run in check mode, or does either write?
+    relates:
+      - id: gates.command.28
+        how: see
+      - id: gates.hooks.3
+        how: see
+    open:
+      - >-
+        Planned check: the members file names the check flag and no fix flag on the two commit members. No tool
+        key is bound yet; the stack has no tool record in this rulebook.
+  - id: py.cycle.2
+    slug: pins-are-exact-or-hashed
+    since: 0.1.0
+    rule: >-
+      The requirements are pinned with exact versions, or a lock file carries hashes; a minimum-version pin
+      gives a fresh venv whatever is newest.
+    detail: >-
+      supply.install.1 holds that one package manager installs from the lockfile only and that the lockfile
+      is the pin. For a project with a plain requirements file the pin is an exact version per line; where
+      hashes are carried the installer refuses anything it cannot match. A line that says at least a version
+      is not a pin.
+    level: program
+    why: >-
+      A requirements file with minimum-version pins gives every fresh venv a different tree, and a check that
+      passed on one cannot be said to pass on the next.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: pip-secure-installs
+        where: Hash-checking Mode, Requirements Pinned with ==
+        says: >-
+          Requirements must be pinned (either to a URL, filesystem path or using ==).
+        backs: rule
+    review_question: >-
+      Is every line of this project's requirements an exact pin or a hashed entry, and does any say a minimum
+      version?
+    relates:
+      - id: supply.install.1
+        how: see
+      - id: supply.install.4
+        how: see
+    open:
+      - >-
+        Planned check: a scan of the requirements file for a range operator at commit. Plant: a minimum-version
+        line fails. Control: exact pins pass. No tool key is bound yet.
+  - id: py.cycle.3
+    slug: the-venv-follows-the-pins
+    since: 0.1.0
+    rule: >-
+      The venv is built from the pins and rebuilt only when the pins change; a run checks it once and installs
+      nothing when the check passes.
+    detail: >-
+      gates.command.19 holds that a tool is installed when its pin changes and checked once per run. The
+      venv is this stack's install; the check compares the installed set with the pins, and the install runs
+      when they differ or the pins file changed. The measured cost was 1.08 seconds plus 0.86 seconds warm.
+    level: program
+    why: >-
+      An install on every push is paid on every push, and an install that never checks the pin lets a stale
+      venv pass for the pinned one.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: py-reasons-stated
+        backs: rule
+    review_question: >-
+      What triggers this project's venv build, and does a run with unchanged pins install anything?
+    relates:
+      - id: gates.command.19
+        how: see
+      - id: gates.command.21
+        how: see
+    open:
+      - >-
+        Planned check: the tools step's report says checked or installed with the reason. No tool key is bound
+        yet.
+  - id: py.cycle.4
+    slug: byte-compile-every-file
+    since: 0.1.0
+    rule: >-
+      At push every source file is byte-compiled, so a syntax error in a file nothing imports is found.
+    detail: >-
+      An import smoke (py.cycle.5) proves only the files the imports reach. The byte-compile walks the tree
+      and compiles each file, in about 0.05 seconds, and a file with a syntax error fails it whether or not
+      anything imports it. It is a member of its own, quiet on success.
+    level: program
+    why: >-
+      A file nothing imports can carry a syntax error for months and fail the day something imports it.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: python-compileall
+        where: compileall
+        says: >-
+          These functions compile Python source files in a directory tree.
+        backs: check
+    review_question: >-
+      Does this push tier byte-compile every source file, including the ones nothing imports?
+    relates:
+      - id: py.cycle.5
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the byte-compile member. No tool key is bound yet.
+  - id: py.cycle.5
+    slug: import-smoke-and-the-interpreter-in-the-key
+    since: 0.1.0
+    rule: >-
+      At push an import smoke imports every package in a fresh interpreter.
+    detail: >-
+      The smoke proves the packages import with the venv as pinned, in about 0.03 seconds. The interpreter is
+      the one the venv pins, so its version is already in the stamp key through the pin (gates.land.15); the
+      host's own build string is no part of the key.
+    level: program
+    why: >-
+      One fleet's desktop tool was red on import on the host that studied it, and a stamp that ignores the
+      interpreter would have served the green of another host.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: py-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this push tier import every package in a fresh interpreter, and is the interpreter's build in the
+      stamp key?
+    relates:
+      - id: gates.land.15
+        how: see
+      - id: go.cycle.3
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the import member and the runner's report lists the key's
+        interpreter field. No tool key is bound yet.
+  - id: py.cycle.6
+    slug: tests-with-workers-and-a-type-check
+    since: 0.1.0
+    rule: >-
+      At push the tests run with workers from the pool and a type checker runs as its own member.
+    detail: >-
+      tests.runners.2 holds that the worker count comes from the pool's capacity and is never hard-coded; the
+      test tool's automatic worker count is the tool's own reading of the host and is capped by the pool's
+      number (gates.command.27). The type checker is a member of its own, so a type failure names it. Neither
+      was measured on the host that studied the stack.
+    level: program
+    why: >-
+      A serial test run holds one CPU while the pool has more, and a type check inside the test command hides
+      which one failed.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: pytest-xdist-docs
+        where: Running tests across multiple CPUs
+        says: >-
+          With -n auto, pytest-xdist will use as many processes as your computer has physical CPU cores.
+        backs: check
+    review_question: >-
+      Where does this project's test worker count come from, is it capped by the pool, and is the type check
+      its own member?
+    relates:
+      - id: tests.runners.2
+        how: see
+      - id: gates.command.27
+        how: see
+      - id: tests.runners.4
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the two members and the test command names the pool's variable.
+        No tool key is bound yet.
+  - id: py.cycle.7
+    slug: a-replay-golden
+    since: 0.1.0
+    rule: >-
+      At push the program runs headless on a checked-in input and its output is compared with a checked-in
+      expected file, read by a person.
+    detail: >-
+      A replay golden is the one test that runs the whole program. tests.generated.5 holds how a golden a
+      person reads is approved; this line places one in the push tier for a program that has a headless
+      mode. A replay that proves only that the program did not crash is a start, and the expected file grows
+      as the output does.
+    level: program
+    why: >-
+      One fleet's desktop tool had no test that ran it; a replay was the cheapest proof that it starts and
+      produces its output.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: py-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this push tier run the program on a checked-in input, what does it compare, and who approved the
+      expected file?
+    relates:
+      - id: tests.generated.5
+        how: see
+      - id: tests.journeys.2
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the replay member and the expected file is a protected path. No
+        tool key is bound yet.
+  - id: py.cycle.8
+    slug: vulnerability-and-secrets-scans
+    since: 0.1.0
+    rule: >-
+      At push the requirements are scanned for known vulnerabilities, and at commit the staged diff is scanned
+      for secrets against a reviewed allowlist.
+    detail: >-
+      supply.scans.7 holds the vulnerability scan in the full gate the land job runs before main, and
+      supply.secrets.1 the secrets scan at commit; this line names the inputs for the stack: the requirements file for the first, the staged
+      diff for the second, with the allowlist a shrink-only baseline that has an owner (gates.ratchets.1).
+      The standard's stack line lists the secrets scan at push; this rule keeps it at commit, the earliest
+      moment that holds it (C3), as the commit-moment decision DCS-01 (gragas#698) records. The vulnerability
+      scan took 0.69 seconds on the measuring host.
+    level: program
+    why: >-
+      A secrets scan with no allowlist found 15 hits in three repositories of one fleet and none was a
+      credential, so without the list the line stays red and is ignored.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gitleaks-readme
+        where: .gitleaksignore
+        says: >-
+          You can ignore specific findings by creating a .gitleaksignore file at the root of your repo.
+        backs: check
+    review_question: >-
+      Which file does this project's vulnerability scan read, and does its secrets allowlist have an owner and
+      only shrink?
+    relates:
+      - id: supply.scans.7
+        how: see
+      - id: supply.secrets.1
+        how: see
+      - id: gates.ratchets.1
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds both members with their inputs, and the allowlist is a registered
+        baseline. No tool key is bound yet.

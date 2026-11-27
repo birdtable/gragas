@@ -1,0 +1,9 @@
+not run: ""
+good:
+  .lintrc = "base\n"
+  docs/x.go = "package ok\n"
+  src/legacy/.lintrc = "strict\n"
+bad:
+  .lintrc = "base\n"
+  docs/x.go = "package bad\n"
+  src/legacy/.lintrc = "strict\n"

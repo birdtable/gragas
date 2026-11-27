@@ -1,0 +1,67 @@
+part: gates
+concern: tracked
+order: 13
+title: What the repository tracks
+summary: >-
+  The tracked file list is checked for what breaks a checkout on another system: a link, and two paths that
+  differ only by case.
+rules:
+  - id: gates.tracked.1
+    slug: no-tracked-symlink
+    since: 0.1.0
+    rule: >-
+      No tracked path is a symbolic link.
+    detail: >-
+      A tracked entry of mode 120000 fails the check, naming the path. A link reads as a file on one system
+      and as a text file holding a path on another, so the checkout differs by system.
+    level: program
+    why: >-
+      A repository that must check out the same on every system cannot hold an entry whose meaning depends on
+      the system that wrote it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    sources:
+      - ref: git-config-core-symlinks
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-rule
+        tool: gragas
+        key: link
+        tier: "3"
+        fix: never
+        note: >-
+          The link key of the gragas preset, which gragas check computes. gragas check reads the tracked list from git. Plant: a tracked symlink fails, naming its path.
+          Control: a tree of regular files passes.
+    open:
+      - Proposed until the check runs from a command of its own (gragas#1745).
+  - id: gates.tracked.2
+    slug: no-paths-differing-by-case
+    since: 0.1.0
+    rule: >-
+      No two tracked paths differ only by case.
+    detail: >-
+      Two tracked paths that are equal once case is folded fail the check, naming both. On a case-folding
+      file system the second overwrites the first.
+    level: program
+    why: >-
+      A checkout on a case-folding system keeps one of the two files and loses the other without a message.
+    kind: rule
+    strength: Hard
+    status: proposed
+    sources:
+      - ref: git-config-core-ignorecase
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-rule
+        tool: gragas
+        key: fold
+        tier: "3"
+        fix: never
+        note: >-
+          The fold key of the gragas preset, which gragas check computes. gragas check folds the case of each tracked path and fails a pair. Plant: two paths that differ by
+          case fail, naming both. Control: distinct paths pass.
+    open:
+      - Proposed until the check runs from a command of its own (gragas#1745).

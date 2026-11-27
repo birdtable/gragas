@@ -1,0 +1,12 @@
+# gragas#1723: the findings of `gragas check` on gragas, golangci-lint asked: rule, tool and key, file, one a line.
+# A finding not here is red; a line with no finding is not, so a fix need not touch this list.
+gates.command.1 task pre-push build linux/amd64 Taskfile.yml
+gates.command.1 task pre-push build linux/arm64 Taskfile.yml
+gates.command.1 task pre-push build darwin/arm64 Taskfile.yml
+gates.command.1 task pre-push build windows/amd64 Taskfile.yml
+gates.command.1 task pre-push build freebsd/amd64 Taskfile.yml
+go.cycle.2 task pre-push lint linux/amd64 Taskfile.yml
+go.cycle.2 task pre-push lint linux/arm64 Taskfile.yml
+go.cycle.2 task pre-push lint darwin/arm64 Taskfile.yml
+go.cycle.2 task pre-push lint windows/amd64 Taskfile.yml
+go.cycle.2 task pre-push lint freebsd/amd64 Taskfile.yml

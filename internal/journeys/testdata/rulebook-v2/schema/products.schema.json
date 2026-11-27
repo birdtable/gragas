@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "products.schema.json",
+  "title": "The product kinds: rulebook/products.yaml (schema v2)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kinds"],
+  "properties": {
+    "kinds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "name", "description"],
+        "properties": {
+          "key": {"type": "string", "pattern": "^[a-z]+(-[a-z]+)*$", "description": "what a project's .rulebook.yaml names, and a when or unless tests"},
+          "name": {"type": "string", "minLength": 2},
+          "description": {"type": "string", "minLength": 10},
+          "instances": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["ref"],
+              "properties": {
+                "ref": {"type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "a key in sources.yaml"},
+                "where": {"type": "string", "minLength": 1}
+              }
+            },
+            "description": "products of this kind, each as a source that shows it"
+          },
+          "note": {"type": "string"}
+        }
+      }
+    }
+  }
+}

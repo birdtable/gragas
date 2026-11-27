@@ -1,0 +1,7 @@
+kind: Security
+body: >-
+  **No roll-back, restore or writer touches a path under .git.** gragas has no writer that writes
+  under .git today; a journal record that names one, as .git/config, a hook or .GIT/hooks/pre-commit
+  in any case, is now refused by the roll-back, by journal restore (before it reads the file or says
+  a line for it) and by the Writer, with nothing written. The Writer now refuses every name a disk reads as another, not only .git: a reserved name such as con or nul.txt, a trailing dot or space, and the ignored code points. A plan already held to that rule, so nothing a plan writes changes.
+time: 2026-11-23T12:00:00.00000+01:00

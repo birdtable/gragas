@@ -1,0 +1,26 @@
+.gr-tabs-list {
+  display: flex;
+  gap: var(--gr-space-1);
+  border-bottom: 1px solid var(--gr-control-border);
+}
+
+.gr-tab {
+  padding: var(--gr-space-2) var(--gr-space-4);
+  font: inherit;
+  color: var(--gr-text-muted);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.gr-tab[data-active] {
+  color: var(--gr-text-ink);
+  font-weight: 600;
+  border-bottom-color: var(--gr-text-action);
+}
+
+.gr-tab-panel {
+  padding: var(--gr-space-4) 0;
+  color: var(--gr-text-prose);
+}

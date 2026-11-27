@@ -1,0 +1,427 @@
+part: ts
+concern: type-safety
+order: 2
+title: Type escapes and type coverage
+summary: >-
+  The type system is only as good as its holes. This concern bans the ways out of it (explicit any,
+  assertions, suppression comments), makes outside data enter through a parse, gives each kind of id its own
+  type, and measures the share of values that escape.
+rules:
+  - id: ts.type-safety.1
+    slug: no-explicit-any
+    since: 0.1.0
+    rule: No explicit `any` appears in source, and none appears in a signature.
+    detail: >-
+      typescript-eslint `no-explicit-any` as an error, with no exemption inside source files; the untyped
+      rules run without type information so they work on every file kind. On `.astro` files the typed rules
+      are switched off for the virtual script files and carried by oxlint. Use `unknown` and narrow, or a
+      parsed type. Biome form: `noExplicitAny` at error.
+    level: function
+    why: >-
+      One `any` turns off checking for everything it touches, and spreads through inference. At the donor repo
+      118 non-null assertions sat in one baseline (evidence C); `any` and the empty record are the worst holes
+      at a signature.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: typescript-eslint-docs
+        where: no-explicit-any
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: typescript-eslint-strict-type-checked
+        tier: "0"
+        note: >-
+          typescript-eslint `@typescript-eslint/no-explicit-any` as an error. Plant: `const x: any = 1` fails;
+          the same with `unknown` and a narrowing passes. Control: a function with a named parameter type
+          passes
+    open:
+      - Not run on `.tsx` files.
+      - >-
+        On `.astro` the untyped rule is carried by oxlint because the typed rules cannot read the virtual
+        script files.
+      - >-
+        v1 evidence, not yet a source: C (the donor repo's own lint, plus a trial on `.ts` files)
+    note: >-
+      A related rule in the Go part bans an empty interface in an exported signature; the two are separate
+      checks.
+  - id: ts.type-safety.2
+    slug: no-type-assertions
+    since: 0.1.0
+    rule: >-
+      No forced type assertion (`as T`, `as unknown as T`) and no non-null assertion; narrow the value or
+      parse it.
+    detail: >-
+      typescript-eslint `consistent-type-assertions` with `assertionStyle: never` (outside tests; `as const`
+      is not flagged), `no-non-null-assertion`, and a rule against an unsafe assertion that narrows. A
+      response from outside is never cast: it is parsed against a schema or typed by the generated client.
+      Biome form: `noNonNullAssertion` at error and a GritQL plugin for an `as` assertion other than `as
+      const`; the unsafe-narrowing half (`no-unsafe-type-assertion`) needs types and is ESLint-only.
+    level: function
+    why: >-
+      An assertion is a claim the compiler cannot check; one wrong claim removes the safety of a whole path.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: typescript-eslint-docs
+        where: consistent-type-assertions
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: typescript-eslint-strict-type-checked
+        tier: "0"
+        note: >-
+          typescript-eslint `consistent-type-assertions` (assertionStyle never), `no-non-null-assertion` and
+          `no-unsafe-type-assertion` as errors. Plant: `a!.b` fails; `x as Foo` fails; the typed twin that
+          narrows passes. Control: `as const` passes
+    open:
+      - >-
+        Not run on `.tsx`. The assertion style `never` did not flag `as const`, confirmed in a trial.
+      - "v1 evidence, not yet a source: C (118 non-null assertions in one donor baseline)"
+  - id: ts.type-safety.3
+    slug: suppression-comments-need-a-reason
+    since: 0.1.0
+    rule: >-
+      No `@ts-ignore` and no `@ts-nocheck`; `@ts-expect-error` needs a description, and any suppression
+      carries a reason and a ticket.
+    detail: >-
+      typescript-eslint `ban-ts-comment` as an error: every directive needs a description of at least 10
+      characters; a type-check suppression names a ticket and a reason of a minimum length; a file-wide
+      suppression is banned. Counts of suppressions only fall, through ESLint bulk suppressions (see
+      ts.lint-config.1). Biome form: `noTsIgnore` at error, plus a separate comment scan that fails
+      `@ts-nocheck` and an expect-error comment with no ticket and reason.
+    level: function
+    why: >-
+      A suppression with no reason is a bug that has been hidden. The same rule family covers no `any` and no
+      unchecked cast without a reason.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: typescript-eslint-docs
+        where: ban-ts-comment
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: typescript-eslint-strict-type-checked
+        tier: "0"
+        note: >-
+          typescript-eslint `ban-ts-comment` (descriptions of at least 10 characters, ts-ignore and ts-nocheck
+          banned), plus a rule for the ticket pattern in the description. Plant: `// @ts-ignore` fails; `//
+          @ts-expect-error` with no description fails. Control: an expect-error with a ticket and a reason
+          passes
+    relates:
+      - id: ts.lint-config.1
+        how: see
+    open:
+      - >-
+        The ticket pattern rule is written from the source's text; the minimum description length differs
+        between sources (10 characters in the preset).
+  - id: ts.type-safety.4
+    slug: parse-outside-values
+    since: 0.1.0
+    rule: >-
+      A value from outside is never cast to a type; it is parsed against a schema, or typed by the generated
+      client.
+    detail: >-
+      The common form is `response.json()` cast with `as T`; it is banned. The parse happens once at the edge
+      and the rest of the code sees the parsed type. Biome form: a GritQL plugin for an `as` assertion whose
+      operand is a `json()` call or `JSON.parse`.
+    level: function
+    why: >-
+      A cast response is trusted without a check; a server change then breaks callers far from the call.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          no-restricted-syntax on an `as` assertion whose operand is a call to `json()` or `JSON.parse`,
+          together with the assertion ban. Plant: `const u = (await res.json()) as User` fails. Control:
+          parsing the result with the schema passes
+    relates:
+      - id: ts.type-safety.2
+        how: see
+    open:
+      - >-
+        The selector for the response-cast form is written from the source text, not run.
+    note: >-
+      Narrower than ts.type-safety.2, which covers every assertion; this one names the form that crosses the
+      trust boundary.
+  - id: ts.type-safety.5
+    slug: typed-exports-of-core
+    since: 0.1.0
+    rule: >-
+      No `any`, unparsed `unknown`, raw JSON or untyped record appears in the exported signature of a core
+      module; data is parsed at the adapter's edge into a named type.
+    detail: >-
+      A type-aware lint over the exported signatures of files under the core path. It resolves aliases,
+      because the known way round is a type alias over a record, so the scan looks at the underlying type. It
+      extends the request-validation rule (one validation by the contract) and the no-`any` rule: those cover
+      the request and the use of `any`, and not a core function that takes `unknown` or `Record<string,
+      unknown>`. ESLint-only as a lint rule, because the scan resolves type aliases; a Biome project holds it
+      by a separate check that reads exported signatures through the compiler API.
+    level: type
+    why: >-
+      Argued, with no fault in the record. Parsed types at the boundary are what make a later adapter cheap
+      (principles report P-01 section 19).
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: p-01-core-programming
+        where: section 19
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: analyzer
+        tier: "1"
+        note: >-
+          v1 class our-plugin. a type-aware lint rule over exported signatures of core-path files that
+          resolves aliases and flags any, unknown and record types. Plant: a core function taking
+          `Record<string, unknown>` fails; an adapter taking it passes. Control: a core function taking a
+          named parsed type passes
+    open:
+      - The rule is argued, with no failure case in the record.
+      - The held-by tier is 1 or 2 in the source; set to 1 here.
+      - The alias-resolving scan is inference; the plugin is not built.
+      - "v1 evidence, not yet a source: practice (argued from the principles report)"
+      - "v1 reference, not yet a source: backend report B-04 section 4"
+    note: >-
+      Held-by in the source is a gate at tier 1 or 2. Agents get round it with a type alias over the record,
+      which is why the scan resolves the underlying type.
+  - id: ts.type-safety.6
+    slug: branded-ids
+    since: 0.1.0
+    rule: >-
+      Ids are branded types, so one kind of id cannot be passed where another is expected.
+    detail: >-
+      Each id kind is a branded string derived from its schema (the schema library's brand), declared once
+      next to the entity. A function takes the branded type; a plain string is parsed into it at the edge.
+    level: type
+    why: >-
+      Two ids are both strings; passing one for the other compiles and returns nothing or the wrong record.
+    kind: rule
+    strength: Review
+    status: active
+    sources:
+      - ref: wlaschin-dmmf
+        where: types as documentation
+        backs: rule
+    review_question: >-
+      Does this function take two ids of different kinds as plain strings, and which brand would tell them
+      apart?
+    open:
+      - >-
+        No mechanical check yet; a lint that flags a parameter named `*Id` typed as string would be a
+        candidate.
+      - >-
+        v1 evidence, not yet a source: practice (wanted; no UI catalogue row names distinct id types)
+  - id: ts.type-safety.7
+    slug: types-make-wrong-programs-fail
+    since: 0.1.0
+    rule: >-
+      Types are used so that a wrong program does not compile, through branded ids, exhaustive unions and
+      parsed values.
+    detail: >-
+      Switches over a union are exhaustive and end in a never check; values are parsed once at the edge; ids
+      are branded; links are typed.
+    level: program
+    why: >-
+      A guidance rule with no check of its own; its parts are held by other rules (assertions, branded ids,
+      typed destinations).
+    kind: instruction
+    strength: Review
+    status: active
+    sources:
+      - ref: minsky-effective-ml
+        backs: rule
+    review_question: >-
+      Which wrong program in this change would still compile, and what type would reject it?
+    open:
+      - >-
+        Instruction only; the exhaustive-union part is held by typescript-eslint switch-exhaustiveness-check
+        in the lint concern.
+  - id: ts.type-safety.8
+    slug: dependencies-ship-types
+    since: 0.1.0
+    rule: >-
+      A dependency ships its own types, or a matching types package exists in the lock.
+    detail: >-
+      After an install, each added direct dependency's manifest has `types`, `typings`, an exports entry with
+      types, or a matching `@types` package is in the lock; otherwise the check fails. It reads the installed
+      package manifests.
+    level: file
+    why: An untyped dependency brings `any` in through its imports (evidence D).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. a lock-diff check after install that reads each added direct dependency's manifest
+          in node_modules and the lock for a types package. Plant: a scratch untyped package fails. Control: a
+          typed package passes
+    open:
+      - Runs after install; the check is not built.
+  - id: ts.type-safety.9
+    slug: escapes-only-fall
+    since: 0.1.0
+    rule: >-
+      The count of values that escape the type system (`any`, assertions, non-null assertions, suppressions)
+      only falls.
+    detail: >-
+      The type-coverage tool reports the share of identifiers whose type is not `any`, and with its strict
+      option counts casts and non-null assertions as well. The suppression counts only fall through ESLint
+      bulk suppressions paired with a per-file count (ts.lint-config.1). In a Biome project the suppression
+      count is the count of `biome-ignore` comments, held by the same shrink-only number.
+    level: program
+    why: >-
+      The share is the measure; without it the bans above are met by moving the hole, not closing it.
+    kind: measure
+    strength: Hard
+    status: active
+    sources:
+      - ref: type-coverage
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: type-coverage
+        tier: "3"
+        note: >-
+          the type-coverage tool with its strict option, committed as a shrink-only number, and ESLint bulk
+          suppressions for suppression counts. Plant: a change that adds an `any` lowers coverage below the
+          committed number and fails. Control: a change that removes an `any` raises the number and updates
+          the file
+    relates:
+      - id: ts.lint-config.1
+        how: see
+      - id: ts.type-safety.1
+        how: see
+    open:
+      - The baseline number and its file are set at adoption.
+      - "v1 evidence, not yet a source: C (donor baselines) and own measure"
+    note: The measure of ts.type-safety.1 to 3.
+  - id: ts.type-safety.10
+    slug: exported-functions-declare-return-type
+    since: 0.1.0
+    rule: A function exported from a module declares its return type.
+    detail: >-
+      Exported functions, methods of exported classes and exported arrow functions name their return type; a
+      local function may infer it. In library mode the compiler holds it: `isolatedDeclarations` in the
+      library base (ts.compiler.3) fails an export whose type would need inference to emit. In app mode the
+      lint holds it. Biome form: `useExplicitType` at error. ESLint form:
+      `@typescript-eslint/explicit-module-boundary-types` at error.
+    level: function
+    why: >-
+      A declared return type is the contract the next reader builds on, and it stops an inferred type drifting
+      under a refactor in a file the caller never sees.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: typescript-handbook
+        where: isolatedDeclarations
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          v1 class compiler. `isolatedDeclarations` in the library base. Plant: an exported function with no
+          return type fails the type check in a library package. Control: the same function with a declared
+          return type passes
+      - binding: ts
+        class: preset-config
+        tool: eslint
+        tier: "1"
+        note: >-
+          Biome `useExplicitType` or ESLint `@typescript-eslint/explicit-module-boundary-types` at error in
+          app packages. Plant: an exported function with no return type fails the lint. Control: a local
+          function with an inferred type passes
+    relates:
+      - id: ts.compiler.3
+        how: see
+    open:
+      - >-
+        Biome's explicit-type rule is new; its coverage of methods and arrow functions is read from its docs,
+        not run.
+  - id: ts.type-safety.11
+    slug: one-clock-port
+    since: 0.1.0
+    rule: >-
+      Time enters through one clock port, instants are one branded type, and Date is constructed only in the
+      clock adapter and the file reader.
+    detail: >-
+      Code that needs the time takes the clock port as a parameter; `new Date()`, `Date.now()` and
+      `performance.now()` appear only in the clock adapter, and `new Date(value)` only there and in the
+      adapter that reads file times. Every other module carries the branded instant type, never a `Date` or a
+      bare number. Tests use the fake clock. The two allowed paths are listed in one place. Biome form: a
+      GritQL plugin for a `Date` construction or `Date.now()` call, with an `overrides` entry for the two
+      listed paths. ESLint form: `no-restricted-syntax` on the same calls with the same path list.
+    level: function
+    why: >-
+      A clock port is what makes every time-dependent test deterministic; a direct read of the clock is a test
+      that passes today and fails in another timezone or at midnight.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: eslint
+        tier: "1"
+        note: >-
+          a GritQL plugin for Biome, or ESLint `no-restricted-syntax`, failing `new Date`, `Date.now` and
+          `performance.now` outside the two listed paths. Plant: `Date.now()` in a domain module fails.
+          Control: the same call in the clock adapter passes, and a domain function that takes the clock port
+          passes
+    review_question: >-
+      Does this change pass a `Date` or a bare number for an instant where the branded instant type belongs?
+    open:
+      - The branded-instant half is review until a type-aware check exists.

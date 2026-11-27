@@ -1,0 +1,74 @@
+$ gragas plugin approve lint-a --json
+--- exit 0
+--- stdout
+{
+  "name": "lint-a",
+  "version": "1.0.0",
+  "digest": "<digest>",
+  "grants_digest": "sha256:a800c50cf9819f8cca410aea310f4a7a80602b2e3ad949ce932582c57832d4dd",
+  "since": {
+    "prior": "",
+    "recorded": false,
+    "changes": []
+  },
+  "tool": "lint-a",
+  "tool_versions": "\u003e=10.13.0 \u003c11.0.0",
+  "grants": [
+    {
+      "id": "lint-a",
+      "where": "script",
+      "path": "",
+      "manifest": "node_modules/lint-a/package.json",
+      "script_at": "/bin/lint-a",
+      "interpreter": "node",
+      "versions": "\u003e=10.13.0 \u003c11.0.0",
+      "version_argv": [
+        "--version"
+      ],
+      "version_pattern": "",
+      "whole_line": false,
+      "cache_vars": []
+    },
+    {
+      "id": "lint-a-native",
+      "where": "path",
+      "path": ".tools/bin/lint-a",
+      "manifest": "",
+      "script_at": "",
+      "interpreter": "",
+      "versions": "\u003e=2.0.0 \u003c3.0.0",
+      "version_argv": [
+        "version"
+      ],
+      "version_pattern": "v([0-9.]+)",
+      "whole_line": true,
+      "cache_vars": []
+    },
+    {
+      "id": "lint-a-helper",
+      "where": "pinned",
+      "path": "",
+      "manifest": "",
+      "script_at": "",
+      "interpreter": "",
+      "versions": "\u003e=1.4.0",
+      "version_argv": [
+        "--version"
+      ],
+      "version_pattern": "",
+      "whole_line": true,
+      "cache_vars": []
+    }
+  ],
+  "preset": "lint-a.config.js",
+  "resolve_from": "node_modules",
+  "install": [
+    "npm",
+    "install",
+    "--save-dev",
+    "lint-a"
+  ],
+  "approved": false,
+  "recorded": false
+}
+--- stderr

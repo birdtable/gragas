@@ -1,0 +1,8 @@
+# Paths confine takes: clean relative paths inside a root, one a line.
+a
+a/b.txt
+.gragas/pin.yaml
+...
+..a
+a..
+a b/c

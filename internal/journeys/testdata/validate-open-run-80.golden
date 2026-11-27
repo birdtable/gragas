@@ -1,0 +1,8 @@
+$ gragas validate
+--- exit 4
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  not ready  a run that wrote here never closed (run r1)
+    gragas journal recover --apply
+--- stderr

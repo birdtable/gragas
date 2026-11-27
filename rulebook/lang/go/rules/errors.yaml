@@ -1,0 +1,155 @@
+format: 3
+part: go
+concern: errors
+rules:
+  - id: go.errors.1
+    statement: "Every error is handled or returned; nothing is swallowed."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The linter checks type assertions and blank assignments in non-test code; suppressions are counted by the suppression ratchet of the gates part."
+      pros:
+        - "Own bugs: 3 of 60 sampled bugs. The linter is on everywhere with 235 suppressions in one repo."
+    sources:
+      - ref: harsanyi-100-go-mistakes
+        where: "chapter 7, mistake 53 (not handling an error)"
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: errcheck
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: golangci-lint
+        target: source
+        key: ineffassign
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: go.errors.2
+    statement: "An error is wrapped with %w and context saying what was being done, and compared with errors.Is or errors.As."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "Practice; a wrapped error compared with == silently stops matching."
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: errorlint
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: go.errors.3
+    statement: "Panic is for programmer errors only and never crosses a package's API, and an unchecked type assertion is banned."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: A panic outside main and tests sits on a one-file-per-entry allow list that only shrinks. A type assertion without the ok check is an unchecked error return. Whether a panic crosses a package API is review.
+      pros:
+        - "Own measure: panics outside main in our repos: 6 (20 in all), 8, 3, 2, 5 and 0."
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: golangci-lint
+        target: source
+        key: errcheck
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: go.errors.4
+    statement: "Only main calls os.Exit or a fatal log; a command returns its ending as a value (an exit status, or a typed result or error mapped to one in one place); and every refusal is testable in process."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no main package.
+    reasoning:
+      definition: "An exit call or a fatal log call outside main is a finding; the linter's per-rule cap is off so repeats are not hidden. Test files are excluded by path (a test main may call exit). A command function is func Verb(...) int or returns a typed ending or error; either way exactly one function maps endings and errors to the exit codes of cli.exit.1, by word or type, never by message. A test calls each command in process and reads its ending."
+      pros:
+        - "Own measure: 0 exits outside the main package everywhere today; a library that exits cannot be tested or reused. The part that protects is the lint: no exit outside main, so every path is testable in process. Both Go target programs return an ending because a refusal is a value they print on three surfaces, and forcing an error type in between adds a layer with no reader."
+    relations:
+      relates:
+        - cli.exit.1
+    sources:
+      - ref: decision-65-go
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: revive
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: go.errors.5
+    statement: "Error strings follow one style (lowercase, no trailing punctuation), and any exception is written down once."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "Practice. The ruling on style is open: the linter rule is disabled in three configs today, and a repo that keeps sentence-style errors lists the exception once in rule data."
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: staticcheck
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: go.errors.6
+    statement: "Nil flows (a map lookup or a nil pointer followed by a field read) are checked, advisory, with a count that only falls."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "Practice. Findings today: 206 in one repo and 106 in another; 75 tracker issues of the tool mention false positives."
+  - id: go.errors.7
+    statement: "Each error is handled once, logged or returned and not both; a new sentinel or typed error exists only when a caller branches on it."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "Practice; no fault in our record. Run on two repos: 0 real hits, so adoption debt is zero where tried."
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+  - id: go.errors.8
+    statement: "An error crossing a process or wire boundary travels as a word from a closed list plus detail and is typed again on the other side, and callers compare with errors.Is or errors.As, never the message."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The wire form is a word and a detail field; the receiving side maps the word back to the sentinel or typed error of the closed list, and an unknown word becomes one typed unknown error carrying it. A comparison of err.Error() or a strings.Contains on an error message is a finding."
+      pros:
+        - "Typing an error again after a flattening joint keeps callers off message strings that change; it is the Go side of the one refusal value of cli.errors.2."
+    relations:
+      relates:
+        - cli.errors.2
+    sources:
+      - ref: decision-65-go
+        backs: rule

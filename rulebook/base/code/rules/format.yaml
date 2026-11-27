@@ -1,0 +1,41 @@
+format: 3
+part: code
+concern: format
+rules:
+  - id: code.format.1
+    statement: "Code is clean under one formatter and one import-order tool, checked by the tool's output and not by its exit status."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "One formatter and one editor configuration are used across projects. In Go the code is gofmt- and goimports-clean, and the check is that the formatter and the standalone import-order tool print nothing (the formatter's list mode exits 0 on findings, so the exit status is not read); the import-order check uses the standalone tool, not the lint runner's formatter, which measured 141 CPU-seconds cold. In the web stack formatting is one command and the format check is in the gate, with a class-order plugin in the shared config. A tree-wide formatting commit is made once, in a quiet window, and listed in the blame-ignore file."
+      pros:
+        - "Unformatted code makes every diff noisy and every review slower; the floor items are cheap and run in every Go lint config. The one-time format commit has no blame-ignore row in Go today."
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+  - id: code.format.2
+    statement: "The language's vet and static analysis pass in the lint gate."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "In Go the lint runner runs the vet analyzers at their defaults and the static-analysis suite (all of its correctness, simplification and style groups, with the six non-default style checks off), from one shared configuration pinned by version. In the web stack the equivalent is the type check and the lint gate named in the web part."
+      pros:
+        - "These are the cheapest finders of real mistakes (a wrong print verb, a deprecated call); they run in six repositories today."
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: govet
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: golangci-lint
+        target: source
+        key: staticcheck
+        severity: error
+        rung: 0
+        run_point: commit

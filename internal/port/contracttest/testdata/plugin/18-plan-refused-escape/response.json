@@ -1,0 +1,1 @@
+{"error":{"code":"refused","message":"the standin hands no tool this config: a key is written with an escape, which a tool may read as another key","path":"/config/0/data"}}

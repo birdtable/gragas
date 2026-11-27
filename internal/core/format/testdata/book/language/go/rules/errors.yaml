@@ -1,0 +1,53 @@
+format: 3
+part: go
+concern: errors
+rules:
+  - id: go.errors.1
+    aliases: [go.errs.1]
+    statement: Wrap an error with what was being done.
+    strength: must
+    status: active
+    scope:
+      parts: [go]
+      paths: ["**/*.go"]
+      kinds: [service]
+    exemptions:
+      - paths: ["testdata/**"]
+        reason: fixtures hold planted code
+    reasoning:
+      definition: An error says what failed and what was being done.
+      pros: [the cause is found from the message]
+      cons: [longer messages]
+      decision: wrap-errors
+    pairs:
+      - number: 1
+        target: source
+    owner: team-a
+    review_by: "2027-01-31"
+    relations:
+      relates: [go.layout.1]
+      covers: [go.errors.2]
+    origin: authored
+    sources:
+      - ref: effective-go
+        where: errors
+        says: Errors are values.
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: config
+        key: wrapcheck
+        value: true
+        options: {ignore-sigs: [".Errorf("]}
+        severity: error
+        rung: 1
+        run_point: push
+        remedy: gofmt
+        pair: 1
+        pair_path: pkg/a.go
+        tightens: base.errors.1
+  - id: go.errors.2
+    statement: Return an error and never panic in a library.
+    strength: should
+    status: proposed
+    origin: migrated

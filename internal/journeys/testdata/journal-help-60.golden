@@ -1,0 +1,39 @@
+$ gragas journal --help
+--- exit 0
+--- stdout
+
+  Every run that wrote on this folder keeps a record: what
+  it
+  meant to do, the copy of each file it replaced and how it
+  ended. These commands read that record; nothing here asks
+  a
+  tool. The folder is named by a digest, never by its path.
+
+    gragas journal list
+    gragas journal recover --apply
+    gragas journal restore <run>
+
+  USAGE
+
+
+    gragas journal [command] [--flags]
+
+
+  COMMANDS
+
+    list               List the runs that wrote here
+    recover [--flags]  Roll back the runs that were
+                       interrupted
+    restore <run>      Print the lines that put a run's
+                       files back
+
+  FLAGS
+
+    --accessible       Plain questions (ACCESSIBLE)
+    --config           The settings file (GRAGAS_CONFIG)
+    -h --help          Help for journal
+    --json             Answer in one JSON document
+    --no-color         No colour (NO_COLOR)
+    --plain            Print plainly: nothing moves
+
+--- stderr

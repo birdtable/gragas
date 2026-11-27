@@ -1,0 +1,65 @@
+part: code
+concern: config
+order: 8
+title: Configuration reading
+summary: >-
+  How code reads its configuration: in one package, through a reader with a default and a doc row per key, and
+  with no literal service address, path, port or name of one installation outside the loaded config.
+rules:
+  - id: code.config.1
+    slug: no-address-fallback
+    since: 0.1.0
+    rule: >-
+      A value specific to one installation comes only from the loaded config: a literal of one in non-config,
+      non-test code fails, and a default is the program's own neutral choice said once, never one
+      installation's fact.
+    detail: >-
+      An installation-specific value is a service address, a path on one machine, a port, a container, host,
+      network or household name, or any other fact true of one deployment and not of the program. It comes
+      from the loaded config or is observed on the machine at run time. There is no literal service address or
+      fallback beside the configured one. A default exists only as the program's own neutral choice (a
+      documented port, a path under the platform's standard folders), declared once in the config package.
+      Config is read in one package with a reader, a default and a doc row per key; a secret never comes from
+      a flag. Variables are declared in a typed schema. A word-list check reads non-config, non-test source
+      and the defaults, with the installation's known names, addresses and paths as a list kept outside the
+      repository (supply.secrets.4 holds that list's handling); a hit fails.
+    level: file
+    why: >-
+      A hard-coded fallback address sends traffic to the wrong place when the configured one is missing. A
+      default holding one installation's fact works on the author's machine and silently misbehaves on every
+      other.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-code
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          A structural rule flagging a service address literal next to a configured address read. Plant: A
+          literal service address used as a fallback fails. Control: The configured address alone passes.
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          a word-list test over non-config, non-test source and the config defaults against the installation
+          list kept outside the repository, plus a check that defaults are declared only in the config
+          package. Plant: a default host name equal to a name on the installation list fails; a literal LAN
+          address in a command file fails. Control: a neutral default port declared in the config package
+          passes
+    relates:
+      - id: supply.secrets.4
+        how: see
+      - id: gates.own-rules.4
+        how: see
+      - id: web.delivery.8
+        how: see
+    open:
+      - Taken from one bundled source row of five small domain rules written as checks.
+    note: >-
+      Moved from gates.own-rules.4, where the merge wrote it with the doubt that it belongs in code (config
+      reading). The web form, a service base URL from one descriptor that throws when unset, is held in
+      web.delivery.8.

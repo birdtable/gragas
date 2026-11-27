@@ -1,0 +1,222 @@
+part: arch
+concern: decisions
+order: 1
+title: Decision records
+summary: >-
+  Structural choices are written down before code, as one file each with a status, supersession links and a
+  link to the check that holds them. Who rules a kind of change, and which alternative was tried and lost, are
+  recorded in the same place, so a reader and an agent can find why the shape is what it is.
+rules:
+  - id: arch.decisions.1
+    slug: one-file-per-decision
+    since: 0.1.0
+    rule: >-
+      A decision has a permanent id and one home the repo declares, a status, supersession links on both
+      sides, and a link to the check that holds it or the word instruction; every cited id resolves, and one
+      index test checks all of it.
+    detail: >-
+      The repo declares one container for decisions: a file per decision (a MADR-style record with front
+      matter validated against a JSON Schema), an entry in one append-only log amended only by dated
+      sub-entries, or a numbered row in a design note with ids numbered across notes. Whatever the container,
+      the invariants are the same: an id that is never reused, a status from a fixed set, supersedes and
+      superseded-by links where a target that does not point back fails, and a check link or the word
+      instruction on an accepted decision. A reversal is a new decision that marks the old one superseded; the
+      old one is not edited away. Every decision id cited anywhere in the repo resolves, links are resolved by
+      a link checker, and an accepted decision whose check file does not exist fails. One index test reads the
+      declared container and checks all of this.
+    level: file
+    why: >-
+      Decision logs are prose files in each repo, so a decision cannot be found, superseded or tied to its
+      check. Three target repos keep decisions in three different containers with the same invariants; the
+      invariants are what a reader relies on, the container is not.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: madr
+        backs: rule
+      - ref: decision-65-arch
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the companion docs check reads the container the repo declares (front matter
+          validated against a JSON Schema by santhosh-tekuri/jsonschema v6.0.3, Apache-2.0, released 6 Aug
+          2026; or the log's or notes' numbered entries): status enum, supersedes and superseded-by symmetric,
+          check link or the word instruction, ids unique and never reused, every cited id resolves; links
+          resolved by the repo's own offline link test. Plant: a decision with no status fails; a supersedes link whose
+          target does not point back fails; a cited id with no decision fails. Control: a complete pair passes
+    open:
+      - >-
+        Note, 8 Nov 2026: a slug is a permanent id and one home, so an id need not be a number; records
+        already numbered keep their numbers (arch.decisions.5).
+      - >-
+        The front-matter schema plugin first tried was rejected for its age (its row in the docs part's tools
+        is replaced); no schema tool has been tested end to end and no plant is recorded.
+  - id: arch.decisions.2
+    slug: structural-change-needs-a-ruled-record
+    since: 0.1.0
+    rule: >-
+      A structural change needs a ruled decision record before any code, with a machine-read header.
+    detail: >-
+      Structural means a new or split module, a new dependency edge outside an existing record's scope, a new
+      shared package, a new element kind, an app-wide concern, a new library family, or a new gate tier or
+      always-full check. If no door of the classification table (arch.structure.1) fits, the record is written
+      and ruled before code. Only a ruled record may be named when gate configuration changes. A chart library
+      is such a decision: the first project that needs one writes the record, with an earlier ruling as the
+      recorded prior, and there is no ban and no pick now. A new rule, shared package or framework needs its
+      change record, check and pack first.
+    level: process
+    why: >-
+      A structure that appears in code first becomes the precedent; the record makes the choice visible while
+      it is still cheap to change.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. commitlint 21.2.4 trailer-exists for a Door trailer and body-empty at land (both
+          fired in a run) plus a header check on the record; the diff-conditional half (a diff that adds a
+          package or dependency needs the trailer) is the land step's own check. Plant: a message with no Door
+          trailer exits 1, with one exits 0; a diff adding a dependency without the trailer fails at land.
+          Control: a message with the trailer passes
+    relates:
+      - id: arch.structure.1
+        how: see
+    open:
+      - >-
+        The message form is held by commitlint, which reads only the message; the diff condition is ours and
+        its plant is owed.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: arch.decisions.3
+    slug: who-rules-is-recorded
+    since: 0.1.0
+    rule: >-
+      The kind of change decides who rules it, and the decision record names who ruled.
+    detail: >-
+      A new module, slot, shared package or check is ruled by the area lead. A new library family, anything
+      that changes a recorded operator decision, or a change to the ten-domain list's foundation and business
+      split is ruled by the operator through the engineering manager. The record carries its ruling header.
+    level: process
+    why: >-
+      A change ruled by the wrong person is not ruled; naming the ruler in the record is what lets a later
+      reader trust it.
+    kind: instruction
+    strength: Review
+    status: active
+    sources:
+      - ref: decision-2
+        backs: rule
+      - ref: decision-3
+        backs: rule
+      - ref: decision-28
+        backs: rule
+    review_question: Who ruled this change, and is that the person this kind of change belongs to?
+    open:
+      - >-
+        Rulings come from the operator, the owner lane and the leads; the record names who ruled and no gate
+        can judge whether the ruling was right.
+  - id: arch.decisions.4
+    slug: second-design-recorded
+    since: 0.1.0
+    rule: >-
+      Every decision record lists each rejected alternative with the reason it lost, a rejected item with no
+      reason fails, and a new module, repository or shared interface answers two questions in its change.
+    detail: >-
+      Each decision, in whatever container arch.decisions.1 declares, has a Rejected part listing every
+      alternative considered, each with the reason it lost beside it. A decision with no alternative says so
+      in one line (none considered, and why the answer was forced). The index test of arch.decisions.1 fails a
+      decision with no Rejected part and a rejected item with no reason. Whether the alternatives were real
+      stays review. A seeded decision record with a single design must be flagged.
+    level: process
+    why: >-
+      Design it twice was written assuming hours per design; for an agent a second design costs minutes, and
+      the first plausible design is what agents settle on. The rejected alternative is the part somebody later
+      proposes again; without its reason the same argument is held twice.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ousterhout-aposd
+        where: chapter 11
+        backs: rule
+      - ref: b-04-philosophy-of-software-design
+        where: item T10
+        backs: rule
+      - ref: decision-65-arch
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the decision index test of arch.decisions.1 requires a Rejected part per decision
+          and a reason per rejected item. Plant: a decision whose rejected item has no reason fails. Control:
+          a decision with each alternative and its reason passes
+    review_question: What was the second design for this interface, and why did it lose?
+    relates:
+      - id: arch.decisions.1
+        how: see
+      - id: arch.structure.5
+        how: see
+    note: >-
+      The driver question for a new module or repository is in arch.structure.5. v1 review check (review is
+      not a v2 check class): a required field in the change template (presence only) and a model lens that
+      judges whether the alternatives were real
+  - id: arch.decisions.5
+    slug: no-shared-counter
+    since: 0.1.0
+    rule: >-
+      An id is never the next free number taken on a branch: it is a slug, derived from content, or assigned
+      by the landing step, and a reference to an id that has not landed is refused.
+    detail: >-
+      Two branches that each take the next number collide as surely as two edits of one line. Where an id has
+      no public grammar (a decision, a note, a planned item) it is a slug, permanent and chosen once; ids
+      already issued as numbers keep their numbers. Where it has one that must stay numeric and frozen (a
+      rule id), the author writes a provisional form and the landing step allocates the number, rewrites
+      every reference in the change and records the allocation in its own commit; until that exists, whoever
+      dispatches the work assigns the number in the ticket. A number the host system already allocates (a
+      pull request's) is safe. Counts that are ratchets are not ids: two changes moving one count meet on
+      purpose, and the answer is to add them. Per-author ranges are not used, since they put the roster into
+      permanent ids.
+    level: process
+    why: >-
+      Own measure: two changes took the same decision number in the same week, and the rulebook's rule ids and
+      the fourteen ports are counters of the same shape.
+    kind: rule
+    strength: Hard
+    status: proposed
+    sources:
+      - ref: towncrier-fragments
+        says: >-
+          Change notes are fragments named by the change, not entries numbered in one file.
+        backs: rule
+      - ref: go-api-next
+        says: >-
+          A proposed API addition is a file named by its issue, joined at release.
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        fix: never
+        note: >-
+          the rulebook check refuses a provisional id on the main branch and a numeric id the lock file does
+          not hold; the docs test refuses two records with one id. Plant: two decision records with one id
+          fail; a provisional rule id on main fails. Control: two records with distinct slugs pass
+    relates:
+      - id: arch.decisions.1
+        how: see
+    open:
+      - >-
+        Proposed until the checks exist. Slug ids for new decisions are step 6 of gragas#477; ids for rules
+        assigned at landing are step 11, built only when two rule changes first collide. Until then whoever
+        dispatches the work assigns the number in the ticket.

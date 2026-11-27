@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("packages:\n  - {package: write, job: j, banned_calls: [os.CreateTemp]}\n")

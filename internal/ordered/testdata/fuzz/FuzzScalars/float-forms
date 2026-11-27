@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("k: .inf\nj: -.Inf\nh: .NaN\ng: 1.5e+3\n")

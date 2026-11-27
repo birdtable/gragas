@@ -1,0 +1,46 @@
+format: 3
+name: fixture-base
+version: 1.2.0
+kind: overlay
+licences:
+  rules: CC-BY-4.0
+  checker_code: Apache-2.0
+  presets: MIT
+language: en
+docs_url: https://example.com/fixture-base/
+explorer_url: https://example.org/fixture-base/explorer/
+extends:
+  rulebook: fixture-parent
+  version: 0.9.0
+  source: https://example.com/fixture-parent.git
+  content_hash: sha256:ab78351089603a19341bd2b875a5f7348d516b1d60335727c5e54c1e62131640
+imports:
+  - rulebook: fixture-other
+    version: 0.3.0
+    source: https://example.org/fixture-other.git
+    content_hash: sha256:b77b6a5859c584ff1f1acf5fc4f59e3d19d9a213e8bcf5a944a130fb0b3fa6c2
+    parts: [ui]
+owners: [alex]
+governance:
+  contribution: proposals
+  checker_publishers: [alex]
+  checker_second_reviewer: true
+  checker_proof: sandboxed
+  decision_required: true
+  trial_releases: 2
+  review_days: 180
+tested:
+  tools:
+    - {name: golangci-lint, version: 2.1.0}
+    - {name: stylelint, version: 16.0.0}
+  plugins:
+    - {name: wrapcheck-plugin, version: 1.4.0}
+  kits:
+    - {name: fixture-kit, version: 0.2.0}
+  adapters:
+    - {name: golangci-lint, version: 1.0.0}
+  min_engine: 0.1.0
+budgets:
+  statement_words: 30
+  reasoning_words: 80
+hand_written_presets: [sqlfluff]

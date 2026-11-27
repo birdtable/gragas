@@ -1,0 +1,11 @@
+# Paths a person on another system could write, which no path of this system's
+# spelling holds: a backslash, a drive letter. Each is refused as a path in a
+# finding or a declared pair. One case a line; \\ is a backslash.
+#
+# a backslash
+src\\x.go
+a\\b
+# a drive letter
+C:x.go
+c:/x.go
+c:x

@@ -1,0 +1,192 @@
+part: cli
+concern: exit
+order: 1
+title: Exit codes and version
+summary: >-
+  A command line program in any language ends with one of seven documented exit codes that a script can rely on,
+  takes those codes from one owner package, and says its version, commit, toolchain and, where it has them,
+  its server's version and API number, from what was stamped at build.
+rules:
+  - id: cli.exit.1
+    slug: documented-exit-codes
+    since: 0.1.0
+    rule: >-
+      One documented exit-code table, tested against the code and the built binary, with the estate set 0
+      done, 1 failed or findings, 2 usage, 3 busy, 4 not ready, 5 refused, 6 declined, in every language; a
+      refused result, a declined one and a failed one never share a code; and a command whose port the machine
+      lacks says not on this machine with the port's name and exits 2.
+    detail: >-
+      A test parses the documentation table and the exit constants and fails on any code, name or meaning that
+      differs, and runs the built binary through the matrix for one refused, one failed and one missing-port
+      path and compares the exit status. A refusal is a rule holding and a failure is a bug or an outage: an
+      agent retries one and never the other, so they never share a code. A typed refusal or error maps to its
+      code in one place, by its word or type, never by its message (go.errors.4). A program in another
+      language holds the same seven through its own exit owner. Declined (6) is a plan that was shown, asked
+      for a yes, and not applied because no yes was given, whether the answer was no, no answer or the end of
+      the input: nothing changed and nothing went wrong, and a caller never runs it again unasked, which is
+      why it has a code of its own and does not end done (0), where a script would believe the plan was
+      applied. It is not refused (5), where a rule held against the request, and not failed (1), where the
+      program broke; an agent never retries a declined plan unasked. Failed shares code 1 with findings and
+      is told apart from it by the word and by the kind in the JSON document, so a gate fails on an engine
+      failure while a reader still sees which of the two ended the run. Whether
+      a run that only shows a plan and asks nothing ends done (0) or declined (6) is not set here. A program
+      that never shows a plan never exits 6, yet its table names the code, so a script reads one table across the estate. The set 0 to 5 was ruled 4 Nov (decision 13)
+      and 6 was added on 9 Nov; no meaning of 0 to 5 moved. The change is applied in
+      lockstep: one release of the shared module sets the failed and refused codes and
+      binds the closing word refused to 5, with the programs' tests changed in the same tag (decision 16);
+      every document that maps refused to 1 changes in one commit; the test in each program is the gate that
+      proves it.
+    level: program
+    why: >-
+      Own measure. Today one program uses 0, 1, 2, 64, 69, 75 and 78; the shared module uses 0 to 4 with 1 for
+      both refused and failed; three others use 1 for everything; one TypeScript program uses three codes with
+      refusal and bad usage both 1.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It has no exit codes.
+    sources:
+      - ref: decision-13
+        backs: rule
+      - ref: decision-16
+        backs: rule
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          Go test in the shared repo-check package, lifted from two existing tests (the
+          table-against-constants test and the five-codes test): parse the markdown table and the exit
+          package's constants, fail on any difference, and run the built binary through the matrix for one
+          refused, one failed and one missing-port path. Plant: set the refused code to 1 in a copy of the
+          exit package, or change the document row for 5, or drop the row for 6, or exit 4 on a missing port, and the
+          test fails.
+          Control: the unchanged tree passes
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          the same table-against-constants test over the program's own exit owner module, and a matrix run of
+          the built CLI for one refused and one failed path. Plant: a refusal that exits 1 fails. Control: a
+          refusal that exits 5 passes
+    relates:
+      - id: go.errors.4
+        how: see
+    open:
+      - >-
+        The check exists in two repos but nobody has seen it fail (no plant recorded), so the plant must be
+        run once per repo at adoption.
+      - One program moves at its next minor with a changelog entry.
+    note: >-
+      The cost of the codes 0 to 5 falls on the three-code TypeScript program named in evidence: it remaps bad
+      usage 1 to 2, refusal 1 to 5 and could-not-run 2 to 1. That breaks scripts that read its exit status, so
+      the remap ships as a breaking change recorded in that program's changelog. Its three-code meaning is
+      kept: bad usage stays usage and a person's mistake becomes refused.
+  - id: cli.exit.2
+    slug: exit-codes-from-the-owner
+    since: 0.1.0
+    rule: >-
+      Exit codes are imported from the one leaf package that owns them and never declared elsewhere, and a
+      daemon imports the leaf so it does not link the terminal look.
+    detail: >-
+      Syntax-pattern rules flag a constant or variable named like an exit code with an integer literal, and an
+      exit call with an integer literal argument, anywhere outside the owner package, on a shrink-only list
+      (one file per entry). A test in the owner package asserts that the leaf's dependency list contains no
+      terminal-library module. The owner package is the program's own exit leaf. Where a shared kit owns
+      codes, the program imports them from it. Where the kit takes the program's table, the program's leaf is
+      the owner and the kit only checks and draws. A daemon imports the leaf so it does not link the look.
+    level: file
+    why: >-
+      Decision 13; the program's own exit leaf, `internal/exit`, owns the codes, so there is one place they can change, and the shared module does not re-export them.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    sources:
+      - ref: decision-13
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rules using the node-kind form (a pattern form matched nothing in the trial): const or var
+          spec with an exit-like name and an int literal, and an exit call with an int literal, over non-test
+          Go outside the owner; a dependency-list test of the leaf. Plant: const ExitBusy = 3, a grouped
+          ExitFailed = 1, and os.Exit(3) are reported; os.Exit(code) is not. Control: the owner package's own
+          constants pass
+    open:
+      - >-
+        Real clones, non-test: const declarations 8 in one program, 0 in the others; the exit-call counts are
+        in the trial record.
+  - id: cli.exit.3
+    slug: version-from-build-info
+    since: 0.1.0
+    rule: >-
+      --version prints the release tag and the commit stamped at build (a build with no tag says so), the
+      toolchain version, and, for a client of a server, the server's version; version --json gives one JSON
+      document with the same keys plus the API number for a program with an API.
+    detail: >-
+      The tag comes from git describe stamped at build time; a build with no tag prints v0.0.0-<commit>. In Go
+      the commit and toolchain are compared with the binary's build information (revision, modified flag,
+      toolchain), built with VCS stamping; another language stamps the same fields at build. A client asks its
+      server for the server's version and prints unknown with a reason when it cannot reach it (cli.output.9).
+      The version line is printed once, also off a terminal, and never with the banner. The matrix runs both
+      forms, asserts exit 0, a non-empty first line and a JSON document with the keys version, commit and
+      toolchain (plus server and api where they apply), and compares them with what was stamped. A repo-check
+      test demands that each program has a test calling the matrix, so a program cannot skip it. The health
+      document of the daemon repeats the same fields (see the daemon part).
+    level: program
+    why: >-
+      Own measure: the four CLIs disagree on --version, and it fails in three of them. The version line is the
+      first thing a person pastes into a bug report and the first thing a reader checks against a provider, so
+      it carries the tag, the commit and the API number, the same shape in any language. This rule starts the
+      matrix helper that the output, config, environment and signal rules reuse.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It has no binary.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          binary matrix in the shared test package, exec of the built program with --version and version
+          --json; a repo-check test that each cmd folder has a test calling the matrix; comparison with go
+          version -m. Plant: a binary whose --version prints nothing, one whose version --json prints two
+          documents, one with a hard-coded version string, and a client whose JSON has no server key all fail.
+          Control: a binary built from the hello-world kit program passes and reads its stamped tag and
+          runtime build info
+    relates:
+      - id: cli.output.9
+        how: see
+    open:
+      - >-
+        The matrix is shared code; its alternative, each repo writing its own, is caught by the repo-check
+        that demands the call.
+    note: >-
+      Merges the --version rule with the rule that the version comes from build info; one matrix check holds
+      both.

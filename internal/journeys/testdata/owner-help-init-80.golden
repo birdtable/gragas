@@ -1,0 +1,51 @@
+$ gragas help init
+--- stdout
+
+  Sets up the folder you are in. In a folder that is neither a
+  project nor a rulebook it asks which. A rulebook gets its
+  identity, its structure and a first history entry, and the
+  two lines that wire the guard are printed for you to add.
+  The project form is not built yet.
+
+  Without --apply it prints the plan and writes nothing.
+
+    gragas init --kind rulebook --name my-rules --owner me
+    gragas init --kind rulebook --name my-rules --owner me --apply
+
+  USAGE
+
+
+    gragas init [--flags]
+
+
+  FLAGS
+
+    --accessible       Plain questions (ACCESSIBLE)
+    --apply            Write the files
+    --config           The settings file (GRAGAS_CONFIG)
+    --docs-url         The base URL of the published pages
+    -h --help          Help for init
+    --import           A part taken from another rulebook,
+                       RULEBOOK@VERSION=PART,PART=sha256:<hash> (repeat for
+                       more)
+    --json             Answer in one JSON document
+    --kind             What the folder is: project or rulebook
+    --language         The authoritative language (en)
+    --layer            The slug of the first layer (core)
+    --licence          The licence of the rules (CC-BY-4.0)
+    --name             The rulebook's short name, a slug
+    --no-color         No colour (NO_COLOR)
+    --owner            Who owns the rulebook, shown in its views; it grants
+                       nothing (repeat for more)
+    --parent           An overlay's parent rulebook
+    --parent-hash      The content hash of the parent's pinned release,
+                       sha256:<64 hex digits>
+    --parent-version   The parent's version the overlay pins
+    --part             The slug of the first part (core)
+    --plain            Print plainly: nothing moves
+    --presets-licence  The licence of the presets (MIT)
+    --rulebook-kind    Base, overlay, companion or fork (base)
+    --version          The starting version the first release publishes (1.0.0)
+
+--- stderr
+--- exit 0

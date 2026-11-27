@@ -1,0 +1,28 @@
+format: 3
+part: lambda
+concern: identity
+rules:
+  - id: lambda.identity.1
+    statement: "Function permissions are granted only through managed policy ARNs on the role, never through a standalone policy attachment."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, a unit runs with its own identity and sandbox from one template, and CI tokens are scoped."
+      pros:
+        - "A standalone attachment lies outside the role definition, so the role cannot be read as the full list of what a function may do."
+  - id: lambda.identity.2
+    statement: Every function has a pinned role name from one table and receives the shared baseline grants.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "A function with no entry in the role-name table fails, so a new function cannot be deployed with a generated role name. In Go, a daemon unit has its own identity and sandbox from one template."
+      pros:
+        - "A generated role name changes on replacement and breaks everything that names it, and a function without the baseline misses logging and tracing grants."

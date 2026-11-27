@@ -1,0 +1,11 @@
+[
+  {
+    "code": "unreadable",
+    "message": "stdout is not JSON",
+    "path": "/have/0/stdout"
+  },
+  {
+    "code": "bug",
+    "message": "a nil map"
+  }
+]

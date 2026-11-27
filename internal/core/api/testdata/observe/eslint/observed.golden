@@ -1,0 +1,11 @@
+as-set    eqeqeq                 set by base (equality)
+tighter   no-console             set by base
+weaker    no-debugger            set by base
+weaker    no-alert               set by web
+?         no-restricted-globals  the options differ from the preset's, and which are the tighter is the plugin's rank, not asked yet
+?         no-shadow              the options differ from the preset's, and which are the tighter is the plugin's rank, not asked yet
+absent    prefer-const           set by base
+excluded  no-eval                was excluded by team (legacy-eval)
+unmapped  no-new-func            was excluded by team (legacy-func)
+as-set    curly                  set by base
+unmapped  no-var

@@ -1,0 +1,148 @@
+part: code
+concern: deadcode
+order: 4
+title: Dead code
+summary: >-
+  Nothing ships that nothing uses: no unused file, export or dependency, and no stub left in shipped source.
+  The tools are run by their output, since several exit with status 0 even with findings.
+rules:
+  - id: code.deadcode.1
+    slug: nothing-unused
+    since: 0.1.0
+    rule: >-
+      No file nobody imports, no unused export (including in a shared package), no unused dependency and no
+      unused path alias.
+    detail: >-
+      In Go the dead-code tool must print nothing, or print only lines on a committed list, because its exit
+      status is 0 even with findings. The dead-code tool and the linter run for each system of the
+      project's list, by GOOS, on the one machine the gate runs on, as one step. Tidying the module file leaves no diff.
+      Both runs are in the local gate. In the web stack the unused-file finder follows
+      the project's entry points (page routes, scripts, test files) with the framework plugins active (else
+      .astro files report false unused), reports unused files, exports and dependencies as errors with a
+      baseline of known ones that only shrinks; the lock holds exactly the declared dependencies. An unused
+      export in a shared package fails.
+    level: function
+    why: >-
+      27 lines of dead exports in one Go repo; 97 and 124 unused exports in two web repos. At the donor the
+      finder caught unused exports at land on two changes. (An earlier version of this rule asked for a run per
+      GOOS because a single run called the other system's code dead; a product now holds none, so one run
+      suffices.)
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-code
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tool: golangci-lint
+        tier: "2"
+        note: >-
+          deadcode (golang.org/x/tools v0.52.0) -test ./... runs for each system of the project's list, by GOOS, on the one machine the gate runs on, as one step;
+          golangci-lint likewise; a wrapper
+          compares the dead-code output with a committed list and fails on any new line; go mod tidy with no
+          diff. Plant: an uncalled exported function in main is listed and fails (a trial listed neverCalled
+          with exit 0). Control: a function called from main is not reported
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: unused
+        tier: "1"
+        fix: never
+        note: >-
+          Held by the golangci preset (default: standard turns it on): an unused identifier is reported.
+      - binding: ts
+        class: preset-config
+        tool: knip
+        tier: "2"
+        note: >-
+          knip 6.44.1 (MIT) with the template's config and the astro and vite plugins active (needs the astro
+          dependency present); entries are page routes, scripts and test files; unused files, exports and
+          dependencies as errors with a shrink-only baseline. Plant: a new exported function nobody imports
+          fails; an .astro component imported only from a page is not reported. Control: an .astro component
+          imported only from a page is not reported
+    open:
+      - go:linkname is banned by code.deadcode.3, not left to the dead-code report.
+      - The web finder needs a re-run on the newest Astro before binding.
+  - id: code.deadcode.2
+    slug: no-stubs-in-shipped-source
+    since: 0.1.0
+    rule: >-
+      No stub is left in shipped source: no not-implemented bodies and no placeholder returns.
+    detail: >-
+      A command that is not built refuses and says so; documents say what is built and what is only designed.
+      A scan for stub bodies and placeholder returns in shipped source is the check; stub patterns include
+      not-implemented errors and a typed empty value cast to the return type.
+    level: function
+    why: A stub that compiles looks like a feature and fails at the first caller.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          a lint rule banning not-implemented throws and as-cast placeholder returns in non-test source.
+          Plant: a function whose body throws not implemented fails. Control: a real body passes
+      - binding: go
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          a lint rule or ast-grep scan for not-implemented errors and placeholder returns in non-test source.
+          Plant: a function whose body returns a not-implemented error fails. Control: a real body passes
+    open:
+      - >-
+        The sources record this as a gap: neither the Go nor the web rulebook has a scan for stub bodies; the
+        stub rule of the language-neutral docs row is held by a model lens with a linter ban.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: code.deadcode.3
+    slug: no-go-linkname
+    since: 0.1.0
+    rule: >-
+      A project's own Go code has no //go:linkname directive, unless the project lists the file in an exemption
+      with an expiry date.
+    detail: >-
+      A linkname binds a name to a symbol of another package by string, past the compiler's export rules and
+      the linker's check of what a package may reach. The scan reads every non-generated Go file of the
+      project's own modules for the directive, in test files too, and a hit outside the exemption list is a
+      finding. The list starts empty; a row names the file, the reason and the date it ends, and a row past its
+      date is a finding. The directive needs an unsafe import, but a scan for that import is not the check: the
+      import has other uses and the directive can sit in a file that gosec passes.
+    level: file
+    why: >-
+      A linkname is invisible to the dead-code tool and to the compiler's export rules, and the standard
+      library's linker now refuses new references to its internals, so a binding that builds today can fail
+      on the next toolchain. The gap was found in the review of #650: no rule banned it.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: go-1-23-release-notes
+        where: Linker
+        says: >-
+          The linker now disallows using a //go:linkname directive to refer to internal symbols in the standard
+          library (including the runtime) that are not marked with //go:linkname on their definitions
+        backs: rule
+    review_question: Does this directive have an exemption row with a reason and an expiry?
+    relates:
+      - id: code.deadcode.1
+        how: see
+    open:
+      - >-
+        Planned check: an ast-grep or text scan for the //go:linkname comment in non-generated Go files outside
+        an exemption list whose rows carry a file, a reason and an expiry date; a row past its date is a
+        finding. Plant: a file with a //go:linkname line and no exemption row fails. Control: the same file
+        with an unexpired row passes. No tool key is bound yet, and a row without one would raise
+        checks-unresolved, a baseline that may only fall. A directive is a comment, so no golangci-lint linter
+        reads it as a call (forbidigo matches calls and selectors); ast-grep has no preset in this repository
+        yet, and the exemption list and its expiry check are not built. It becomes a Hard rule with its row
+        when a key resolves.
+      - >-
+        Opened as gragas#654, from the review of #650; the finding was that code.deadcode.1 only said linkname
+        may be reported.

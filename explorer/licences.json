@@ -1,0 +1,41 @@
+{
+  "$comment": "The licences a package in the explorer's resolved tree may carry (pnpm licenses list). It follows gate/licences.txt, the one SPDX allowlist: allowed holds only ids that list holds as plain ids (a test checks it), and adds is the <package> adds <id> form, one package one id, never every package. It is a second file only because gate/licences.txt reads Go module paths; an npm name is not one.",
+  "allowed": [
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MIT",
+    "MPL-2.0"
+  ],
+  "adds": {
+    "argparse": {
+      "id": "Python-2.0",
+      "reason": "build tooling (eslint), and the command-line script of markdown-it, which the library never imports; a bundle does not carry it"
+    },
+    "caniuse-lite": {
+      "id": "CC-BY-4.0",
+      "reason": "data, attribution only; build tooling, not shipped"
+    },
+    "@ibm/plex-mono": {
+      "id": "OFL-1.1",
+      "reason": "a font family vendored as woff2 under packages/tokens/fonts, not installed; shipped, with its notice"
+    },
+    "@ibm/plex-sans": {
+      "id": "OFL-1.1",
+      "reason": "a font family vendored as woff2 under packages/tokens/fonts, not installed; shipped, with its notice"
+    },
+    "language-subtag-registry": {
+      "id": "CC0-1.0",
+      "reason": "public-domain dedication; data of a lint rule, not shipped"
+    },
+    "minimatch": {
+      "id": "BlueOak-1.0.0",
+      "reason": "permissive; build tooling, not shipped"
+    },
+    "type-fest": {
+      "id": "(MIT OR CC0-1.0)",
+      "reason": "dual-licensed, MIT is allowed; reached by msw, a test-only devDependency, not shipped"
+    }
+  }
+}

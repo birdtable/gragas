@@ -1,0 +1,196 @@
+part: react
+concern: server-state
+order: 2
+title: Server state and data fetching
+summary: >-
+  Data that lives on a server is held in one query cache with a stated freshness, reached through gated hooks.
+  Cache policy and key roots are declared once, reads are joined by id, paged lists are de-duplicated, and
+  nothing fetches from an effect.
+rules:
+  - id: react.server-state.1
+    slug: one-query-cache
+    since: 0.1.0
+    rule: >-
+      Server state lives in one query cache with a stated freshness, reached through gated hooks; none of it
+      is copied to local state, and no second cache library is used.
+    detail: >-
+      The query lint plugin runs at error level with its exhaustive-deps, stable-client, no-rest-destructuring
+      and no-unstable-deps rules. A lint for derived state flags server data copied into state by an effect
+      (`no-derived-state`, `no-initialize-state` of the you-might-not-need-an-effect plugin; rule names from
+      its README, not run). A restricted-imports rule bans the other server-state libraries (swr, apollo,
+      rtk-query). No hand-made fetch cache exists. A gated read is never revived by a refetch, which is swept
+      rather than linted. A hand store on a console page is an instruction, not a check.
+    level: function
+    why: >-
+      Two stores for one resource show two answers, and a copy in local state goes stale without a signal. The
+      import ban and the lint hold the mechanical half; the gated-read half is held by a sweep.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: tanstack-query-docs
+        where: important defaults
+        backs: rule
+      - ref: react-docs
+        where: You Might Not Need an Effect
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          @tanstack/eslint-plugin-query (exhaustive-deps, stable-query-client, no-rest-destructuring,
+          no-unstable-deps) and eslint-plugin-react-you-might-not-need-an-effect (no-derived-state,
+          no-initialize-state) as errors, and no-restricted-imports for swr, apollo and rtk-query (ESLint-only
+          for the two plugins; the import ban's Biome form is `noRestrictedImports`). Plant: `useEffect(() =>
+          setRows(data), [data])` fails; importing swr fails; a query key that omits a variable fails
+          exhaustive-deps. Control: reading the query result directly passes
+    open:
+      - Never run on a real React tree.
+      - The sweep that finds a gated read revived by a refetch has no lint form.
+      - >-
+        The rule names of the derived-state plugin are from its README and have not been run.
+    note: One library is a tool pick, recorded in tools.yaml.
+  - id: react.server-state.2
+    slug: cache-policy-and-key-roots
+    since: 0.1.0
+    rule: >-
+      Cache freshness settings (stale and garbage-collection times) come only from one policy file, a query
+      key's first segment comes from a key file, and a key namespace is declared once.
+    detail: >-
+      A literal stale time or gc time anywhere else fails; a query key built with an inline first segment
+      fails; two key files that claim the same namespace fail. The underlying rule is that a value that
+      decides behaviour has one home.
+    level: function
+    why: >-
+      Freshness set per call site drifts, and two key namespaces that collide invalidate each other's data.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: tanstack-query-docs
+        where: query keys and caching
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint no-restricted-syntax on `staleTime` and `gcTime` properties outside the policy file and on a
+          query-key array whose first element is a string literal outside a key file, plus a test that no
+          namespace is declared twice (Biome form: a GritQL plugin on the same properties and arrays). Plant:
+          a `staleTime` literal in a hook fails; a key with an inline first segment fails; a duplicate
+          namespace fails. Control: a hook that imports its policy and key root passes
+    open:
+      - >-
+        The check is written from the source rule's text; the lint selectors are not run.
+  - id: react.server-state.3
+    slug: fan-out-joined-by-id
+    since: 0.1.0
+    rule: >-
+      Fan-out reads use the gated multi-query hook, and results are joined by id through a map, never by array
+      position.
+    detail: >-
+      The combine function is hoisted so it is stable between renders. A position-based join breaks the moment
+      the order of the requests or the responses changes.
+    level: function
+    why: >-
+      Results joined by position are silently attached to the wrong record once order changes.
+    kind: rule
+    strength: Review
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: tanstack-query-docs
+        where: parallel and dynamic queries
+        backs: rule
+    review_question: >-
+      Does any code read a fan-out result by array index instead of by id, and is the combine function
+      hoisted?
+    open:
+      - >-
+        No tool holds join-by-id; a typed lint on indexed access into query results is a candidate.
+      - >-
+        v1 evidence, not yet a source: practice (source rule; the nearest check has no tool)
+  - id: react.server-state.4
+    slug: paged-lists-dedupe-by-id
+    since: 0.1.0
+    rule: >-
+      A gated infinite query de-duplicates by id when it flattens pages, and a cursor is never put in a plain
+      query key.
+    detail: >-
+      Pages from an outside source can overlap when records are added between requests; flattening without a
+      de-duplication shows a record twice. The cursor belongs to the infinite query's page parameter, not to
+      the key of a plain query.
+    level: function
+    why: >-
+      A cursor in a plain key creates a new cache entry per page and loses the list; overlapping pages repeat
+      records.
+    kind: rule
+    strength: Review
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: tanstack-query-docs
+        where: infinite queries
+        backs: rule
+    review_question: >-
+      Does the flatten step of this infinite query de-duplicate by id, and is any cursor part of a plain query
+      key?
+    open:
+      - No tool holds it yet; the test would feed overlapping pages and count records.
+      - "v1 evidence, not yet a source: practice (source rule)"
+  - id: react.server-state.5
+    slug: no-fetch-in-effect
+    since: 0.1.0
+    rule: No `useEffect` calls fetch; data comes from the query hooks.
+    detail: >-
+      A lint selects an effect call whose callback holds a `fetch` call (selector with descendant). It is
+      partial: it misses a helper called inside the effect. The stronger form is typed lint that flags a
+      floating promise inside an effect.
+    level: function
+    why: >-
+      An effect that fetches has no cache, no dedupe, no cancel and races on fast navigation.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: react-docs
+        where: You Might Not Need an Effect
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint no-restricted-syntax with a selector for an effect call that contains a `fetch` call (Biome
+          form: a GritQL plugin on the same call). Plant: `useEffect(() => { fetch("/a") }, [])` fails.
+          Control: the same read through a query hook passes
+    open:
+      - >-
+        Partial by the source row's own text: a helper called inside the effect is missed. Never run.

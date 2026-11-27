@@ -1,0 +1,40 @@
+part: postgres
+concern: indexes
+order: 5
+title: Indexes
+summary: >-
+  An index has a reason and a cost. A migration that adds an index names the query it serves and the write
+  path that pays for it, and unused indexes are listed at release from the engine's statistics.
+rules:
+  - id: postgres.indexes.1
+    slug: new-index-names-its-query
+    since: 0.1.0
+    rule: >-
+      A migration that adds an index names the query it serves and the write path that pays for it, and unused
+      indexes are listed from the engine's own statistics at release.
+    detail: >-
+      The measure is a count of indexes with no scans, from the statistics views, with no limit set. A
+      two-column index is useless to a query on only its second column, and an index on every column makes
+      every write maintain all of them. A failed concurrent build leaves an invalid index that still costs
+      writes.
+    level: file
+    why: >-
+      A small development database hides an index that no query uses; agents add an index per query just in
+      case (inference).
+    kind: rule
+    strength: Review
+    status: active
+    sources:
+      - ref: winand-sql-performance-explained
+        backs: rule
+      - ref: magda-just-use-postgres
+        where: ch. 4 indexes
+        backs: rule
+      - ref: p-03-data
+        where: section 9
+        backs: rule
+    review_question: For this index, which query uses it and which write path pays for it?
+    open:
+      - The exact statistics view that lists unused indexes was not read.
+      - >-
+        No plant exists; a seeded migration that adds an index on every column of a new table must be flagged.

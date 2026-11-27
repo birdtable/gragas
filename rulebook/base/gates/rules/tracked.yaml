@@ -1,0 +1,42 @@
+format: 3
+part: gates
+concern: tracked
+rules:
+  - id: gates.tracked.1
+    statement: No tracked path is a symbolic link.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A tracked entry of mode 120000 fails the check, naming the path. A link reads as a file on one system and as a text file holding a path on another, so the checkout differs by system."
+      pros:
+        - A repository that must check out the same on every system cannot hold an entry whose meaning depends on the system that wrote it.
+    sources:
+      - ref: git-config-core-symlinks
+        backs: rule
+    bindings:
+      - tool: gragas
+        target: source
+        key: link
+        severity: error
+        rung: 0
+        run_point: land
+  - id: gates.tracked.2
+    statement: No two tracked paths differ only by case.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Two tracked paths that are equal once case is folded fail the check, naming both. On a case-folding file system the second overwrites the first."
+      pros:
+        - A checkout on a case-folding system keeps one of the two files and loses the other without a message.
+    sources:
+      - ref: git-config-core-ignorecase
+        backs: rule
+    bindings:
+      - tool: gragas
+        target: source
+        key: fold
+        severity: error
+        rung: 0
+        run_point: land

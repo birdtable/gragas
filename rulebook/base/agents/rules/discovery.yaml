@@ -1,0 +1,73 @@
+format: 3
+part: agents
+concern: discovery
+rules:
+  - id: agents.discovery.1
+    statement: "Before writing a helper or naming something, the agent reads the glossary and the listing of shared exports and searches the sibling repositories for what already exists."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The answer must be reachable without a network. Standards and decisions are found by text search on a checkout. Code search across the other repositories of the organisation is by local clones first, and the repository host's own search covers the rest. A new helper that duplicates an export of the shared kit is caught by the reuse scan in the code part; this rule makes the agent look first. The listing of shared exports is the registry of arch.shared.15 rendered into the instruction file, so what the agent must read exists at a path."
+      pros:
+        - "Reinvention comes from a limited view of the repository: a name search found none of three atomic writers where the type-checked lookup found them, and the census shows 42 hand copies of shared helpers."
+    sources:
+      - ref: agents-reasons-stated
+        backs: rule
+  - id: agents.discovery.2
+    statement: "Whether agents use the lookup tools is measured, not assumed."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A question set with known answers is asked with and without the guidance and scored; the hook log of each session records whether the lookup tool answered."
+      pros:
+        - A tool nobody uses prevents nothing.
+  - id: agents.discovery.3
+    statement: "The agent's environment has a type-checked lookup and diagnostics tool for each language, and a preflight fails when it is missing."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "For Go the language server is on the path with its plugin enabled; for TypeScript the language server or the native compiler server is on the path, with its version read. After each edit the agent sees type errors and can find references by type instead of text. Hosts must pass the preflight."
+      pros:
+        - "A language server found 28 of 28 callers of one function where grep found the same plus 4 fixture strings; limited views of the repository cause reinvention."
+    sources:
+      - ref: decision-17
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 6.2
+        backs: rule
+  - id: agents.discovery.4
+    statement: "Where an agent needs callers or implementations it uses a type-checked answer, and an answer is bounded in size, at about 20 KB."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A language-server tool returned 112,914 bytes for one file, which fills the context for no gain."
+  - id: agents.discovery.5
+    statement: "A knowledge tool runs with no network and no account, is pinned to an exact version, has a licence a company may use, and never writes to the source tree."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Exact pin: the tools file names an exact version and no range. Licence: a licence check with an allow list. No writes: run the tool, then the working tree is clean. No network: a sandboxed run."
+      pros:
+        - "A knowledge tool that reaches out or writes breaks the offline and clean-tree guarantees; one tool is pinned today by exact npm version (ast-grep 0.51.1)."
+  - id: agents.discovery.6
+    statement: A change that adds an exported function outside a registry owner and that calls a registry primitive or has a capability word in its name carries a trailer that names what the builder read and why none of it fits.
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The trailer is `Reuse:`. It names the registry rows and the shared module's package listing the builder read, and says why none fits. The capability words are write, lock, digest, sum, walk, trust, golden and isolate. The ban half of arch.shared.8 catches the primitive; this rule catches the copy that was restructured so that the ban cannot see it, by making the builder say what they looked at. It is cheaper than a hook-log check of what the agent read, which agents.discovery.1 proposes and nobody runs. The standard line of the dispatch note, and the instruction block rendered from the registry, ask for the same three reads: the registry file, the shared module's listing at the pinned tag, and a search of the repository for the primitive."
+      pros:
+        - "The ban on a primitive misses a helper that wraps it under another name; a sentence a builder can write without reading anything is weak evidence, but it makes the omission visible to the reviewer, which is what a Record rule is for."
+    relations:
+      relates:
+        - agents.discovery.1
+        - arch.shared.8
+    sources:
+      - ref: agents-reasons-stated
+        backs: rule

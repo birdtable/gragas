@@ -1,0 +1,249 @@
+part: go
+concern: style
+order: 5
+title: Go style, types and resource linters
+summary: >-
+  Go idioms with no counterpart in other languages: small interfaces, named types and useful zero values, no
+  pass-through wrappers, the resource linters that catch unclosed bodies and rows, and the shape and isolation
+  of Go tests.
+rules:
+  - id: go.style.1
+    slug: small-interfaces
+    since: 0.1.0
+    rule: >-
+      Interfaces are small, and a function accepts interfaces and returns concrete types.
+    level: type
+    why: >-
+      Practice. One repo declares 98 interfaces; their sizes were not measured; the linter flagged a 40-method
+      port in another.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: interfacebloat
+        tier: "1"
+        fix: never
+        note: >-
+          golangci-lint interfacebloat with a ceiling of 10 methods; iface covers part of return-concrete
+          (ireturn was skipped for false positives). Plant: an interface with 12 methods is reported at a
+          ceiling of 10. Control: a small interface passes
+    review_question: >-
+      Does this function accept the smallest interface it needs and return a concrete type?
+    open:
+      - >-
+        Half: the size half is the rule; accept-interfaces-return-concrete is review. The ceiling of 10 is a
+        choice.
+      - The control for the plant was not run.
+  - id: go.style.2
+    slug: named-types-and-zero-values
+    since: 0.1.0
+    rule: >-
+      A concept gets a named type, the zero value is useful, and generics come only after the same code was
+      written several times.
+    level: type
+    why: Practice; judgement. Nothing decides that a concept needs a type.
+    kind: instruction
+    strength: Lens
+    status: proposed
+    review_question: >-
+      Is this primitive-typed parameter a concept that needs its own type, and is the zero value of this new
+      type useful?
+    open:
+      - >-
+        A count of type-parameter declarations is a hint only (report); no check on named types or zero
+        values.
+      - "Blocked: no tool decides a concept needs a type."
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: go.style.3
+    slug: no-pass-throughs
+    since: 0.1.0
+    rule: >-
+      No checks for states that cannot happen, and no wrapper or function that only forwards a call;
+      pass-throughs are counted per package and read as a list, with no limit.
+    detail: >-
+      A types-aware analyser counts free functions that forward to a function of the same shape, and wrappers
+      whose every method has the same signature as the call it forwards, with no type conversion. Dispatchers
+      and adapters that convert types are exempt; an adapter that imports what the core may not is a seam and
+      exempt; a fake alone does not earn the exemption.
+    level: function
+    why: >-
+      Practice; no fault among the 60 sampled. Free forwarders today: 48, 12, 11, 18, 2 and 2 across six
+      repos; 39 of the first 48 forward inside our own module, in clusters left by moves, 9 are false hits.
+    kind: rule
+    strength: Answered
+    status: active
+    sources:
+      - ref: ousterhout-aposd
+        where: chapter 7
+        backs: rule
+    checks:
+      - binding: go
+        class: analyzer
+        tier: "3"
+        note: >-
+          v1 class our-plugin. types analyser that counts forwarding free functions and wrappers and prints
+          the list per package; a golangci module plugin with a trivial-forwarder rule is a host-free
+          alternative to try first. Plant: a forwarding type fires; a type with one extra method fires only
+          partly. Control: an adapter that converts types passes
+    review_question: >-
+      Does this wrapper do anything the call it forwards does not, and is this check for a state that cannot
+      happen?
+    open:
+      - >-
+        A new pass-through blocks until answered. Measure: no limit and no fail line, since a ratchet is
+        beaten for free by one extra statement and a layer rule can demand the alias.
+      - "Whole-type wrappers: 1 hit in six repos plus one exempt."
+      - >-
+        The alternative plugin (BSD-3, v0.2.0, Sep 2026) was not run here; try it on the clones before
+        building.
+  - id: go.style.4
+    slug: resource-linters
+    since: 0.1.0
+    rule: >-
+      The resource and context linters are on: bodyclose, noctx, and in a repo that imports the SQL package
+      sqlclosecheck and rowserrcheck.
+    level: function
+    why: >-
+      A leaked response body is a daemon-lifetime bug. Practice; priced in the linter trial.
+    kind: rule
+    strength: Hard
+    status: active
+    unless:
+      - facets:
+          - no-database
+        reason: >-
+          A program that does not import the SQL package needs neither of the two database linters; a
+          rule-data field marks it.
+    sources:
+      - ref: harsanyi-100-go-mistakes
+        where: chapter 10
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: bodyclose
+        tier: "1"
+        fix: never
+        note: >-
+          golangci-lint bodyclose and noctx always; sqlclosecheck and rowserrcheck where the SQL package is
+          imported. Plant: an http.Get whose Body is never closed fails, and db.Query with rows.Err unchecked
+          fails. Control: closed and checked passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: noctx
+        tier: "1"
+        fix: never
+        note: Held by the golangci preset, whose comment on noctx names this rule.
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: contextcheck
+        tier: "1"
+        fix: never
+        note: >-
+          Held by the golangci preset, whose comment on contextcheck names this rule: a function that
+          receives a context passes it on and does not start a fresh one.
+    open:
+      - Plants must run once; the record sits beside the data part's rule.
+    note: Moved here from the Postgres part, since the linter set is Go's.
+  - id: go.style.5
+    slug: go-test-shape
+    since: 0.1.0
+    rule: >-
+      Go tests use the standard testing package only, every test helper calls t.Helper, a table case is named
+      by its claim, and a test checks one behaviour.
+    detail: >-
+      An assertion or mock library import in a test file is a finding (tests.doubles.2 bans mock libraries for
+      every language). A function in a test file that takes a testing.TB, *testing.T or *testing.B and is not
+      itself a test calls t.Helper first. A table case name says what holds (refuses a retired key), not an
+      index or input. One behaviour per test is review.
+    level: function
+    why: >-
+      A helper without t.Helper reports the failure at the helper's line, not the caller's, and a case named
+      by its claim is the failure message a person reads first. The standard package keeps tests readable by
+      anyone who knows Go.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-go
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: thelper
+        tier: "1"
+        fix: never
+        note: >-
+          golangci-lint thelper (t.Helper first in helpers) and depguard denying assertion and mock modules in
+          test files; an ast-grep rule for table case names that are empty or numeric. Plant: a helper taking
+          *testing.T with no t.Helper call fails; import of an assertion library in a test fails; a case named
+          "case 1" fails. Control: a helper calling t.Helper first and a case named by its claim pass
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: depguard
+        tier: "1"
+        fix: never
+        note: Held by the golangci preset, whose comment on depguard names this rule.
+    review_question: Does this test check one behaviour, and does its name say what it claims?
+    relates:
+      - id: tests.doubles.2
+        how: see
+      - id: tests.admission.2
+        how: see
+    open:
+      - >-
+        The language-free half (non-empty loops, a negative test per guard, a cost line) is tests.admission.2.
+  - id: go.style.6
+    slug: test-isolation-by-package
+    since: 0.1.0
+    rule: >-
+      A package's tests build with every sibling package outside its declared imports unresolvable, and a
+      suite that still passes with its subject package's non-test source removed fails as vacuous.
+    detail: >-
+      The Go form of the sibling-hiding resolver: a gate step lists each package's test import closure (go
+      list -deps -test) and fails when it holds an internal package not allowed for that package's layer in
+      the import table, so a test cannot reach a sibling the package itself may not. The subject-deleted run
+      uses go test -overlay to replace every non-test file of the package with an empty file of the same
+      package name; a suite that compiles and passes is vacuous. A module's tests make another module's data
+      only through that module's exported API or their own fixtures.
+    level: package
+    why: >-
+      A suite that passes with its subject deleted is the cheapest mutation test there is, and siblings
+      unresolvable is what makes a package extractable in fact, not only by the import table.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-go
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. companion check test-closure (go list -deps -test against the layer table) and a
+          subject-deleted run with go test -overlay per package. Plant: a test in internal/core importing
+          internal/host/fs fails the closure check; a test that asserts only on its own fixture passes with
+          the package emptied and fails the vacuous run. Control: a test whose closure stays inside the
+          layer's allowed imports and fails with the subject removed passes
+    relates:
+      - id: tests.isolation.13
+        how: see
+    open:
+      - >-
+        The language-free rule and the TypeScript resolver are tests.isolation.13 and the ts part.
+      - >-
+        An overlay that empties a package can break the compile of its tests rather than pass them; only a
+        compile and a pass counts as vacuous. Not run yet.

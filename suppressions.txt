@@ -1,0 +1,19 @@
+# Every exception gragas makes to a check, one line each, with its reason
+# after the #: a lint suppression (nolint <file> <linters>, once per
+# comment) or an error read by its text (error-text <file>, go.errors.8).
+# The list only shrinks (gates.exemptions): internal/exceptions_test.go
+# fails a suppression or an error read by its text that is not listed here,
+# a line the tree no longer needs, and a line with no reason.
+nolint cmd/gragas/main.go gochecknoglobals # the commit string the linker stamps, as version is; nothing writes it at run time
+nolint internal/journeys/main_test.go gosec # the binary this suite built
+nolint internal/journeys/main_test.go gochecknoglobals # the binary built once for the run, from the body of the first test that asks, so its build record is in the test-cache key; nothing writes it after
+nolint internal/journeys/plugin_record_test.go gochecknoglobals # the standin plugin's module and program, built once for the run from the first recording journey; nothing writes it after
+nolint internal/journeys/plugin_record_test.go gosec # go build of this tree's own sources, as main_test.go's binary
+nolint internal/isolation_test.go gosec # go list of a package of this module
+nolint internal/isolation_test.go gosec # go test of a package of this module, with an overlay
+nolint internal/layers_test.go gosec,noctx # go list of this module, read only, once for the run from the first test that asks
+error-text internal/cli/root/errors.go # cobra types neither its unknown-command nor its unknown-flag error, so the usage message reads its text
+nolint internal/snapshot_test.go gochecknoglobals # the tree read once, from the body of the first test that asks, so its reads are in the test-cache key; nothing writes it after
+nolint internal/cli/root/menu_test.go paralleltest # the one test that sets os.Args, a variable of the whole process, to prove a nil argument list never reads it
+nolint internal/host/trust/bind_test.go paralleltest # the walk and Held plant, one of two Bind plants in one process; a host may hold only one root-made entry (docs/checks.md asks for /mnt or /srv), on which the second plant run at once would skip, and the caps line reads any skip as red
+nolint internal/host/trust/bind_test.go paralleltest # the settings plant, one of two Bind plants in one process; a host may hold only one root-made entry (docs/checks.md asks for /mnt or /srv), on which the second plant run at once would skip, and the caps line reads any skip as red

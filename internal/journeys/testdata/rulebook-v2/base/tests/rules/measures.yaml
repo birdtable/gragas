@@ -1,0 +1,420 @@
+part: tests
+concern: measures
+order: 8
+title: Budgets and measures of the suite
+summary: >-
+  Every tier's suite has a wall-time budget for the whole run and per package, measured on the machine that
+  runs it and recorded per tree with the load, so a suite written by agents cannot grow unnoticed to hours.
+  Coverage is reported and never a threshold in the inner loop, a time limit is judged on medians, and size
+  and deletion candidates are reports.
+rules:
+  - id: tests.measures.1
+    slug: wall-time-recorded
+    since: 0.1.0
+    rule: >-
+      Each tier's wall time is recorded per run with the load beside it where the system gives one, and
+      re-measured at each release, never on a timer.
+    detail: >-
+      The runner writes a times file per run with tier, seconds and the load, and per-package elapsed time
+      from the test JSON; a schema test fails a summary without time and load. A timeout prints the load. The
+      load is the load average where the system keeps one (go-proc load.Read). Where it keeps none (Windows:
+      load.ErrNoAverage) the program records the CPU time of the run's own process tree (proc.Usage with
+      proc.JoinTree) and says that is the figure, never an invented average.
+    level: program
+    why: >-
+      Whole suite 4 to 66 s wall on five repos under load, and the top three packages are 63 to 89 percent of
+      the time in every repo (one sample). Own measure: 7 of 60 sampled bugs were time or load budgets.
+    kind: measure
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-39
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. runner writes a times file per run with tier, seconds and the load (the load
+          average where the system gives one, else the tree's CPU time); schema test fails a summary without
+          time or load. Plant: a summary without load fails the schema. Control:
+          a summary with time and load passes
+    open:
+      - >-
+        The times file shape was trialled in the web notes; the Go summary fields exist in one repo, which
+        also records load.
+      - "v1 evidence, not yet a source: own measure (operator direction)"
+  - id: tests.measures.2
+    slug: budget-file-only-falls
+    since: 0.1.0
+    rule: >-
+      Each tier has a whole-suite budget, a selected-run budget where selection is on, and each package a
+      budget, written in one file; a budget is a ceiling with a measured floor, raised only with a new floor
+      measurement in the same change, and a budget that is passed or a package whose time rises tree after
+      tree fails or is flagged.
+    detail: >-
+      Each budget line holds the ceiling and the floor it was set from (the measured time, the date, the
+      machine and its load). Lowering a ceiling needs nothing. Raising one is refused unless the same change
+      replaces the floor with a new measurement on the stated machine, and the new ceiling stays within the
+      stated margin of the new floor. A count that grows on purpose (tests, packages) is a register, not a
+      ratchet. A slow file is split or declared. Test count is reported beside seconds. The web starting
+      values are 15 s selected and 60 s whole for the first tier, 60 s and 3 minutes, 5 and 10 minutes, and 15
+      minutes. A ratchet on the count of packages over 5 s is the Go growth check. The fail-closed path (an
+      unplaced path selects everything) may run over the tier's budget; it runs and records the time and is
+      never refused or trimmed.
+    level: program
+    why: >-
+      A suite written by agents cannot grow unnoticed to hours. One repo's browser journeys alone are
+      35 minutes serial for one family (not re-timed).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: gotestsum
+        where: slowest list (candidate tool)
+        backs: rule
+      - ref: decision-39
+        backs: rule
+      - ref: decision-65-tests
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. budget file with a ceiling and a measured floor per tier (whole, and selected
+          where selection is on) and per package; raising a ceiling is refused unless the same change carries
+          a new floor measurement; a ratchet on packages over 5 s. Plant: raising a budget with the old floor
+          is refused, and a test package slowed past the ratchet fails. Control: an unchanged budget passes,
+          and a raised ceiling with a new floor measured in the same change passes
+    open:
+      - The margin between floor and ceiling is set per repo at adoption.
+      - >-
+        The web catalogue's starting figures are guesses; the Go budgets come from the first measurement.
+  - id: tests.measures.3
+    slug: release-time-budget
+    since: 0.1.0
+    rule: >-
+      A release aims at 15 minutes with a red line of 20 minutes, and the red line is a hard timeout on the
+      release job.
+    level: release
+    why: >-
+      Decision 39: the 20 is a guess until the release is measured step by step; the web notes had set a red
+      line of 40 minutes.
+    kind: measure
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-39
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "4"
+        note: >-
+          a hard timeout-minutes on the release job set to the red line; the tier budgets are targets only.
+          Plant: a release job with no timeout fails the config check. Control: a job with the red-line
+          timeout passes
+    open:
+      - The 20 minutes is labelled a guess until a release is measured step by step.
+  - id: tests.measures.4
+    slug: deletion-candidates-listed
+    since: 0.1.0
+    rule: >-
+      Report the code-to-test change share by test level, and the deletion candidates: tests with no failure
+      in a stated window, identical coverage or a covered path that also has a stronger test; deleting one is
+      a commit with a stated reason.
+    detail: >-
+      The change share per path class per release is a trigger for what to run and what to fix. Deletion stays
+      a visible act. The reports are built from failure history and per-test coverage.
+    level: program
+    why: >-
+      Agents add and never delete; nothing lists what to delete, so nothing shrinks. The window is a guess.
+    kind: measure
+    strength: Hard
+    status: active
+    sources:
+      - ref: tornhill-code-crime-scene
+        where: chapter 9
+        backs: rule
+      - ref: p-07-testing
+        where: sections 8.2, 8.3
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. report from failure history and per-test coverage, and churn by path class per
+          release. Plant: a fixture history with one known candidate must list it. Control: a history with no
+          candidate lists none
+    open:
+      - The window length is a guess; the report says so. Report only.
+  - id: tests.measures.5
+    slug: coverage-reported
+    since: 0.1.0
+    rule: >-
+      Coverage is measured per changed file and reported at the slowest tier, and is never a threshold in the
+      inner loop.
+    detail: >-
+      The record keeps the coverage figure with no floor; packages without tests count as zero percent. No
+      land tier adds a coverage threshold, and a gate scan bans a fail-under line in the Makefile or
+      workflows. Packages without tests count as 0% in the record.
+    level: program
+    why: >-
+      Practice; one repo reports without a threshold. Low value, kept so the cheap scan closes the row.
+    kind: measure
+    strength: Hard
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          gate scan bans a coverage floor (a coverage-threshold tool or any fail-under) in Makefile or
+          workflow; the record keeps -cover with no floor The gate scan is gatescan; it bans a coverage-floor
+          tool such as go-test-coverage or any fail-under line. Plant: a Makefile line with a coverage
+          threshold fails. Control: -cover only passes
+      - binding: ts
+        class: preset-config
+        tier: "4"
+        note: >-
+          coverage runs only at the slowest tier as a reported percentage, and the runner config carries no
+          threshold. Plant: a coverage threshold in the runner config fails the read-back. Control: reporting
+          only passes
+    open:
+      - >-
+        The web catalogue has no row of its own, and no per-changed-file report exists for the web side.
+  - id: tests.measures.6
+    slug: timing-limits-on-medians
+    since: 0.1.0
+    rule: >-
+      A time limit stated as a percentage or as a small number of seconds is judged on the median of at least
+      three runs per side, with the base and the head run on the same machine in one window.
+    detail: >-
+      A small-seconds limit means a limit of a few seconds; a percentage or such a limit needs the median of
+      three runs per side.
+    level: program
+    why: >-
+      On our host on 4 Nov the same tree read 55 s and 67 s plain, and 93 s and 130 s with the race detector
+      across runs: 22 percent and 40 percent between runs of one tree, so one run per side could not tell a
+      regression from noise.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. comparison helper that runs each side at least three times in one window on one
+          host and compares medians (hyperfine gives runs and median in JSON); a limit judged on fewer runs is
+          refused by the helper. Plant: a limit judged on one run per side is refused. Control: three runs per
+          side pass
+    open:
+      - Judging a limit without the helper is not caught; hyperfine was not run.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+  - id: tests.measures.7
+    slug: performance-ceilings
+    since: 0.1.0
+    rule: >-
+      A performance ceiling comes from the 99th percentile of at least twenty runs times a stated margin, with
+      the machine's load written beside each timing.
+    level: process
+    why: A ceiling set from one run is noise; the method is a number method, not a check.
+    kind: instruction
+    strength: Review
+    status: proposed
+    review_question: >-
+      How many runs and at what load produced this ceiling, and what margin was applied to the 99th
+      percentile?
+    open:
+      - >-
+        No check holds it; carved out of the cached-result row, which is a number method.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: tests.measures.8
+    slug: test-size-classes
+    since: 0.1.0
+    rule: >-
+      Tests have a declared size class bounding what each may touch, and small tests are kept from the
+      network, disk outside temp and the clock.
+    detail: >-
+      The class comes from a build tag or the test name. A tracer reports what each test touched. Go has no
+      runner sandbox for this, so the class is reported and nothing enforces it by construction.
+    level: function
+    why: >-
+      Practice; the isolation rules hold the parts (own home, no sleep, no fixed port, named machine reads, no
+      machine writes).
+    kind: measure
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. size-class report by build tag or name, with a tracer report of what each test
+          touched; enforcement by running small tests under a no-network sandbox, which go-proc's sandbox gives where
+          the system has a block; where it has none the run is refused by name (sandbox.ErrNoBlock) and never
+          made unblocked. Plant: a small test that
+          opens a socket fails under the sandbox. Control: a small test touching only temp passes
+    open:
+      - >-
+        Enforcement is unsolved in Go; sandbox-exec on macOS and a network namespace on Linux were not tried.
+      - The must-enforce strength Hard is a proposal that the sandbox run is built.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: tests.measures.9
+    slug: loaded-host-pass-is-a-finding
+    since: 0.1.0
+    rule: >-
+      A tier that passes its budget only under the loaded-host clause is a finding, not a pass, and the clause
+      prints at the top of the report where the reader looks.
+    detail: >-
+      The budget is the tier's measured floor on a quiet host times a stated margin (tests.measures.2; this
+      repository states 1.5). A run on a busy host that is over the budget is not judged, and its report says so
+      in its first lines and counts the run as unjudged, not as green. The tier is judged on the next quiet-host
+      run, and a tier whose last quiet-host run was over the budget fails on budget. A run that is only green
+      because the host was busy is never recorded as the floor.
+    level: program
+    why: >-
+      Every measured push run broke its 180 second budget (206 to 301 seconds) and passed only through the
+      clause that excuses a busy host, so the budget never pushed the heaviest member out of the tier.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      Did this tier pass its budget on a quiet host, or only because the host was busy?
+    relates:
+      - id: tests.measures.2
+        how: refines
+      - id: tests.measures.7
+        how: see
+      - id: gates.command.7
+        how: see
+    open:
+      - >-
+        Planned check: the gate's report prints the unjudged clause in its first lines and the stamp records the
+        run as unjudged. That is a change to gate code and to gate/budgets.yaml, both protected paths, and is the
+        work of gragas#638's follow-up tickets.
+  - id: tests.measures.10
+    slug: a-budget-is-the-floor-times-a-margin
+    since: 0.1.0
+    rule: >-
+      A tier's floor is its best time on a quiet host, written with its date, machine and load; the budget is
+      the floor times 1.5; a target such as about one minute is never a budget, and a project's budget is its
+      own.
+    detail: >-
+      tests.measures.2 holds that a budget is a ceiling with a measured floor and is raised only with a new
+      floor. This rule holds how the floor is taken and how far the budget sits above it. A floor measured on a
+      loaded host is not a floor, and every number from a study of a busy host is a target until a quiet run is
+      made. The margin is one number for every project, 1.5, so a report that prints the floor and the budget
+      can be read without the file. A run over its budget on a busy host is unjudged, never green, and says so
+      in its first lines (tests.measures.9).
+    level: program
+    why: >-
+      Every measured push of one project broke its 180 second budget and passed through the loaded-host clause
+      printed at the bottom where nobody read it; another fleet had no budget at all, and a commit hook took
+      218 to 241 seconds unseen.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      Where is this tier's floor written, with what date, machine and load, and is the budget 1.5 times it?
+    relates:
+      - id: tests.measures.2
+        how: see
+      - id: tests.measures.9
+        how: see
+      - id: gates.command.7
+        how: see
+    open:
+      - >-
+        Planned check: the budgets file holds a floor row with date, machine and load for each tier and the
+        budget equals the floor times 1.5, held by a test over the file. No tool key is bound yet; the floors
+        are measured by gragas#648.
+  - id: tests.measures.11
+    slug: a-third-of-the-timeout-is-a-finding
+    since: 0.1.0
+    rule: >-
+      A test that takes over a third of its timeout when the host is idle is a finding, before it ever fails.
+    detail: >-
+      A timeout is sized for a loaded host and a test that uses a third of it when idle uses all of it at load
+      three. The finding names the test, its idle time and its timeout, and is fixed by making the test faster
+      (tests.runners.5, tests.runners.8) or by splitting it, never by raising the timeout alone. The tier
+      report lists the tests over the line.
+    level: program
+    why: >-
+      One test took 9.5 seconds idle against a 30 second limit and went red at load 27; another's module took
+      565 milliseconds idle against a 60 second budget and still timed out nine times, and the tickets stayed
+      open 21 to 23 days.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      How long does this test take on an idle host, what is its timeout, and is the first over a third of the
+      second?
+    relates:
+      - id: tests.runners.5
+        how: see
+      - id: tests.runners.8
+        how: see
+      - id: tests.flakes.4
+        how: see
+    open:
+      - >-
+        Planned check: the runner reads per-test times from the test tool's output and lists each over a third
+        of its timeout. No tool key is bound yet.
+  - id: tests.measures.12
+    slug: an-inconclusive-timing-has-a-bound
+    since: 0.1.0
+    rule: >-
+      A timing assertion on a shared host is off the blocking path: it is judged against a reference taken in
+      the same run and only on undisturbed samples, and a reading that cannot be judged gives no verdict for a
+      bounded time, three tips of the main branch or 24 hours, and then locks.
+    detail: >-
+      tests.flakes.4 holds that a test asserts counted work and judges timing only on an undisturbed machine
+      or as a ratio. This rule holds what happens when the machine is never undisturbed. The reading is
+      inconclusive, not red, and the run is green for everything else. Inconclusive readings are counted,
+      and after three tips of the main branch or 24 hours without a judged sample the member locks landing
+      until someone measures on a quiet host. A rule that turns one inconclusive reading into a lock holds
+      landing for a host it cannot control.
+    level: program
+    why: >-
+      One fleet's timing specs put 11 of 44 land logs red in one day and locked landings twice, and a rule that
+      turned an all-inconclusive budget into a lock held landing for 8 hours 2 minutes.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      Is this timing judged against a reference from the same run, what happens to an inconclusive reading,
+      and after how many does it lock?
+    relates:
+      - id: tests.flakes.4
+        how: see
+      - id: tests.measures.6
+        how: see
+      - id: tests.measures.9
+        how: see
+    open:
+      - >-
+        Planned check: the budget member records each inconclusive reading with the load and counts them
+        against the bound. No tool key is bound yet.

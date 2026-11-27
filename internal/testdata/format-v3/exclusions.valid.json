@@ -1,0 +1,12 @@
+[
+  {
+    "format": 3,
+    "exclusions": [
+      {
+        "overlay": "house-overlay", "rule": "go.errors.1", "number": 1, "decision": "keep-the-names-out", "who": "alex", "when": "2026-10-03T09:30:00Z",
+        "lifted": {"decision": "older-ruling", "who": "alex", "when": "2026-10-09T10:00:00Z"}
+      },
+      {"overlay": "house-overlay", "rule": "go.errors.1", "number": 2, "decision": "keep-the-names-out", "who": "alex", "when": "2026-10-10T09:30:00Z"}
+    ]
+  }
+]

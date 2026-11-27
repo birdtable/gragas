@@ -1,0 +1,27 @@
+# The node tools' workspace (tools.yaml, from: node). One package manager,
+# pnpm, pinned in tools.yaml; it installs from the lockfile only and holds no
+# release-age window: pnpm 12 holds a one-day window of its own when
+# minimumReleaseAge is absent, so it is set to 0, off and stated. task tools installs without
+# --ignore-scripts (Taskfile, tools), so every install, task tools' as much
+# as one that adds or bumps a tool, fails loudly on a package with a build
+# script (strictDepBuilds, ERR_PNPM_IGNORED_BUILDS), rather than run it or
+# skip it unseen; a package that has one is listed under allowBuilds, set
+# false, and none runs. A variable of the shell or the person's global pnpm
+# config beats this file, so task tools' line also passes
+# --config.dangerously-allow-all-builds=false and
+# --config.strict-dep-builds=true, which beat both.
+# pnpm_config_allow_builds naming one package still lets that package build:
+# only a person who means it sets that, and the reviewer of the change sees
+# it. ignoreScripts is not set here: it would skip every
+# script silently, so a new one would go unseen. Without it pnpm runs the
+# workspace's own lifecycle scripts, so package.json has none.
+# internal/node_builds_test.go holds each of these, and plants a tool with a
+# build script against the pinned pnpm. The install is a plain tree of folders
+# with no link but the .bin ones (nodeLinker: hoisted). tools-check holds it to
+# this workspace's pnpm-lock.yaml by the copy pnpm writes at install,
+# node_modules/.pnpm/lock.yaml; no digest of the tree is checked.
+minimumReleaseAge: 0
+strictDepBuilds: true
+saveExact: true
+engineStrict: true
+nodeLinker: hoisted

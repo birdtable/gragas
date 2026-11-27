@@ -1,0 +1,5 @@
+go test fuzz v1
+string("rules:\n  - id: a.b.1\n    t: |\n      one\n      two\n    u: z\n")
+string("t")
+string("one\ntwo\n")
+string("q")

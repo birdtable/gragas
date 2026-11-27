@@ -1,0 +1,5 @@
+[
+  {"name":"no fixtures","patch":[{"op":"remove","path":"/0/fixtures"}],"problem":"'fixtures' is a required property"},
+  {"name":"no have","patch":[{"op":"remove","path":"/0/have"}],"problem":"'have' is a required property"},
+  {"name":"a fixture that is not a path","patch":[{"op":"replace","path":"/0/fixtures/0","value":1}],"problem":"is not of type 'string'"}
+]

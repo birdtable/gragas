@@ -1,0 +1,38 @@
+# Every call site that decodes input in a non-test file of the tree
+# (tests.generated.1): the file, the function that holds the call (a method as
+# Type.name, a closure as the function around it), and the fuzz target of that
+# package that reaches it. internal/decoders_test.go reads this list: a decode
+# call on no row is red, and so is a row whose target is not a func Fuzz of the
+# file's package, or whose function decodes nothing.
+#
+# A target of "-" is a site with none: the rest of the row says why, and a row
+# of none with no reason is red. It is taken only in a package that has a fuzz
+# target of its own; a package with none is waived only by a row of
+# gate/exemptions.yaml, and a package that file exempts from tests.generated.1
+# has no rows here.
+#
+# file	function	target
+cmd/gragas-dev/hook.go	parseGoPrivate	FuzzParseGoPrivate
+cmd/gragas-dev/hook.go	parseStore	FuzzParseStore
+cmd/gragas-dev/presetplugins.go	readPresetCheck	FuzzReadPresetCheck
+cmd/gragas-dev/surface.go	withContractPackage	-	the surface diff's read of the export list gragas-generate writes in the tree
+cmd/gragas-release/built.go	readBuilt	FuzzReadBuilt
+cmd/gragas-release/draft.go	readReleases	FuzzReadReleases
+internal/core/api/guard_hook.go	ParseHookEdit	FuzzParseHookEdit
+internal/core/api/guard_hook.go	oneKeyEach	FuzzParseHookEdit
+internal/core/api/journal.go	groups	FuzzJournalDetails
+internal/core/api/journal.go	outcomeOf	FuzzJournalDetails
+internal/core/api/journal_restore.go	JournalRestore	FuzzJournalDetails
+internal/core/api/journal_restore.go	leftBy	FuzzJournalDetails
+internal/dev/census/census.go	FirstClass	FuzzFirstClass
+internal/dev/generate/reads.go	parseConsumer	FuzzGenerateConsumer
+internal/dev/layers/usesmatrix.go	textList.UnmarshalJSON	FuzzTheReadersOfTheRegisterAndTheUsesFiles
+internal/dev/layers/usesmatrix.go	Uses.CompareMatrix	FuzzTheReadersOfTheRegisterAndTheUsesFiles
+internal/dev/standin/answer.go	Answer	FuzzServe
+internal/dev/standin/answer.go	Serve	FuzzServe
+internal/dev/tokens/tokens.go	Parse	FuzzParseTokens
+internal/host/fs/journal.go	records	FuzzTheJournalReader
+internal/host/fs/journal.go	older	FuzzTheJournalReader
+internal/host/term/palette.go	ParsePalette	FuzzParsePalette
+internal/port/testing/world_files.go	journalPort.RecordsOf	FuzzTheWorldsJournalReader
+internal/ordered/yaml.go	decodeOne	FuzzParseYAML

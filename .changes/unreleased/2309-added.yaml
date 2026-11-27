@@ -1,0 +1,12 @@
+kind: Added
+body: >-
+  **A plugin's grant can keep a tool's cache between steps.** A grant names, by `cache_vars`, the
+  variables its program reads where to keep its cache, and the manifest needs the feature `cache-vars`.
+  `gragas plugin approve` shows the names before the yes, and a name the grant gains is not covered by an
+  earlier yes. Each name is pointed at a folder of its own in the cache folder's `tools` kind, one for each
+  plugin, version, grant and project, made private once the walk trusts its way; a name gragas sets itself
+  (PATH, LANG, the home and system variables, GOENV, GOTOOLCHAIN, GOFLAGS) is refused when the plugin opens.
+  `gragas cache list` lists the kind, and `gragas cache clear` removes every folder of it, of every
+  project of this account and whatever its age, read-only folders a tool left among them, following no
+  link; a step that runs meanwhile, in any project, may fail.
+time: 2026-11-25T19:30:00.000000+01:00

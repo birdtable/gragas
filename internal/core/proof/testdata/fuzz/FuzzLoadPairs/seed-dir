@@ -1,0 +1,4 @@
+go test fuzz v1
+string("pairs/a.b.1/1/good.go")
+int64(1)
+bool(true)

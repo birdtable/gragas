@@ -1,0 +1,80 @@
+format: 3
+part: supply
+concern: provenance
+rules:
+  - id: supply.provenance.1
+    statement: "A vendored token file equals the source at its named version, by hash, in the path agents take."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "One program's header said version 9 while the source tokens said 1, so a copy had drifted from what it named."
+  - id: supply.provenance.2
+    statement: "A part copied between sites records where it came from, with a header naming the source repository, version, path and a hash."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The header form is copied-from: <repo>@<version> <path> plus a hash."
+      pros:
+        - A copy with no origin cannot be updated or checked against its source.
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule
+  - id: supply.provenance.3
+    statement: Generated files name the version of the tool that made them.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Generated files start with the standard \"Code generated ... DO NOT EDIT.\" line and a version token. Regeneration is go generate."
+      pros:
+        - A generated file with no banner is edited by hand and its tool version is lost.
+    relations:
+      relates:
+        - supply.provenance.5
+        - supply.provenance.6
+  - id: supply.provenance.4
+    statement: "If a repository has generators, regenerating leaves no diff; with zero inputs the check reports not applicable with the count."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The rule is in the gate list from the start. Its input count is the number of go:generate lines, zero today, and it declares zero a valid state: it returns not applicable with zero inputs and the count until the first generator appears. The generator lines counted are //go:generate lines."
+      pros:
+        - "A stale generated file passes review because nobody regenerates it. No Go repository used go:generate in the seven checked, which the count shows, with the build-constraint lines as the positive."
+    sources:
+      - ref: decision-26
+        backs: rule
+  - id: supply.provenance.5
+    statement: "There is one token file for design tokens, and every copy of it is a recorded vendored copy."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "Two token files drift apart; the bundled source row asked for one."
+  - id: supply.provenance.6
+    statement: "Build and gate recipes are Taskfile tasks that run the program's own commands, with standard tools only."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A recipe written as shell for one system silently differs on another; a task that runs a program command has no shell of its own to differ, so the rule asks for no claim of which systems it works on."
+  - id: supply.provenance.7
+    statement: "A program fetched into an image, a tool cache or a build is pinned by version and verified before use by a signature or a checksum from its publisher's https origin, its version is read back, and a verification that cannot run stops the step."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Every fetch names an exact version. Before the fetched program is used, it is checked against the publisher's signature where the publisher signs, and otherwise against a checksum fetched from the same https origin as the program (never a checksum kept beside the download URL on a mirror). The program is then run to print its version, which must equal the pinned one. A missing signature tool, an unreachable checksum or a version mismatch stops the step with could not run; the step never continues unverified. Locked packages are held by supply.age.4; this rule covers what a package manager does not fetch."
+      pros:
+        - "A program fetched outside the lockfile has no integrity check unless the step does one, and a step that skips a check it cannot run installs whatever the network handed it."
+    relations:
+      relates:
+        - supply.age.4
+    sources:
+      - ref: decision-65-supply
+        backs: rule

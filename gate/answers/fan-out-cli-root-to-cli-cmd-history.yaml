@@ -1,0 +1,5 @@
+rule: arch.measures.1
+path: internal/cli/root/join_gen.go
+fingerprint: 43fa0d32ffbab4ce532bf7a2dc61ba11feadbec1adc71a6ccbf47f5f5637ec48
+answer: keep
+reason: "the root joins the history command, which lists a rulebook's history entries, as a package of its own below internal/cli/cmd; it draws only through the kit session and reads nothing itself"

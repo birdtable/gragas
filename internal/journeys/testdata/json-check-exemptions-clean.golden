@@ -1,0 +1,31 @@
+{
+  "schema": 2,
+  "command": "check",
+  "ended": "done",
+  "msg": "6 entries in 2 files, and no problem",
+  "data": {
+    "entries": 6,
+    "exemptions": {
+      "findings": [],
+      "next_expiry": "2099-06-30",
+      "rows": 2
+    },
+    "files": 2,
+    "parts": [
+      {
+        "part": "arch",
+        "name": "Architecture and boundaries",
+        "entries": 5,
+        "enforced": 1,
+        "tools": 1
+      },
+      {
+        "part": "go",
+        "name": "Go",
+        "entries": 1,
+        "enforced": 1,
+        "tools": 0
+      }
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "override_rate": {
+    "value": null,
+    "reason": "no batches given"
+  },
+  "today": "DAY",
+  "all_proposed": true,
+  "items": [
+    {
+      "rule": "go.errors.1",
+      "kind": "missing source",
+      "status": "proposed",
+      "why": "it cites no source",
+      "fix": "gragas rule edit go.errors.1 --cite \u003csource slug\u003e"
+    },
+    {
+      "rule": "go.errors.2",
+      "kind": "missing source",
+      "status": "proposed",
+      "why": "it cites no source",
+      "fix": "gragas rule edit go.errors.2 --cite \u003csource slug\u003e"
+    },
+    {
+      "rule": "go.errors.3",
+      "kind": "missing source",
+      "status": "proposed",
+      "why": "it cites no source",
+      "fix": "gragas rule edit go.errors.3 --cite \u003csource slug\u003e"
+    },
+    {
+      "rule": "go.errors.1",
+      "kind": "missing example pair",
+      "status": "proposed",
+      "why": "it has no example pair",
+      "fix": "add good.* and bad.* under pairs/go.errors.1/1/ and list the pair in the rule"
+    },
+    {
+      "rule": "go.errors.2",
+      "kind": "missing example pair",
+      "status": "proposed",
+      "why": "it has no example pair",
+      "fix": "add good.* and bad.* under pairs/go.errors.2/1/ and list the pair in the rule"
+    },
+    {
+      "rule": "go.errors.1",
+      "kind": "missing decision",
+      "status": "proposed",
+      "why": "its reasoning names no decision, and the governance asks for one",
+      "fix": "gragas rule promote go.errors.1 --decision-title \"...\" --decision-text \"...\", or name one in its reasoning"
+    },
+    {
+      "rule": "go.errors.2",
+      "kind": "missing decision",
+      "status": "proposed",
+      "why": "its reasoning names no decision, and the governance asks for one",
+      "fix": "gragas rule promote go.errors.2 --decision-title \"...\" --decision-text \"...\", or name one in its reasoning"
+    },
+    {
+      "rule": "go.errors.3",
+      "kind": "missing decision",
+      "status": "proposed",
+      "why": "its reasoning names no decision, and the governance asks for one",
+      "fix": "gragas rule promote go.errors.3 --decision-title \"...\" --decision-text \"...\", or name one in its reasoning"
+    },
+    {
+      "rule": "go.errors.2",
+      "kind": "owner missing",
+      "status": "proposed",
+      "why": "nobody answers for it",
+      "fix": "gragas rule edit go.errors.2 --rule-owner \u003cname\u003e"
+    },
+    {
+      "rule": "go.errors.3",
+      "kind": "owner missing",
+      "status": "proposed",
+      "why": "nobody answers for it",
+      "fix": "gragas rule edit go.errors.3 --rule-owner \u003cname\u003e"
+    }
+  ],
+  "findings": []
+}

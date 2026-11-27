@@ -1,0 +1,42 @@
+[
+  {
+    "steps": [
+      {
+        "kind": "run",
+        "program": "lint-a",
+        "argv": [
+          "--print-config",
+          "probe.js",
+          "-c",
+          "{scratch}/lint-a.config.js",
+          "--out",
+          "{null}"
+        ],
+        "stdin": {
+          "text": ""
+        },
+        "place": [
+          {
+            "path": "probe.js",
+            "data": {
+              "text": ""
+            }
+          }
+        ],
+        "collect": [
+          "out.json"
+        ],
+        "level": "sandboxed"
+      },
+      {
+        "kind": "read",
+        "glob": "rules/**/*.yml"
+      }
+    ],
+    "final": false
+  },
+  {
+    "steps": [],
+    "final": true
+  }
+]

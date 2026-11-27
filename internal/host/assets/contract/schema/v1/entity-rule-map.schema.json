@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-rule-map.schema.json",
+  "title": "Rule map toward one mapped rulebook (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "rulebook",
+    "rows"
+  ],
+  "properties": {
+    "rulebook": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mark"
+        ],
+        "properties": {
+          "left": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "x-introduced": "1.0",
+            "default": null
+          },
+          "arrived": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/id"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "x-introduced": "1.0",
+            "default": null
+          },
+          "mark": {
+            "$ref": "common.schema.json#/$defs/mark",
+            "x-introduced": "1.0"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/reason"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "x-introduced": "1.0",
+            "default": null
+          }
+        }
+      },
+      "x-introduced": "1.0"
+    }
+  }
+}

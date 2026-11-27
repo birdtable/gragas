@@ -1,0 +1,34 @@
+$ gragas term new --slug header --term-definition The name a request carries. --literal X-Request-Id --apply
+--- before
+a7378c2c06875a3c26c08883fb1d663d593226832fc6ff7e40c62544adccfc71 language/go/rules/errors.yaml
+93d53f8940029b3e40a77be9c8d8df9c0c239c28bb88ad6136ebc7eb3d847ae1 presets/golangci-lint/settings.yml
+7d1543288bbbe5e0ef83911768156af6f901e0611bf851dce435757f72ea996b rulebook.yaml
+860f82f9bebaf053658f0d86939b59c005959ce62bfb361e7b8566bc6c3069ac structure.yaml
+--- after
+254530098d6bf596ee0d78278294c7a498bfd3b8d74a6d53972605d1378b9e3b history.jsonl
+a7378c2c06875a3c26c08883fb1d663d593226832fc6ff7e40c62544adccfc71 language/go/rules/errors.yaml
+93d53f8940029b3e40a77be9c8d8df9c0c239c28bb88ad6136ebc7eb3d847ae1 presets/golangci-lint/settings.yml
+7d1543288bbbe5e0ef83911768156af6f901e0611bf851dce435757f72ea996b rulebook.yaml
+860f82f9bebaf053658f0d86939b59c005959ce62bfb361e7b8566bc6c3069ac structure.yaml
+95e56815b4269925ac6a70eb49b3d1a1f78b2f080c932ee52999590a337ce2be terms.yaml
+--- boundaries
+before-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+after-record
+after-record
+after-record

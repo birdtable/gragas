@@ -1,0 +1,9 @@
+## clean control
+## id twice
+language/go/rules/layout.yaml:5: the id go.errors.1 is also at language/go/rules/errors.yaml:5; an id is used once
+## alias at two rules
+language/go/rules/layout.yaml:5: the id go.errs.1 is also at language/go/rules/errors.yaml:5; an id is used once
+## alias equals a live id
+language/go/rules/layout.yaml:5: the id go.errors.1 is also at language/go/rules/errors.yaml:5; an id is used once
+## alias equals its own id
+language/go/rules/errors.yaml:5: the id go.errors.1 is listed twice in this rule; an id is used once

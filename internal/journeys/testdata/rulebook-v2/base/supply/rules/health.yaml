@@ -1,0 +1,87 @@
+part: supply
+concern: health
+order: 4
+title: Dependency health
+summary: >-
+  What is kept after intake. A dependency stays maintained or is removed, and nothing is in production that is
+  a prerelease or a 0.x major unless it entered through a labelled pilot.
+rules:
+  - id: supply.health.1
+    slug: dependency-is-maintained
+    since: 0.1.0
+    rule: >-
+      A dependency is maintained: no module is archived and none has gone without a release or a push for 24
+      months in Go, and a web dependency has a release within 12 months or a written finished note.
+    detail: >-
+      An unmaintained or abandoned dependency is removed. A banned one that is already present stays on a
+      shrink-only list. Go checks archived and last-pushed state per direct module through the host API (the
+      network is needed, so at land or after release). The web check reads the newest release date of each
+      direct dependency from the registry, and a finished note is an exception record. Transitive age is a
+      report only. Examples removed in the reference: @uiw/react-json-view (alpha), @dnd-kit, zpl-renderer,
+      and other rotting packages.
+    level: package
+    why: >-
+      A library nobody maintains carries unfixed vulnerabilities. One archived Go module was found in the
+      baseline and nothing else.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "4"
+        note: >-
+          host API archived and pushed_at per direct module; an OpenSSF Scorecard maintained check is a
+          candidate. Plant: an archived module fails. Control: an active module passes
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. companion lock-age extended with the newest release date per direct dependency;
+          older than 12 months fails unless an exception record carries a finished note. Plant: a scratch
+          dependency whose last release is older than 12 months fails. Control: a recent one passes
+    open:
+      - The Go script is proposed and was not planted.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D: practice; one archived Go module
+        in the baseline
+  - id: supply.health.2
+    slug: prerelease-only-through-a-pilot
+    since: 0.1.0
+    rule: >-
+      No prerelease, 0.x, alpha or release-candidate major enters production except through a labelled pilot
+      with a removal path.
+    detail: >-
+      For Go, v0.x is normal and the shared modules are below 1.0, so only a prerelease tag or a
+      pseudo-version on a direct requirement needs a pilot entry in the allow file; indirect lines are left
+      out because the module graph brings them in. For the web, a 0.x browser dependency needs a pilot record.
+      The 0.x transitives of an accepted pilot are accepted through that pilot. Example: the 0.x transitives
+      of @inlang/paraglide-js are accepted through one named pilot.
+    level: file
+    why: >-
+      A prerelease or an unreleased commit changes without notice and carries the same risk as a bump mixed
+      with other edits.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. companion lock-diff: an added or changed lock entry with a prerelease tag or a
+          0.x version fails unless the project lists a labelled pilot record; npm-package-json-lint
+          no-restricted-pre-release covers the manifest. Plant: adding a 0.3.1 browser dependency with no
+          pilot record fails. Control: a recorded pilot passes
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          a scan of direct requirements for pseudo-versions and prerelease tags against the allow file. Plant:
+          a direct pseudo-version with no pilot entry fails. Control: a recorded pilot passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D: zero direct pseudo-versions today
+        in six repositories, and 25 indirect lines

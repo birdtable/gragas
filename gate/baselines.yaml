@@ -1,0 +1,12 @@
+# The console messages the explorer's browser journeys tolerate
+# (web.speed.4). The allow list is empty: any console error, warning or
+# security-policy violation fails the journey. A message is added here only
+# with its rule, an owner and a zero-by date, and the list only shrinks.
+console_allow: []
+
+# The allowances of gate/shared.yaml (arch.shared.8): the packages beside a
+# row's owner that may reach its primitives. The count is what the file holds
+# today (internal/journeys on the digest row, tests.journeys.2, and
+# cmd/gragas-dev on the archive row); the list only shrinks, and
+# a test holds the count to the registry.
+shared_allowances: 2

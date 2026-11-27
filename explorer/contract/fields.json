@@ -1,0 +1,297 @@
+{
+  "views": [
+    {
+      "view": "rule",
+      "reads": [
+        {
+          "document": "bundle",
+          "fields": [
+            "adapters_used[].tool",
+            "adapters_used[].waiver_syntax",
+            "bindings[].key",
+            "bindings[].pair_path",
+            "bindings[].proof.reason",
+            "bindings[].proof.result",
+            "bindings[].proof.run_level",
+            "bindings[].proof.tool_version",
+            "bindings[].remedy",
+            "bindings[].rule",
+            "bindings[].run_point",
+            "bindings[].rung",
+            "bindings[].tool",
+            "bindings[].value",
+            "decisions[].cites.rules[]",
+            "decisions[].date",
+            "decisions[].slug",
+            "decisions[].title",
+            "decisions[].who",
+            "history[].decision",
+            "history[].entity",
+            "history[].kind",
+            "history[].number",
+            "history[].plan",
+            "history[].status",
+            "history[].when",
+            "history[].who",
+            "proof_grid[].adapter_version",
+            "proof_grid[].binding",
+            "proof_grid[].reason",
+            "proof_grid[].result",
+            "proof_grid[].run_level",
+            "proof_grid[].tool_version",
+            "rules[].aliases[]",
+            "rules[].cons[]",
+            "rules[].id",
+            "rules[].marks[]",
+            "rules[].pairs[].bad",
+            "rules[].pairs[].good",
+            "rules[].pairs[].number",
+            "rules[].pairs[].target_type",
+            "rules[].pros[]",
+            "rules[].reasoning",
+            "rules[].relations[].kind",
+            "rules[].relations[].rule",
+            "rules[].replaced_by",
+            "rules[].sources[]",
+            "rules[].standing",
+            "rules[].statement",
+            "rules[].status",
+            "rules[].strength",
+            "rules[].translations[].field",
+            "rules[].translations[].language",
+            "rules[].translations[].stale",
+            "sources[].attribution",
+            "sources[].kind",
+            "sources[].locator",
+            "sources[].slug",
+            "sources[].title"
+          ]
+        }
+      ]
+    },
+    {
+      "view": "relations",
+      "reads": [
+        {
+          "document": "bundle",
+          "fields": [
+            "bindings[].key",
+            "bindings[].rule",
+            "bindings[].tool",
+            "checker_code[].tool",
+            "decisions[].cites.bindings[]",
+            "decisions[].cites.rules[]",
+            "decisions[].cites.sources[]",
+            "decisions[].slug",
+            "decisions[].title",
+            "exclusions[].decision",
+            "exclusions[].rule",
+            "presets[].tool",
+            "rules[].id",
+            "rules[].reasoning",
+            "rules[].scope.parts[]",
+            "rules[].sources[]",
+            "rules[].statement",
+            "sources[].slug",
+            "sources[].title",
+            "structure.parts[].name",
+            "structure.parts[].slug",
+            "terms[].slug"
+          ]
+        }
+      ]
+    },
+    {
+      "view": "rulebooks",
+      "reads": [
+        {
+          "document": "bundle",
+          "fields": [
+            "identity.extends.rulebook",
+            "identity.extends.version",
+            "identity.governance.contribution",
+            "identity.governance.decision_required",
+            "identity.governance.review_days",
+            "identity.governance.trial_releases",
+            "identity.imports[].parts[]",
+            "identity.imports[].rulebook",
+            "identity.imports[].version",
+            "identity.kind",
+            "identity.licences.checker_code",
+            "identity.licences.presets",
+            "identity.licences.rules",
+            "identity.name",
+            "identity.successor",
+            "identity.version",
+            "rule_map[].rows[].arrived",
+            "rule_map[].rows[].left",
+            "rule_map[].rows[].mark",
+            "rule_map[].rulebook",
+            "rules[].id",
+            "rules[].origin",
+            "rules[].scope.parts[]"
+          ]
+        }
+      ]
+    },
+    {
+      "view": "tools",
+      "reads": [
+        {
+          "document": "bundle",
+          "fields": [
+            "adapters_used[].adapter_version",
+            "adapters_used[].tool",
+            "bindings[].key",
+            "bindings[].rule",
+            "bindings[].rung",
+            "bindings[].target_type",
+            "bindings[].tool",
+            "bindings[].value",
+            "presets[].entries",
+            "presets[].tool",
+            "rules[].id",
+            "rules[].standing",
+            "tested_set.tools[].tool",
+            "tested_set.tools[].version"
+          ]
+        }
+      ]
+    },
+    {
+      "view": "coverage",
+      "reads": [
+        {
+          "document": "bundle",
+          "fields": [
+            "bindings[].key",
+            "bindings[].rule",
+            "bindings[].tool",
+            "coverage.bindings_to_rules[]",
+            "coverage.rules_to_bindings[]",
+            "identity.extends.rulebook",
+            "identity.extends.version",
+            "release.version",
+            "rules[].id",
+            "rules[].origin",
+            "rules[].standing",
+            "rules[].status",
+            "structure.layers[].name",
+            "structure.layers[].slug",
+            "structure.parts[].layer",
+            "structure.parts[].name",
+            "structure.parts[].slug"
+          ]
+        }
+      ]
+    },
+    {
+      "view": "standing",
+      "reads": [
+        {
+          "document": "bundle",
+          "fields": [
+            "rules[].id",
+            "rules[].marks[]",
+            "rules[].scope.kinds[]",
+            "rules[].standing",
+            "structure.kinds[].slug"
+          ]
+        }
+      ]
+    },
+    {
+      "view": "health",
+      "reads": [
+        {
+          "document": "bundle",
+          "fields": [
+            "changelog[].change",
+            "changelog[].release",
+            "health.numbers[].name",
+            "health.numbers[].value",
+            "health.resolved",
+            "identity.kind",
+            "proof_grid[].result",
+            "release.version"
+          ]
+        }
+      ]
+    },
+    {
+      "view": "terms",
+      "reads": [
+        {
+          "document": "bundle",
+          "fields": [
+            "identity.language",
+            "rules[].id",
+            "rules[].reasoning",
+            "rules[].statement",
+            "terms[].definition",
+            "terms[].literal",
+            "terms[].slug",
+            "terms[].translations[].field",
+            "terms[].translations[].language",
+            "terms[].translations[].stale",
+            "terms[].translations[].text"
+          ]
+        }
+      ]
+    },
+    {
+      "view": "changelog",
+      "reads": [
+        {
+          "document": "bundle",
+          "fields": [
+            "changelog[].bump",
+            "changelog[].change",
+            "changelog[].consumer_action",
+            "changelog[].date",
+            "changelog[].diff",
+            "changelog[].entity",
+            "changelog[].release",
+            "changelog[].remedy",
+            "changelog[].sentence",
+            "rules[].id"
+          ]
+        }
+      ]
+    },
+    {
+      "view": "attention",
+      "reads": [
+        {
+          "document": "bundle",
+          "fields": [
+            "conflicts[].entity",
+            "conflicts[].fix",
+            "conflicts[].kind",
+            "conflicts[].message",
+            "conflicts[].rule",
+            "identity.governance.decision_required",
+            "identity.governance.trial_releases",
+            "rendering_manifest[].renderings[].path",
+            "rendering_manifest[].renderings[].rules[].rule",
+            "rendering_manifest[].renderings[].rules[].standing",
+            "rendering_manifest[].target",
+            "rules[].bindings[]",
+            "rules[].id",
+            "rules[].marks[]",
+            "rules[].owner",
+            "rules[].pairs[]",
+            "rules[].reasoning_decision",
+            "rules[].review_by",
+            "rules[].sources[]",
+            "rules[].standing",
+            "rules[].status",
+            "rules[].strength",
+            "rules[].trial_shipped[]",
+            "rules[].zero_by"
+          ]
+        }
+      ]
+    }
+  ]
+}

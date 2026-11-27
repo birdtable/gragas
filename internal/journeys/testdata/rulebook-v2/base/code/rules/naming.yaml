@@ -1,0 +1,164 @@
+part: code
+concern: naming
+order: 5
+title: Naming
+summary: >-
+  Names follow one table per layer and one file-name scheme, do not stutter, and carry one spelling per
+  concept. Before a new name is written the same name elsewhere is looked for. Catch-all package names are the
+  arch part's rule.
+rules:
+  - id: code.naming.1
+    slug: identifiers-follow-one-table
+    since: 0.1.0
+    rule: >-
+      Identifiers follow the language's case convention and one table of verbs and shapes per layer, and do
+      not stutter on the package name.
+    detail: >-
+      In Go names are MixedCaps and do not repeat the package name (a type UserStore in package user stutters;
+      Store does not), underscores and initialisms follow the static-analysis style check. In the web stack
+      identifier patterns are enforced per-layer (for example repository methods are find, list, create,
+      update or delete) and names of classes, tokens and routes follow one table that the repo owns.
+    level: word
+    why: >-
+      A fixed table lets a reader and an agent guess a name correctly; a stutter and a free spelling make the
+      same thing two things.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: revive
+        tier: "1"
+        fix: auto
+        note: >-
+          golangci-lint revive exported (checks stutter by default; disable-stuttering-check turns it off) and
+          var-naming for MixedCaps; staticcheck ST1003 for underscores and initialisms. Plant: package user
+          with type UserStore is reported as stuttering, consider calling this Store (run with golangci-lint
+          2.14.0). Control: type Store in package user passes
+      - binding: ts
+        class: preset-rule
+        tool: typescript-eslint-strict-type-checked
+        tier: "1"
+        note: >-
+          @typescript-eslint/naming-convention enforcing identifier patterns per layer, from one naming table.
+          Plant: a repository method named fetchAll in the repository layer fails. Control: a method named
+          list passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: staticcheck
+        tier: "1"
+        fix: auto
+        note: Held by the golangci preset, whose comment on staticcheck names this rule.
+    open:
+      - >-
+        The proposed name-aware stutter analyzer is not needed because revive already does the check; the
+        MixedCaps half was not run.
+      - >-
+        The verb table per layer is a rule of the layer's own part; the web table is planned.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "v1 evidence, not yet a source: practice (config only)"
+  - id: code.naming.2
+    slug: one-file-name-scheme
+    since: 0.1.0
+    rule: >-
+      One file-name scheme is used, enforced by lint; names of files, folders and routes follow one table.
+    detail: >-
+      For TypeScript files the style is kebab-case with middle extensions ignored. In Go file names are a
+      convention with meaning in suffixes, so the narrow part is enforced: lower case and the fixed layout
+      under cmd and internal. Names of non-code files are checked by a name linter.
+    level: word
+    why: >-
+      A second spelling of a file name makes every glob and every search miss half the files.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          eslint-plugin-check-file 3.3.2 (Apache-2.0, 18 Jul 2026) filename-naming-convention (kebab-case,
+          middle extensions ignored) and folder-match-with-fex for the naming table, plus @ls-lint/ls-lint
+          2.3.2 (MIT, 17 Oct 2026) for names of non-code files. Plant: a file named stuffandthings.ts or a
+          camel-case file name fails. Control: a kebab-case name passes
+      - binding: go
+        class: preset-config
+        tier: "1"
+        note: >-
+          a layout test that file names are lower case and programs live under cmd with the rest under
+          internal. Plant: a file with upper-case letters in its name fails. Control: a lower-case name passes
+    open:
+      - >-
+        Go suffixes carry meaning (_test), so only the narrow part is enforceable.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+  - id: code.naming.3
+    slug: find-the-name-elsewhere-first
+    since: 0.1.0
+    rule: Before a new name is written, the same name in other repositories is found.
+    detail: >-
+      Before naming or writing a helper the agent reads the shared module's listing and searches sibling
+      clones; in the web stack the parts catalogue is queryable before a new part, and a second copy found by
+      shape is reported in the change.
+    level: word
+    why: >-
+      An agent invents a name that already exists elsewhere and creates the second spelling.
+    kind: instruction
+    strength: Review
+    status: proposed
+    review_question: >-
+      Does the same name or the same job already exist in the shared listing or in a sibling repository?
+    open:
+      - No check exists; the shared listing and the catalogue make the search possible.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: code.naming.4
+    slug: one-spelling-per-concept
+    since: 0.1.0
+    rule: >-
+      One spelling is used for each concept across the public surface (paths, parameters, flags, JSON fields
+      and terms).
+    detail: >-
+      A flag has one meaning everywhere, and documents match the registered flags and JSON fields. The
+      glossary half, a product term defined once and a shared word set with one definition, is held in the
+      docs part (docs.glossary.1 and docs.glossary.3).
+    level: program
+    why: Two spellings of one concept make clients and docs guess which one is real.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test compares the paths, parameters and flags of the public surface against one table of terms and
+          against the docs. Plant: a path using a second spelling of a listed concept fails. Control: the
+          listed spelling passes
+    relates:
+      - id: docs.glossary.1
+        how: see
+      - id: docs.glossary.3
+        how: see
+    open:
+      - >-
+        The check is an inference from the Go and web forms of the rule; the glossary owns the term
+        definitions.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.

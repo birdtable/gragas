@@ -1,0 +1,89 @@
+format: 3
+part: react
+concern: cycle
+rules:
+  - id: react.cycle.1
+    statement: "The production build is the push tier's build member, and a bundle-size budget runs after it as its own member that declares it runs after the build."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The build proves the application compiles and bundles; the budget reads its output (web.speed.1). The budget is a member of its own, so a budget failure names the budget and a build failure the build, and its `after` edge is the one ordering the pool shows (gates.command.18, gates.command.28)."
+      pros:
+        - "A build that is a step of the test command, or a budget that rebuilds, runs the same work twice and hides which one failed."
+    relations:
+      relates:
+        - web.speed.1
+        - gates.command.18
+        - gates.command.28
+    sources:
+      - ref: vite-guide-build
+        where: Building for Production
+        says: "When it is time to deploy your app for production, simply run the vite build command."
+        backs: check
+  - id: react.cycle.2
+    statement: "Heavy page mounts are spread across test files, so the workers share them instead of one file holding the path."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A file of fifty stories or page mounts runs on one worker however many the pool has, and it sets the member's time. Splitting it across files lets the runner spread the mounts (tests.runners.4). The split is by page or by story group, not by count alone, so a reader still finds the file."
+      pros:
+        - "One file of 55 stories took 33.6 seconds in one organisation's design system, on one worker, while the others idled."
+    relations:
+      relates:
+        - tests.runners.4
+        - web.testing.15
+    sources:
+      - ref: react-reasons-stated
+        backs: rule
+  - id: react.cycle.3
+    statement: "A large document a test reads is parsed once per file, and a scan over the whole repository belongs to the gate, not to a test."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A test that parses a token document, a route table or a schema per case does the same work per case (tests.runners.5). A test that walks the repository is the tree-reading package of this stack (tests.runners.10), and where its check is a rule of the gate, it is a gate member with a count, not a test hidden in the unit suite."
+      pros:
+        - "Repository-wide scans inside unit tests were among the slowest files of one organisation's React applications."
+    relations:
+      relates:
+        - tests.runners.5
+        - tests.runners.10
+    sources:
+      - ref: react-reasons-stated
+        backs: rule
+  - id: react.cycle.4
+    statement: "Shared dependencies are pre-bundled and the bundler's cache is kept between runs, in every tier."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The bundler pre-bundles the dependencies once and keeps them in its cache folder; a run that starts with an empty cache pays that again for its first file. The cache folder is kept between tiers and between runs, and is never pruned by a member (gates.command.24), and the tool's settings are the same in every tier (gates.command.25)."
+      pros:
+        - "The first story of each file was 74 percent of one organisation's design-system story time, paid again on every cold run."
+    relations:
+      relates:
+        - gates.command.24
+        - gates.command.25
+    sources:
+      - ref: vite-dep-pre-bundling
+        where: File System Cache
+        says: Vite caches the pre-bundled dependencies in node_modules/.vite.
+        backs: rule
+  - id: react.cycle.5
+    statement: "A request budget per page or story is a property checked in the same run as the render, never a second run."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The render already opens the page; the count of requests it made is read from that run and judged against the budget, as the narrow-width properties are judged on the same render (tests.journeys.8). A second run for the count is the page rendered twice."
+      pros:
+        - A count taken in a second run doubles the render time and can disagree with the first.
+    relations:
+      relates:
+        - tests.journeys.8
+        - web.speed.1
+    sources:
+      - ref: react-reasons-stated
+        backs: rule

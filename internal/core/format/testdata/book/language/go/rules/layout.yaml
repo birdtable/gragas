@@ -1,0 +1,10 @@
+format: 3
+part: go
+concern: layout
+rules:
+  - id: go.layout.1
+    statement: Keep one package per folder.
+    strength: may
+    status: retired
+    origin: imported
+    replaced_by: go.layout.1

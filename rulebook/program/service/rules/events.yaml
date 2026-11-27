@@ -1,0 +1,104 @@
+format: 3
+part: service
+concern: events
+rules:
+  - id: service.events.1
+    statement: "Every event payload is defined once, by the service that emits it, in a shared package with its schema committed beside it; consumers import the type or map it into their own words at their edge."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The package holds the schema for every event and the committed schema file is generated from it. A service defines the name and fields of its own events only; a consumer never declares a second copy. In Go, journal and message shapes are versioned in the shared module and its surface is listed, and a shape that crosses a boundary has one source."
+      pros:
+        - "Two definitions of one event drift, and the break shows up in a consumer in production."
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+  - id: service.events.2
+    statement: "Event names (the detail-type of the event) follow one pattern: domain, entity, action and version, lowercase and dot-separated."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - A name that varies in shape cannot be matched by a rule or a subscription filter and hides the version.
+  - id: service.events.3
+    statement: A service publishes only the event families it owns.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, each piece of shared state has one writer and one owner."
+      pros:
+        - Two publishers of one family make the schema owner ambiguous and break the consumers who trust it.
+  - id: service.events.4
+    statement: "Every event payload extends a base envelope with schema version, event id and actor, and its fields use the casing the program declares (service.contract.10)."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The rulebook names no default casing; the key-casing lint reads the program's declaration and a program with none fails. In Go, versioned files and JSON carry a version inside and journal lines are one write."
+      pros:
+        - "Without a common envelope a consumer cannot deduplicate by id, route by version or attribute the actor."
+    relations:
+      relates:
+        - service.contract.10
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.events.5
+    statement: An event is validated against its schema before it is published.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, an effect is not run until its record is written and input is parsed at the edge."
+      pros:
+        - "An invalid event on the bus breaks every consumer; a failure at the source is cheaper."
+  - id: service.events.6
+    statement: "A new event family states its prospective consumers and which of them needs each field before its schema is fixed, and carries one fact: no type field that selects between meanings, and no event whose only job is to tell another team to do something."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The event carries the full result of that action, not a copy of the whole entity, so consumers need not call back. The residual risk is a discriminator inside the payload and an event used as a command."
+      pros:
+        - "One engagement event grew a nullable field per type until no consumer could tell what it meant. The two cautions reconcile as: avoid events as semaphores or signals, and also avoid thin signals that force a call back."
+    sources:
+      - ref: bellemare-bedm
+        where: "ch. 3 (designing events: single definition, narrowest types, single purpose, size, prospective consumers, semaphores)"
+        backs: rule
+  - id: service.events.7
+    statement: "Each event family catalogue entry names its owner, whether it carries personal or financial data, whether it is public or internal to its domain, and its status (active or deprecated, with a sunset); a subscription to an internal family by another domain fails."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: A report of families with no subscriber (orphans) is a measure beside it. The catalogue schema requires the fields and a scan of subscriptions in the infrastructure checks them against the visibility field.
+      pros:
+        - "Open internal streams let consumers couple to a producer internal model. Argued from the tagging of streams with owner, data class and deprecation, and restricted access to personal-data streams."
+    sources:
+      - ref: bellemare-bedm
+        where: "ch. 14 (event stream metadata tagging; discovering orphaned streams and microservices)"
+        backs: rule

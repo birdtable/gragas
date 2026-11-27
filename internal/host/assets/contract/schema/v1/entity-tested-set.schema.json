@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-tested-set.schema.json",
+  "title": "Tested set of a release (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tools",
+    "minimum_engine"
+  ],
+  "properties": {
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tool",
+          "version"
+        ],
+        "properties": {
+          "tool": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "version": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0"
+    },
+    "plugins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "plugin",
+          "version"
+        ],
+        "properties": {
+          "plugin": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "version": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "kits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kit",
+          "version"
+        ],
+        "properties": {
+          "kit": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "version": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "adapters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "adapter",
+          "version"
+        ],
+        "properties": {
+          "adapter": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "version": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "minimum_engine": {
+      "$ref": "common.schema.json#/$defs/semver",
+      "x-introduced": "1.0"
+    }
+  }
+}

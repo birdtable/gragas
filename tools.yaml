@@ -1,0 +1,523 @@
+# Every check tool the gate runs, pinned by version and by the sha256 of the
+# program itself on each platform (architecture 14, Tools; A25). This file is
+# the only place a tool's version or checksum is written: the Taskfile reads
+# the programs from .tools/bin, where `task tools` puts them, and nothing is
+# installed on the machine.
+#
+# `task tools` needs the network. A release tool is
+# fetched over https, its archive checked against the publisher's checksum
+# below before it is opened, and the program in it checked against its own
+# sha256 before it is placed. A go tool is built from the tools module
+# (tools/go.mod, verified against the checksum database when it is added) with
+# the toolchain go.mod pins, and the program checked against its sha256 before
+# it is placed. A program whose sum differs is refused and never run
+# (supply.provenance.7). A release archive is a .tar.gz or a .zip, and its
+# member is the program's path in it, in a folder or at its top; on windows
+# the program is placed as its id and .exe.
+#
+# The stated build of a go tool: task tools runs, from the root,
+#   CGO_ENABLED=0 GOAMD64=v1 GOARM64=v8.0 GOEXPERIMENT= GOFIPS140=off \
+#     go build -C tools -trimpath -buildvcs=false [-ldflags=<the row's ldflags>] -o .tools/bin/<id> <package>
+# with GOTOOLCHAIN=go1.27.4 (the toolchain go.mod pins, which the Taskfile's
+# guard holds), GOFLAGS=-mod=readonly and GOWORK=off. That build prints the same
+# file on every machine of a system, so the platform's sha256 is the sha256 of
+# that file, and tools-check (and the end of task tools) refuses a go tool whose
+# file is another. A go tool with no sha256 for a system says why, and is
+# then held by go.sum alone: no-<goos> for the platforms of one system, as
+# no-windows for windows, and no-sha256 for every system (task). A no-<goos>
+# beside a pin of a platform of that system is red, as a no-sha256 beside any
+# pin is, so a no-<goos> never quiets a system the row pins. A go row that pins no sha256 for the system tools-check runs
+# on and says neither, or has a platforms line that is not
+# "<goos>/<goarch>: {sha256: <64 lowercase hex>}", is red and named,
+# as is a go tool of the Taskfile with no row here. The
+# linux/amd64 and darwin/arm64 rows were measured by one run of that build on each system; linux/arm64 and darwin/amd64 were
+# built across from darwin/arm64 with it, and no session of those systems has
+# run it yet: their rows hold until one does. The windows/amd64 rows were
+# measured by two clean runs of task tools on Windows at 81cd489a7, which
+# printed the same sums, possibly on one machine.
+#
+# The windows/amd64 pins let the gate's tools run on Windows. Nothing here
+# picks the release's systems: those are the Taskfile's CROSS, which
+# .goreleaser.yaml builds. A tool with no windows/amd64 pin
+# says why in no-windows: task alone, held by its build info everywhere.
+#
+# A node tool is a package of the workspace tools/.node, installed by task
+# tools with the pnpm and node below from its lockfile alone (which holds the
+# sha512 of every package's tarball), frozen, into a plain tree of folders.
+# pnpm refuses at that install a package with a build script
+# (strictDepBuilds, tools/.node/pnpm-workspace.yaml). No release-age window is
+# held. What the preflight holds is the
+# install, not a digest: tools-check reads the lockfile pnpm wrote when it
+# installed, tools/.node/node_modules/.pnpm/lock.yaml, and refuses the tree
+# when that is not tools/.node/pnpm-lock.yaml, or is missing (gragas-dev
+# tools-check --pnpm). The sha256 each node tool still carries below is read
+# by no check of the tree: tests want every tool pinned on Windows or saying
+# why not, and the prettier preset's test reads prettier's, so the pins stay
+# until those readers go. task tools installs from pnpm's
+# store when it holds every package, with no network.
+#
+# The preflight (gragas-dev tools-check, the first step of every tier)
+# needs no network: it checks each program's sha256, runs it with the network
+# blocked and reads its version back, reads a go tool's build info, and fails
+# closed on a missing tool (supply.install.10, gates.plants.5). Where the
+# system gives no network block the run is refused by name
+# (sandbox.ErrNoBlock), never made unblocked. The gate then
+# runs every member with the network blocked (supply.install.2).
+#
+# opa is not listed: gragas has no Policy port, and D3, which named it, is
+# superseded. The gate refuses an opa entry.
+#
+# expected are the programs the engine runs that the settings file names
+# (architecture 9, programs:). They are never fetched or pinned here: the
+# person who installs gragas chooses them, and the engine checks each one
+# where it runs it.
+#
+# To bump a tool: change its version, its urls and archive sums from the
+# publisher's checksums, and its tools/go.mod line for a go tool; then put each
+# platform's program sha256 here, from a build or an unpacked archive, and run
+# task tools. For a node tool, change its version in tools/.node/package.json
+# and run pnpm install there with the pnpm below, so pnpm-lock.yaml moves with
+# it; task tools then installs the tree tools-check holds to that lock. Bump
+# the toolchain in go.mod and every go tool's sums change.
+
+tools:
+  - id: golangci-lint
+    why: the Go linters, task lint
+    version: 2.15.0
+    released: "2026-10-16"
+    from: release
+    run: [version]
+    says: "golangci-lint has version 2.15.0 "
+    platforms:
+      darwin/amd64:
+        url: https://github.com/golangci/golangci-lint/releases/download/v2.15.0/golangci-lint-2.15.0-darwin-amd64.tar.gz
+        archive: 767b899a28285e88ded2823d5dcc4bc5ef681173eb2d80f029a7b17ee4ece3b8
+        member: golangci-lint-2.15.0-darwin-amd64/golangci-lint
+        sha256: e04962742507a5f37a4002a7a8b2b549f6864f17807eb5d534d947f6311a051f
+      darwin/arm64:
+        url: https://github.com/golangci/golangci-lint/releases/download/v2.15.0/golangci-lint-2.15.0-darwin-arm64.tar.gz
+        archive: d1e409481a8ca846c4bc97e781eb5cb1bd5c23353a0b3977a1cbda1b1b6447d5
+        member: golangci-lint-2.15.0-darwin-arm64/golangci-lint
+        sha256: 71b89744ef6dd92dad9026b70489d1ad660da79ef90dfb5aabe995d916bec8a9
+      linux/amd64:
+        url: https://github.com/golangci/golangci-lint/releases/download/v2.15.0/golangci-lint-2.15.0-linux-amd64.tar.gz
+        archive: 9b7fe6a6bf6334b98decf8d86b11415ea7889afdabdd1959fdce23af2a9ebcea
+        member: golangci-lint-2.15.0-linux-amd64/golangci-lint
+        sha256: d9af4564c05beb2f5e130119aec45e5e89d28e5017d558d3ca382659f2427894
+      linux/arm64:
+        url: https://github.com/golangci/golangci-lint/releases/download/v2.15.0/golangci-lint-2.15.0-linux-arm64.tar.gz
+        archive: b4d8f17068b35ee6060cc2f69a16fb48740d706fbba81661c318649c114a6998
+        member: golangci-lint-2.15.0-linux-arm64/golangci-lint
+        sha256: 14680d7674eb1fed0405446670e15dcffb74e979ef0dcd41f998c088fd6babfb
+      windows/amd64:
+        url: https://github.com/golangci/golangci-lint/releases/download/v2.15.0/golangci-lint-2.15.0-windows-amd64.zip
+        archive: cd7ea6063c95de245e17e5246e42bdc14bb221792c429dbd239ab3a6ade6ca6a
+        member: golangci-lint-2.15.0-windows-amd64/golangci-lint.exe
+        sha256: 5ec86137f1f3b9f68d948adc3644c689c4d805b449c4257b75efdc9fe03085b2
+
+  # v2.20.0, not v2.20.2: the later tags are under the cooldown, and the
+  # archive's licence is MIT. The archive is checked against the publisher's
+  # checksums.txt of the release.
+  - id: goreleaser
+    why: the release config check of the goreleaser preset, and the release archives and their checksum file, .goreleaser.yaml (supply.release)
+    version: 2.20.0
+    released: "2026-11-04"
+    from: release
+    run: [--version]
+    says: "GitVersion:    2.20.0"
+    platforms:
+      darwin/amd64:
+        url: https://github.com/goreleaser/goreleaser/releases/download/v2.20.0/goreleaser_Darwin_x86_64.tar.gz
+        archive: a1dfe9492c67b860129bc08fa5952955f0666abe4741e1846f93a6c6b47360e6
+        member: goreleaser
+        sha256: 45ec7e6e817ec81b70d5d8f161714c665a6d9be6f7fbf977a97de0f90242bc91
+      darwin/arm64:
+        url: https://github.com/goreleaser/goreleaser/releases/download/v2.20.0/goreleaser_Darwin_arm64.tar.gz
+        archive: 50bd83a6fcbf1dac272cfc4c46f9116052a9b0b463404a044af71a832fd92ad6
+        member: goreleaser
+        sha256: 9988202381824b763c95422cbcff82b86060dfde891436242f5184974c8cfd04
+      linux/amd64:
+        url: https://github.com/goreleaser/goreleaser/releases/download/v2.20.0/goreleaser_Linux_x86_64.tar.gz
+        archive: d2483159e6007f814132cb56635ad30a70013dbeb813d6033a7e01adf6ae108c
+        member: goreleaser
+        sha256: d7ea8864f20f2cb1625ca64eb07e5d71fcb75475cb18d0045631098974bd0796
+      linux/arm64:
+        url: https://github.com/goreleaser/goreleaser/releases/download/v2.20.0/goreleaser_Linux_arm64.tar.gz
+        archive: 2dada0a6bbcd10f3a05228d98e77d25fb362efb9e5bab6362cf37e64c8a26cb9
+        member: goreleaser
+        sha256: fbb2d4282826697bda31aacebddd6e6c3de5c939df16c06d9c7ce08d0d5bb525
+      windows/amd64:
+        url: https://github.com/goreleaser/goreleaser/releases/download/v2.20.0/goreleaser_Windows_x86_64.zip
+        archive: 3c6a58f6941224a25ec28de733554743e9b2517c40c76991eef5474f8c1c2c1a
+        member: goreleaser.exe
+        sha256: 3dff4294558a0e7f417e8c21ff99321ea845640bc5e0d67944a7843caa4e3d62
+
+  - id: gitleaks
+    why: the secret scanner, task secrets
+    version: v8.30.1
+    from: go
+    module: github.com/zricethezav/gitleaks/v8
+    package: github.com/zricethezav/gitleaks/v8
+    ldflags: -X=github.com/zricethezav/gitleaks/v8/version.Version=8.30.1
+    run: [version]
+    says: "8.30.1"
+    platforms:
+      darwin/amd64: {sha256: d0d222fd2cedec19df54ce6231168eb08c35267c5e6d5a332fb6f5446ac56607}
+      darwin/arm64: {sha256: 5483719608d4d684c30dafde3a9be9bc12b7b09345563f359a162dab0eaab50f}
+      linux/amd64: {sha256: 7788b0708e5fdedf692b6ae55080d7ec6ff44808cf2fe7a9025343b8d93b60a1}
+      linux/arm64: {sha256: 2dc66382bc5e1e1289ec87bd1d5c125f00fe446d2071d694777c09531da8ae92}
+      windows/amd64: {sha256: ab534368fdf225a1362f2c1424046171869c09b91036163a09c5b0ce7bf3300f}
+
+  - id: govulncheck
+    why: the known-vulnerability scan (M0a-10)
+    version: v1.9.0
+    from: go
+    module: golang.org/x/vuln
+    package: golang.org/x/vuln/cmd/govulncheck
+    run: [-version]
+    says: "govulncheck@v1.9.0"
+    platforms:
+      darwin/amd64: {sha256: 761425e2911406d7621bf5b1f09eb444a884ea43b7ffdee07e23f57b9f6c1c53}
+      darwin/arm64: {sha256: 8377c24dbd6e804c90c772182df82da26835496c735f2d048a91930ad54d0c1a}
+      linux/amd64: {sha256: 0e428fd03ff3e5c34059efec4f026d85bdf3a2586ad4031fe7312762be26d1fa}
+      linux/arm64: {sha256: d71f5d541989b21206fad359b34c5ec5ad794377f215cb82e0c3949875995d61}
+      windows/amd64: {sha256: cc1b1dec8d6a0f637cfd85668471bf7f0ebf8bebcf539095eaa7365e15e23630}
+
+  - id: task
+    why: the runner of the three tiers, Taskfile.yml (gates.command.1)
+    version: v3.54.0
+    from: go
+    module: github.com/go-task/task/v3
+    package: github.com/go-task/task/v3/cmd/task
+    run: [--version]
+    says: "3.54.0"
+    no-windows: "task is held by its build info, with no sha256 pinned on any system"
+    no-sha256: "task is held by its build info against tools/go.sum on every system, with no sha256 pinned"
+
+  # go-licenses prints no version, so its build info is the read-back, and
+  # the run proves it starts.
+  - id: go-licenses
+    why: the licence check against one allowlist
+    version: v2.0.1
+    from: go
+    module: github.com/google/go-licenses/v2
+    package: github.com/google/go-licenses/v2
+    run: [help]
+    platforms:
+      darwin/amd64: {sha256: 90d3cfe3b9a9c840d15063a210fb8eb65bce99722f8ebd555ba772af427065a2}
+      darwin/arm64: {sha256: 4ffbefe4e81f18897b5285cb172b349921c17366d1bc698615e8345070b7a0a6}
+      linux/amd64: {sha256: 0e72df24c8469266a05d8860977b944487c5fdefa59f815c8e6fd15a42c91a6a}
+      linux/arm64: {sha256: dd5d264a2611e4dc276dc539e042b990c842bdb32d35f653926162a5cd95dac5}
+      windows/amd64: {sha256: 01c20650d66f01b4c67e06e2ab787fd74fec87bbe6c3378ad161dafbacab5efa}
+
+  - id: dupl
+    why: the clone groups across packages, which the duplication measure counts (code.duplication.1)
+    version: v1.1.0
+    from: go
+    module: github.com/mibk/dupl
+    package: github.com/mibk/dupl
+    # dupl prints no version: the run reads an empty list of files, and the
+    # version is read from its build info.
+    run: [-files]
+    platforms:
+      darwin/amd64: {sha256: 2056e41942acfce7821463f92ba7e32a7c02d3d260a4fdcccc9e66e3914061d1}
+      darwin/arm64: {sha256: fd4ce830a8de11ac8e6b39e105fa4a911feee7ba5b4c546e0e6b3a6d1fff2814}
+      linux/amd64: {sha256: 4e5b76a5c52442968a88a90fa73790e7d81a84ae24de33bccfe2224abe0d6017}
+      linux/arm64: {sha256: bdc0cb3645a24d8bfae685f1700c70065cfcdbbb13e4cfa98c09bff5238365ed}
+      windows/amd64: {sha256: 431922407e757473b119072da41ce471254969228956ab1097a399ae80b07363}
+
+  # Our own module: a release tag of github.com/birdtable/ is no young release. hatch is a go tool of tools/go.mod, which
+  # carries its own go-proc (v0.16.0, which hatch v0.7.0 requires) apart from the root module's. It prints no version through a flag, so the build info is the read-back.
+  # v0.7.0's four sums were built on darwin/arm64 with the stated build, twice for each platform, the two alike; no Linux run
+  # measured its own, so linux/amd64 is built across here as linux/arm64 and darwin/amd64 are.
+  # hatch and go-proc come from their public tags, so tools/go.mod has no replace by a private repository for either.
+  - id: hatch
+    why: the tier's closing budget line, its CPU time against gate/budgets.yaml (hatch budget --cpu)
+    version: v0.7.0
+    from: go
+    module: github.com/birdtable/hatch
+    package: github.com/birdtable/hatch/cmd/hatch
+    run: [budget, --load, --window, "1"]
+    no-windows: "the sha256 of a GOOS=windows build with the flags task tools builds with, which waits for a Windows run of task tools"
+    platforms:
+      darwin/arm64: {sha256: 68ef831a2b5b6707a2c4bf1b4b6e5090f482242e26b8473ac34dda5e7acd3e1d}
+      darwin/amd64: {sha256: e0606dd47b935d21332f20ab62182aa5ac8f5b1aa6adad72e263f13c14d98ebd}
+      linux/amd64: {sha256: c558a830e83d3b2669ddf33fda5b92f480035d2155e15a0d3700920946f21775}
+      linux/arm64: {sha256: f20800c16bc3e5f4902135eef9ceda16b6c91eed69eb1811192aea7e46ce72b5}
+
+  - id: changie
+    why: the changelog writer, which loads the changie preset and batches a fixture, and the changelog and the next version, .changie.yaml
+    version: 1.26.0
+    released: "2026-08-20"
+    from: release
+    run: [--version]
+    says: "changie version v1.26.0"
+    platforms:
+      darwin/amd64:
+        url: https://github.com/miniscruff/changie/releases/download/v1.26.0/changie_1.26.0_darwin_amd64.tar.gz
+        archive: 9a1a4dc8a6901ccd9724b3b9b5ec1354e5038b1b1aa4dceef65976f6462ac7d2
+        member: changie
+        sha256: a31c616f793f75caf41c318c8bd5c4b03c33b0870db1ccf969f4c7c12bf12d36
+      darwin/arm64:
+        url: https://github.com/miniscruff/changie/releases/download/v1.26.0/changie_1.26.0_darwin_arm64.tar.gz
+        archive: ba1a14e0eb220fb9c7d4dc90af462e7f7178a313cdb1299a17aafbb37838a458
+        member: changie
+        sha256: 30388f755d3827a7bf01e10edb9874d3f96dc716edbc6ec4cf160817b8ad63ba
+      linux/amd64:
+        url: https://github.com/miniscruff/changie/releases/download/v1.26.0/changie_1.26.0_linux_amd64.tar.gz
+        archive: eab168c8287a6e91912e1c02e5260911232d945bfd3c89d8a0e1ace6bb7b6161
+        member: changie
+        sha256: 27888a8be37963d141b1a62718cb54841e6588feec74ad66c41d310a9d7ca846
+      linux/arm64:
+        url: https://github.com/miniscruff/changie/releases/download/v1.26.0/changie_1.26.0_linux_arm64.tar.gz
+        archive: ec1e542014b5134f1cf86b3a12e86d566ab5ec9bd3901bf66f42a09cd9865b6e
+        member: changie
+        sha256: b7558bc8f5c089a0285c9c8e9d359e2d0b6fd1885c5a3286d787c5ce962f8f2d
+      windows/amd64:
+        url: https://github.com/miniscruff/changie/releases/download/v1.26.0/changie_1.26.0_windows_amd64.zip
+        archive: 86b1e2851d78be2b52b04c8129442d4fcc8b29edd839bcc893fe66486d72ae72
+        member: changie.exe
+        sha256: 8a4117075d09d0e515969d314f5d51331a251f4e16b7d6a6e3b68b876bb59a3b
+
+  # v3.26.0, not v3.27.0: the later tag is under the cooldown
+  # (rulebook/lang/go/libraries.yaml), and the archive's licence is MIT. Each
+  # archive sum is the publisher's vale_3.26.0_checksums.txt of the release,
+  # and each program sum is of the member unpacked from it. Upstream also ships
+  # windows/arm64, which no row pins: the gate runs on no such machine.
+  - id: vale
+    why: the prose check of the vale preset, presets/vale, over docs and printed text (docs.voice.2)
+    version: 3.26.0
+    released: "2026-10-31"
+    from: release
+    run: [--version]
+    says: "vale version 3.26.0"
+    platforms:
+      darwin/amd64:
+        url: https://github.com/errata-ai/vale/releases/download/v3.26.0/vale_3.26.0_macOS_64-bit.tar.gz
+        archive: df42b317be6ece6a6a70d06b952deec581d047046eb93ea4632f58da56a86ff9
+        member: vale
+        sha256: 1b3e123a0aad3474a40a9186d4cd143cae218cf6e84570c66f882dd8c1a4e8f0
+      darwin/arm64:
+        url: https://github.com/errata-ai/vale/releases/download/v3.26.0/vale_3.26.0_macOS_arm64.tar.gz
+        archive: a6c3370f53bad93086c6b85f3163676e44e08049d69743afdcc13f3aab5b7482
+        member: vale
+        sha256: ebaab47b28ea7ecba0d9eb704c9ec6e303d981ad436882ef640a3aaa051a1dfe
+      linux/amd64:
+        url: https://github.com/errata-ai/vale/releases/download/v3.26.0/vale_3.26.0_Linux_64-bit.tar.gz
+        archive: 22aa69a556558e4a9dfc63c17030777383d8d3c48dcdfad655fa98e839d666ed
+        member: vale
+        sha256: 5b9c11248539c96e416cf348f7d63fca87ebe369de1cf124e3bed9b5d3863378
+      linux/arm64:
+        url: https://github.com/errata-ai/vale/releases/download/v3.26.0/vale_3.26.0_Linux_arm64.tar.gz
+        archive: 3154179f4611140c9af54a8b3bc6a90bc02b73fe6c1f635369604dde0490406d
+        member: vale
+        sha256: 5607e63b62c6f4577e2c16f44e05c93db9307ea96b2139a6390688fcbf3886fc
+      windows/amd64:
+        url: https://github.com/errata-ai/vale/releases/download/v3.26.0/vale_3.26.0_Windows_64-bit.zip
+        archive: c42f4b413aa29b6b36fa4e3ac0c18322588a54ac860db4c84b8255997f7d1ec2
+        member: vale.exe
+        sha256: a4e0b17ea31fb61f3117f3171af502ff95f3467ca60d7097e6aa909928078c30
+
+  - id: node
+    why: the JavaScript runtime of the explorer workspace, which the TypeScript compiler and the test runner run on (M1-17)
+    version: 24.22.1
+    released: "2026-10-20"
+    from: release
+    run: [--version]
+    says: "v24.22.1"
+    platforms:
+      darwin/amd64:
+        url: https://nodejs.org/dist/v24.22.1/node-v24.22.1-darwin-x64.tar.gz
+        archive: d132557e7ee2b85af08b0c8c34338e65c6430f2238d01f727728ef42dc83b035
+        member: node-v24.22.1-darwin-x64/bin/node
+        sha256: cc6f41f72e3eb4460154952e56a35afdd96b6995cea51cd25e637355a2955a51
+      darwin/arm64:
+        url: https://nodejs.org/dist/v24.22.1/node-v24.22.1-darwin-arm64.tar.gz
+        archive: 89c682593d76cd44233fa53b1563264e7de9cbb189cad169135c5b4fadfbc0a7
+        member: node-v24.22.1-darwin-arm64/bin/node
+        sha256: 6f32069480ec14d52b6d7b1f3c7124cfbbc46203abf5ddf5c65b127435f3f329
+      linux/amd64:
+        url: https://nodejs.org/dist/v24.22.1/node-v24.22.1-linux-x64.tar.gz
+        archive: eb6728e77c576a35162c122c45ccadf224d89ff00abc8dae46cc2897c6002d7c
+        member: node-v24.22.1-linux-x64/bin/node
+        sha256: e32e2d16081cf644f88392934288086e7662529d0d43277c34f7aad2207cfafb
+      linux/arm64:
+        url: https://nodejs.org/dist/v24.22.1/node-v24.22.1-linux-arm64.tar.gz
+        archive: 33c37be234ba8bee041961047b19160f4d7d0f164e8e246f78bdd10feff148b3
+        member: node-v24.22.1-linux-arm64/bin/node
+        sha256: c8c5721679d8d1a09e9987e345d5f9a64899bb85f7a384783ba8a93e6e62348a
+      windows/amd64:
+        url: https://nodejs.org/dist/v24.22.1/node-v24.22.1-win-x64.zip
+        archive: d2046d28c2c3dcd211ac5145c0bf30e2047ef9dfb306693c8c6e2eccd8b95fa5
+        member: node-v24.22.1-win-x64/node.exe
+        sha256: d702daa815eabbff763c7d3808e235cf031cf2ca70211b56847bc72f51e240e5
+
+  - id: pnpm
+    why: the one package manager of the explorer workspace, installing from the lockfile only with no install script (M1-17)
+    version: 12.15.0
+    released: "2026-10-21"
+    from: release
+    run: [--version]
+    says: "12.15.0"
+    platforms:
+      darwin/amd64:
+        url: https://github.com/pnpm/pnpm/releases/download/v12.15.0/pnpm-darwin-x64.tar.gz
+        archive: 2d7b336884574aee8a765bee48591212e9caf4fcf985fb3279588c1fb73fb47f
+        member: pnpm
+        sha256: ec2d9a6058c21d2f8b424e92dd11147729f212422a475c697126b7abbf0f28e0
+      darwin/arm64:
+        url: https://github.com/pnpm/pnpm/releases/download/v12.15.0/pnpm-darwin-arm64.tar.gz
+        archive: 6a41a2877773e97f19832067187cc6fc82e186d8a2cf91fec4b4c1a5fbd6ef27
+        member: pnpm
+        sha256: d9c23be5ad12e3e31faf6bdbe8c1566f642eddd03d915bfc0b9ab46120c8a521
+      linux/amd64:
+        url: https://github.com/pnpm/pnpm/releases/download/v12.15.0/pnpm-linux-x64.tar.gz
+        archive: 55b5ed0092bd11176c1669598e231ae52e7cedac59de6efd0d415730f37d0598
+        member: pnpm
+        sha256: 8cca52dc2aab0081ac153a3c7ad36224cd72b6d7cfea413746b7b97f6a3d8942
+      linux/arm64:
+        url: https://github.com/pnpm/pnpm/releases/download/v12.15.0/pnpm-linux-arm64.tar.gz
+        archive: d7ce93a2c7d847d3a34bd3f559b60c14f578b1320c17cc352a2c5c5fdf956117
+        member: pnpm
+        sha256: 21d4af1819ad1d9bf5f6ac52bc1bf5346032fdfeb2ebe87fa1fffb8770a9f7af
+      windows/amd64:
+        url: https://github.com/pnpm/pnpm/releases/download/v12.15.0/pnpm-win32-x64.zip
+        archive: 84cf69db1be19e95bb4e5bef329291a046f2821b390d87e00f5690809d8a2ed7
+        member: pnpm.exe
+        sha256: 6052300915b4d839772595dc15dd6539333bf2af440839d1f8c1ffe34c86b4fd
+
+  - id: ast-grep
+    why: the pattern tool whose adapter reads its rule files and its JSON report, and whose recordings regenerate from this pin (M3-05). Each archive's sum is GitHub's digest of the release asset
+    version: 0.51.0
+    released: "2026-10-15"
+    from: release
+    run: [--version]
+    says: "ast-grep 0.51.0"
+    platforms:
+      darwin/amd64:
+        url: https://github.com/ast-grep/ast-grep/releases/download/0.51.0/app-x86_64-apple-darwin.zip
+        archive: 8438fe549da59da28518c45bdaab5b851aabafe8fb4f8dc05c261a7649b4eca6
+        member: ast-grep
+        sha256: 7c7bd4ccd32fa7881dd52b6eb6b55dc8c930e20db41cdf8ee733a9c47085a981
+      darwin/arm64:
+        url: https://github.com/ast-grep/ast-grep/releases/download/0.51.0/app-aarch64-apple-darwin.zip
+        archive: e18e13c27ed6c4b3ec4de00745b0755dee9dc26c035e226f4dd5d147dca99cc8
+        member: ast-grep
+        sha256: 6e4e64393e1cbc67b68f56606982c2834e9ffe771cf10d4811de0f4d15ee3a6d
+      linux/amd64:
+        url: https://github.com/ast-grep/ast-grep/releases/download/0.51.0/app-x86_64-unknown-linux-gnu.zip
+        archive: a7eead5552d3a8daad70f5d50d935da44bd0c138e946b5b0a96b1d38169fa639
+        member: ast-grep
+        sha256: 99b5aeab1f47536789482b4517595b759de910f7f1f1d1f80c752824e894e38e
+      linux/arm64:
+        url: https://github.com/ast-grep/ast-grep/releases/download/0.51.0/app-aarch64-unknown-linux-gnu.zip
+        archive: 73af0ebe5958acee012754a5b2826a186580ef83333092408a7a01096fc30b8b
+        member: ast-grep
+        sha256: 50f96dbaf16c20b6e3f2275b3e670bd2a8e527e85c67ca906447116b2ff37cee
+      windows/amd64:
+        url: https://github.com/ast-grep/ast-grep/releases/download/0.51.0/app-x86_64-pc-windows-msvc.zip
+        archive: 1a5b7824c5925ac34257f806488e54860817cefd855fd308d13df7550d068908
+        member: ast-grep.exe
+        sha256: 8ac5d5e90484e727c6ca53114c77c93b26e63a42bf9db07efda5008a5a4165a3
+
+  - id: eslint
+    why: the linter whose adapter reads its effective config and its JSON report, and whose recordings regenerate from this pin (M3-04)
+    version: 10.13.0
+    released: "2026-10-16"
+    from: node
+    package: eslint
+    bin: bin/eslint.js
+    run: [--version]
+    says: "v10.13.0"
+    platforms:
+      darwin/amd64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+      darwin/arm64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+      linux/amd64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+      linux/arm64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+      windows/amd64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+
+  - id: tsc
+    why: the TypeScript compiler whose adapter reads its shown config and its diagnostics (M3-04), at the version the explorer's lockfile holds
+    version: 6.0.3
+    released: "2026-04-16"
+    from: node
+    package: typescript
+    bin: bin/tsc
+    run: [--version]
+    says: "Version 6.0.3"
+    platforms:
+      darwin/amd64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+      darwin/arm64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+      linux/amd64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+      linux/arm64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+      windows/amd64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+
+  - id: prettier
+    why: the format check of the explorer and the boards generators, run with its default options and read-only
+    version: 3.9.10
+    released: "2026-10-10"
+    from: node
+    package: prettier
+    bin: bin/prettier.cjs
+    run: [--version]
+    says: "3.9.10"
+    platforms:
+      darwin/amd64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+      darwin/arm64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+      linux/amd64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+      linux/arm64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+      windows/amd64: {sha256: cce95fa610972510b8eed0493ac9978c1709a15f1b57189dde438c3aa6a82bd2}
+
+expected:
+  - {id: git, setting: programs.git, why: "History and Remote: every read of a repository and the two writes release makes"}
+  - {id: container, setting: programs.container, why: "the sandboxed level through a container runtime (sandbox: container)"}
+  - {id: userns, setting: programs.userns, why: "the sandboxed level through a user-namespace sandbox (sandbox: userns)"}
+  - {id: macos, setting: programs.macos, why: "the sandboxed level through the macOS sandbox tool (sandbox: macos)"}
+
+# The browsers Vitest's browser mode starts, Chromium's headless shell, its
+# ffmpeg and WebKit. Playwright's own `playwright install`, run by
+# the pinned node at the version explorer/pnpm-lock.yaml holds, places them in
+# .tools/playwright, and there is no unpacker of our own. Neither the CDN nor
+# the npm package publishes a checksum, so the pin is the tree digest
+# (go-files treesum, a link kept only when its target stays inside the folder)
+# of the folder as first fetched over https and measured here: a first-fetch
+# pin, not signed by the publisher (supply.provenance.7). The gate holds the
+# folder to it before a test starts a browser (gragas-dev browsers), refusing a
+# changed file, an added file, a link out of the folder and a folder past the
+# caps. To bump Playwright, change it in the explorer, run task tools, read the
+# new digest with gragas-dev browsers --print --platform <platform> on each
+# platform, and put it here. The digest is browsers2: since go-files v0.4.0
+# (treesum's t2: lines, which no longer cover the executable bit); a
+# browsers1: pin is refused as an older format. Each browsers2: pin was
+# measured twice, by the new binary, from a tree the old binary had just
+# passed against its browsers1: pin on that system, so the
+# change of format blesses no drift.
+browsers:
+  playwright: 1.65.0
+  platforms:
+    darwin/arm64: {tree: browsers2:9c0d483cde314ed20e5d1008ae7a054a40dc77f632e8af00dc081044d938758e}
+    darwin/amd64: {unmeasured: "no session of that system has run the install, so no tree was measured"}
+    linux/amd64: {unmeasured: "no session of that system has run the install, so no tree was measured"}
+    linux/arm64: {unmeasured: "no session of that system has run the install, so no tree was measured"}
+    windows/amd64: {unmeasured: "no session of that system has run the install, so no tree was measured"}
+
+# The plugins the generated-presets member installs the way a user does:
+# each is a bundle a release of birdtable/gragas-plugins tagged,
+# added to this tree by gragas plugin add from that tag's commit, so
+# plugins/lock.yaml holds it and plugins/<name>/<version>/ is its folder. A pin
+# is the release's tag, the tag's object and commit, and the bundle's digest the
+# tag's message records, which is the digest the lock holds. The digest is what
+# is enforced; the tag, object and commit are the record a person checks it
+# against in gragas-plugins, and are read for their shape only. The member preset-plugins (gragas-dev
+# preset-plugins) holds the lock to these pins, approves each plugin by its
+# pinned digest in a state folder it makes for its run and never the
+# account's, and runs gragas preset --check through them; a plugin missing, a
+# lock digest that is not its pin, and a bundle whose files are not that digest
+# are each red. To bump a plugin, read its new tag's record in gragas-plugins'
+# RELEASES, gragas plugin add the bundle from the tag's commit, and change its
+# line here.
+plugins:
+  golangci-lint@1.0.1: {tag: golangci-lint/v1.0.1, object: 8adf8bd03e4d2d4be7f29ee44af2a8869b693ee8, commit: bf6ce7a3d3e9f21c6ab7dc4af60eaa4e5e76a69e, digest: "sha256:6a11c13105016f4ae034373c8d379a582d4bec94b3d3044a2484d930a0d1f923"}
+  ast-grep@1.1.0: {tag: ast-grep/v1.1.0, object: 1b422d7d6b35ca52a9bd0284bb0e00d472211bc0, commit: bf6ce7a3d3e9f21c6ab7dc4af60eaa4e5e76a69e, digest: "sha256:c1eef2baae51c0db88d04b17280dbd312b439dd709e31dc268c85c9277079558"}
+  eslint@1.0.0: {tag: eslint/v1.0.0, object: ec7cb941db11199d08a87e3bc67dd36a7bba90aa, commit: bf6ce7a3d3e9f21c6ab7dc4af60eaa4e5e76a69e, digest: "sha256:6f8e3468308b64fa7410875d173ef09f491fe09d66e222bed4ae84c419922627"}
+  tsc@1.0.0: {tag: tsc/v1.0.0, object: 6884b7c916e6779da7bbce71eb6e15873404ec8c, commit: bf6ce7a3d3e9f21c6ab7dc4af60eaa4e5e76a69e, digest: "sha256:86e424e3236bc6e5c27ad0247986bcaf3f25484c490e791994e1fc56eca4300f"}

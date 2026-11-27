@@ -1,0 +1,269 @@
+part: daemon
+concern: lifecycle
+order: 2
+title: Upgrade, revert and version pairing
+summary: >-
+  A program that replaces a running one keeps the previous binary and puts it back when the new one does not
+  answer healthy; a running old daemon is not mistaken for the new one; a daemon sleeps until asked and
+  reconciles what an earlier run left at every start; a served page and its daemon agree on a version on every
+  connect, an API-only provider's reader checks the number at setup; an embedded page that is missing says so.
+rules:
+  - id: daemon.lifecycle.1
+    slug: revert-on-unhealthy
+    since: 0.1.0
+    rule: >-
+      A program that replaces a running one keeps the previous binary and puts it back by itself when the new
+      one does not answer healthy within a stated window; the revert is tested with a candidate built to fail.
+    level: release
+    why: >-
+      Own measure: of eight programs, one has a working guard, three do it manually and four have none.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It has no binary to replace.
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          start test installing a candidate that exits at start and asserting the previous binary runs again;
+          shared upgrade helper. Plant: a failing candidate with no revert makes the test fail. Control: a
+          healthy candidate stays installed
+    relates:
+      - id: cli.commands.5
+        how: see
+    note: >-
+      The install-by-rename rule is cli.commands.5; the revert of an install is F-22's, held here.
+  - id: daemon.lifecycle.2
+    slug: old-daemon-not-mistaken
+    since: 0.1.0
+    rule: >-
+      A running old daemon is not mistaken for the new one when the command starts; the command compares the
+      daemon's reported version.
+    level: deploy
+    why: A command that talks to a stale daemon draws results from the wrong version.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - daemon
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "3"
+        note: >-
+          Go test starting an old stub daemon and running the command; the health document's version is
+          compared and the old one is not treated as the new. Plant: a command that discards the version field
+          fails. Control: a command that compares the version passes
+    relates:
+      - id: daemon.lifecycle.3
+        how: see
+    open:
+      - The web side's version-pairing rule is daemon.lifecycle.3.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: R"
+    note: >-
+      The web catalogue lists it for the TypeScript side with a Go twin; the Go row is held here.
+  - id: daemon.lifecycle.3
+    slug: page-and-server-versions-paired
+    since: 0.1.0
+    rule: >-
+      A daemon that serves a page pairs page and server versions: the contract carries a version, the page
+      reads it on the first answer and again on every reconnect, and a mismatch stops or reloads the page with
+      a sentence, never draws wrong.
+    detail: >-
+      An upgrade with a page open stops or reloads. One pairing helper is shared; one program writes a schema
+      field and never reads it. A daemon declares whether it serves a page; a daemon that answers an API only
+      declares so, serves no HTML, and its readers learn the API number at setup instead (daemon.lifecycle.7).
+    level: deploy
+    why: >-
+      Unproven in two programs (a pairing constant and a number helper); the test is not built. No target
+      serves a page today and each makes a page a separate program, but the rule is right for the day one
+      does.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    unless:
+      - facets:
+          - no-page
+        reason: >-
+          A daemon that declares it answers an API only has no page to pair; its readers are held by
+          daemon.lifecycle.7.
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          browser test against a stub daemon serving contract version N+1: the page must stop with the
+          mismatch sentence; a second test restarts the stub with a new version while the page is open and the
+          page must reload or stop. Plant: a stub with the wrong version and no sentence fails; a page that
+          keeps drawing after a version change fails. Control: a page that stops with the sentence passes
+    relates:
+      - id: daemon.lifecycle.7
+        how: see
+    note: >-
+      Merges the first-answer pairing rule with the reconnect rule, as one browser test holds both.
+  - id: daemon.lifecycle.4
+    slug: embedded-page-not-silent
+    since: 0.1.0
+    rule: >-
+      A daemon that embeds a page is not silent when the page is missing: a build without the page serves a
+      clear 404 and does not compile when the embedded folder is empty.
+    level: deploy
+    why: >-
+      A blank 200 for a missing page is invisible; held in part by the doctor command. It binds only a daemon
+      that embeds a page; no target does today.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    unless:
+      - facets:
+          - no-page
+        reason: A daemon with no page has nothing to embed.
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "3"
+        note: >-
+          build without the page; a test asserts a clear 404 body; the embed directive fails to compile on an
+          empty directory. Plant: serving a missing page that returns a blank 200 fails. Control: a clear 404
+          passes
+  - id: daemon.lifecycle.5
+    slug: idle-by-default
+    since: 0.1.0
+    rule: >-
+      A daemon is asleep by default: where its service manager can start it on its socket it is started that
+      way and exits after a stated idle time, a daemon that stays resident states why in a recorded decision
+      with its measured idle cost, and no timer of its own runs while nothing needs it.
+    detail: >-
+      Under systemd a .socket unit starts the service; under launchd the Sockets key does. A Go daemon takes
+      the socket either manager passes with go-socket's listen.Activated, by the name the unit gives it (a
+      launchd Sockets key), and a process the manager did not start is told so (listen.ErrNotActivated)
+      rather than handed nothing. The idle time is a named constant, and the exit after it is a clean exit
+      (daemon.units.3 does not restart it). Where the manager cannot hand a socket over to this program, the
+      daemon stays resident but sleeps in accept between requests, and the decision says so. A timer of the
+      daemon's own (a watch, a refresh) starts with the work that needs it and stops when that work ends.
+      Applies to every daemon whatever it serves; a new manager adds its socket setting to the test table.
+    level: deploy
+    why: >-
+      Idle power is measured on a home server and on a laptop battery; a process that keeps itself awake costs
+      watts every hour of every day. It also keeps a daemon's behaviour explainable: nothing happens unless
+      something asked.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          unit-render test asserting a socket unit or the launchd Sockets key and a named idle-exit constant,
+          or a recorded decision named in the unit's notes; a start test that sends one request, waits past
+          the idle time and asserts a clean exit with no timer left running. Plant: a resident unit with no
+          socket and no recorded decision fails, and a daemon still running past its idle time fails. Control:
+          a socket-started daemon that exits cleanly after its idle time passes
+    relates:
+      - id: daemon.units.3
+        how: see
+  - id: daemon.lifecycle.6
+    slug: start-reconciles-leftovers
+    since: 0.1.0
+    rule: >-
+      Every start reconciles what an earlier run left (locks, units, ids, sockets, temporary files) and
+      reclaims what nothing owns, and a test plants an orphan of each kind and proves it is reclaimed.
+    detail: >-
+      Reconciling is read, compare, then reclaim: a lock whose holder is gone is released, a unit or id no
+      record names is removed, and each reclaim is logged with what was found. Remove and wipe commands
+      reclaim the same kinds. A new kind of persisted state adds its orphan to the test table, so the rule
+      stays true as state kinds grow.
+    level: program
+    why: >-
+      A daemon that cannot start cleanly after a crash is fixed by hand at the worst moment, and nothing may
+      be left running unwatched.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a start test that plants one orphan per state kind in the table and asserts each is reclaimed after
+          start. Plant: a stale lock left by a killed process that blocks the next start fails. Control: a
+          start that reclaims every planted orphan passes
+    relates:
+      - id: go.concurrency.5
+        how: see
+    note: >-
+      go.concurrency.5 clears in-memory state when its cause ends; this rule covers persisted leftovers.
+  - id: daemon.lifecycle.7
+    slug: reader-learns-api-number-at-setup
+    since: 0.1.0
+    rule: >-
+      A reader of a provider that answers an API only learns the provider's API number at setup and in doctor,
+      and on a mismatch draws nothing of the provider's, names which side to update, and doctor reports it
+      with the deploy line.
+    detail: >-
+      The number is the provider's one contract number (service.contract.2). A reader keeps the number it was
+      built against, compares it with the provider's at setup and on every doctor run, and on a difference
+      shows the sentence and the commands that bring the older side up, never a partial answer.
+    level: deploy
+    why: >-
+      A reader that draws a provider's answer of another shape draws wrong numbers with confidence; checking
+      once at setup and in doctor costs nothing at run time.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+        - cli
+        - web-app
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          a reader test against a stub provider reporting number N+1, asserting setup and doctor stop with the
+          which-side sentence and that no provider data is drawn. Plant: a reader that draws the provider's
+          answer under a mismatched number fails. Control: a reader that stops and names the side to update
+          passes
+    relates:
+      - id: service.contract.2
+        how: see

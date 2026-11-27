@@ -1,0 +1,68 @@
+part: postgres
+tools:
+  - key: shared-postgres-toolkit
+    name: shared Postgres toolkit
+    role: >-
+      Our package for Postgres on a function runtime: the connection pool, the IAM auth token, the certificate
+      bundle, the integer parser, the transaction helper and the error mapping. Every Postgres service uses
+      it.
+    binding: ts
+    ships: the toolkit package and its tests
+    state: chosen
+    why: >-
+      One package owns connections and error mapping, so a budget can be computed and a mapping can be proved
+      once.
+    open:
+      - >-
+        No repository uses Postgres today; the toolkit is the reference implementation, not ours.
+  - key: kysely
+    name: Kysely
+    role: >-
+      Builds SQL in TypeScript with a type for every table and column, so a query is checked by tsc.
+    binding: ts
+    state: chosen
+    why: Every table and column is checked at compile time.
+    lost:
+      - name: sqlc (Go)
+        why: >-
+          Reserved for Go with no repository yet using it; generated query code must regenerate with no diff.
+    open:
+      - Go uses the database package with a query generator reserved.
+  - key: kysely-codegen
+    name: kysely-codegen
+    role: >-
+      Reads the live schema and writes the query builder's table types; verify fails when the committed types
+      differ from the schema.
+    binding: ts
+    ships: a verify step in the test container
+    state: chosen
+    why: The committed types are held to the live schema.
+  - key: squawk
+    name: Squawk
+    role: >-
+      Lints Postgres migrations for changes that lock tables or break running code, such as a not-null column
+      without a default, a rename or a non-concurrent index.
+    version: 2.71.0
+    licence: Apache-2.0
+    binding: sql
+    ships: a Squawk config in the Postgres pack
+    state: chosen
+    why: >-
+      It reads Postgres only, which matches this part, and covers the lock rules of postgres.migrations.6.
+    lost:
+      - name: Atlas
+        why: Considered, not run.
+      - name: eugene
+        why: Considered, not run.
+    open:
+      - >-
+        Its rule names were read from documentation; the exit code and config were not confirmed.
+  - key: schemalint
+    name: schemalint
+    role: >-
+      Lints the live Postgres schema in the shared container for name casing, name inflection, mandatory
+      columns, primary keys, references and types, with ignores by identifier pattern. The rules used are
+      name-casing, name-inflection, mandatory-columns, require-primary-key, references and types.
+    binding: sql
+    state: chosen
+    why: It holds the live schema, not the migration text, to the conventions.

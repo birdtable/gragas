@@ -1,0 +1,8 @@
+$ gragas explain go.errors.77
+--- exit 2
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  usage      no rule has the id or alias go.errors.77
+    gragas coverage
+--- stderr

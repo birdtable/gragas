@@ -1,0 +1,10 @@
+# The modules the licences member passes over because their module zip carries no LICENSE
+# (supply.licences.1), each by a row that names where its licence is. One row to a line:
+#   <module path> <version in go.mod> <commit of the module's tag> <licence id> <sha256 of the licence text> <issue>
+# The licence text is committed beside this file as gate/<name>-LICENSE, and its sha256 is the
+# fifth field. The id must be on gate/licences.txt. There is no wildcard and no id is added to
+# the allowlist. A test is red when a row's module zip in the module cache now holds a LICENSE,
+# so the row goes when the tag carries it; when the copy's sha256 or id disagrees with a row;
+# and when a module with no LICENSE has no row.
+#
+# No module is passed over now: every module the build takes carries its LICENSE.

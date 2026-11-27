@@ -1,0 +1,119 @@
+format: 3
+part: code
+concern: comments
+rules:
+  - id: code.comments.1
+    statement: "A comment says why, not what, and none narrates the change; one question judges it."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The question: could someone who never saw the code write this comment from the adjacent lines? If yes it goes. A comment that states an interface contract may be longer than a function body, so the length clause is dropped from this rule. A regular-expression report for change-narrating words (now, no longer, previously, used to, changed, was) was considered and not run; false hits are expected. Agents narrate; the question fails narration without counting words."
+      pros:
+        - "A comment that restates the line adds a second thing to keep in step with the code. A study of 60 Go bugs found no comment fault, so this is practice and an instruction."
+    sources:
+      - ref: ousterhout-aposd
+        where: chapters 13 and 16
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.4
+        backs: rule
+  - id: code.comments.2
+    statement: "A TODO, FIXME, HACK or XXX names an issue in one shared pattern; a bare one is refused."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The tracked form is TODO(#123). The first tier is a comment-node pattern check (it catches line and block-comment forms); the second tier checks that the named issue exists and is open. The Go lint runner's godox cannot test the named-issue form and was rejected; in the web stack the core no-warning-comments rule does not read an issue id, so every TODO fails, and the tracked form needs an expiring-todo rule or a small local rule."
+      pros:
+        - "A TODO with no issue is a promise with no owner. Not measured: nothing checks that a TODO names an issue today (one bare TODO in one of six Go repos)."
+    sources:
+      - ref: ousterhout-aposd
+        where: chapter 13
+        backs: rule
+  - id: code.comments.3
+    statement: "Commented-out code is refused, found by a lint check enabled by name."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "In Go the check is gocritic commentedOutCode, enabled by name (a stock linter set does not enable it); a two-line commented statement pair beside a nolint line was not reported, so a short group can pass. In the web stack the sonarjs no-commented-code rule fires on some forms and misses others (a commented call chain such as // fetchAll(items.map(x => x.id)); and a commented if block), so it holds only some forms."
+      pros:
+        - "Commented-out code is dead code that no tool tracks and that readers cannot tell from intent. Not configured in any Go repo; one source says no tool works."
+    sources:
+      - ref: golangci-lint-linters
+        where: gocritic
+        says: "Provides diagnostics that check for bugs, performance and style issues."
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: gocritic
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: code.comments.4
+    statement: "Every exported name of a port or shared API has a doc comment stating its contract; elsewhere a doc comment is written only when it says more than the signature, and a comment one could write from the line below is a finding."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "On a port, a shared package's surface and any other API a second program or package builds on, every exported name has a doc comment stating, where they apply, units, the meaning of nil, null or absent, ownership, invariants, ordering, what it mutates and what it throws or returns as an error. Presence and form there are a rule: in Go the lint runner's exported check over the port and shared-package paths (with its comments exclusion preset off, so it is not hidden) and the doc-comment form check. Elsewhere an exported name gets a doc comment only when it says something local, non-obvious and with no other home; a comment that restates the name or the line below is deleted. The content is review. A surface change of a shared part or port fails until a reason is recorded (arch.shared.9)."
+      pros:
+        - "Ports are where the reader cannot read the body; a contract that is not written is guessed. A doc comment required on every export elsewhere produces filler that restates the name, which three target repos ban."
+    relations:
+      relates:
+        - arch.shared.9
+    sources:
+      - ref: ousterhout-aposd
+        where: "chapter 13 sections 13.1, 13.3 and 13.5"
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.4
+        backs: rule
+      - ref: b-04-philosophy-of-software-design
+        where: section 7 item 4
+        backs: rule
+      - ref: decision-65-code
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: revive
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: golangci-lint
+        target: source
+        key: godoclint
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: code.comments.5
+    statement: "Comment blocks stay short within the comment standard, cite a ruling once, carry no decoration lines or narrated history, and do not restate types or facts with a home."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A ruling id appears once per file with no prose; there are no decoration lines; doc comments restate no types; a comment id that is cited must exist. In Go inline comment groups over three lines only fall. A checker for comment-block length, decoration lines and restated ruling ids is built because no stock linter does it."
+      pros:
+        - "Long, decorated and restating comments rot first and bury the few that carry a contract."
+    relations:
+      relates:
+        - code.comments.1
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+  - id: code.comments.6
+    statement: A disable comment carries a reason.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "In the web stack a lint disable comment with no description fails; the Go counterpart is the nolint rule of the suppression concern in the gates part."
+      pros:
+        - A suppression with no reason cannot be reviewed or retired.
+    sources:
+      - ref: ousterhout-aposd
+        where: chapters 13 and 16
+        backs: rule

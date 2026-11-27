@@ -1,0 +1,273 @@
+part: service
+concern: bootstrap
+order: 1
+title: Bootstrap and pipeline
+summary: >-
+  Every service entry is built by one shared bootstrap that runs the same steps in the same order. A service
+  writes business code only; plumbing, data-layer helpers and the exposure mode are owned once and never
+  copied.
+rules:
+  - id: service.bootstrap.1
+    slug: one-shared-bootstrap
+    since: 0.1.0
+    rule: >-
+      Every service entry point is built by one shared bootstrap, and the plumbing libraries it wraps are
+      imported only inside it.
+    detail: >-
+      The bootstrap runs a fixed sequence for every entry: contract validation, authentication context,
+      logging with a correlation id, secrets, and the error envelope, in that order. A service writes only its
+      own business code. The shared bootstrap is the one place a plumbing library (request middleware, logger,
+      validator) is imported; a direct import anywhere else fails. The same shape holds in Go: each program is
+      assembled by one shared run helper and its plumbing packages are imported only there.
+    level: package
+    why: >-
+      Many entries each wiring their own plumbing gave as many pipelines as services, each missing a different
+      step. One owner means a step is fixed once for all.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: p-03-data
+        where: section 16
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep or import-restriction rule failing an import of any request-middleware, logger or validator
+          library outside the shared bootstrap package. Plant: a handler file that imports the middleware
+          library directly fails. Control: the same import inside the bootstrap package passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          depguard or import-rule table naming the shared run helper as the only importer of the plumbing
+          packages. Plant: a program package importing the plumbing package directly fails. Control: the run
+          helper importing it passes
+    open:
+      - >-
+        The reference estate lists the plumbing libraries by name; the allow-list of banned imports is to be
+        built per product from its own bootstrap.
+  - id: service.bootstrap.2
+    slug: no-local-plumbing-copy
+    since: 0.1.0
+    rule: >-
+      No service keeps a local copy of a shared plumbing step or handler factory, and the count of copies only
+      falls.
+    detail: >-
+      A step copied into a second repository moves to the shared module, and the number of copies is counted
+      and may not rise. This covers handler factories and each plumbing step written again by hand
+      (validation, auth context, logging, error mapping).
+    level: package
+    why: >-
+      Copies drift. The reference estate counted dozens of hand-copied plumbing steps beside a shared package
+      that was meant to replace them.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rules for the known shapes of each plumbing step and handler factory outside the shared
+          package, with a shrink-only count in the ratchet. Plant: a new local handler factory fails. Control:
+          a service that imports the shared factory passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a ratchet counting copies of shared steps outside the shared module, failing when the count rises.
+          Plant: a copied step added to a program fails the count. Control: a program using the shared module
+          passes
+    open:
+      - The starting count of copies is to be measured per product.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+  - id: service.bootstrap.3
+    slug: no-local-data-plumbing
+    since: 0.1.0
+    rule: >-
+      No service writes its own data-layer plumbing: error tables, certificate bundles, integer parsers,
+      outboxes or key builders.
+    detail: >-
+      Store opening, error mapping, number parsing and key building each have one owner in the shared data
+      toolkit. A service that needs one imports it.
+    level: package
+    why: >-
+      Each service writing its own database error table or integer parser repeats the same bugs in a different
+      place.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rules for hand-written error-code tables, integer parsers, certificate bundle loading and
+          key builders outside the shared data toolkit. Plant: a local SQLSTATE table in a service fails.
+          Control: the shared toolkit call passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          import and forbidigo rules limiting store opening, error mapping and key building to the one owning
+          package. Plant: a second package opening a store connection fails. Control: the owner package passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      Related to no-local-plumbing-copy: that rule counts copies of request steps; this one covers the data
+      layer.
+  - id: service.bootstrap.4
+    slug: route-unit-closed-files
+    since: 0.1.0
+    rule: "Every route unit has the same closed set of files: handler, contract and schema."
+    detail: >-
+      A route folder holds exactly the handler, its contract declaration and its schema, so a new route has a
+      fixed shape and a generator can find all three. In Go, programs sit under one commands folder with the
+      rest under an internal folder, so a new command has a fixed home.
+    level: file
+    why: >-
+      A route missing its contract or schema is invisible to the generated API description and the access
+      catalogue.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          a repo test walking route folders and failing on a folder missing the handler, contract or schema
+          file, or holding an unlisted file. Plant: a route folder without a schema file fails. Control: a
+          complete folder passes
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          a repo test over the commands folder layout and the layer table. Plant: a command outside the
+          commands folder fails. Control: a command in its home passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.bootstrap.5
+    slug: route-contract-closed-keys
+    since: 0.1.0
+    rule: >-
+      A route contract may use only a closed set of keys (path, query, body, headers); any other key fails.
+    detail: >-
+      The closed set is checked by the contract builder and by a lint, so a misnamed key (for example params)
+      cannot silently drop validation. In Go, command and config declarations refuse unknown keys and the
+      command tree is compared with a stored file.
+    level: function
+    why: >-
+      An unknown key in a contract is ignored by the validator, so the input it was meant to constrain goes
+      unchecked.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          contract builder typed to the closed key set, plus an ast-grep rule failing any other key. Plant: a
+          route contract with a params key fails. Control: a contract with path, query, body and headers
+          passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          strict decoding of command and config declarations with unknown fields refused, and the command tree
+          compared with a stored file. Plant: a declaration with an unknown key fails to load. Control: a
+          declaration with known keys loads
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.bootstrap.6
+    slug: pinned-request-order
+    since: 0.1.0
+    rule: >-
+      Request steps run in a pinned order, so a request without authentication never reaches the handler.
+    detail: >-
+      The bootstrap fixes the order of steps (origin check, authentication, authorisation, validation,
+      handler, error mapping) and no step can be reordered or skipped by a service. In Go, a daemon checks the
+      caller on every request before any handler, and its steps are bounded.
+    level: program
+    why: >-
+      An authentication step placed after validation or business code lets an unauthenticated request touch
+      the handler.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          a shared bootstrap test sending an unauthenticated request through every registered route and
+          asserting the handler is never called, and a test asserting the step order list. Plant: a route
+          whose handler runs without a verified identity fails. Control: every route refusing before the
+          handler passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.bootstrap.7
+    slug: exposure-mode-explicit
+    since: 0.1.0
+    rule: >-
+      The exposure mode of the entry origin check is an explicit code argument from the deployment tier, never
+      ambient configuration.
+    detail: >-
+      A public entry passes enforce; an internal entry passes the disabled mode explicitly. No environment
+      variable selects the mode. In Go, a daemon states its reach (socket, loopback, tailnet) as a code
+      argument, and the peer check is never a header alone.
+    level: function
+    why: >-
+      A mode read from the environment can be switched off by a configuration slip, opening a public entry
+      without anyone changing code.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing a bootstrap call whose origin-check mode argument is not a literal. Plant: a
+          bootstrap call passing the mode from an environment read fails. Control: a call passing the literal
+          mode passes
+      - binding: go
+        class: preset-rule
+        tier: "1"
+        note: >-
+          a rule failing a server constructor whose reach argument is not a constant. Plant: a reach read from
+          a flag or environment fails. Control: a constant reach passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

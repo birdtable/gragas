@@ -1,0 +1,9 @@
+$ gragas contract validate newer.json
+--- exit 4
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  not ready  the report is written in contract 2.0 and this engine reads up to
+  contract 1.3
+    gragas version
+--- stderr

@@ -1,0 +1,11 @@
+$ gragas gen --apply
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+reading rulebook/ in .
+
+  write      rulebook/coverage.json
+
+  done       wrote 1 generated file
+--- stderr
+warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
+--- exit 0

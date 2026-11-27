@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-baseline.schema.json",
+  "title": "Baseline as a report counts it (entity, spec 16.7)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "slug",
+    "rule",
+    "tool",
+    "count",
+    "owner",
+    "zero_by"
+  ],
+  "properties": {
+    "slug": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0"
+    },
+    "rule": {
+      "$ref": "common.schema.json#/$defs/id",
+      "x-introduced": "1.0"
+    },
+    "tool": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0,
+      "x-introduced": "1.0"
+    },
+    "owner": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "zero_by": {
+      "$ref": "common.schema.json#/$defs/date",
+      "x-introduced": "1.0"
+    },
+    "age_days": {
+      "type": "integer",
+      "minimum": 0,
+      "x-introduced": "1.0",
+      "default": 0
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terms.schema.json",
+  "title": "terms.yaml: the words a rulebook defines once (format v3)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "terms"],
+  "properties": {
+    "format": {"$ref": "common.schema.json#/$defs/format"},
+    "terms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "definition"],
+        "properties": {
+          "slug": {"$ref": "common.schema.json#/$defs/slug"},
+          "definition": {"$ref": "common.schema.json#/$defs/text"},
+          "literal": {"$ref": "common.schema.json#/$defs/text", "description": "optional: a header name, a package, so statements stay neutral"},
+          "status": {"enum": ["active", "retired"], "description": "absent is active; a retired term stays in the file and no statement uses it"}
+        }
+      },
+      "description": "a term's other languages are translations (translations.schema.json), never fields here"
+    }
+  }
+}

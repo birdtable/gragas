@@ -1,0 +1,21 @@
+$ gragas gen --apply --json
+--- stdout
+{
+  "schema": 2,
+  "command": "gen",
+  "apply": true,
+  "ended": "done",
+  "msg": "wrote 1 generated file",
+  "run": "<run>",
+  "changes": [
+    "write rulebook/coverage.json"
+  ],
+  "data": {
+    "stale": [
+      "rulebook/coverage.json"
+    ]
+  }
+}
+--- stderr
+warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
+--- exit 0

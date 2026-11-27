@@ -1,0 +1,64 @@
+part: ts
+concern: schema
+order: 9
+title: The schema model as the one source
+summary: >-
+  One schema library holds the model of the program's data. JSON Schema, types, DDL and API contracts are
+  generated from it and held by regenerate-and-diff, the live database is checked against the model and never
+  the other way, and what the model exports parses back to the same value.
+rules:
+  - id: ts.schema.1
+    slug: model-generates-every-shape
+    since: 0.1.0
+    rule: >-
+      One schema library holds the model, JSON Schema, types, DDL and API contracts are generated from it and
+      held by regenerate-and-diff, no second schema library is a dependency, and what the model exports parses
+      back to the same value.
+    detail: >-
+      The model is the one source. Every other shape (the JSON Schema files, the TypeScript types, the SQL
+      DDL, the HTTP and tool contracts) is generated from it, committed, and regenerated and diffed by the
+      gate; a hand edit to a generated file fails. The live database schema is checked against the DDL the
+      model generates, never used to generate the model or the types. A landed migration is never edited; new
+      SQL is appended and held to the generated DDL. The manifest names one schema library; a second one, or a
+      query builder that owns its own schema, fails the manifest check. A round-trip test exports each model
+      shape and parses it back to an equal value. The checks are engine-free.
+    level: program
+    why: >-
+      One model that generates every other shape is the strongest guard against a type, a table and a contract
+      drifting apart over years, and regenerate-and-diff makes it mechanical. Naming the model as the source,
+      and checking the live schema against it, leaves no second place where the truth can start.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. a generate-and-diff step that regenerates JSON Schema, types, DDL and contracts
+          from the model and fails on any difference, and a check that compares the live schema with the
+          generated DDL. Plant: a hand edit to a generated type file fails; a column added in the database and
+          not in the model fails. Control: a model change with its regenerated files in the same change passes
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. a manifest check that names one schema library and refuses a second schema library
+          or a schema-owning query builder. Plant: a manifest with two schema libraries fails. Control: a
+          manifest with one schema library and a typed query builder that takes generated types passes
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          a round-trip test that exports each model shape and parses it back, failing on any difference or on
+          an empty model list. Plant: a shape whose export drops an optional field fails the round trip.
+          Control: a shape that parses back equal passes
+    open:
+      - >-
+        The data parts still describe types generated from the live schema; they follow this rule's direction
+        when they are rewritten.

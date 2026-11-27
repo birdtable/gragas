@@ -1,0 +1,8 @@
+kind: Changed
+body: >-
+  **Preset files are written at the repository's root, under presets/<tool>/.** bind, rebind and
+  unbind now write a tool's preset data in presets/<tool>/ at the root of the repository, where
+  projects import it, not under the rulebook's own folder. Files an earlier build wrote under
+  <book>/presets/ are left in place: nothing moves them, and gragas preset --check does not name
+  them. Move each one by hand to presets/<tool>/ at the root, then run gragas preset --check.
+time: 2026-11-22T14:40:00.00000+01:00

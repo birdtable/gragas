@@ -1,0 +1,27 @@
+version: '3'
+tasks:
+  pre-commit:
+    cmds:
+      - test -z "$(gofmt -l .)"
+      - go mod tidy -diff
+  pre-push:
+    cmds:
+      - {cmd: go vet ./..., timeout: 5m}
+      - {cmd: GOOS=linux GOARCH=amd64 go build ./..., timeout: 5m}
+      - {cmd: GOOS=darwin GOARCH=arm64 go build ./..., timeout: 5m}
+      - {cmd: GOOS=linux GOARCH=amd64 golangci-lint run --allow-parallel-runners, timeout: 10m}
+      - {cmd: GOOS=darwin GOARCH=arm64 golangci-lint run --allow-parallel-runners, timeout: 10m}
+      - {cmd: gitleaks git, timeout: 5m}
+  full:
+    cmds:
+      - {cmd: gotestsum --format testname -- -count=1 ./... | tee out.txt, timeout: 20m, set: [pipefail]}
+      - grep -q -e EMPTY -e "DONE 0 tests" out.txt && exit 1 || true
+      - {cmd: govulncheck ./..., timeout: 5m}
+      - {cmd: gragas check, timeout: 2m}
+  landing:
+    cmds:
+      - task: pre-push
+      - task: full
+  release:
+    cmds:
+      - {cmd: go test -race ./..., timeout: 30m}

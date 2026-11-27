@@ -1,0 +1,843 @@
+part: go
+# The register of libraries and tools a Go program calls instead of writing the code itself (supply.intake.6).
+# Beside tools.yaml, which says which tool a rule's check uses. This file says which library does a job, so a
+# program does not write its own. Standing rule: do not build what already exists; the library is the core and is
+# called directly, and a program's own code holds only the gap, which each row names.
+#
+# A row: key, job, use (module, version, package; released, the day the pinned release was published, and age, a day
+# the row records, both only dates: no release-age window is held), scope, replaces (the modules it refuses, each with a why), by_hand (the hand-written code it refuses), ban (deny: import paths the depguard row refuses; forbid:
+# forbidigo patterns; planned: patterns not yet proven by a planted fixture; note: why a row bans nothing; linter: the
+# linter of the Go preset that holds the ban, one of depguard, forbidigo, gomodguard_v2 or gomoddirectives, or a list of
+# them for a row that bans imports and calls; a row that bans an import or a call names it), gap,
+# source (the module's own page or an upstream issue), state and, for a conditional row, the proof it waits for.
+#
+# version is a release (v1.2.3, which a chosen row dates in released), floor (the version every program resolves to,
+# which the first change that adopts the module fixes with gh and the 7-day age), toolchain (the Go release's own)
+# or none. state is chosen (built on), needs-spike (a spike decides it first) or conditional (applies only if its
+# proof passes; the checker treats it as not used here until the proof is recorded). Only a chosen row that bans
+# something feeds the preset.
+libraries:
+  # ---------------------------------------------------------------- data formats
+  - key: yaml
+    job: read and write YAML
+    use: {module: go.yaml.in/yaml/v3, version: v3.0.6, released: "2026-10-13", package: "anywhere a program reads or writes YAML"}
+    scope: anywhere
+    replaces:
+      - {name: "gopkg.in/yaml.v3", why: "archived upstream; go.yaml.in/yaml/v3 is the same code under the new path, so no call changes"}
+      - {name: "github.com/go-yaml/yaml", why: "archived in April 2025"}
+      - {name: "gopkg.in/yaml.v2", why: "the older line of the archived module; a second YAML implementation (one pin stays in one program for a crawl dependency, see crawl-pins)"}
+      - {name: "github.com/goccy/go-yaml", why: "a second YAML implementation with 277 open issues and no gain over the first"}
+    by_hand:
+      - a strict YAML reader (duplicate keys, single document, depth limit) once a library option does it
+    ban:
+      linter: depguard
+      deny: [gopkg.in/yaml.v3, gopkg.in/yaml.v2, github.com/go-yaml/yaml, github.com/goccy/go-yaml]
+      note: the one yaml.v2 pin of crawl-pins is in go.mod and is never imported, and depguard reads imports
+    gap: >-
+      The v3 line has no unique-keys, known-fields or single-document options, so about 130 lines of a strict reader
+      stay until the v4 line of the same organisation is released as stable (it has WithUniqueKeys, WithKnownFields and
+      WithSingleDocument).
+    source: https://github.com/yaml/go-yaml
+    state: chosen
+  - key: toml-read
+    job: read and write TOML
+    use: {module: github.com/BurntSushi/toml, version: v1.6.0, released: "2025-12-18", package: "anywhere a program reads TOML, called directly with no wrapper package"}
+    scope: anywhere
+    replaces:
+      - {name: "github.com/pelletier/go-toml", why: "a second TOML library for a job that has one; v2 is allowed only for the toml-edit row"}
+    by_hand:
+      - a home-made TOML reader or line splitter
+    ban:
+      linter: depguard
+      deny: [github.com/pelletier/go-toml]
+      note: github.com/pelletier/go-toml/v2 stays allowed in the one editing package of the toml-edit row, and for the config checker's read of .gitleaks.toml
+    gap: "It keeps no comments and no key order. A change to a file a person edits is the toml-edit row."
+    source: https://github.com/BurntSushi/toml
+    state: chosen
+  - key: toml-edit
+    job: change one key in a TOML file a person edits and keep its comments and key order
+    use: {module: github.com/pelletier/go-toml/v2, version: v2.4.3, released: "2026-07-05", package: "the one package that edits the file"}
+    scope: "one package per program, and the config checker's own read of .gitleaks.toml (ruled 14 Nov 2026; the reading library above is the reader everywhere else)"
+    replaces:
+      - {name: "github.com/BurntSushi/toml", why: "it writes the file back without comments or order, so it cannot edit a hand-kept file"}
+    by_hand:
+      - a regexp or line-by-line text edit of a TOML file
+    ban:
+      linter: depguard
+      deny: [github.com/pelletier/go-toml]
+      note: the v2 path of this library is denied everywhere except the one editing package and the config checker's reader
+    gap: >-
+      None known. A program that already has text edits that keep comments moves them onto the library in the same
+      change that adds it.
+    source: https://github.com/pelletier/go-toml
+    state: chosen
+  - key: json-strict
+    job: decode JSON strictly (case-exact names, duplicate keys refused, unknown members refused by option)
+    use: {module: encoding/json/v2, version: toolchain, package: "the wire and record readers"}
+    scope: anywhere
+    by_hand:
+      - a walker that rejects duplicate JSON keys, such as an exact-keys or one-key-each reader
+      - a line decoder that works around case-insensitive field matching
+    ban:
+      note: review only, since no import or call stands for the hand-written decoder
+    gap: >-
+      The package's API stability under the Go 1 promise is not confirmed. Recheck it when the toolchain moves.
+    source: https://pkg.go.dev/encoding/json/v2
+    state: chosen
+    open:
+      - "The check is the Go 1 compatibility statement for encoding/json/v2 in the release notes of each toolchain; until it says stable the row is kept chosen under this open."
+  - key: json-schema
+    job: check a YAML or JSON document against a schema
+    use: {module: github.com/santhosh-tekuri/jsonschema/v6, version: v6.0.3, released: "2026-06-28", package: "the one package that validates a registry"}
+    scope: one package per program
+    replaces:
+      - {name: "github.com/kaptinlin/jsonschema", why: "less mature"}
+      - {name: "github.com/google/jsonschema-go", why: "aimed at one protocol; second choice"}
+      - {name: "cuelang.org/go", why: "a large dependency and a new language for one small job"}
+    by_hand:
+      - hand shape checks of a document's fields, kinds, counts and budgets (about 900 lines in one registry)
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/kaptinlin/jsonschema, github.com/google/jsonschema-go, cuelang.org/go]
+    gap: "None known. Kept at the version the config checker already pins."
+    source: https://github.com/santhosh-tekuri/jsonschema
+    state: chosen
+  - key: expression-rules
+    job: compile and check typed rule expressions
+    use: {module: github.com/google/cel-go, version: floor, package: "the one package that compiles rule expressions"}
+    scope: one package per program
+    by_hand:
+      - an expression parser and evaluator for rule conditions
+    ban:
+      note: github.com/google/cel-go is denied everywhere except the one rule package; no alternative is banned
+    gap: "None known. The first change that adopts the module fixes a tag with gh, since no release date is read yet."
+    source: https://github.com/google/cel-go
+    state: chosen
+  - key: openapi-server
+    job: generate a strict server interface from an OpenAPI document
+    use: {module: github.com/oapi-codegen/oapi-codegen/v2, version: v2.8.1, released: "2026-10-24", package: "a tool of the program, run as a pinned tool and never imported"}
+    scope: tool only
+    by_hand:
+      - a hand-written request or response type that the OpenAPI document already states
+    ban:
+      linter: depguard
+      deny: [github.com/oapi-codegen]
+      note: the tool is never imported by non-generated code
+    gap: >-
+      The generated file is generated, never edited. It is pinned as a tool (the go tool directive or a tool modfile),
+      not in a Makefile.
+    source: https://github.com/oapi-codegen/oapi-codegen
+    state: chosen
+  - key: version-and-semver
+    job: read the build version, parse and compare semantic versions, read go.mod
+    use: {module: golang.org/x/mod, version: v0.42.0, released: "2026-10-09", package: "version, semver and modfile uses"}
+    scope: anywhere
+    replaces:
+      - {name: "github.com/carlmjohnson/versioninfo", why: "package-level variables set in init, no injected build info, no stamp merge"}
+      - {name: "github.com/caarlos0/go-version", why: "one maintainer, the same 40 lines, no stamp"}
+    by_hand:
+      - a semantic-version regexp
+      - a hand parse of go.mod or go.sum, or of the private-module path patterns
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/carlmjohnson/versioninfo, github.com/caarlos0/go-version]
+    gap: The stamped-else-build-info-else-dev rule is about 90 lines of our own.
+    source: https://pkg.go.dev/golang.org/x/mod
+    state: chosen
+  # ---------------------------------------------------------------- command line and terminal
+  - key: command-tree
+    job: the command tree, flags, help and completion
+    use: {module: github.com/spf13/cobra, version: v1.10.2, released: "2025-12-03", package: "the command packages and main"}
+    scope: only the program's command packages
+    replaces:
+      - {name: "github.com/urfave/cli/v3", why: "it would replace the command tree every program already uses"}
+      - {name: "github.com/alecthomas/kong", why: "the same"}
+      - {name: "github.com/hashicorp/cli", why: "no safe arguments, no dry run, no json mode"}
+    by_hand:
+      - a flag parser, a help printer or a completion generator
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/alecthomas/kong, github.com/hashicorp/cli]
+      note: the preset row cli-flags already holds flag, pflag, cobra and urfave/cli outside the command packages
+    gap: >-
+      None. pflag resolves to v1.1.0 in the one program whose book converter requires it, and to v1.0.9 elsewhere; for
+      "did you mean", cobra's SuggestionsFor does the job.
+    source: https://github.com/spf13/cobra
+    state: chosen
+  - key: cli-frame
+    job: run a command with version, help, completion and the closing line
+    use: {module: charm.land/fang/v2, version: v2.0.1, released: "2026-03-11", licence: MIT, package: "anywhere a program draws"}
+    scope: anywhere a program draws
+    by_hand:
+      - a home-made version, help or banner printer
+      - a second command runner beside the shared one
+    ban:
+      note: no import is banned; the shared module owns the frame and a product may import Charm directly
+    gap: >-
+      The command frame (flags, recover, the ending and its exit code) is about 230 lines of our own in the shared UI
+      library.
+    source: https://github.com/charmbracelet/fang
+    state: chosen
+  - key: terminal-style
+    job: colour, width, tables, layout and terminal detection
+    use: {module: charm.land/lipgloss/v2, version: v2.1.0, released: "2026-11-09", age: "2026-11-16", licence: MIT, package: "anywhere a program draws"}
+    scope: anywhere a program draws
+    replaces:
+      - {name: "github.com/fatih/color", why: "a second style system beside the one the programs share"}
+      - {name: "github.com/mattn/go-isatty", why: "terminal detection belongs to the UI package"}
+      - {name: "github.com/muesli/termenv", why: "superseded by colorprofile"}
+      - {name: "github.com/pterm/pterm", why: "global writers and state, its own layout"}
+      - {name: "github.com/rivo/tview", why: "a second UI framework beside Charm"}
+      - {name: "github.com/jedib0t/go-pretty", why: "a second style system; the lipgloss table is already linked"}
+      - {name: "github.com/olekukonko/tablewriter", why: "a second style system; the lipgloss table is already linked"}
+      - {name: "github.com/cli/go-gh/v2/pkg/term", why: "it reads os.Stdout and os.Environ only, so streams cannot be injected"}
+    by_hand:
+      - a colour or no-colour switch that reads NO_COLOR, CLICOLOR or TERM by hand
+      - a Windows ANSI switch (lipgloss has EnableLegacyWindowsANSI)
+      - a table, grid or width fitter
+    ban:
+      linter: depguard
+      deny: [github.com/pterm/pterm, github.com/rivo/tview, github.com/jedib0t/go-pretty, github.com/olekukonko/tablewriter, github.com/cli/go-gh/v2/pkg/term]
+      note: the preset rows owner-ui and the os.Stdout and os.Stderr rows (cli.errors.3) hold the rest
+    gap: >-
+      The look itself (symbols, the lesson and report layouts, the plain twins) is about 5,500 lines in the shared UI
+      library and nowhere else. colorprofile and charmbracelet/x/term stay at the shared UI library's floor.
+    source: https://github.com/charmbracelet/lipgloss
+    state: chosen
+  - key: ansi-text
+    job: strip ANSI sequences from text, wrap it, measure its width
+    use: {module: github.com/charmbracelet/x/ansi, version: floor, licence: MIT, package: "anywhere a program draws"}
+    scope: anywhere a program draws
+    replaces:
+      - {name: "github.com/acarl005/stripansi", why: "no push since 2022"}
+      - {name: "github.com/muesli/reflow", why: "last release 2021"}
+      - {name: "github.com/muesli/cancelreader", why: "no release since 2022; the standard library does it in about 60 lines"}
+      - {name: "github.com/cli/go-gh/v2/pkg/asciisanitizer", why: "C0 and C1 only, errors on invalid UTF-8, no bidi or format characters"}
+    by_hand:
+      - an ANSI-stripping regexp
+      - a word-wrap or display-width function
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/acarl005/stripansi, github.com/muesli/reflow, github.com/muesli/cancelreader]
+    gap: Making a name safe to print (control and bidi characters) stays in the shared UI library.
+    source: https://github.com/charmbracelet/x
+    state: chosen
+  - key: forms-and-live-ui
+    job: questions, live views, pager and meters
+    use: {module: charm.land/huh/v2, version: v2.0.3, released: "2026-03-10", licence: MIT, package: "anywhere a program draws; charm.land/bubbletea/v2 v2.1.1 and charm.land/bubbles/v2 v2.2.1 (both MIT) come with it"}
+    scope: anywhere a program draws
+    replaces:
+      - {name: "github.com/AlecAivazis/survey", why: "archived in April 2024"}
+      - {name: "github.com/manifoldco/promptui", why: "no accessible mode, no multi-step form"}
+      - {name: "github.com/walles/moor", why: "a second terminal framework for about 200 lines of pager"}
+      - {name: "github.com/jackdoe/go-pager", why: "abandoned, for about 200 lines of pager"}
+      - {name: "github.com/charmbracelet/x/exp/teatest/v2", why: "runs a real asynchronous program, pins a release candidate, cannot step a form"}
+    by_hand:
+      - a hand-drawn progress meter (bubbles progress.ViewAs does it)
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/AlecAivazis/survey, github.com/manifoldco/promptui, github.com/walles/moor, github.com/jackdoe/go-pager]
+    gap: >-
+      The progress bar with its rate window and its pipe face (about 306 lines) stays our own: an outside progress
+      library (github.com/schollz/progressbar/v3) was weighed and turned down.
+    source: https://github.com/charmbracelet/huh
+    state: chosen
+  - key: log
+    job: logging
+    use: {module: log/slog, version: toolchain, package: "anywhere; the only logging API"}
+    scope: anywhere
+    replaces:
+      - {name: "github.com/charmbracelet/log", why: "not as the logging API; as a slog handler it is allowed anywhere"}
+      - {name: "github.com/lmittmann/tint", why: "a fine handler, but the Charm one is already linked"}
+      - {name: "log", why: "a daemon logs through slog (rule go.logging.1)"}
+    by_hand:
+      - a home-made logger or logfmt writer
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/lmittmann/tint]
+      note: the Charm log package is allowed as a slog handler anywhere a program draws, and the sloglint settings of the preset hold the slog side
+    gap: None.
+    source: https://pkg.go.dev/log/slog
+    state: chosen
+  - key: shell-quote
+    job: quote one word for a POSIX shell, and print a command a person can paste
+    use: {module: al.essio.dev/pkg/shellescape, version: v1.6.1, released: "2026-09-01", licence: MIT, package: "called at the one site that prints the line, for a POSIX shell only; go-console's one quoter (POSIX, PowerShell and cmd, go-console#196) replaces it for a line a person pastes once it lands"}
+    scope: anywhere
+    replaces:
+      - {name: "github.com/kballard/go-shellquote", why: "last tag 2018"}
+    by_hand:
+      - a home-made quote helper or a "line" package (about 30 copies existed)
+      - a regexp that escapes single quotes by hand
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/kballard/go-shellquote]
+    gap: >-
+      It passes a NUL byte through without error. The runner-up, the quote function of the shell parser in the next row,
+      refuses NUL; this library was picked. A caller that prints for a person checks its input for NUL first.
+    source: https://github.com/alessio/shellescape
+    state: chosen
+  - key: shell-parse
+    job: read a shell line (tokens, quoting, commands) instead of splitting it by hand
+    use: {module: mvdan.cc/sh/v3, version: v3.14.1, released: "2026-09-06", package: "the one package that reads shell lines"}
+    scope: one package per program
+    by_hand:
+      - a hand tokenizer for shell lines or workflow run steps
+    ban:
+      note: mvdan.cc/sh is denied everywhere except the one package; its quote function is not used elsewhere (see shell-quote)
+    gap: "Allowed for one package. Using its quote function elsewhere is not allowed."
+    source: https://github.com/mvdan/sh
+    state: chosen
+  - key: size-and-duration-text
+    job: print sizes, durations, counts and "ago"; read them back
+    use: {module: github.com/dustin/go-humanize, version: v1.1.0, released: "2026-09-17", package: "anywhere a program prints a size or a count"}
+    scope: anywhere
+    by_hand:
+      - a home-made size, duration, comma or plural formatter (about 240 lines in one program)
+    ban:
+      note: review only, since no import or call stands for the hand-written formatter
+    gap: Parsing "10 MB" or "2h" typed by a person stays in the program (ParseSize, ParseDuration).
+    source: https://github.com/dustin/go-humanize
+    state: chosen
+  - key: did-you-mean
+    job: say "did you mean" for a mistyped command or word
+    use: {module: github.com/agnivade/levenshtein, version: v1.2.2, released: "2026-10-17", package: "the command package, through cobra's SuggestionsFor where it fits"}
+    scope: only the program's command packages
+    by_hand:
+      - an edit-distance function
+    ban:
+      note: review only, since no import or call stands for the hand-written function
+    gap: None.
+    source: https://github.com/agnivade/levenshtein
+    state: chosen
+  # ---------------------------------------------------------------- terminals in tests and on Windows
+  - key: pseudoconsole
+    job: a pseudoterminal on every system, including the Windows pseudoconsole
+    use: {module: github.com/aymanbagabas/go-pty, version: v0.2.3, released: "2026-05-17", package: "the one package that starts a terminal child"}
+    scope: one package per program
+    replaces:
+      - {name: "github.com/charmbracelet/x/conpty", why: "ruled 14 Nov 2026 in favour of go-pty (x/conpty was the earlier pick)"}
+      - {name: "github.com/creack/pty", why: "no pseudoconsole on Windows"}
+      - {name: "github.com/charmbracelet/x/xpty", why: "larger than the use"}
+      - {name: "github.com/UserExistsError/conpty", why: "stale"}
+    by_hand:
+      - raw CreatePseudoConsole calls
+      - a pty opened with cgo or a hand ioctl
+    ban:
+      linter: depguard
+      deny: [github.com/charmbracelet/x/conpty, github.com/creack/pty, github.com/charmbracelet/x/xpty, github.com/UserExistsError/conpty]
+    gap: Windows is not run yet; the Windows build of the session host is proven on a Windows machine first.
+    source: https://github.com/aymanbagabas/go-pty
+    state: chosen
+  - key: terminal-screen
+    job: a terminal screen that a test reads (the rendered cells of a program's output)
+    use: {module: github.com/charmbracelet/x/vt, version: v0.1.0, released: "2026-10-12", package: "the journey test package only"}
+    scope: only the program's journey tests
+    by_hand:
+      - a home-made ANSI screen model in a test
+    ban:
+      note: github.com/charmbracelet/x/vt is denied outside _test.go files of the journey package
+    gap: Allowed 14 Nov 2026, and used only if it draws the goldens the same as today.
+    source: https://github.com/charmbracelet/x
+    state: conditional
+    proof: the library draws the program's goldens byte for byte the same as the hand-written screen model does
+  - key: test-scripts
+    job: command-line test scripts
+    use: {module: github.com/rogpeppe/go-internal/testscript, version: v1.16.0, released: "2026-07-01", licence: BSD-3-Clause, package: "test files, imported directly with no wrapper package"}
+    scope: only the program's test files
+    by_hand:
+      - a home-made script runner or a wrapper package around testscript
+    ban:
+      note: >-
+        review only for now: a lint on script text is to refuse [windows], [unix], [linux] and [darwin] conditions,
+        chmod and symlink, and go-proc does not wrap testscript
+    gap: "A script that must differ by system is written once with the program's own commands, never a condition on the system."
+    source: https://github.com/rogpeppe/go-internal
+    state: chosen
+  # ---------------------------------------------------------------- files
+  - key: confine-to-folder
+    job: open, make and rename inside a folder and never leave it
+    use: {module: os, version: toolchain, package: "anywhere, called directly (os.Root)"}
+    scope: anywhere
+    replaces:
+      - {name: "github.com/cyphar/filepath-securejoin", why: "superseded by os.Root; the fd form is Linux only and it follows links inside the root"}
+      - {name: "github.com/google/safeopen", why: "its own README defers to os.Root"}
+      - {name: "github.com/containerd/continuity", why: "RootPath resolves a string, so it checks then uses"}
+    by_hand:
+      - a string-prefix test on a cleaned path
+      - a path walk that Lstat-checks each part and then opens
+      - raw openat2 syscalls with RESOLVE flags
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/cyphar/filepath-securejoin, github.com/google/safeopen, github.com/containerd/continuity]
+      planned: ['^unix\.(Openat2|Renameat2)$']
+    gap: >-
+      os.Root follows links that stay inside the root and has no rename-exchange. The no-link rule and the exchange stay
+      as our side code until golang/go#83038 and golang/go#73080 land, and the macOS no-follow open until std gains
+      os.O_NOFOLLOW_ANY.
+    source: https://go.dev/blog/osroot
+    state: chosen
+    open:
+      - The pattern for raw openat2 and renameat2 outside the host layer needs type information, so a planted fixture through golangci-lint makes it active.
+  - key: atomic-write
+    job: replace a file whole so a reader sees the old file or the new one
+    use: {module: github.com/birdtable/go-files, version: v0.4.0, released: "2026-11-19", age: "2026-11-26", licence: Apache-2.0, package: "write (File, FileFrom and FileIn); a program imports no golang.org/x/sys, since go-files holds it inside write"}
+    scope: anywhere a program writes a file
+    replaces:
+      - {name: "github.com/google/renameio/v2", why: "no Windows support; its root form puts the temp file in the root's top folder"}
+      - {name: "github.com/moby/sys/atomicwriter", why: "by path only, no os.Root, no folder flush"}
+      - {name: "github.com/natefinch/atomic", why: "unmaintained since 2021"}
+      - {name: "github.com/dchest/safefile", why: "unmaintained since 2015"}
+      - {name: "tailscale.com/atomicfile", why: "its API is declared unstable and it keeps the old ACL on Windows"}
+    by_hand:
+      - a temp file, sync, rename written again in a program
+      - a plain os.WriteFile of a file another process reads
+    ban:
+      linter: depguard
+      deny: [github.com/google/renameio, github.com/moby/sys/atomicwriter, github.com/natefinch/atomic, github.com/dchest/safefile, tailscale.com/atomicfile]
+      note: os.WriteFile is not banned, because a scratch write is fine
+    gap: >-
+      The standard library has no atomic write (golang/go#22397 is open), so about 320 lines stay ours in one package.
+      Revisit when std gains an atomic replace or when google/renameio covers Windows (its issue 47). The Windows form is
+      not proven: clear the read-only bit first; no-replace needs hard links.
+    source: https://github.com/golang/go/issues/22397
+    state: needs-spike
+  - key: path-lock
+    job: one holder per path, on Linux, macOS, freebsd and Windows
+    use: {module: github.com/gofrs/flock, version: v0.13.2, released: "2026-11-08", age: "2026-11-15", licence: BSD-3-Clause, package: "go-files lock (Take and Wait), which holds gofrs/flock, syscall.Flock and LockFileEx inside it; a program imports none of them"}
+    scope: anywhere a program holds a path
+    replaces:
+      - {name: "github.com/alexflint/go-filemutex", why: "blocking only, one maintainer, last release January 2024"}
+      - {name: "github.com/juju/fslock", why: "archived 2016, LGPL"}
+      - {name: "github.com/nightlyone/lockfile", why: "a pid file with staleness, which goes stale"}
+    by_hand:
+      - a pid file or a lock file with a staleness check
+      - a hand flock or LockFileEx wrapper
+      - a wait loop around a try-lock in a command
+    ban:
+      linter: [gomodguard_v2, forbidigo]
+      deny: [github.com/alexflint/go-filemutex, github.com/juju/fslock, github.com/nightlyone/lockfile]
+      forbid:
+        - {pattern: '^syscall\.Flock$', pkg: syscall}
+        - {pattern: '^unix\.Flock$', pkg: golang.org/x/sys/unix}
+      note: >-
+        github.com/gofrs/flock is denied outside the lock package and the host layer. One exception by file: go-files'
+        write package holds a file for Append with syscall.Flock and windows.LockFileEx in its system files, because
+        write may not import lock (a link test holds that); a project spares those files by name, and no other file.
+    gap: >-
+      No library carries a holder note (who and since). That note, about 105 lines, stays ours. The Windows byte lock is
+      not proven.
+    source: https://github.com/gofrs/flock
+    state: chosen
+  - key: data-file-lock
+    job: lock a data file while it is open and read or written through the same handle
+    use: {module: github.com/rogpeppe/go-internal/lockedfile, version: v1.16.0, released: "2026-07-01", package: "the one package that holds the data file"}
+    scope: one package per program
+    replaces:
+      - {name: "github.com/gofrs/flock", why: "on Windows it locks byte 0 on a handle it opens itself, so the writer on another handle is refused"}
+    by_hand:
+      - a hand lock around an open file with raw LockFileEx or flock
+    ban:
+      note: github.com/rogpeppe/go-internal/lockedfile is denied outside the one data-file package
+    gap: "It blocks only: no try-lock and no context. Allowed 14 Nov 2026 in one package, and the shared lock library does not wrap it."
+    source: https://github.com/rogpeppe/go-internal
+    state: chosen
+  - key: file-owner-and-mode
+    job: judge who owns a path and who else can write it
+    use: {module: golang.org/x/sys, version: v0.50.0, released: "2026-11-06", age: "2026-11-13", licence: BSD-3-Clause, package: "go-files trust (Path, Held, OwnerOf and Account), which holds golang.org/x/sys inside it; a program does not import x/sys or syscall"}
+    scope: anywhere a program judges a path
+    replaces:
+      - {name: "github.com/moby/sys/user", why: "it parses a garbled group id as 0, so a trust decision cannot rest on it"}
+      - {name: "github.com/hectane/go-acl", why: "x/sys/windows sets the same ACL with no new dependency"}
+    by_hand:
+      - a copy of the owner and mode walk in a second program (six copies disagreed)
+      - an /etc/group parser that ignores number errors
+    ban:
+      linter: depguard
+      deny: [github.com/moby/sys/user, github.com/hectane/go-acl]
+    gap: >-
+      No maintained library judges owner and mode along a path, so about 470 lines stay ours in one library. The Windows
+      facts are not proven.
+    source: https://pkg.go.dev/golang.org/x/sys
+    state: chosen
+  - key: app-folders
+    job: where config, state, cache and run files live
+    use: {module: github.com/birdtable/go-files, version: v0.4.0, released: "2026-11-19", age: "2026-11-26", licence: Apache-2.0, package: "go-files appdirs (For, Here, System and Temp)"}
+    scope: anywhere a program names its folders
+    replaces:
+      - {name: "github.com/adrg/xdg", why: "its macOS default is the Library folder, its variables are read at init, one maintainer"}
+      - {name: "github.com/kirsle/configdir", why: "stale"}
+    by_hand:
+      - a per-program folder function that reads HOME or XDG variables by hand
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/adrg/xdg, github.com/kirsle/configdir]
+      note: the preset row for os.UserConfigDir, os.UserCacheDir and os.UserHomeDir (cli.config.5) holds the calls
+    gap: "The standard library gives the Linux and Windows rule, not XDG on macOS or the state and run folders; go-files appdirs holds the rule for every system, and no program keeps its own."
+    source: https://pkg.go.dev/os#UserConfigDir
+    state: chosen
+  # ---------------------------------------------------------------- processes and machine
+  - key: child-process
+    job: run a child with a bare environment, a deadline, an output cap and a kill of its whole tree
+    use: {module: github.com/birdtable/go-proc, version: v0.6.0, released: "2026-11-19", age: "2026-11-26", licence: Apache-2.0, package: "proc (Run, Start, Bare, Usage), the runner"}
+    scope: anywhere a program starts a child
+    replaces:
+      - {name: "github.com/go-cmd/cmd", why: "no output cap, no pid-reuse guard, no Windows tree kill"}
+      - {name: "github.com/shirou/gopsutil/v4/process", why: "finds children by parent pid, which races; a process group or Job Object does not"}
+      - {name: "github.com/kolesnikovae/go-winjob", why: "last release 2020, last push 2023"}
+      - {name: "github.com/tg123/jobobject", why: "last release 2020, last push 2023"}
+      - {name: "k8s.io/utils/exec", why: "an interface for faking; the program has its own port"}
+    by_hand:
+      - a second os/exec runner with its own group kill
+      - setpgid and kill code copied from another program (eight copies were counted)
+      - an ETXTBSY retry in a program
+    ban:
+      linter: depguard
+      deny: [github.com/go-cmd/cmd, k8s.io/utils/exec, github.com/kolesnikovae/go-winjob, github.com/tg123/jobobject]
+      note: >-
+        the ban is on starting a program outside the runner, not on the os/exec import: exec.LookPath
+        and exec.ErrNotFound stay allowed; the preset rows for os.StartProcess and syscall.ForkExec (cli.process.1)
+        hold the calls
+    gap: >-
+      About 505 lines stay ours: the Unix files that move, the start and drain, the Windows Job Object. golang/go#80415
+      would delete about 40 Windows lines. The Windows form is not proven.
+    source: https://pkg.go.dev/os/exec
+    state: chosen
+  - key: machine-facts
+    job: load, CPU, memory and process facts on Windows and freebsd
+    use: {module: github.com/birdtable/go-proc, version: v0.6.0, released: "2026-11-19", age: "2026-11-26", licence: Apache-2.0, package: "load (Read) and proc (Usage with JoinTree), which own the figures that differ by system; gopsutil v4.26.10 (BSD-3-Clause) stays inside them and a program does not import it"}
+    scope: anywhere a program reads a machine figure
+    replaces:
+      - {name: "github.com/mackerelio/go-osstat", why: "lighter but no Windows load either; second choice"}
+      - {name: "github.com/prometheus/procfs", why: "Linux only"}
+      - {name: "github.com/elastic/go-sysinfo", why: "macOS needs cgo"}
+      - {name: "go.uber.org/automaxprocs", why: "superseded by the runtime since Go 1.25"}
+    by_hand:
+      - a sysctl, /proc or getloadavg reader for load and CPU counts (two copies existed)
+      - a process-table reader for Windows
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/mackerelio/go-osstat, github.com/prometheus/procfs, github.com/elastic/go-sysinfo, go.uber.org/automaxprocs]
+      note: gopsutil, x/sys and gofrs/flock are held inside go-proc and go-files, and a program imports none of them
+    gap: >-
+      Windows has no load average (load.Read returns load.ErrNoAverage; proc.Usage with JoinTree answers the tree's CPU there). The cgroup quota walker stays until golang/go#81180. Linux
+      and macOS keep their own cheap readers where measured.
+    source: https://github.com/shirou/gopsutil
+    state: chosen
+  - key: login-service
+    job: install, query and remove a login service or timer
+    use: {module: github.com/birdtable/go-proc, version: v0.6.0, released: "2026-11-19", age: "2026-11-26", licence: Apache-2.0, package: "service (Install, Query and Remove, with a Plan and a Runner), which drives systemd, launchd and the Task Scheduler by unit text; per-user scope only (go-proc#290)"}
+    scope: anywhere a program installs a login service
+    replaces:
+      - {name: "github.com/kardianos/service", why: "no timers, Windows needs an administrator, Zlib licence, fixed templates"}
+      - {name: "github.com/godbus/dbus/v5", why: "a new dependency for what systemctl --user does; allowed in the one package of the dbus row only"}
+      - {name: "howett.net/plist", why: "an encoder for about 60 lines of fixed text"}
+      - {name: "github.com/takama/daemon", why: "stale"}
+    by_hand:
+      - a third copy of a unit, plist or task writer with its own English-phrase parser
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/kardianos/service, howett.net/plist, github.com/takama/daemon]
+    gap: >-
+      About 430 lines of generators and readers stay ours. They read the schedulers' machine-readable answers, never
+      English phrases.
+    source: https://www.freedesktop.org/software/systemd/man/systemctl.html
+    state: chosen
+  - key: sandbox
+    job: run a program with the network closed, or with files held too (Linux Landlock)
+    use: {module: github.com/birdtable/go-proc, version: v0.6.0, released: "2026-11-19", age: "2026-11-26", licence: Apache-2.0, package: "sandbox (Run, RunHolding and Check)"}
+    scope: anywhere a program runs a child with a block
+    replaces:
+      - {name: "github.com/elastic/go-seccomp-bpf", why: "64-bit argument compare and arch-mismatch issues are open"}
+      - {name: "github.com/seccomp/libseccomp-golang", why: "cgo"}
+      - {name: "github.com/containers/bubblewrap", why: "an outside binary that needs user namespaces or root"}
+      - {name: "github.com/google/nsjail", why: "an outside binary that needs user namespaces or root"}
+      - {name: "github.com/criyle/go-sandbox", why: "a judge sandbox needing root"}
+      - {name: "github.com/tailscale/wf", why: "a firewall tool needing administrator"}
+    by_hand:
+      - raw Landlock structures and syscalls
+      - a seccomp filter assembler beyond the one socket-family filter
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/elastic/go-seccomp-bpf, github.com/seccomp/libseccomp-golang, github.com/criyle/go-sandbox, github.com/tailscale/wf]
+      planned: ['^landlock\.Config\.BestEffort$']
+    gap: >-
+      The seccomp filter that closes every socket family but AF_UNIX stays ours (about 435 lines). Linux is full; macOS
+      is weaker; Windows and freebsd refuse by name. golang/go#68595 would remove the self re-exec.
+    source: https://github.com/landlock-lsm/go-landlock
+    state: chosen
+    open:
+      - The BestEffort pattern needs type information, since best effort would silently drop a restriction; a planted fixture through golangci-lint makes it active.
+  # ---------------------------------------------------------------- sockets
+  - key: unix-socket-listen
+    job: bind a Unix socket with a mode and take sockets passed by the service manager
+    use: {module: github.com/birdtable/go-socket, version: v0.5.0, released: "2026-11-19", age: "2026-11-26", licence: Apache-2.0, package: "listen (Listen, Local, SocketMode and Activated, which takes systemd's sockets and, from v0.5.0, launchd's by its Sockets key), which holds docker/go-connections v0.8.2 (Apache-2.0), gofrs/flock and the activation package of go-systemd v22.7.0 (Apache-2.0) inside it; go-systemd's daemon and journal are imported directly by a product that needs them"}
+    scope: anywhere a program listens on a local socket
+    replaces:
+      - {name: "github.com/cloudflare/tableflip", why: "fd handover for upgrades, a different job"}
+      - {name: "github.com/ory/graceful", why: "one server only; signal glue"}
+      - {name: "github.com/pseidemann/finish", why: "one server only; signal glue"}
+      - {name: "github.com/libp2p/go-socket-activation", why: "no gain over go-systemd"}
+      - {name: "systemd-socket-proxyd", why: "the backend sees the proxy as the peer, which breaks peer-uid checks"}
+    by_hand:
+      - a LISTEN_FDS reader
+      - a bind that changes the process umask, or that unlinks whatever is at the path
+      - a dial probe to guess whether a socket is live
+    ban:
+      linter: [gomodguard_v2, forbidigo]
+      deny: [github.com/cloudflare/tableflip, github.com/ory/graceful, github.com/pseidemann/finish, github.com/libp2p/go-socket-activation]
+      forbid:
+        - {pattern: '^syscall\.Umask$', pkg: syscall}
+        - {pattern: '^unix\.Umask$', pkg: golang.org/x/sys/unix}
+    gap: >-
+      go-connections unlinks whatever is at the path, so a lock decides first and a refuse-only dial stays. The idle exit
+      (about 68 lines) has no library.
+    source: https://github.com/docker/go-connections
+    state: chosen
+  - key: peer-identity
+    job: who is at the other end of a Unix socket or a Windows pipe
+    use: {module: github.com/birdtable/go-socket, version: v0.4.0, released: "2026-11-19", age: "2026-11-26", licence: Apache-2.0, package: "peer (PeerOf, Listener, ListenPipe and DialPipe), which holds golang.org/x/sys and github.com/Microsoft/go-winio v0.6.4 (MIT) inside it; a program imports neither"}
+    scope: anywhere a program identifies a caller
+    replaces:
+      - {name: "github.com/tailscale/peercred", why: "no tag, last push January 2025, Unix only, 16 stars"}
+      - {name: "github.com/natefinch/npipe", why: "no ACL, unmaintained"}
+      - {name: "tailscale.com/client/local", why: "WhoIs needs a real remote address, so it fails behind a serve proxy"}
+      - {name: "tailscale.com/safesocket", why: "bound to the Tailscale daemon, a large module"}
+    by_hand:
+      - a raw Syscall6 getsockopt with unsafe pointers
+      - a second SO_PEERCRED or LOCAL_PEERCRED implementation
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/tailscale/peercred, github.com/natefinch/npipe]
+      planned: ['^syscall\.(Syscall|Syscall6|RawSyscall)$']
+    gap: >-
+      go-winio does not give the pipe client's SID: about 25 lines impersonate on a locked thread and revert. The Windows
+      form is not proven. The header reader for a Tailscale serve front stays ours (no library).
+    source: https://pkg.go.dev/golang.org/x/sys/unix
+    state: chosen
+    open:
+      - The raw-syscall pattern is held to outside the host layer, which needs the package of each file, so a planted fixture through golangci-lint makes it active.
+  # ---------------------------------------------------------------- books, tokens, markup
+  - key: epub-and-crawl
+    job: write EPUB and KEPUB files, crawl pages and query HTML
+    use: {module: github.com/go-shiori/go-epub, version: v1.2.1, released: "2023-12-31", package: "the book, kepub and crawl packages (github.com/pgaskin/kepubify/v5 v5.0.0, github.com/gocolly/colly/v2 v2.3.0, github.com/PuerkitoBio/goquery v1.13.0 come with it)"}
+    scope: only the one program that writes books
+    replaces:
+      - {name: "github.com/raitucarp/epub", why: "runner-up; the switch target if go-epub is archived"}
+      - {name: "pandoc", why: "an installed program as a precondition"}
+      - {name: "url2epub", why: "one article per book"}
+      - {name: "github.com/mdigger/epub3", why: "abandoned"}
+      - {name: "github.com/readium/go-toolkit", why: "no writer"}
+    by_hand:
+      - a second book writer
+      - a child process that runs a KEPUB converter, or a plugin system for one
+      - a next-link resolver beside colly
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/raitucarp/epub]
+      note: the four modules are denied outside the book program
+    gap: >-
+      About 130 lines of our own: a flat AddSection adapter in one file. The ICU licence part of a charset library stays
+      linked after the colly bump and needs a line in the licence list. kepubify v5.0.0 is of 8 Nov 2026 and passes the
+      window on 22 Nov.
+    source: https://github.com/go-shiori/go-epub
+    state: chosen
+  - key: keychain
+    job: keep a secret in the system keychain
+    use: {module: github.com/zalando/go-keyring, version: v0.2.8, released: "2026-03-23", package: "the one secret package"}
+    scope: one package per program
+    by_hand:
+      - a call to security, secret-tool or the Windows credential API from our own code
+    ban:
+      note: github.com/zalando/go-keyring is denied everywhere except the one secret package
+    gap: >-
+      None known. A platform with no keychain returns an error that wraps errors.ErrUnsupported. Allowed 14 Nov 2026.
+    source: https://github.com/zalando/go-keyring
+    state: chosen
+  - key: web-graph-layout
+    job: lay out a graph in the page
+    use: {module: elkjs, version: floor, package: "the page's script bundle (an npm package, not a Go module; the floor is its lock file's)"}
+    scope: only the one program that ships a page
+    by_hand:
+      - a hand-written graph layout
+    ban:
+      note: review only, since no Go import stands for a script bundle
+    gap: >-
+      Licence EPL-2.0 binds only changes to elkjs itself. Allowed 14 Nov 2026 with its notice in the release archive. The
+      npm licence check is the program's own task.
+    source: https://github.com/kieler/elkjs
+    state: chosen
+  - key: dbus
+    job: read live unit state over D-Bus (a Linux adapter only)
+    use: {module: github.com/godbus/dbus/v5, version: v5.2.4, released: "2026-10-13", package: "the one package that talks D-Bus (host/bus in the one program that has it), through github.com/coreos/go-systemd/v22/dbus"}
+    scope: one package in one program
+    replaces:
+      - {name: "github.com/godbus/dbus/v5 in any other program or package", why: "installing and removing units is systemctl run as a program; no other program should add godbus"}
+    by_hand:
+      - a hand-written D-Bus client
+    ban:
+      note: github.com/godbus/dbus is denied outside the one bus package
+    gap: "BSD-2-Clause, so the licence list is widened for it before the shared notices are built."
+    source: https://github.com/godbus/dbus
+    state: chosen
+  - key: sqlite
+    job: an embedded SQL database without cgo
+    use: {module: modernc.org/sqlite, version: floor, package: "the one package that opens the database (v1.60.1 in one program, v1.59.0 in another; the floor is the higher)"}
+    scope: one package per program
+    by_hand:
+      - a file-backed index or key-value store written by hand
+    ban:
+      note: no alternative is banned, since no source bans one
+    gap: "None known. SQLite's own text is a public-domain dedication, not an id on the licence list."
+    source: https://gitlab.com/cznic/sqlite
+    state: chosen
+  - key: signed-tokens
+    job: sign and verify web tokens
+    use: {module: github.com/go-jose/go-jose/v4, version: v4.1.9, released: "2026-11-05", age: "2026-11-12", package: "the one package that signs or verifies tokens"}
+    scope: one package per program
+    by_hand:
+      - a hand-written JWS or JWT reader
+    ban:
+      note: review only, since no import or call stands for the hand-written reader
+    gap: None known.
+    source: https://github.com/go-jose/go-jose
+    state: chosen
+  - key: markdown
+    job: parse Markdown
+    use: {module: github.com/yuin/goldmark, version: v1.8.7, released: "2026-10-30", package: "the one package that reads Markdown"}
+    scope: one package per program
+    by_hand:
+      - a line scanner that reads headings, links or tables out of Markdown
+    ban:
+      note: review only, since no import or call stands for the hand-written scanner
+    gap: None known.
+    source: https://github.com/yuin/goldmark
+    state: chosen
+  - key: text-and-unicode
+    job: language tags, message catalogues and Unicode normalisation
+    use: {module: golang.org/x/text, version: floor, package: "anywhere (v0.43.0 is the floor; a program still on v0.14.0 moves to it with its own change)"}
+    scope: anywhere
+    by_hand:
+      - a hand-written normaliser or case folder
+    ban:
+      note: review only, since no import or call stands for the hand-written code
+    gap: The date of v0.43.0 is not read, so the first change that adopts it fixes the date with gh.
+    source: https://pkg.go.dev/golang.org/x/text
+    state: chosen
+  - key: html-and-css
+    job: parse HTML and CSS
+    use: {module: golang.org/x/net/html, version: floor, package: "the one package that reads a page (golang.org/x/net v0.62.0 fixes two advisories in the html package of v0.59.0; github.com/tdewolff/parse/v2 v2.8.16 and github.com/mazznoer/csscolorparser v0.1.8 come with it)"}
+    scope: only the programs that read pages
+    by_hand:
+      - a regexp that picks tags or colours out of a page
+    ban:
+      note: review only, since no import or call stands for the hand-written regexp
+    gap: None known.
+    source: https://pkg.go.dev/golang.org/x/net/html
+    state: chosen
+  - key: single-flight
+    job: collapse concurrent calls for one key, and bounded parallel work
+    use: {module: golang.org/x/sync, version: floor, package: "anywhere (v0.23.0 is the floor of the program that imports it directly)"}
+    scope: anywhere
+    by_hand:
+      - a hand-written call collapser or error group
+    ban:
+      note: review only, since no import or call stands for the hand-written code
+    gap: None known.
+    source: https://pkg.go.dev/golang.org/x/sync
+    state: chosen
+  - key: text-width
+    job: the display width of text
+    use: {module: github.com/mattn/go-runewidth, version: floor, licence: MIT, package: "anywhere a program draws (floor v0.0.30)"}
+    scope: anywhere a program draws
+    by_hand:
+      - a hand-written width table
+    ban:
+      note: review only, since no import or call stands for the hand-written table
+    gap: It arrives through the Charm libraries; the floor is set in the shared UI library's go.mod.
+    source: https://github.com/mattn/go-runewidth
+    state: chosen
+  - key: crawl-pins
+    job: version pins the crawler's graph needs
+    use: {module: github.com/antchfx/xpath, version: v1.3.9, released: "2026-10-04", package: "go.mod only, never imported (gopkg.in/yaml.v2 v2.4.0 is pinned the same way: v1.3.9 fixes GO-2026-4526, v2.4.0 fixes GO-2020-0036)"}
+    scope: only the one program that writes books
+    by_hand:
+      - a replace or an old pin that keeps an advisory in the graph
+    ban:
+      note: the pin is in go.mod only and is never imported; the yaml row denies a yaml.v2 import in every program, and tells the user what to use instead
+    gap: yaml.v2 is not linked; it leaves when the graph no longer needs it.
+    source: https://pkg.go.dev/vuln/
+    state: chosen
+  - key: landlock-threads
+    job: run a system call on every thread, which Landlock needs
+    use: {module: kernel.org/pub/linux/libs/security/libcap/psx, version: v1.2.78, released: "2026-04-05", package: "the one sandbox package, required through go-landlock"}
+    scope: one package per program
+    by_hand:
+      - a hand-written all-threads syscall wrapper
+    ban:
+      note: kernel.org/pub/linux/libs/security/libcap/psx is denied outside the one sandbox package
+    gap: BSD-3-Clause; a note goes in NOTICE.
+    source: https://sites.google.com/site/fullycapable/
+    state: chosen
+  - key: std-synctest
+    job: tests of time and concurrency
+    use: {module: testing/synctest, version: toolchain, package: "test files"}
+    scope: only _test.go files
+    replaces:
+      - {name: "github.com/benbjohnson/clock", why: "the standard library has a fake clock for tests"}
+      - {name: "github.com/jonboulle/clockwork", why: "the standard library has a fake clock for tests"}
+      - {name: "github.com/coder/quartz", why: "the standard library has a fake clock for tests"}
+    by_hand:
+      - a hand-written fake clock or sleeping test
+    ban:
+      linter: gomodguard_v2
+      deny: [github.com/benbjohnson/clock, github.com/jonboulle/clockwork, github.com/coder/quartz]
+    gap: None.
+    source: https://pkg.go.dev/testing/synctest
+    state: chosen
+  - key: std-small
+    job: small jobs the standard library does
+    use: {module: errors, version: toolchain, package: "anywhere (errors.ErrUnsupported, os/user, crypto/sha256 and crypto/sha512 for digests, net/http FileServerFS, archive/tar and archive/zip)"}
+    scope: anywhere
+    replaces:
+      - {name: "github.com/opencontainers/go-digest as a shared package", why: "no shared digest package exists; a program that wants a typed sha256 value may import it directly, and there is no ban"}
+    by_hand:
+      - "a home-made unsupported error, an /etc/passwd reader, a hex digest helper, a static file server, a tar or zip walker"
+    ban:
+      note: review only, since no import or call stands for the hand-written code
+    gap: None.
+    source: https://pkg.go.dev/std
+    state: chosen
+# Tools. tools.yaml says which tool a rule's check uses; this list only points to it and names the code a program
+# does not write instead. A tool with no row in tools.yaml yet needs that row first; a pointer stays a pointer until
+# a rule needs a check from the tool.
+tools:
+  - {key: golangci-lint, version: v2.15.0, tools_yaml: "rulebook/lang/go/tools.yaml, key golangci-lint", replaces: "a hand-written layers test, a per-linter debt list, a clone detector, a lint config copied between programs", source: "https://github.com/golangci/golangci-lint"}
+  - {key: gitleaks, version: v8.30.1, tools_yaml: "rulebook/base/supply/tools.yaml, key gitleaks", replaces: "a hand-written scan for private words, addresses and home paths in tests", source: "https://github.com/gitleaks/gitleaks"}
+  - {key: typos, tools_yaml: "rulebook/base/docs/tools.yaml, key typos", replaces: "a hand-written spelling or one-word ban test; the one spelling tool kept", source: "https://github.com/crate-ci/typos"}
+  # vale: v3.26.0 was published 2026-10-31, 16 days before this row (2026-11-16), so it clears the 7-day window; the
+  # newer v3.27.0 (2026-11-12) passes it on 2026-11-19. Chosen for docs.voice.2, beside typos, which stays the spelling tool.
+  - {key: vale, version: v3.26.0, tools_yaml: pointer, replaces: "a hand-written scan for filler words and the not-X-but-Y form in docs", source: "https://github.com/errata-ai/vale"}
+  - {key: go-task, version: v3.54.0, tools_yaml: "rulebook/lang/go/tools.yaml, key go-task", replaces: "a home-made task runner, a stamp, a tier pool, a Makefile with its own fan-out", source: "https://github.com/go-task/task"}
+  - {key: gotestsum, version: v1.13.0, tools_yaml: "rulebook/lang/go/tools.yaml, key gotestsum", replaces: "a hand-written test-result counter or event reader", source: "https://github.com/gotestyourself/gotestsum"}
+  - {key: goreleaser, version: v2.20.2, tools_yaml: "rulebook/lang/go/tools.yaml, key goreleaser", replaces: "a hand-written archive, checksum and notices script", source: "https://github.com/goreleaser/goreleaser"}
+  - {key: changie, version: v1.26.0, tools_yaml: "rulebook/lang/go/tools.yaml, key changie", replaces: "a changelog writer that parses commits, a release script", source: "https://github.com/miniscruff/changie"}
+  - {key: govulncheck, version: v1.9.0, tools_yaml: "rulebook/lang/go/tools.yaml, key govulncheck", replaces: "a hand-written vulnerability scan of the module graph", source: "https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck"}
+  - {key: go-tool-directive, tools_yaml: "rulebook/lang/go/tools.yaml, key go-tool-directive", replaces: "a tool-fetch package, a Makefile curl block with a checksum, a second tool manager", source: "https://go.dev/doc/modules/managing-dependencies#tools"}
+  - {key: go-licenses, version: v2.0.1, tools_yaml: pointer, replaces: "a hand-written licence and notice collector", source: "https://github.com/google/go-licenses"}
+  - {key: actionlint, tools_yaml: pointer, replaces: "a hand-read of workflow files", source: "https://github.com/rhysd/actionlint"}
+  - {key: gorelease, tools_yaml: pointer, replaces: "a hand-written API diff of a library between tags", source: "https://pkg.go.dev/golang.org/x/exp/cmd/gorelease"}
+  - {key: gh, version: v2.103.3, tools_yaml: pointer, replaces: "hand-written calls to the GitHub API", source: "https://github.com/cli/cli"}
+  - {key: psmux, tools_yaml: pointer, replaces: "a hand-written tmux stand-in on Windows", source: "https://github.com/marlocarlo/psmux"}
+  - {key: djvutxt, tools_yaml: pointer, replaces: "a hand-written DjVu text reader", source: "https://djvu.sourceforge.net/"}
+  - {key: epubcheck, tools_yaml: pointer, replaces: "a hand-written EPUB validator", source: "https://github.com/w3c/epubcheck"}
+  - {key: sandbox-exec, tools_yaml: pointer, replaces: "a hand-written sandbox on macOS", source: "https://developer.apple.com/library/archive/documentation/Security/Conceptual/AppSandboxDesignGuide/"}
+# Dropped, and by what. No row and no ban for any of these.
+dropped:
+  - {name: gotest.tools/v3, by: "the standard testing package and the library's own golden helper; the preset's no-assert row stays as it is"}
+  - {name: github.com/opencontainers/go-digest, by: "the standard crypto/sha256 (no shared digest package exists); a program that wants a typed sha256 value may import it directly, with no ban and no shared package"}
+  - {name: multi-gitter, by: "not needed to sync files between repos"}
+  - {name: osv-scanner, by: "govulncheck, which is the pick for the Go dependency scan"}
+  - {name: lychee, by: "each repo's own offline link test"}
+  - {name: github.com/moby/sys/reexec, by: "nothing; no source lists it"}
+  - {name: dependabot, by: "nothing; Dependabot is not used on the Free plan, so no file of it is written or read. Out-of-date modules are found by the module-age check and govulncheck"}
+  - {name: github.com/go-sqlite3, by: "modernc.org/sqlite (the sqlite row); no source bans it, so there is no ban"}

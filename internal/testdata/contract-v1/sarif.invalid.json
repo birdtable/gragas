@@ -1,0 +1,5 @@
+[
+  {"name": "an unknown field", "patch": [{"op":"add","path":"/0/extra","value":1}], "problem": "Additional properties are not allowed ('extra' was unexpected)"},
+  {"name": "a missing contract", "patch": [{"op":"remove","path":"/0/contract"}], "problem": "'contract' is a required property"},
+  {"name": "a wrong sarif version", "patch": [{"op":"replace","path":"/0/version","value":"2.0.0"}], "problem": "must be '2.1.0'"}
+]

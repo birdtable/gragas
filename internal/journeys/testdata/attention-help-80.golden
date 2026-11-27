@@ -1,0 +1,30 @@
+$ gragas attention --help
+--- stdout
+
+  Lists the rules that need you, grouped by what is missing: a
+  review-by that is past, no source, no example pair, no decision
+  where the governance asks for one, no owner. The days are judged
+  against today's date, read when the command runs; nothing is
+  kept between runs. A retired rule asks for nothing. When every
+  rule is proposed it lists the whole book, and says so first.
+  It reads and changes nothing.
+
+    gragas attention
+    gragas attention --json
+
+  USAGE
+
+
+    gragas attention [--flags]
+
+
+  FLAGS
+
+    --accessible  Plain questions (ACCESSIBLE)
+    --config      The settings file (GRAGAS_CONFIG)
+    -h --help     Help for attention
+    --json        Answer in one JSON document
+    --no-color    No colour (NO_COLOR)
+    --plain       Print plainly: nothing moves
+
+--- stderr

@@ -1,0 +1,7 @@
+$ gragas guard staged
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  done       every lifecycle field staged is recorded in history.jsonl
+--- stderr

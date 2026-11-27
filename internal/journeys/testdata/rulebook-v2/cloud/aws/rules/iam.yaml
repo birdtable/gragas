@@ -1,0 +1,82 @@
+part: aws
+concern: iam
+order: 1
+title: Identity and IAM grants
+summary: >-
+  Every deployed unit runs with its own identity and only the grants its job needs. No grant uses a wildcard,
+  and the few powerful grants (publishing, invoking, database connect) exist only on the declared path.
+rules:
+  - id: aws.iam.1
+    slug: no-wildcard-grants
+    since: 0.1.0
+    rule: >-
+      No grant uses a wildcard action or a wildcard resource, and a gate that bans wildcards runs in every
+      service.
+    detail: >-
+      The gate scans the infrastructure code and the rendered policies for a star in an action or resource
+      position. Allow lists elsewhere (modules, callers) also name entries and a wildcard fails there. In Go,
+      the CI token is read-only and scoped, the daemon callers are checked, and the sandbox comes from a
+      template.
+    level: deploy
+    why: >-
+      A wildcard grant turns any compromise or bug in one function into access to everything the account
+      holds.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule over the infrastructure code failing a star ("*") in an action or resource of any
+          policy statement, run in every service gate. Plant: a policy statement with action star or resource
+          star fails. Control: a statement naming exact actions and a resource passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that the CI token is read-only and scoped and that a unit sandbox comes from the template.
+          Plant: a CI token with write scope fails. Control: a read-only scoped token passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: aws.iam.2
+    slug: powerful-grants-on-declared-path
+    since: 0.1.0
+    rule: >-
+      Event publishing, invoke and database-connect grants exist only on the declared path: publish only on
+      the shared bus, invoke only through the one internal invoke grant, and runtime database connect only for
+      the service own application role.
+    level: deploy
+    why: >-
+      These three grants are how a unit reaches other services and the data; each must come from one declared
+      place so a reader sees every door a unit has.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: p-03-data
+        where: section 16
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rules over the infrastructure code: a publish grant naming a bus other than the shared bus,
+          an execute-api:Invoke grant not built by the internalInvokeGrant helper, and an rds-db:connect grant
+          for any role but the unit application role (<svc>_app). Plant: a function granted publish on an
+          arbitrary bus fails; a handwritten invoke permission fails; a connect grant for the owner role
+          fails. Control: grants through the declared helpers pass
+    open:
+      - >-
+        The three exact grant shapes are named from the reference estate and need translating to each product
+        shared constructs.

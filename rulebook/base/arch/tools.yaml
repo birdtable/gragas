@@ -1,0 +1,160 @@
+part: arch
+tools:
+  - key: eslint-boundaries-plugin
+    name: "import boundary check: ESLint boundaries plugin"
+    role: >-
+      Checks imports against a layer table generated from rule data: element types per folder, dependency
+      edges with a reason in the message, files in no element, external provider packages and test paths.
+      Reads .ts, .tsx and, through the Astro parser, .astro frontmatter and scripts.
+    version: eslint-plugin-boundaries 7.4.1 with ESLint 10
+    binding: ts
+    ships: the generated layer table and boundary rules in the shared lint preset
+    state: chosen
+    why: >-
+      It is the only stock tool that reads the layer table, the unknown-file rule and the external-package
+      rule from one configuration, and the plants fired on both web sites.
+    lost:
+      - name: text script for layer checks
+        why: >-
+          kept as a fallback until the plugin passes the ten plants on both sites; two copies differ by 1314
+          lines
+    open:
+      - >-
+        The mode file option is deprecated in 7.4.1, measured under the former 14-day window: pin the
+        version outside tools.yaml's window and re-run the plants.
+      - Never run on React; plants fired 10 of 10 on Astro.
+  - key: dependency-cruiser
+    name: "import graph checker: dependency-cruiser"
+    role: >-
+      Builds a repository's import graph and checks it against rules: layer order, cycles, forbidden paths and
+      orphan files; a baseline of known cycles that only shrinks.
+    version: dependency-cruiser 18.7.2
+    binding: ts
+    ships: the shared import-boundary preset
+    state: chosen
+    why: >-
+      It reads .ts and .tsx cycles with a shrink-only baseline and domain independence from a domain list; the
+      compiler stops Go cycles and depguard with a layer-table test does the rest in Go.
+    lost:
+      - name: import-x/no-cycle
+        why: >-
+          used for .ts cycles alongside it (4.17.1 with the TypeScript resolver); neither tool sees an edge
+          out of an .astro file
+    open:
+      - >-
+        Sees no edges out of .astro files; the companion graph step is to be built for them.
+  - key: shared-import-boundary-preset
+    name: shared import-boundary preset
+    role: >-
+      One shared preset (a dependency-cruiser preset in the web stack) of a few error rules and an empty list
+      for later rules, loaded by every repository's boundary checker; in Go the same rules become generated
+      depguard rows plus a layer-table test.
+    binding: any
+    ships: the preset in the shared repo config
+    state: chosen
+    why: >-
+      A boundary rule typed in each repository drifts; one preset with an empty extension list makes every
+      addition visible.
+    open:
+      - Not yet built as one preset for both languages.
+  - key: madr-with-a-check-link
+    name: "decision record format: MADR with a check link"
+    role: >-
+      A short decision record per structural change, in the MADR format, whose confirmation section links the
+      check that enforces it as a relative link (an enforced-by link); a link checker fails an accepted record
+      whose check file does not exist.
+    binding: any
+    ships: the decision template and the front-matter schema
+    state: chosen
+    why: >-
+      One file per decision with symmetric supersession links is what makes the record findable and tied to
+      its check.
+    lost:
+      - name: running decision log
+        why: >-
+          prose files in each repository cannot be superseded or linked to a check; frozen once records exist
+    open:
+      - No UI project has a decision-record rule yet.
+  - key: decision-records-and-standards-that-point-at-their-checks
+    name: decision records and standards that point at their checks
+    role: >-
+      The written rules and the decisions behind them, each decision pointing at the check that enforces it;
+      the pair is held together by the front-matter validator and the repo's own offline link test.
+    binding: any
+    ships: companion docs check
+    state: chosen
+    why: >-
+      A standard that names no check is advice; a check that names no decision has no reason on record.
+    open:
+      - The category is chosen; the validator is still to be built.
+  - key: step-copies-hashing
+    name: "copy census: step-copies hashing"
+    role: >-
+      Hashes every known plumbing step across the services and counts copies and versions; a one-off
+      measurement first, rebuilt as a shrink-only count per step.
+    binding: any
+    ships: companion census
+    state: candidate
+    why: It is what showed 42 hand copies and what the ratchet of arch.shared.3 reads.
+    lost:
+      - name: dupl or jscpd as the engine
+        why: >-
+          both are candidate engines for the rebuild; jscpd needs identifiers and literals ignored to see a
+          renamed copy
+    open:
+      - The script exists as a read-only measure; the rebuild is not done.
+  - key: canonical-root-file-diff-against-the-shared-config-package
+    name: canonical root file diff against the shared config package
+    role: >-
+      The shared config package ships the canonical root files; each repository's copy is a one-line extends
+      or re-export and a pre-push job diffs it (git diff --no-index) against the package's copy.
+    binding: any
+    ships: the shared config package and the pre-push job
+    state: chosen
+    why: A repo copy of a canonical file drifts; the diff makes drift fail the push.
+    open:
+      - A template update tool reconciles template drift once the template lands.
+  - key: companion-sync
+    name: "project template tool: companion sync"
+    role: >-
+      (Includes a route sub-template.) A command in the checks binary that lays down configs, scripts and
+      gates per kind, records the source version and hash in a lock file, and pushes later template changes
+      into repositories already generated from it.
+    binding: any
+    ships: the per-kind templates and the lock file
+    state: chosen
+    why: >-
+      A ruled choice that keeps the template tool in the same binary as the checks, so the byte check and the
+      template share one source.
+    lost:
+      - name: Copier
+        why: >-
+          proven for the backend and not for the web; it is a host dependency and needs a Python runtime
+      - name: Projen, cruft and template repositories
+        why: considered and not chosen
+    open:
+      - To be built.
+    note: Copier was the donor's pick and is kept here only as the lost alternative.
+  - key: companion-new-generator
+    name: "scaffolder: companion new generator"
+    role: >-
+      Templates and generators that create a new service, route, page, program, command or package already
+      shaped like the standard, with a reference program to copy from.
+    binding: any
+    ships: golden pages and the reference program
+    state: candidate
+    why: >-
+      A new unit that starts clean is cheaper than a correction after the gate has found the fault.
+    open:
+      - No scaffolder exists for a new Go program or command.
+  - key: shared-libraries-with-one-owner-and-one-version
+    name: shared libraries with one owner and one version
+    role: >-
+      Packages a service calls instead of writing its own, each with one owner and one version, in a small
+      named set.
+    binding: any
+    ships: the shared modules and the owner file
+    state: chosen
+    why: One owner and one version is what makes a change reach every consumer once.
+    open:
+      - Its owner lane is a planned platform lane; see the shared-code rules.

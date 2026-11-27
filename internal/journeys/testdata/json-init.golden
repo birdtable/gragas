@@ -1,0 +1,13 @@
+{
+  "schema": 2,
+  "command": "init",
+  "apply": false,
+  "ended": "not ready",
+  "msg": "already a rulebook: this folder holds its identity file",
+  "next": "gragas validate",
+  "error": {
+    "kind": "not-ready",
+    "msg": "already a rulebook: this folder holds its identity file",
+    "hint": "gragas validate"
+  }
+}

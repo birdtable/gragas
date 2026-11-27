@@ -1,0 +1,12 @@
+part: arch
+tools:
+  - key: layer-test
+    name: layer test
+    role: reads the import graph and fails on an upward edge
+    version: "1.2"
+    state: chosen
+    preset: presets/layers.yml
+    why: it runs in the test runner already
+    lost:
+      - name: a text script
+        why: it missed aliases

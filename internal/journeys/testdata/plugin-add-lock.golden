@@ -1,0 +1,12 @@
+version: 1
+plugins:
+  -
+    name: lint-a
+    version: 1.0.0
+    source: local
+    digest: "sha256:99f8602a3203331eb3a1a14d2ba1b7a18f17b1ed3b00698edf78b3ee9fddb0fa"
+  -
+    name: lint-b
+    version: 2.0.0
+    source: "file:vendor/lint-b/2.0.0"
+    digest: "sha256:b0709481d2170f297d18ea3c8e5fecad5837c760839210b5c747c4099bcc7e54"

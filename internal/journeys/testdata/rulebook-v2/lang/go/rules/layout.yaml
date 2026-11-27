@@ -1,0 +1,157 @@
+part: go
+concern: layout
+order: 1
+title: Module layout, build and dependencies
+summary: >-
+  What only a Go module has: the layout template every program starts from, whether init functions exist,
+  whether the module carries local replace directives, and how shipped binaries are built.
+rules:
+  - id: go.layout.1
+    slug: commands-and-internal
+    since: 0.1.0
+    rule: >-
+      A Go program starts from one layout template: programs live under cmd/<name>/ and everything else under
+      internal/, with no pkg/ folder; adapters live under one host folder, one package per platform or per
+      external tool, and the core lives outside it; and every package sits in a layer named in the import
+      table.
+    detail: >-
+      The template is rule data (the layer and import table), so a new program starts from it one to one:
+      cmd/<name>/ (wires and registers implementations, nothing else), internal/core/ (the domain),
+      internal/core/api/ (routes and their JSON result types), port packages (interfaces only, each with its
+      fake), slot packages with their registries, internal/host/<platform or tool>/ (adapters, such as
+      host/linux, host/launchd), internal/door/ (listeners), internal/config/, internal/cli/<group>/ and
+      internal/cli/ui/ (the only terminal code), and leaf packages. A layout test walks the module tree and
+      lists packages: it fails on any directory named pkg, on a main package outside cmd/<name>/, on a
+      non-test package at the module root or outside cmd/ and internal/, on an adapter outside the host
+      folder, and on a package with no layer in the table. A library repo is declared kind lib in rule data
+      and is exempt, since a library has exported packages at its root. The popular project-layout repository
+      (golang-standards/project-layout) is not a standard.
+    level: package
+    why: >-
+      Practice; all six of our Go repos follow cmd and internal. A shared layout makes a port, an adapter or a
+      command findable across programs by an agent that has read one of them, and the two Go target programs
+      already agree on the names.
+    kind: rule
+    strength: Hard
+    status: active
+    unless:
+      - kinds:
+          - library
+        reason: A library has exported packages at its root and no cmd folder.
+    sources:
+      - ref: decision-65-go
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          layout test in the shared gate pack (go test over the module tree with a directory walk and the
+          package list), the layer table and kind lib read from rule data. Plant: a pkg/util directory with
+          one file fails; a main.go at the module root fails; an adapter package internal/launchd outside the
+          host folder fails; a package missing from the layer table fails. Control: cmd/foo/main.go plus
+          internal/core and internal/host/linux, each in the table, passes
+    relates:
+      - id: arch.structure.6
+        how: see
+    open:
+      - >-
+        Rendered from the same layer table as the import rules of the architecture part; arch.structure.6
+        points at the template per kind of program.
+  - id: go.layout.2
+    slug: no-init-outside-main
+    since: 0.1.0
+    rule: No init functions outside the main package, or their count only falls.
+    level: function
+    why: >-
+      Own measure: init functions in our repos today: 26 in one, 1 in another, 0 in the rest. The linter is
+      enabled in six of six configs.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: golangci-lint-linters
+        where: gochecknoinits
+        says: >-
+          Checks that no init functions are present in Go code.
+        backs: rule
+      - ref: docker-commands-register
+        says: >-
+          The one surveyed command line program that registers commands from init functions through blank
+          imports, which makes the command set depend on import side effects.
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: gochecknoinits
+        tier: "1"
+        fix: never
+        note: >-
+          golangci-lint gochecknoinits in the shared config; the count only falls through a new-code-only
+          setting or an existing-debt baseline; a justified init carries a nolint with a reason New-code-only
+          is golangci issues.new-from-merge-base. Plant: func init() in an internal package fails. Control: no
+          init passes
+    note: >-
+      Promoted in E4 (gragas#1740) under a ruling there: enforced-without-examples rises by the
+      count until baseline.json goes at the switch (gragas#1743), and no examples block is written.
+  - id: go.layout.3
+    slug: no-replace-or-workspace
+    since: 0.1.0
+    rule: No replace directive in go.mod and no go.work file in a committed tree.
+    level: program
+    why: >-
+      A local replace builds on one machine only and hides the real dependency; a workspace file changes
+      resolution for everyone who checks out.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: go-modules-reference
+        where: go.mod, replace directives
+        says: >-
+          replace directives only apply in the main module's go.mod file and are ignored in other modules.
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: gomoddirectives
+        tier: "1"
+        fix: never
+        note: >-
+          golangci-lint gomoddirectives with an empty replace allow list (verified 5 Nov that a replace line
+          is reported as a local replacement not allowed), plus a one-line tracked-file check for go.work in
+          the gate scan. Plant: a replace line fails, and a committed go.work fails. Control: neither passes
+  - id: go.layout.4
+    slug: cgo-disabled
+    since: 0.1.0
+    rule: Shipped binaries are built with cgo disabled.
+    level: file
+    why: >-
+      A cgo binary links the host's C library and breaks the static, copy-anywhere build. Own measure: set in
+      5 of the 7 programs today (verified); the library repo and one scraper set none.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: A library ships no binary.
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          grep of build recipes for CGO_ENABLED=0, and go version -m on the built binary. Plant: a build with
+          cgo enabled fails. Control: a build recipe with it disabled passes
+    open:
+      - Proposed as a gate; no plant recorded in the catalogue.
+    note: The dependency-side counterpart is a supply-chain rule held by the supply part.

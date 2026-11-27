@@ -1,0 +1,17 @@
+$ gragas check --json
+--- stdout
+{
+  "schema": 2,
+  "command": "check",
+  "ended": "not ready",
+  "msg": ". is not a rulebook repository: it has no rulebook/parts.yaml",
+  "next": "gragas check -C \u003cthe gragas repository\u003e",
+  "error": {
+    "kind": "not-ready",
+    "msg": ". is not a rulebook repository: it has no rulebook/parts.yaml",
+    "hint": "gragas check -C \u003cthe gragas repository\u003e"
+  }
+}
+--- stderr
+warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
+--- exit 4

@@ -1,0 +1,20 @@
+format: 3
+part: dynamodb
+concern: migrations
+rules:
+  - id: dynamodb.migrations.1
+    statement: "A change to what a table holds is additive where it can be, and otherwise a migration with a written plan whose backfill is resumable and safe to run twice."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Additive means readers default a missing attribute and writers add it as items are touched. A change that rewrites every item, or a new index that needs a backfill, is an extract-transform-load job with a written plan: a parallel scan, batched writes, resumable, idempotent."
+      pros:
+        - "A new access pattern on existing data usually needs a full rewrite, and a one-off script run once and never retested leaves the table half migrated when it fails."
+    sources:
+      - ref: debrie-dynamodb-book
+        where: strategies for migrations
+        backs: rule
+      - ref: p-03-data
+        where: section 16
+        backs: rule

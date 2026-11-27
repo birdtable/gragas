@@ -1,0 +1,80 @@
+format: 3
+part: web
+concern: speed
+rules:
+  - id: web.speed.1
+    statement: "A byte budget per kind of file is measured on the built output, and the check proves it can fail."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "One gzip limit per kind and per chunk class (core, first visit) is read from the parameters file; the budget tool runs over the built output and exits non-zero on any breach. Where the tool cannot split by class, the site's own budget script is the lift candidate. The gate runs a planted breach and a clean build once per tier. The site's own budget script is `check-budget`."
+      pros:
+        - "One site's first visit weighs 300 KB gzipped, with 98,304 bytes of core; an admin visit weighs 303,936 bytes. Its marks are said, not failed: 19 chunks are over today."
+  - id: web.speed.2
+    statement: "Static first: script is added only to pages where a behaviour needs it."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A scan of the built HTML fails any script element, module-preload link or inline handler on a page not listed under the allowed-scripts section of the parameters file; a listed page names the behaviour. The check first asks whether the HTML validator or a JavaScript-off render already does it. Check the `html-validate` rule first."
+      pros:
+        - "1,787 bytes of hand code against 5,302 for a tagged-template runtime and 69,135 for React; React fits 70 percent of one site's core budget."
+  - id: web.speed.3
+    statement: "Route-level code splitting is on per area where a router exists, and development tooling never ships in the production bundle."
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "The router's automatic splitting setting is read back from the build config, and the entry chunk is held at the core budget so an unsplit app breaches the byte budget; chunk count is a report. A test-only module is absent from the non-test build."
+      pros:
+        - "No route budgets are asked for in the source; the core budget holds it."
+    replaced_by: react.performance.2
+  - id: web.speed.4
+    statement: "The built page loads with zero violations under its declared content security policy; script-src never contains unsafe-inline, there is no inline script, define-vars style injection or client island, and trusted types stay on."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A browser test serves the built output under its generated policy, adds a `securitypolicyviolation` listener to every page and state, and fails on any event. A policy evaluator fails a generated policy whose script-src contains unsafe-inline. ESLint bans the `define:vars` and `client:` directives in templates. Template stack: a generated policy meets it."
+      pros:
+        - "One site's index page has 3 inline scripts and 12 style attributes; a Preact island adds 2 scripts and a style block."
+  - id: web.speed.5
+    statement: "The bundle and the dependency list only shrink, with one recorded exemption and a ceiling; banned dependencies already present are a shrink-only list."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Two shrink-only numbers in the committed baseline: total gzip bytes per kind, and the count of direct dependencies plus banned names present; the check reads the diff, not only totals, so a new file importing a banned name fails (ESLint `no-restricted-imports` generated from the ban data). The dependency half is also held by a banned-group rule in the version checker. A recorded exemption lets the message functions grow the bundle to a ceiling of about +15 kB gzipped at 2,900 messages (measured +7.0 kB on one version, and +22.6 kB on an older version with shorter strings), until the bundle is back under the pre-conversion budget; a high number is fixed within the message compiler."
+      pros:
+        - "The baseline format is already held in two sites; the single exemption is for the message-function cost of the content rules."
+  - id: web.speed.6
+    statement: "A budget exists for render cost under churn on any stack with a live list, counted in commits and rendered rows, not milliseconds."
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "A test counts commits and rendered rows for one update to a live list and asserts the count against a declared render budget. A rule-table list names each live list; a list with no matching render-budget test fails the pairing scan."
+      pros:
+        - "Solid's keyed list passed behaviour and failed churn; a count is deterministic, unlike time."
+    replaced_by: react.performance.1
+  - id: web.speed.7
+    statement: Nothing loads from another origin unless it is declared.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The same browser run as the policy check uses a request allow list of origins from the parameters file (empty by default); any other origin fails. The policy sets default-src and connect-src to self so the browser blocks it too. A static host scan of the built output is a report only."
+      pros:
+        - "One site's built files name seven hosts, not all fetched; the static scan is noisy, so the run-time listener is the gate."
+  - id: web.speed.8
+    statement: "Core Web Vitals are good at the 75th percentile, judged only on field data."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - field-traffic
+    reasoning:
+      pros:
+        - "A lab score is a stand-in, not this measure."

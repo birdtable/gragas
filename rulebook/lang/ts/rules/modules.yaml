@@ -1,0 +1,85 @@
+format: 3
+part: ts
+concern: modules
+rules:
+  - id: ts.modules.1
+    statement: "Exports are named, and a default export fails except in a file a framework requires it in, listed by path."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The exception list holds paths, never globs wider than the framework's own file convention, and each entry names the framework rule that needs the default export. A re-export of a default under a name (an `export` list naming `default as X`) is a named export and passes. Biome form: `noDefaultExport` at error, with an `overrides` entry for the listed paths. ESLint form: `import-x/no-default-export` (or `no-restricted-syntax` on an export-default declaration) at error, with the same path list."
+      pros:
+        - "A default export takes whatever name each importer gives it, so a rename does not travel, search misses uses and two files can import the same thing under two names."
+    sources:
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.modules.2
+    statement: "TypeScript `enum` and `namespace` are refused, and a closed set is a literal union or a schema enum."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The compiler holds it first: `erasableSyntaxOnly` in the shared core (ts.compiler.3) fails an enum, a const enum and a namespace that holds values. A type-only `declare namespace` for an outside library's types is the one form left, and only in a `.d.ts` file. Biome form: `noEnum` and `noNamespace` at error. ESLint form: `no-restricted-syntax` on an enum declaration and `@typescript-eslint/no-namespace` at error."
+      pros:
+        - "An enum and a namespace compile to runtime objects with their own semantics, so they cannot be stripped by a type-erasing loader and differ from every other type in the program; a literal union or a schema enum says the same thing and erases cleanly."
+    relations:
+      relates:
+        - ts.compiler.3
+    sources:
+      - ref: typescript-handbook
+        where: erasableSyntaxOnly
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.modules.3
+    statement: Packages are ESM only and relative imports carry their file extension.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Every package manifest says `\"type\": \"module\"`; a `.cjs` file, a `require` call or a `module.exports` in source fails, and a package that must serve a CommonJS reader does so from a generated build, never from source. A relative import names the file it loads with its extension. In library mode the nodenext resolution of ts.compiler.3 makes a missing extension a type error; in app mode the lint holds it. Biome form: `useImportExtensions` at error. ESLint form: `import-x/extensions` set to always for relative imports."
+      pros:
+        - "An import without an extension resolves only under a loader that guesses, so the same module loads under the bundler and fails under the runtime, the test runner or the next loader."
+    relations:
+      relates:
+        - ts.compiler.3
+    sources:
+      - ref: nodejs-docs
+        where: ECMAScript modules
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.modules.4
+    statement: "Importing any exported entry reads no file, network or environment and starts no timer or connection, checked by importing each entry under a hook that records such reads."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A test lists every entry of every package (the exports map, ts.packages.1, or the index of each unit), imports each one in a fresh process under a loader hook that records file reads, network sockets, environment reads, timers and child processes, and fails on any record. Work a module needs is done in a function its caller calls. This is wider than a ban on mutable package-level state: a module-level read of the environment or a connection opened at import fails here even when no state is kept. The test is engine-free, so it holds the same under Biome or ESLint."
+      pros:
+        - "A side effect at import runs before the caller can configure, fake or refuse it, so a test, a worker or a cold start pays for work it did not ask for, and the bug shows only when the import order changes."
+    relations:
+      relates:
+        - ts.packages.1
+    sources:
+      - ref: nodejs-docs
+        where: module customization hooks
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.modules.5
+    statement: "Each module's test suite runs with every sibling module unresolvable, so a test can load only its own module and what that module declares it may import."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The TypeScript form of tests.isolation.13. The test runner's resolver is configured per module from the declared import table (the architecture part's layers): an import of a sibling module that is not on the table resolves to nothing and the suite fails, whether the import is in the test or in the code under test. The configuration is generated from the table, never written by hand, so a new module is covered without a change here."
+      pros:
+        - "A test that imports across modules passes for a module nobody could extract, so the boundary the import table claims is never exercised by the suite that should prove it."
+    relations:
+      relates:
+        - tests.isolation.13
+    sources:
+      - ref: decision-65-ts
+        backs: rule

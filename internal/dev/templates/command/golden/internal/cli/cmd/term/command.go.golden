@@ -1,0 +1,37 @@
+// Package term is the term command: fill in what it does. It lives in a package of its own
+// below internal/cli/cmd; the root joins it from the generated join_gen.go,
+// which task gen writes, so a new command is a new folder and no shared line.
+package term
+
+import (
+	"github.com/spf13/cobra"
+
+	"github.com/birdtable/gragas/internal/cli/kit"
+	"github.com/birdtable/gragas/internal/model"
+)
+
+// Order is the row's place in the table of spec 15.1; 0 takes the next free one.
+const Order = 0
+
+// Row is the one declaration of term (cli.commands.20, .26).
+func Row() kit.Command {
+	return kit.Command{
+		Name: "term", Order: Order, Spec: true, Context: kit.Anywhere, Ends: kit.EndsListing, State: kit.Built,
+		Then:    []string{"restore"},
+		Summary: "Fill in: what term does",
+		Examples: [2]kit.Example{
+			{Line: "gragas term restore", Does: "fill in"},
+			{Line: "gragas term restore --json", Does: "as one JSON document"},
+		},
+		Exits:    []model.Word{model.Done},
+		JSONKind: "term",
+	}
+}
+
+// New is the cobra command, drawn through the session of the run. It is a stub
+// that refuses until it is built.
+func New(s kit.Session) *cobra.Command {
+	c := &cobra.Command{Use: "term", Short: Row().Summary, Args: cobra.NoArgs}
+	c.AddCommand(restoreCmd(s))
+	return c
+}

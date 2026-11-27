@@ -1,0 +1,253 @@
+format: 3
+part: cli
+concern: output
+rules:
+  - id: cli.output.1
+    statement: "--json prints exactly one JSON document on stdout, naming its contract version in one top-level field whose name and form the program states once, and everything else goes to stderr; a command that follows a stream prints one JSON object per line, each with the version field."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no commands.
+      - kinds:
+          - daemon
+          - no-json
+        reason: A daemon with no --json flag has no machine mode to hold.
+    reasoning:
+      definition: "The program states once, in rule data, the field name and the form (an integer such as 3, or a string such as launcher/3); a removal or a type change raises it and an addition does not. For every leaf command (the list comes from the command tree, never typed) the matrix runs with --json against a fixture, reads stdout fully, decodes it, asserts one document, end of input after it, the version field in the stated form, and empty stdout when the command fails to start; stderr may hold anything. A command annotated as following (logs -f) is read line by line instead: each line is one object with the version field."
+      pros:
+        - "Own measure: --json exists on 11, 10, 10 and 5 leaves across four CLIs. What a reader needs is one field it can find and compare; whether it holds 3 or launcher/3 is a program's choice stated once. Marginal assertion on the matrix helper, whose cost is carried by the colour rule (cli.environment.1)."
+    relations:
+      relates:
+        - cli.environment.1
+        - cli.commands.1
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.output.2
+    statement: "The output format is decided once: --json and any later machine format is a flag the shared root reads, a command returns a value the root renders, a command file holds no encoder call, and JSON result types are declared once in the API package with their tags and printed by the CLI unchanged, with no tagged struct in the command layer."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    exemptions:
+      - kinds:
+          - library
+          - go
+        reason: It has no commands.
+    reasoning:
+      definition: "The API package (core/api in the layout of go.layout.1) owns every result type with JSON tags; the CLI's --json and the HTTP answer print the same type. A struct with json tags in a cli/* package is a finding. TypeScript holds the same seam: result types live in the API module and a verb module declares none."
+      pros:
+        - "Own measure; a command that encodes its own JSON drifts from the schema version rule, and result types in the API package are what make the CLI's --json and the HTTP answer one type."
+    relations:
+      relates:
+        - go.layout.1
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: cli.output.3
+    statement: "Each command's --help and --json output has a hand-read, protected golden snapshot kept beside that command, so the shape of the JSON cannot change unnoticed; the root help, which only lists commands, is a generated document held by gen --check; and the gate cannot rewrite goldens."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no commands.
+    reasoning:
+      definition: "Goldens are compared with a script-test tool (its update flag only in a manual command). A repo-check fails a change that edits a golden and no source unless the commit carries the marker, and the update flag is refused whenever the gate variable is set (make check, the pre-push hook, a release workflow). Goldens are on the protected-path list, by pattern, so a verdict covers one command's files (gates.protection.3). The root help is derived text: its oracle is the per-command goldens and the generator that renders it, and a journey compares the built binary's root help with the generated document. A wrong summary in one command shows in that document's diff, which gen --check forces into the change that made it."
+      pros:
+        - "Practice; no help snapshot exists in any repo today."
+    relations:
+      relates:
+        - cli.output.1
+        - cli.look.8
+    sources:
+      - ref: helm-golden-output
+        says: "Output is recorded as one golden file per command, in one folder beside the command tests, and none lists the whole tool."
+        backs: rule
+      - ref: gh-help-test
+        says: "The help of every command is checked by a test that walks the command tree, not by a snapshot of the root."
+        backs: rule
+  - id: cli.output.4
+    statement: "The command tree (commands, flags with type and default, positional words, exit codes, --json field names) is written to a committed file and compared with the file at the last tag under the program's declared reader mode: with owned readers a removed flag, field or changed exit code fails only when the contract number was not raised in the same change; with independent readers it fails unless the last tag already marked it deprecated a minor release earlier; and an addition always passes."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    reasoning:
+      definition: "A program declares its readers once in rule data: owned (every reader ships with it, such as its own page and agents) or independent (a published library, a public API). With owned readers a break raises the contract number in the same change, every reader changes with it, and nothing is kept for an old reader. With independent readers a removal or change of meaning is first marked deprecated for one minor release. Once the command registry exists (cli.commands.20) the committed file is the output of help --json, not a second artefact. A daemon's published route contract is checked the same way: breaking-change diff of the OpenAPI file against the tag under the same declaration, and its error and shape claims against real answers; fuzz is added per route once the walk exists. The file is commands.json; the --json fields it records are the top-level fields of the golden output."
+      pros:
+        - "Practice. The target programs disagree because they answer for different readers: a program that owns every reader found that a compatibility layer is where its bugs lived, and a program that ships to readers it never sees must not break them. One rule with a declared reader mode keeps the check mechanical. The shared exit-code change moves every exit code at one program's next minor; a tag diff is how that move is seen to be intended."
+    relations:
+      relates:
+        - cli.commands.20
+        - service.contract.2
+        - service.evolution.2
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.output.5
+    statement: "The shared flags --plain, --json, --accessible and --no-color, and --explain once lessons bind (cli.commands.18), are registered once, by the shared module, and no program defines its own."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "Own measure; one program defines its own colour flag today."
+    relations:
+      relates:
+        - cli.commands.18
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.output.6
+    statement: "A command with no document of its own prints one shared result type under --json: the ending word, the changes made or planned, the next line, and an error with its kind."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no commands.
+    reasoning:
+      definition: "The type lives in the API package and every writing command without its own document returns it; a dry run fills the planned changes and an applied run the made ones."
+      pros:
+        - "The shared result type gives every write the same ending, changes, next line and error for an agent to read."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.output.7
+    statement: "Without --json the human answer goes to stdout and diagnostics to stderr, every applied or no-op line names the path it concerns, and a read command's human answer is the content itself, not a count of it."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no commands.
+    reasoning:
+      definition: "The render module tags each line as answer or diagnostic and routes it; a matrix test splits the streams and asserts the answer is on stdout. An applied or no-op line has a path field in its constructor. A read command's golden holds the content of a fixture, and a line such as \"3 items\" with no items fails."
+      pros:
+        - "Stream discipline is what makes a pipe work in any language, a path on every applied line makes a transcript a record, and content rather than a count is the difference between an answer and a boast."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.output.8
+    statement: "Every command calls one core operation and reads no store or config file itself; every operation with a route has a command or a named reason; where a command and a route show the same view their answers are one type from one function; and a test walking the route index fails on a route with neither."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no commands or routes.
+    reasoning:
+      definition: What is left to do is computed once and handed out by both surfaces. The exceptions are a list in data with a reason each. A command package that imports a store or the config loader is a finding.
+      pros:
+        - "Parity is what makes a page, an agent and a person see the same facts, and the walk over the route index keeps it true when a route is added years later. Two target programs wrote the same test."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.output.9
+    statement: "A state or value the program could not establish is answered as unknown or null with a reason beside it, in text, in --json and in every API answer, never as 0, false, a dash, off, healthy or a default, and it never folds into ok; a field the platform has no such thing as is left out; an answer lists each source it could not read with why and never fills it from an earlier reading; a kept answer carries the time it was read; and a value known only while the program watched is omitted after a restart."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It answers no status of its own.
+    reasoning:
+      definition: "Good news is claimed only for what was checked; an item not checked is listed as not checked. A summary that is ok when one of its inputs is unknown is a finding. A test per answer plants an unreadable source and asserts the null, the reason, the absence of a carried-forward value and a summary that is not ok."
+      pros:
+        - This is the property that decides whether a status tool can be believed at 3 a.m. One rule across every surface is cheaper than three and keeps a page from showing fine over an API that said unknown.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.output.10
+    statement: "A number is shown no finer than its source resolves, an estimate is marked as one, and what a model cannot explain is its own row, never spread over the measured ones."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It shows no measurements.
+    reasoning:
+      definition: "Each measured quantity declares its source resolution (whole watts, milliseconds); the formatter rounds to it. An estimate is printed with a mark (≈) and flagged in JSON. The remainder of a breakdown is a row of its own."
+      pros:
+        - "A number with two decimals from a whole-watt meter is a lie with a straight face, and a remainder spread over the rest makes every row wrong."
+    relations:
+      relates:
+        - docs.voice.3
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.output.11
+    statement: "A golden records one command's output and lives with that command; no hand-kept golden lists every command, and a listing of all commands is generated output."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no commands.
+    reasoning:
+      definition: "A command's help and --json goldens sit in a folder owned by that command (testdata beside its code, and one folder per command for the built binary's journeys). A golden that prints the root help, the menu or the command table of the whole program is not hand-kept: it is a document a generator writes and gen --check holds, so no command change edits a file another command's change also edits. A test walks the golden folders and fails on a golden that names more than one command's own output."
+      pros:
+        - "Own measure: in one program every new command edited four cross-cutting goldens that each list every command, and each edit of a protected golden bought one reviewer verdict. A per-command golden is reviewed once, with its command. The organisation's run log of 8 Nov 2026 records the cost: each landing sent the waiting candidates through a rebase and a full gate run, and a verdict written on an earlier base was rebuilt."
+    relations:
+      relates:
+        - cli.output.3
+        - arch.structure.9
+    sources:
+      - ref: helm-golden-output
+        says: "One golden per command under one folder; the root has no snapshot of its own."
+        backs: rule
+      - ref: gh-help-test
+        backs: rule

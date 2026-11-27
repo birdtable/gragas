@@ -1,0 +1,154 @@
+part: supply
+tools:
+  - key: gitleaks
+    name: gitleaks
+    role: >-
+      Scans commits and the working tree for keys, tokens and passwords; pinned, with its config chosen
+      explicitly.
+    version: 8.30.1
+    licence: MIT
+    binding: any
+    ships: one pinned version and config in the repository config
+    state: chosen
+    why: >-
+      Verified on a scratch repository, it reported the github-pat rule with file and line and no value on a
+      staged fake key, and exit 0 on a clean file.
+    lost:
+      - name: trufflehog
+        why: AGPL-3.0 licence kept it second; it was not run.
+    open:
+      - Alternatives are to be checked in the later survey.
+  - key: osv-scanner
+    name: osv-scanner
+    role: >-
+      Checks lockfiles (Go go.sum and the web lock) against the OSV vulnerability database at land.
+    version: 2.7.0
+    licence: Apache-2.0
+    binding: any
+    ships: a config with ignore entries carrying an expiry and a reason
+    state: replaced
+    why: >-
+      One tool covers Go and the web lock; run on a planted lock it found seven findings and exit 1, and on a
+      clean lock exit 0.
+    lost:
+      - name: package manager audit at high severity
+        why: >-
+          It has the severity filter that this tool lacks and gave the same split on the plant; kept as the
+          filtered alternative.
+    open:
+      - >-
+        It has no severity threshold flag, so it fails on any finding, which is stricter than the rule.
+    note: >-
+      Replaced: govulncheck is the Go dependency scan, and a web lock is audited by the package manager's own audit at high severity.
+  - key: license-checker
+    name: license-checker
+    role: >-
+      Reads every installed package's licence (the SPDX field, then the licence text) and with an allow list
+      exits 1 on the first outside it; exclusions and clarifications carry reasoned exceptions. Flags:
+      --onlyAllow exits 1 on the first licence outside the list; --excludePackages and --clarificationsFile
+      carry reasoned exceptions. Full package name license-checker-rseidelsohn.
+    version: 5.0.1
+    licence: BSD-3-Clause
+    binding: ts
+    ships: >-
+      the shared licence policy (allowed SPDX ids, own-scope skip, dated exceptions, clarifications)
+    state: candidate
+    why: It is the alternative to the package manager's own licence listing.
+    open:
+      - Not run; the web check script it would replace was read only.
+  - key: security-supply-chain-settings-preset
+    name: security supply-chain settings preset
+    role: >-
+      The shipped reference lines for the package manager - a registry token read from the environment, a
+      minimum release age and install scripts off.
+    binding: ts
+    ships: the package manager settings and workspace file, rendered from the template
+    state: chosen
+    why: >-
+      Go has no install scripts and no settings file, so for Go the age window and the read-only module checks
+      carry the same intent.
+  - key: install-script-rebuild-command
+    name: install-script rebuild command
+    role: >-
+      Prints one explicit rebuild line per allowlisted package for use after an install with scripts off;
+      never fails. Reference command name: rebuild-commands.
+    binding: ts
+    ships: a companion command
+    state: chosen
+    why: >-
+      Scripts are off by default, so the few named packages need an explicit step to build.
+  - key: repo-security-scoring-openssf-scorecard
+    name: repo security scoring (OpenSSF Scorecard)
+    role: >-
+      Scores each repository on branch protection, review, pinned dependencies and update tooling.
+    binding: any
+    state: replaced
+    why: >-
+      One GitHub identity means there is no branch protection by design; the land gate decides, so the score
+      has nothing to measure.
+    open:
+      - >-
+        A scorecard maintained check is kept as a candidate for the unmaintained-module rule.
+  - key: org-wide-branch-protection-app-openssf-allstar
+    name: org-wide branch protection app (OpenSSF Allstar)
+    role: >-
+      A GitHub App that enforces branch protection and the like across an organisation.
+    binding: any
+    state: replaced
+    why: We have no branch protection by design; the land gate decides.
+  - key: version-bump-bot-renovate
+    name: version-bump bot (Renovate)
+    role: >-
+      Opens version-bump pull requests in every repository. Reference form: the self-hosted CLI ran from a
+      scheduler with a token for a renovate-bot user and opened version-bump pull requests in every
+      repository.
+    binding: any
+    state: banned
+    why: >-
+      Decision 16 rules no bot; the owner lane opens bumps, and a bump is one commit with trial counts after
+      its cooldown, which a bot does without either.
+  - key: multi-gitter
+    name: multi-gitter
+    role: >-
+      Clones every repository, runs a codemod in each and opens a pull request for each. Run with --dry-run
+      first; status and merge finish the sweep.
+    binding: any
+    state: replaced
+    why: >-
+      The owner lane opens bumps with no bot; a companion sweep command is proposed instead, and a migration
+      is swept within a deadline.
+    open:
+      - >-
+        No cross-repository sweep tool exists for Go; a companion sweep command is proposed.
+    note: >-
+      Replaced: no cross-repository sweep tool is needed to sync files between repos; a sweep is an ordinary change in each repo.
+  - key: cross-repo-sweep-tool
+    name: cross-repo sweep tool
+    role: >-
+      A category, tools that rewrite code across many files or repositories at once; the pick is a companion
+      sweep command, or an ordinary change in each repo.
+    binding: any
+    state: unsure
+    why: >-
+      modernize and go fix rewrite within one repository and no row covers a cross-repository sweep.
+  - key: version-governance-currency-check-and-lockstep-tags
+    name: version governance (currency check and lockstep tags)
+    role: >-
+      A category, tools and rules that keep one version of each shared package and tool everywhere; the pick
+      is the companion currency check, lockstep tags, one pinned version per tool and the same language
+      version.
+    binding: any
+    ships: companion check currency
+    state: chosen
+    why: >-
+      A currency window, lockstep tags and one pinned version per tool cover Go and web.
+  - key: supply-chain-scanning-secret-scan-vulnerability-scan-install-time-package-policy
+    name: >-
+      supply chain scanning (secret scan, vulnerability scan, install-time package policy)
+    role: >-
+      A category, secret scanning, vulnerability scanning and install-time package policy; the pick is
+      gitleaks, govulncheck for Go and the package manager's audit for web, and the settings preset with a 14 day age window,
+      install scripts off and read-only module checks.
+    binding: any
+    state: chosen
+    why: Together they cover the commit, the lockfile and the install step.

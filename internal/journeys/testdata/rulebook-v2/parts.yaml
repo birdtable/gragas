@@ -1,0 +1,403 @@
+# The parts of the rulebook, the layers they sit in, and the waiver each
+# strength takes by default. The gragas tool reads this file; a part's folder
+# is rulebook/<layer>/<short>/. Order is the order parts are listed in
+# reports. A part's when says which products take it (R-12, section 2): a
+# part whose kinds no product has yet is in the rulebook and binds nowhere.
+layers:
+  - key: base
+    name: Base
+  - key: lang
+    name: Language
+  - key: program
+    name: Program
+  - key: framework
+    name: Framework
+  - key: data
+    name: Data
+  - key: cloud
+    name: Cloud
+waivers:
+  Hard: native
+  Answered: recorded
+  Session: recorded
+  Lens: recorded
+  Record: recorded
+  Review: never
+parts:
+  - short: arch
+    split: base-arch
+    layer: base
+    name: Architecture and boundaries
+    description: Modules, layers, ports, no cycles, decision records and reuse of shared code.
+    builds_on: []
+    facets:
+      - capability-role
+      - no-readers
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: code
+    split: base-code
+    layer: base
+    name: Code health
+    description: Size, duplication, dead code, naming and comments.
+    builds_on: []
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: tests
+    split: base-tests
+    layer: base
+    name: Tests
+    description: >-
+      Deterministic tests, whole-suite runs with optional selection by change, property and mutation tests,
+      test runners.
+    builds_on: []
+    facets:
+      - test-selection
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: gates
+    split: base-gates
+    layer: base
+    name: Gates and enforcement
+    description: >-
+      One gate command, tiers, plants, ratchets, suppressions, measures and the rule registry.
+    builds_on: []
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: supply
+    split: base-supply
+    layer: base
+    name: Supply chain and release
+    description: >-
+      Lockfiles, provenance, secrets, licences, version bumps, releases and CI workflow hygiene.
+    builds_on: []
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: docs
+    split: base-docs
+    layer: base
+    name: Docs and vocabulary
+    description: Docs held to the code, glossaries and retired words.
+    builds_on: []
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: agents
+    split: base-agents
+    layer: base
+    name: Agents and review
+    description: >-
+      Agent instruction files, finding what exists, hooks, review questions and tickets.
+    builds_on: []
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: go
+    split: lang-go
+    layer: lang
+    name: Go
+    description: >-
+      What only Go has: errors and panics, context, goroutines, package layout and Go tooling.
+    builds_on: []
+    when:
+      facets:
+        - go
+    facets:
+      - go
+      - no-database
+    bindings:
+      - go
+    owner: operator
+  - short: ts
+    split: lang-ts
+    layer: lang
+    name: TypeScript
+    description: >-
+      What only TypeScript has: strict compiler, the lint engine (Biome or ESLint), Node ESM, modules and type
+      coverage.
+    builds_on: []
+    when:
+      facets:
+        - ts
+    facets:
+      - ts
+    bindings:
+      - ts
+    owner: operator
+  - short: py
+    split: lang-py
+    layer: lang
+    name: Python
+    description: >-
+      What only Python has: the formatter and linter as checks, exact pins or hashes, the venv behind the pins,
+      byte-compile and import smoke, tests with workers and a type check, a replay golden.
+    builds_on: []
+    when:
+      facets:
+        - py
+    facets:
+      - py
+    bindings:
+      - any
+    owner: operator
+  - short: cli
+    split: app-cli
+    layer: program
+    name: CLI
+    description: "Command-line programs: exit codes, --json, terminal look, flags and environment."
+    builds_on: []
+    when:
+      kinds:
+        - cli
+        - daemon
+    facets:
+      - no-json
+      - no-terminal
+      - single-client
+      - single-config-file
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: daemon
+    split: app-daemon
+    layer: program
+    name: Daemon
+    description: >-
+      Long-running processes: service-manager units, restarts, health and local servers.
+    builds_on:
+      - cli
+    when:
+      kinds:
+        - daemon
+    facets:
+      - no-http
+      - no-notify
+      - no-page
+      - no-retry
+      - no-stack
+      - rebuildable-stores
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: service
+    split: app-service
+    layer: program
+    name: Backend service
+    description: >-
+      Backend services: bootstrap, API contracts, authorisation, events and outbox, outbound clients, logs.
+    builds_on: []
+    when:
+      kinds:
+        - service
+    facets:
+      - anonymous-visitors
+      - no-jobs
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: web
+    split: app-web
+    layer: program
+    name: Web front end
+    description: >-
+      Web front ends: structure, design parts, tokens, states, forms, accessibility, words and speed.
+    builds_on: []
+    when:
+      kinds:
+        - web-app
+        - site
+    facets:
+      - canvas
+      - field-traffic
+      - story-without-text-surface
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: pages
+    split: app-pages
+    layer: program
+    name: Static pages and docs-only repositories
+    description: >-
+      HTML files a person looks at with no build, and repositories that hold Markdown or nothing: links that
+      resolve offline, a ledger that matches the pages, a rendered golden per page, and a members file that
+      says when there is nothing to run.
+    builds_on: []
+    when:
+      kinds:
+        - site
+        - docs
+    bindings:
+      - any
+    owner: operator
+  - short: react
+    split: fw-react
+    layer: framework
+    name: React
+    description: "What only React has: components, hooks, routing, data and form libraries."
+    builds_on:
+      - web
+      - ts
+    when:
+      facets:
+        - react
+    facets:
+      - react
+    bindings:
+      - ts
+      - any
+    owner: operator
+  - short: astro
+    split: fw-astro
+    layer: framework
+    name: Astro
+    description: >-
+      What only Astro has: islands, content collections, astro check and the build CSP.
+    builds_on:
+      - web
+      - ts
+    when:
+      kinds:
+        - site
+    bindings:
+      - ts
+    owner: operator
+  - short: liquid
+    split: fw-liquid
+    layer: framework
+    name: Liquid themes
+    description: >-
+      What only a Liquid theme has: JSON and schema blocks that parse, locale parity, references that resolve
+      and tags that balance, the theme linter, and a deploy to an unpublished theme first.
+    builds_on:
+      - web
+    when:
+      facets:
+        - liquid
+    facets:
+      - liquid
+    bindings:
+      - any
+    owner: operator
+  - short: store
+    split: data-common
+    layer: data
+    name: Data, any store
+    description: "Data in any store: state files, schemas, migrations in general and store seams."
+    builds_on: []
+    facets:
+      - no-embedded-store
+      - no-log-or-lock-file
+      - no-persistent-files
+      - no-secrets
+      - no-store
+      - no-store-engine
+      - no-user-data
+      - not-lock-owner
+      - not-state-file-owner
+      - read-only
+      - stateless
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: postgres
+    split: data-postgres
+    layer: data
+    name: Postgres
+    description: "Postgres: migrations, typed queries, transactions, locks and indexes."
+    builds_on:
+      - store
+    when:
+      facets:
+        - postgres
+    facets:
+      - postgres
+    bindings:
+      - go
+      - ts
+      - sql
+      - any
+    owner: operator
+  - short: dynamodb
+    split: data-dynamodb
+    layer: data
+    name: DynamoDB
+    description: "DynamoDB: key builder, access patterns, conditions and expiry."
+    builds_on:
+      - store
+    when:
+      kinds:
+        - cloud-service
+    bindings:
+      - go
+      - ts
+      - any
+    owner: operator
+  - short: aws
+    split: cloud-aws
+    layer: cloud
+    name: AWS
+    description: "AWS: identity per unit and IAM grants."
+    builds_on: []
+    when:
+      kinds:
+        - cloud-service
+    bindings:
+      - go
+      - ts
+    owner: operator
+  - short: lambda
+    split: cloud-lambda
+    layer: cloud
+    name: AWS Lambda
+    description: "AWS Lambda: handlers, bootstrap and middleware, cold start and timeouts."
+    builds_on:
+      - aws
+    when:
+      kinds:
+        - cloud-service
+    bindings:
+      - ts
+    owner: operator
+  - short: sst
+    split: cloud-sst
+    layer: cloud
+    name: SST
+    description: "SST: infrastructure as code, stages and linked resources."
+    builds_on:
+      - aws
+    when:
+      kinds:
+        - cloud-service
+    bindings:
+      - go
+      - ts
+    owner: operator

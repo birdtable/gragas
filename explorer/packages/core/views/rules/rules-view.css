@@ -1,0 +1,116 @@
+/* The rules view. Colours, spacing and fonts are the tokens'
+   custom properties, so a host theme restyles it with no provider. */
+[data-part="rules-view"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gr-space-3);
+  padding: var(--gr-space-4);
+}
+
+[data-part="rules-view"] h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.gr-rules-question {
+  margin: 0;
+  color: var(--gr-text-muted, var(--gr-text-ink));
+}
+
+[data-part="rules-filters"] {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--gr-space-3);
+  align-items: end;
+}
+
+.gr-rules-search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gr-space-1);
+  grid-column: 1 / -1;
+}
+
+.gr-rules-q,
+.gr-facet-trigger {
+  font: inherit;
+  color: var(--gr-text-ink);
+  background: var(--gr-ground-surface, transparent);
+  border: 1px solid var(--gr-control-border, currentcolor);
+  border-radius: var(--gr-radius-sm, 4px);
+  padding: var(--gr-space-1) var(--gr-space-2);
+  text-align: start;
+}
+
+[data-part="facet"] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gr-space-1);
+}
+
+.gr-facet-label {
+  font-size: 0.875rem;
+}
+
+.gr-facet-positioner {
+  z-index: 10;
+}
+
+.gr-facet-popup {
+  max-height: 20rem;
+  overflow: auto;
+  background: var(--gr-ground-surface, Canvas);
+  color: var(--gr-text-ink);
+  border: 1px solid var(--gr-control-border, currentcolor);
+  border-radius: var(--gr-radius-sm, 4px);
+}
+
+.gr-facet-item {
+  display: flex;
+  align-items: center;
+  padding: var(--gr-space-1) var(--gr-space-2);
+  cursor: default;
+}
+
+.gr-facet-item[data-highlighted] {
+  outline: 2px solid var(--gr-focus);
+  outline-offset: -2px;
+}
+
+[data-part="rules-count"] {
+  margin: 0;
+}
+
+[data-part="rules-group"] {
+  overflow-x: auto;
+}
+
+.gr-rules-standing,
+.gr-rules-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--gr-space-1);
+  align-items: center;
+}
+
+[data-part="rule-chip"],
+[data-part="rule-mark"] {
+  border: 1px solid var(--gr-control-border, currentcolor);
+  border-radius: var(--gr-radius-sm, 4px);
+  padding: 0 var(--gr-space-1);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  [data-part="rules-view"] {
+    padding: var(--gr-space-2);
+  }
+}
+
+/* A rule's id is a link in a table cell: its target is at least 24 px tall. */
+[data-part="rules-group"] a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}

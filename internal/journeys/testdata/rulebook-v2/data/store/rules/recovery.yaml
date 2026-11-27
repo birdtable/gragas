@@ -1,0 +1,99 @@
+part: store
+concern: recovery
+order: 5
+title: Backup and crash recovery
+summary: >-
+  Data that cannot be rebuilt has a backup that has been restored. Backup uses the engine's own interface, a
+  restore drill proves it, and a stateful program survives being killed at random points.
+rules:
+  - id: store.recovery.1
+    slug: restore-drill
+    since: 0.1.0
+    rule: >-
+      Backup uses the engine's own interface, and for every store that cannot be rebuilt a restore drill
+      restores a backup or a point in time to a new path or instance, runs an integrity check and compares
+      counts with the source; a file copy of a live store is not a backup.
+    detail: >-
+      Counts are compared against a minimum from the fixture, so a drill over an empty store fails. The drill
+      is started by hand or by a release, never by a timer. For a managed relational store the restore goes to
+      a new cluster; for an embedded store a test backs up a populated store, restores it and checks. Anything
+      you cannot re-derive from other data counts as not rebuildable. The embedded-store integrity query is
+      the engine call integrity_check.
+    level: function
+    why: >-
+      A copy taken during writes may not be a backup. A neighbouring system found its corruption because its
+      pipeline snapshotted and checked its backups. No row covered backup or restore before this one, and an
+      unrebuildable store is a plain file (store.seams.6), so the embedded checks bind no store today.
+    kind: rule
+    strength: Hard
+    status: active
+    unless:
+      - facets:
+          - rebuildable-stores
+        reason: A rebuild replaces a restore.
+    sources:
+      - ref: p-03-data
+        where: section 4 and five-list item 2
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that backs up a populated store through the engine's API, restores it to a new path, runs the
+          engine's integrity check and compares counts with a fixture minimum. Plant: a backup taken by a
+          plain copy during writes fails integrity or counts; a corrupted page fails the integrity check.
+          Control: a clean backup restores and passes
+      - binding: any
+        class: test-kit
+        tier: "4"
+        note: >-
+          a drill started by dispatch that restores to a new cluster, runs the integrity query and compares
+          counts with a fixture minimum. Plant: a backup of a corrupted page fails the integrity step; a drill
+          over an empty store fails the minimum count. Control: a clean restore passes
+    relates:
+      - id: store.seams.6
+        how: see
+    open:
+      - >-
+        The configuration of the managed store (automated backups, point-in-time restore) was not inspected;
+        this rule is about proving it, not whether it is switched on.
+      - >-
+        The known way round is a drill over an empty store, so the minimum count comes from the fixture
+        (inference).
+    note: Moved from the AWS cloud part because the drill is store-level.
+  - id: store.recovery.2
+    slug: crash-injection
+    since: 0.1.0
+    rule: >-
+      A stateful program is crash-injected: it is killed at random points in a scripted workload, restarted,
+      and its invariants are asserted.
+    detail: A harness per stateful program runs at land for the affected store.
+    level: program
+    why: >-
+      No crash was injected anywhere in the estate; the atomic-write row proposes it only for the write
+      itself. A harness that cannot break the invariant with a known flaw proves nothing.
+    kind: rule
+    strength: Hard
+    status: active
+    unless:
+      - kinds:
+          - library
+        reason: There is no state to lose.
+      - facets:
+          - stateless
+        reason: There is no state to lose.
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: sections 1, 18 and 23
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "3"
+        note: >-
+          a crash-injection harness per stateful program in the shared gate pack, run at land for the affected
+          store. Plant: with the flush removed from the atomic write, the injected kill breaks the invariant,
+          which proves the harness reaches the hard path. Control: the intact program passes
+    open:
+      - Written as a test in the kit, with no separate program.

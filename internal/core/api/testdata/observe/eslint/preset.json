@@ -1,0 +1,12 @@
+[
+  {"binding": {"tool": "eslint", "target": "source", "key": "eqeqeq", "severity": "error", "options": {"null": "ignore"}}, "layer": "base", "decision": "equality"},
+  {"binding": {"tool": "eslint", "target": "source", "key": "no-console", "severity": "warning"}, "layer": "base"},
+  {"binding": {"tool": "eslint", "target": "source", "key": "no-debugger", "severity": "error"}, "layer": "base"},
+  {"binding": {"tool": "eslint", "target": "source", "key": "no-alert", "severity": "error"}, "layer": "web"},
+  {"binding": {"tool": "eslint", "target": "source", "key": "no-restricted-globals", "severity": "error", "options": {"names": ["event", "name"]}}, "layer": "web"},
+  {"binding": {"tool": "eslint", "target": "source", "key": "no-shadow", "severity": "error", "options": {"allow": ["done"]}}, "layer": "web"},
+  {"binding": {"tool": "eslint", "target": "source", "key": "prefer-const", "severity": "error"}, "layer": "base"},
+  {"binding": {"tool": "eslint", "target": "source", "key": "no-eval", "severity": "error"}, "layer": "base", "excluded": {"overlay": "team", "decision": "legacy-eval"}},
+  {"binding": {"tool": "eslint", "target": "source", "key": "no-new-func", "severity": "error"}, "layer": "base", "excluded": {"overlay": "team", "decision": "legacy-func"}},
+  {"binding": {"tool": "eslint", "target": "source", "key": "curly", "severity": "error"}, "layer": "base"}
+]

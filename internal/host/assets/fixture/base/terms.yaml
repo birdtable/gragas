@@ -1,0 +1,10 @@
+format: 3
+terms:
+  - slug: gate
+    definition: A check that stops a push when it fails.
+    literal: make check
+  - slug: wrap
+    definition: Add what was being done to an error before it is returned.
+  - slug: stale-word
+    definition: A word no statement uses any more.
+    status: retired

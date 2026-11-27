@@ -1,0 +1,18 @@
+$ gragas coverage
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Rules to entries
+rule         standing  entries
+go.errors.1  planned   golangci-lint config: errorlint
+go.errors.2  planned   golangci-lint config: recommended
+go.errors.3  planned   none
+
+Entries to rules
+entry                              held by
+golangci-lint config: errorlint    go.errors.1
+golangci-lint config: recommended  go.errors.2
+
+  done       0 rules held, 2 entries explained
+--- stderr

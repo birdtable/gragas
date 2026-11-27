@@ -1,0 +1,420 @@
+part: daemon
+concern: access
+order: 5
+title: The local server surface
+summary: >-
+  A daemon that serves a local page or API is reachable only by expected callers: being local is no identity,
+  peer credentials or the gate on every request, one admission check, expected Host names, no change from
+  another origin, identity believed only from the gate's own connection, and no route that leaks what a caller
+  may not see. Servers and clients carry timeouts and body caps, and a served page gets its security headers
+  in one place.
+rules:
+  - id: daemon.access.1
+    slug: only-expected-callers
+    since: 0.1.0
+    rule: >-
+      Only the expected callers can reach a daemon, and being local is never an identity: peer credentials or
+      the gate's identity are checked on every request, never a header alone; each route and each
+      state-changing command declares who may call it; every route and command passes one admission check; and
+      a route or command with no entry fails.
+    detail: >-
+      Socket permissions or loopback bound who can reach the daemon; they decide nothing about who the caller
+      is. A loopback or container-bridge address is anybody. A command run on the machine builds the same
+      identity value a route builds (a local principal from the peer credentials of its own process) and
+      passes the same admission check, with no bypass for being on the machine. A request no source vouches
+      for is refused (service.authz.8).
+    level: program
+    why: >-
+      Practice; a bridge address is anybody, and a local bypass is the door every later surface walks through.
+      Written as a Go test in the kit or the store test helper; no separate program.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It serves nothing.
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          table test comparing the route and command tables with a caller list that refuses wildcards;
+          peer-credential test from another user; a test that a command reaches the core only through the
+          admission check; the gate door package exists. Plant: a route or a state-changing command added with
+          no entry fails, and a request from a loopback address with no identity that is admitted fails.
+          Control: every route and command listed and admitted through the one check passes
+    relates:
+      - id: service.authz.8
+        how: see
+    open:
+      - >-
+        A test from another user or address is proposed; no plant was recorded in the catalogue.
+  - id: daemon.access.2
+    slug: expected-host-names
+    since: 0.1.0
+    rule: >-
+      Every local HTTP server, in any language, listens on loopback by default, answers only expected Host
+      names, checks Origin against an allow list, needs a custom header for a request that changes a cookie,
+      sets strict cookie attributes, and refuses to listen wider without TLS and a login.
+    detail: >-
+      A local server is any HTTP server that runs on a person's machine: a daemon, a CLI's serve command or a
+      development tool, written in Go, TypeScript or a language added later. Strict cookie attributes are
+      HttpOnly, Secure where TLS is on, SameSite=Strict and a Path. A wider listen address is refused at start
+      unless TLS and an identity source are configured. Each language ships the same shared test; a new
+      language adds its binding, the rule does not change.
+    level: program
+    why: >-
+      Held in one program already; a browser DNS-rebinding run was not done. A local server is attacked the
+      same way whatever language it is written in.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          the same shared request table run against a TypeScript local server (Host, Origin, cookie header,
+          listen address). Plant: a TypeScript local server bound to 0.0.0.0 with no TLS, or answering Host
+          evil.example, fails. Control: a loopback server that refuses unexpected Host and Origin passes
+      - binding: go
+        class: test-kit
+        tier: "3"
+        note: >-
+          shared test that sends a request with Host: evil.example to the page handler and expects refusal,
+          lifted from the program that has it. Plant: a handler without a Host check returns 200 and fails.
+          Control: a handler that refuses unexpected hosts passes
+    open:
+      - A browser rebinding run was not done.
+  - id: daemon.access.3
+    slug: same-origin-change-only
+    since: 0.1.0
+    rule: >-
+      A state-changing request to a local server is accepted only from the server's own origin, not merely the
+      same site, and a change a browser sends from anywhere else is refused.
+    detail: >-
+      Same-site is not enough: every host under one private-network domain is one site on the Public Suffix
+      List, so another device's page on that network would pass a same-site check. The check compares the full
+      origin (scheme, host and port) with the server's own, and a request with Sec-Fetch-Site other than
+      same-origin, or an Origin not its own, is refused. Applies to a local server in any language.
+    level: program
+    why: >-
+      Three programs have a cross-site refusal; a same-site rule leaves a measured hole on a private network
+      where every device shares one site.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "3"
+        note: >-
+          the standard library's cross-origin protection wrapped around the handler (present in Go 1.27.3, run
+          go doc) plus an Origin equality check, tested with a POST carrying Sec-Fetch-Site same-site from a
+          sibling host. Plant: a same-site POST from a sibling host that is accepted fails, and a cross-site
+          POST that is accepted fails. Control: a same-origin POST passes
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          the same request table run against a TypeScript local server. Plant: a same-site POST from a sibling
+          host that is accepted fails. Control: a same-origin POST passes
+  - id: daemon.access.4
+    slug: identity-from-the-gate-only
+    since: 0.1.0
+    rule: >-
+      A peer's identity is believed only from the gate's own connection, on every request, and a spoofed
+      identity header is ignored; the identity value is built only in the door packages, and the core reads no
+      request header or URL.
+    detail: >-
+      A door is any way in: a route, a command, a watcher, a card. Each door builds the one identity value
+      (who, what they may do, which door, the subject) and hands it to the core; the core decides from that
+      value alone. An analyser over the core packages refuses any use of the request type, its headers or its
+      URL.
+    level: program
+    why: >-
+      Held in the shared door package. A core that reads a header can be steered by any caller who can set
+      one, and one identity value is what keeps every later door under the same check.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "3"
+        note: >-
+          door package tests that read identity only from the gate connection on every request. Plant: a
+          request with a spoofed identity header that sets identity fails. Control: identity from the gate
+          connection passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          an AST test over the core packages refusing any reference to the request's header or URL, and any
+          construction of the identity value outside the door packages. Plant: a planted header read in a core
+          package fails. Control: a core that takes only the identity value passes
+  - id: daemon.access.5
+    slug: server-and-client-timeouts
+    since: 0.1.0
+    rule: >-
+      Every http.Server sets ReadHeaderTimeout, ReadTimeout and IdleTimeout, every http.Client has a Timeout
+      or a context deadline, request bodies pass through a size cap, and all of them are constructed by the
+      shared web package; outbound hosts come from configuration, never from a request.
+    detail: >-
+      A fetch that follows a user-supplied address resolves and checks it first (server-side request forgery).
+      forbidigo with type analysis bans the default client, the bare get and post calls and the bare listen
+      call outside the shared web package; the security scanner's G112 and G114 are on (both verified firing
+      on 5 Nov). The scanner did not flag a client with no timeout or a server with only a header timeout, so
+      the other timeouts and the body cap are asserted by a test on the shared constructors.
+    level: program
+    why: >-
+      A client with no timeout hangs a CLI too, so this applies to any program that builds an HTTP server or
+      client. A construction analyzer was considered and not chosen: forbidigo on the type name also hits
+      parameter and return types (verified false positive).
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - facets:
+          - no-http
+        reason: A program that builds no HTTP server or client has none to time out.
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          forbidigo on the default client and bare HTTP calls outside the shared web package, gosec G112 and
+          G114, and a test on the web package's constructors forbidigo runs with analyze-types: true; the
+          constructors live in the shared web module, and the body cap is http.MaxBytesReader. Plant: http.Get
+          and ListenAndServe outside the web package fail, and a server with no ReadHeaderTimeout fails.
+          Control: the web package's constructor passes
+    review_question: >-
+      Does any outbound host here come from a request, and is it resolved and checked first?
+    open:
+      - >-
+        Half rule (calls banned, constructors tested); outbound-host request forgery stays review.
+  - id: daemon.access.6
+    slug: page-headers-and-templates
+    since: 0.1.0
+    rule: >-
+      A daemon that serves a page gets its security headers in one place, tested, and an embedded page uses
+      html/template or the framework's escaping, never text/template for markup.
+    level: program
+    why: >-
+      Practice; a daemon test reads the headers and a depguard ban covers the template package. It binds only
+      a daemon that serves a page; no target does today, and a daemon that answers an API only declares so
+      (daemon.lifecycle.3).
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    unless:
+      - facets:
+          - no-page
+        reason: A daemon with no page has no page to serve.
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          depguard ban of text/template in web packages, plus a daemon header test. Plant: a text/template
+          import in a web package fails, and a response missing the policy header fails. Control:
+          html/template and the full header set pass
+    relates:
+      - id: daemon.lifecycle.3
+        how: see
+  - id: daemon.access.7
+    slug: fixed-requests-never-a-proxy
+    since: 0.1.0
+    rule: >-
+      A daemon that holds another program's key exposes only a named list of fixed requests, each with its
+      address and request fixed in code, never a pass-through proxy.
+    detail: >-
+      A caller names a question from the list; it never supplies a path, host, method or header that reaches
+      the other program. A new question is a new entry in code, reviewed. Values a caller may pass are typed
+      and checked against the entry's own allow list.
+    level: program
+    why: >-
+      A proxy that forwards a key forwards it to anything a caller can name, which turns a read key into
+      whatever the other program's API allows.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test over the keyed client asserting every outbound request comes from the fixed table, and an
+          analyser refusing a request URL or path built from a caller's input in that package. Plant: a
+          handler that forwards a caller's path to the other program with the key fails. Control: a named
+          question with a fixed address passes
+  - id: daemon.access.8
+    slug: privileged-helper-closed-verbs
+    since: 0.1.0
+    rule: >-
+      Proposed, promoted when the design that introduces a privileged helper is approved: a privileged helper
+      runs only a closed list of verbs with fixed absolute command lines, checks each value against a list it
+      builds itself, uses no shell and an empty environment, arms each mutating verb, and has a planted
+      hostile-caller test.
+    detail: >-
+      The helper is its own binary with its own import closure. Each verb is an entry with a fixed absolute
+      command line in a system-protected folder; a caller passes only values, and the helper checks each
+      against a list it reads itself from the system, never one the caller sends. A mutating verb runs only
+      when armed by the owner. Promotion: when the operator approves the privileged-helper part of the design
+      named in evidence (its part 2), status becomes active, strength Hard, and the check is built; until then
+      the rule binds nothing and is not reported as a gap.
+    level: program
+    why: >-
+      A privileged helper is the one place a bug becomes root. The shape is ruled, but the design it encodes
+      is still proposed, and a rule ahead of its own design is what decision 64 warns against.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+      - ref: decision-47
+        backs: rule
+      - ref: decision-64
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a hostile-caller test that sends unknown verbs, extra arguments, shell metacharacters, a value
+          outside the helper's own list and a set environment, and asserts each is refused with nothing run.
+          Plant: a helper that runs a caller-supplied argument or inherits the caller's environment fails.
+          Control: a listed verb with a listed value, armed, passes
+    relates:
+      - id: cli.commands.27
+        how: see
+    open:
+      - >-
+        Proposed (decision 47): promoted when the operator approves part 2 of the access design.
+      - The registration-by-privilege twin is cli.commands.27, promoted when that design merges.
+  - id: daemon.access.9
+    slug: trust-mode-explicit
+    since: 0.1.0
+    rule: >-
+      A setting that decides whom a daemon believes has no default and is never detected, and a missing or
+      unknown value opens no listener, believes nobody, and is named by doctor.
+    detail: >-
+      The trust mode (which identity source a listener believes) is written by the owner. The daemon never
+      infers it from the platform, the network or a running process. Start with the value missing or unknown
+      logs the reason, opens no listener, and doctor prints the key and the allowed values.
+    level: program
+    why: >-
+      A misconfigured daemon must refuse rather than believe everybody, and a detected mode changes when the
+      machine changes, without anyone deciding.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a start test with the trust setting missing, and one with an unknown value, asserting no listener
+          opens and doctor names the key. Plant: a daemon that falls back to a default trust mode when the key
+          is missing fails. Control: a daemon that opens no listener and names the key passes
+  - id: daemon.access.10
+    slug: answer-discipline
+    since: 0.1.0
+    rule: >-
+      A route the machine cannot serve is absent from the route index and answers 404 with one fixed reason to
+      every caller, never 403; a route declares its methods and any other method answers 405 with Allow; and a
+      GET writes no state beyond one declared cache.
+    detail: >-
+      The route index and the 404s come from one table, so a capability the machine lacks is reported the same
+      way to a caller who may and one who may not use it. Each refused method has a negative test. A GET may
+      fill the one cache it declares; anything else it writes (a note, a counter, a last-seen time) is a
+      defect, and only an operation that changes things records what a look observed. Errors follow
+      service.errors.4: a non-2xx status with the JSON error body.
+    level: program
+    why: >-
+      These are the places a reader has to guess, and a reader that guesses breaks. 404, not 403, keeps a
+      capability list from leaking what a caller may not see; a GET that writes makes a look change what it
+      looked at.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a table test that builds the index and the absent-route answers from one table; a generated negative
+          test per route for every method not listed; a test that snapshots the store before and after every
+          GET route and allows only the declared cache to differ. Plant: a missing capability that answers
+          403, a route that accepts an unlisted method, and a GET that writes a note each fail. Control: a 404
+          with the fixed reason, a 405 with Allow, and a GET that leaves the store unchanged pass
+    relates:
+      - id: service.errors.4
+        how: see
+      - id: service.contract.9
+        how: see
+    note: service.contract.9 holds the GET rule for a service; this is the daemon twin.

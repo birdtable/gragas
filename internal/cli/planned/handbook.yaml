@@ -1,0 +1,10 @@
+name: handbook
+order: 360
+context: A
+ends: listing
+summary: "Read the handbook"
+examples:
+  - {line: "gragas handbook", does: "list its chapters"}
+  - {line: "gragas handbook <chapter>", does: "read one"}
+exits: ["done"]
+json: handbook

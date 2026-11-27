@@ -1,0 +1,302 @@
+part: arch
+concern: measures
+order: 7
+title: Architecture measures
+summary: >-
+  Numbers that show whether the structure is holding: coupling, the cost of adding a provider, change coupling
+  across a boundary, the exported surface, how shared packages age and how repositories move together. Most
+  are reports first; where a guessed ceiling would be beaten by a cheap cure the line is a rise that blocks
+  until the change says why.
+rules:
+  - id: arch.measures.1
+    slug: coupling-per-package
+    since: 0.1.0
+    rule: >-
+      Afferent and efferent coupling per package is reported, and a rise in a package's fan-out blocks until
+      the change says why.
+    detail: >-
+      Report Ca, Ce and instability per package. A package created after adoption may not exceed a fan-out
+      ceiling (a guessed number), and a package not in the baseline whose Ce exceeds it fails. The cheap cure
+      is a facade package that re-exports, so a fan-out line alone is easy to pass; the answered form needs no
+      guessed ceiling.
+    level: package
+    why: >-
+      In one repo the command package has Ce=43, the hook package 28 and the main package 25, and 3 of 325
+      edges run from stable to unstable.
+    kind: measure
+    strength: Answered
+    status: active
+    sources:
+      - ref: go-review-r-02-donor-section-gap
+        where: section 3.9
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. companion report from go list -json: Ca, Ce and instability per package; a
+          package not in the baseline whose Ce exceeds the ceiling fails; a rise in a package's Ce blocks
+          until answered. Plant: a new package importing 15 siblings fires the ceiling check; the cheap cure
+          (a facade that imports the 15 and is imported by the package) drops Ce and passes, which is why the
+          answered form is wanted. Control: a package with the same Ce as before passes
+    open:
+      - >-
+        The ceiling is a guess with no fault behind it; the report half is mechanical and the ceiling is not a
+        rule until a number has data. A prototype script exists with a known-positive check (an imported
+        package has Ca of at least 1); no plant for the ceiling.
+  - id: arch.measures.2
+    slug: cost-of-adding-a-provider
+    since: 0.1.0
+    rule: >-
+      A commit that adds a provider reports how many core files and folders it changed, and a change
+      that touches core files blocks until answered.
+    detail: >-
+      On the change that adds a new case to an existing seam (a new adapter) report the files and folders
+      touched outside the new adapter (git diff --name-only against the adapter globs), as a change-locality
+      report. It reports the result of the seam, not its form, so renaming does not satisfy it. A
+      decision-point alarm at a guessed level is optional.
+    level: program
+    why: >-
+      A new launcher took 6 files in 1 package in one repo and a second OS took 69 code files in 21 folders in
+      another; this is the measured result of arch.ports.1.
+    kind: measure
+    strength: Answered
+    status: active
+    when:
+      kinds:
+        - service
+        - cli
+        - daemon
+    sources:
+      - ref: p-08-splitting
+        where: section 5
+        backs: rule
+      - ref: p-08-splitting
+        where: section 20.2 item 1
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. companion report on a commit that adds an adapter, counting files and folders
+          touched outside adapter paths; touching core files blocks until answered. Plant: an add-adapter
+          commit that edits core files is reported and blocks until answered. Control: an add-adapter commit
+          that touches only the adapter passes
+    relates:
+      - id: arch.ports.1
+        how: see
+    open:
+      - >-
+        It could become a rule if the count of core files touched by an add-adapter commit were bounded, but a
+        bound needs data from real adds (none yet).
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "v1 evidence, not yet a source: own measure; no fault in our record"
+  - id: arch.measures.3
+    slug: change-coupling-per-ticket
+    since: 0.1.0
+    rule: >-
+      Change coupling across a boundary is computed per ticket or pull request, and a pair that crosses a
+      boundary without a visible link blocks a review until answered.
+    detail: >-
+      Group file pairs by ticket or pull request, never by commit (per commit it means nothing at an agent's
+      commit rate); ticket ids on commits make it possible. A pair crossing a package or repository boundary
+      with no import link is printed at land (ticket-grouped file-pair coupling, cross-language pairs read
+      first). The numbers (confidence 0.5, 3 tickets) are guesses.
+    level: program
+    why: >-
+      It is the one history idea with outcome support that was not computed. The trial rediscovered a known
+      seam.
+    kind: measure
+    strength: Answered
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: tornhill-code-crime-scene
+        where: chapters 7 and 8 on temporal coupling
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 7.2 item 1
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. change coupling per ticket from git log grouped by ticket id, pairs across a
+          package or repository boundary with no import link printed at land. Plant: a pair across a boundary
+          with no visible link opens a review and blocks until answered. Control: a pair with a recorded link
+          passes
+    open:
+      - >-
+        A report only; the numbers are guesses. Applies to services and shared packages. Not computed today.
+  - id: arch.measures.4
+    slug: exported-surface-not-size
+    since: 0.1.0
+    rule: >-
+      A package is judged by its exported surface, not its size; a rise in a package's exported count blocks
+      until the change says why, and no size line is set.
+    detail: >-
+      Report exported names per package at each tag from the generated listing of arch.shared.9, diffed
+      between tags and printed. The count is read with the merge-candidate report of code.size.
+    level: package
+    why: >-
+      One repo's command package has 117 non-test files and 37,566 non-blank lines, which no size line would
+      have caught early; the surface shows the cost.
+    kind: measure
+    strength: Answered
+    status: active
+    sources:
+      - ref: ousterhout-aposd
+        where: chapter 4
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. companion report of exported names per package at each tag from the generated
+          listing, diffed between tags and printed; a rise blocks until the change says why. Plant: a package
+          whose exported count rises between tags is reported and blocks until answered. Control: an unchanged
+          count passes
+    relates:
+      - id: arch.shared.9
+        how: see
+    open:
+      - >-
+        A package ceiling is the cheap-cure target (split into two packages), so a fail line is not offered; a
+        report has no plant and only a person reads it.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "v1 evidence, not yet a source: own measure; no fault in our record"
+  - id: arch.measures.5
+    slug: shared-package-watched-after-entry
+    since: 0.1.0
+    rule: >-
+      A shared abstraction is watched after entry: releases that forced a consumer change, signature churn,
+      option growth and callers using disjoint subsets.
+    detail: >-
+      Per-package release and consumer counts by release from the registry plus an exported-signature diff
+      across tags. The question each report asks is whether this should be two packages, and whether all its
+      callers change for one reason. There is no limit. A shared package past its churn baseline blocks until
+      the owner answers. A shared part with fewer than 3 importing surfaces is listed as a candidate to move
+      back.
+    level: package
+    why: >-
+      A shared abstraction is cheap to enter and dear to leave; option growth is the early signal that two
+      uses have drifted apart, and agents add an option to a shared call rather than question it. Entry is
+      gated by arch.shared.10 and nothing watched a package after it.
+    kind: measure
+    strength: Answered
+    status: active
+    when:
+      kinds:
+        - service
+        - web-app
+    sources:
+      - ref: ford-sathp
+        where: chapter 8
+        backs: rule
+      - ref: p-01-core-programming
+        where: five-list item 2
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 5.15
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. report of release and consumer counts per shared package, fan-in per shared part,
+          and exported-signature diffs across tags (surface files from arch.shared.9); a package past its
+          churn baseline blocks until the owner answers. Plant: a fixture shared part with one importer is
+          listed; a fixture with a known count prints that count. Control: a shared package within its
+          baseline passes
+    review_question: Do all its callers change for one reason, and should this be two packages?
+    relates:
+      - id: arch.shared.10
+        how: see
+    open:
+      - >-
+        Not measured. Report only; a fail on low fan-in is beaten by importing the part from one more file.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "v1 evidence, not yet a source: practice (anecdotal)"
+  - id: arch.measures.6
+    slug: lockstep-and-lag
+    since: 0.1.0
+    rule: >-
+      The repositories that release together and how far each consumer lags the newest shared version are
+      reported; a forced-newest rule is itself a cause.
+    detail: >-
+      Release tags per repository joined with the shared-package pins. The unit is the release, never the day,
+      because agent commit rates make day counts meaningless.
+    level: release
+    why: >-
+      A many-repo layout rests on pairs of repos not moving together; lockstep deployment signals a misplaced
+      boundary. Independent deployability is what the layout protects.
+    kind: measure
+    strength: Review
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: p-08-splitting
+        where: section 20.2 item 2
+        backs: rule
+      - ref: b-05-architecture-hard-parts
+        where: section 5.2 item 1
+        backs: rule
+      - ref: stopford-designing-event-driven-systems
+        where: chapter 16
+        backs: rule
+    review_question: >-
+      Which repositories moved together in the last releases, and is a forced-newest rule the cause?
+    open:
+      - No plant; a measure only. Applies to the multi-repo estate.
+  - id: arch.measures.7
+    slug: who-writes-each-store
+    since: 0.1.0
+    rule: >-
+      A file per service lists the stores and event families it writes and the services each flow includes,
+      compared with a scan of the writers.
+    detail: >-
+      The tool compares the file with the writers found by scanning write statements. Measure first, gate once
+      the list exists. An agent cannot infer ownership from the code, so the list is what makes a check
+      possible.
+    level: program
+    why: >-
+      Two seam cases of our own were this: no one could say which program wrote a shared store.
+    kind: measure
+    strength: Hard
+    status: later
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. a scan of write statements and event publishes compared with the per-service
+          ownership file. Plant: a write to a store not on the service's list fails once the list exists.
+          Control: a listed write passes
+    open:
+      - >-
+        The list is not yet there and no plant exists until it is built; it extends the rules that a service
+        publishes only the families it owns and that every flow has a journey.

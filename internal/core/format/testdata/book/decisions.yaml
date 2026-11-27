@@ -1,0 +1,12 @@
+format: 3
+decisions:
+  - slug: wrap-errors
+    title: Wrap every error
+    text: Wrapping keeps the cause and adds the step.
+    rejected: [return errors bare]
+    cites:
+      sources: [effective-go]
+      rules: [go.errors.1]
+      bindings: ["go.errors.1 golangci-lint wrapcheck"]
+    who: team-a
+    date: "2026-10-30"

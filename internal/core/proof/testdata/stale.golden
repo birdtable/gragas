@@ -1,0 +1,21 @@
+nothing:                             runs nothing; keeps 8
+one pair's examples:                 runs go.a.1@1.0.0 go.b.1@1.0.0 go.c.1@1.0.0 go.a.1@2.0.0 go.b.1@2.0.0 go.c.1@2.0.0; keeps 2
+one binding's key:                   runs go.a.1@1.0.0 go.b.1@1.0.0 go.c.1@1.0.0 go.a.1@2.0.0 go.b.1@2.0.0 go.c.1@2.0.0; keeps 2
+the review's pair:                   runs go.d.1@1.0.0 go.d.1@2.0.0; keeps 6
+a binding added:                     runs go.a.1@1.0.0 go.b.1@1.0.0 go.c.1@1.0.0 go.e.1@1.0.0 go.a.1@2.0.0 go.b.1@2.0.0 go.c.1@2.0.0 go.e.1@2.0.0; keeps 2
+a binding taken out:                 runs go.a.1@1.0.0 go.c.1@1.0.0 go.a.1@2.0.0 go.c.1@2.0.0; keeps 2
+the bindings in another order:       runs go.b.1@1.0.0 go.a.1@1.0.0 go.c.1@1.0.0 go.b.1@2.0.0 go.a.1@2.0.0 go.c.1@2.0.0; keeps 2
+a neighbour's cell missing:          runs go.a.1@1.0.0 go.b.1@1.0.0 go.c.1@1.0.0; keeps 5
+the review's cell missing:           runs go.d.1@1.0.0; keeps 7
+the config's bytes:                  runs go.a.1@1.0.0 go.b.1@1.0.0 go.c.1@1.0.0 go.d.1@1.0.0 go.a.1@2.0.0 go.b.1@2.0.0 go.c.1@2.0.0 go.d.1@2.0.0; keeps 0
+the config path:                     runs go.a.1@1.0.0 go.b.1@1.0.0 go.c.1@1.0.0 go.d.1@1.0.0 go.a.1@2.0.0 go.b.1@2.0.0 go.c.1@2.0.0 go.d.1@2.0.0; keeps 0
+the adapter of version 2.0.0:        runs go.a.1@2.0.0 go.b.1@2.0.0 go.c.1@2.0.0 go.d.1@2.0.0; keeps 4
+the tool's name:                     runs go.a.1@1.0.0 go.b.1@1.0.0 go.c.1@1.0.0 go.d.1@1.0.0 go.a.1@2.0.0 go.b.1@2.0.0 go.c.1@2.0.0 go.d.1@2.0.0; keeps 0
+a third tool version asked:          runs go.a.1@3.0.0 go.b.1@3.0.0 go.c.1@3.0.0 go.d.1@3.0.0; keeps 8
+version 1.0.0 no longer asked:       runs nothing; keeps 4
+a cell with no inputs:               runs go.a.1@1.0.0 go.b.1@1.0.0 go.c.1@1.0.0; keeps 5
+a cell whose inputs are another's:   runs go.a.1@1.0.0 go.b.1@1.0.0 go.c.1@1.0.0; keeps 5
+a cell failed on its inputs:         runs nothing; keeps 8
+a cell not run, tool missing:        runs go.a.1@1.0.0 go.b.1@1.0.0 go.c.1@1.0.0; keeps 5
+a cell not run, limit hit:           runs go.a.1@2.0.0 go.b.1@2.0.0 go.c.1@2.0.0; keeps 5
+no grid:                             runs go.a.1@1.0.0 go.b.1@1.0.0 go.c.1@1.0.0 go.d.1@1.0.0 go.a.1@2.0.0 go.b.1@2.0.0 go.c.1@2.0.0 go.d.1@2.0.0; keeps 0

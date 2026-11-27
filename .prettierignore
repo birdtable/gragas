@@ -1,0 +1,14 @@
+# The one ignore file of the format check: generated files and lockfiles are
+# never reformatted by hand. node_modules is ignored by default. Prettier reads
+# only the root's ignore files, so explorer/.gitignore's dist/ is not seen:
+# build output is ignored here at any depth.
+**/dist/
+*.gen.ts
+*.gen.js
+*.gen.d.ts
+*.gen.json
+docs/explorer-boards/canvas/
+explorer/core/parts.seed.yaml
+pnpm-lock.yaml
+package-lock.json
+dist/

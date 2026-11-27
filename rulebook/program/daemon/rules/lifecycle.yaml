@@ -1,0 +1,135 @@
+format: 3
+part: daemon
+concern: lifecycle
+rules:
+  - id: daemon.lifecycle.1
+    statement: "A program that replaces a running one keeps the previous binary and puts it back by itself when the new one does not answer healthy within a stated window; the revert is tested with a candidate built to fail."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no binary to replace.
+    reasoning:
+      pros:
+        - "Own measure: of eight programs, one has a working guard, three do it manually and four have none."
+    relations:
+      relates:
+        - cli.commands.5
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+  - id: daemon.lifecycle.2
+    statement: "A running old daemon is not mistaken for the new one when the command starts; the command compares the daemon's reported version."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      pros:
+        - A command that talks to a stale daemon draws results from the wrong version.
+    relations:
+      relates:
+        - daemon.lifecycle.3
+  - id: daemon.lifecycle.3
+    statement: "A daemon that serves a page pairs page and server versions: the contract carries a version, the page reads it on the first answer and again on every reconnect, and a mismatch stops or reloads the page with a sentence, never draws wrong."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    exemptions:
+      - kinds:
+          - no-page
+        reason: "A daemon that declares it answers an API only has no page to pair; its readers are held by daemon.lifecycle.7."
+    reasoning:
+      definition: "An upgrade with a page open stops or reloads. One pairing helper is shared; one program writes a schema field and never reads it. A daemon declares whether it serves a page; a daemon that answers an API only declares so, serves no HTML, and its readers learn the API number at setup instead (daemon.lifecycle.7)."
+      pros:
+        - "Unproven in two programs (a pairing constant and a number helper); the test is not built. No target serves a page today and each makes a page a separate program, but the rule is right for the day one does."
+    relations:
+      relates:
+        - daemon.lifecycle.7
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.lifecycle.4
+    statement: "A daemon that embeds a page is not silent when the page is missing: a build without the page serves a clear 404 and does not compile when the embedded folder is empty."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    exemptions:
+      - kinds:
+          - no-page
+        reason: A daemon with no page has nothing to embed.
+    reasoning:
+      pros:
+        - "A blank 200 for a missing page is invisible; held in part by the doctor command. It binds only a daemon that embeds a page; no target does today."
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.lifecycle.5
+    statement: "A daemon is asleep by default: where its service manager can start it on its socket it is started that way and exits after a stated idle time, a daemon that stays resident states why in a recorded decision with its measured idle cost, and no timer of its own runs while nothing needs it."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "Under systemd a .socket unit starts the service; under launchd the Sockets key does. A Go daemon takes the socket either manager passes with go-socket's listen.Activated, by the name the unit gives it (a launchd Sockets key), and a process the manager did not start is told so (listen.ErrNotActivated) rather than handed nothing. The idle time is a named constant, and the exit after it is a clean exit (daemon.units.3 does not restart it). Where the manager cannot hand a socket over to this program, the daemon stays resident but sleeps in accept between requests, and the decision says so. A timer of the daemon's own (a watch, a refresh) starts with the work that needs it and stops when that work ends. Applies to every daemon whatever it serves; a new manager adds its socket setting to the test table."
+      pros:
+        - "Idle power is measured on a home server and on a laptop battery; a process that keeps itself awake costs watts every hour of every day. It also keeps a daemon's behaviour explainable: nothing happens unless something asked."
+    relations:
+      relates:
+        - daemon.units.3
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.lifecycle.6
+    statement: "Every start reconciles what an earlier run left (locks, units, ids, sockets, temporary files) and reclaims what nothing owns, and a test plants an orphan of each kind and proves it is reclaimed."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "Reconciling is read, compare, then reclaim: a lock whose holder is gone is released, a unit or id no record names is removed, and each reclaim is logged with what was found. Remove and wipe commands reclaim the same kinds. A new kind of persisted state adds its orphan to the test table, so the rule stays true as state kinds grow."
+      pros:
+        - "A daemon that cannot start cleanly after a crash is fixed by hand at the worst moment, and nothing may be left running unwatched."
+    relations:
+      relates:
+        - go.concurrency.5
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.lifecycle.7
+    statement: "A reader of a provider that answers an API only learns the provider's API number at setup and in doctor, and on a mismatch draws nothing of the provider's, names which side to update, and doctor reports it with the deploy line."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+        - cli
+        - web-app
+    reasoning:
+      definition: "The number is the provider's one contract number (service.contract.2). A reader keeps the number it was built against, compares it with the provider's at setup and on every doctor run, and on a difference shows the sentence and the commands that bring the older side up, never a partial answer."
+      pros:
+        - "A reader that draws a provider's answer of another shape draws wrong numbers with confidence; checking once at setup and in doctor costs nothing at run time."
+    relations:
+      relates:
+        - service.contract.2
+    sources:
+      - ref: decision-65-daemon
+        backs: rule

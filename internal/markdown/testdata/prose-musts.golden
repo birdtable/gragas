@@ -1,0 +1,6 @@
+heading 1 line 1 "Rules in prose" #rules-in-prose
+heading 2 line 8 "Code" #code
+paragraph lines 3-4 "Every handler MUST log once.\nIt SHOULD not log twice."
+block lines 12-14 info "gragas" closed true under #code bytes 138-158 body 148-154 "id: x\n"
+must line 3 under #rules-in-prose "Every handler MUST log once."
+must line 6 under #rules-in-prose "A quoted line MUST count."

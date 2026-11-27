@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("version: 1\ncontainer:\n  image: registry.example/proof@sha256:0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF\n")

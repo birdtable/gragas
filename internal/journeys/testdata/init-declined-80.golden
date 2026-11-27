@@ -1,0 +1,24 @@
+$ gragas init --kind rulebook --name demo --owner team-a
+--- exit 6
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+After applying, add these to the rulebook:
+  pre-commit hook   gragas guard staged || exit 2
+  agent settings    gragas guard edit || exit 2
+  pre-merge-commit  gragas guard staged --merge-hook || exit 2
+  the gate runs     gragas guard staged
+  git ignore        .gragas/state.yaml
+
+what changes
+  a base rulebook demo at version 1.0.0
+  its first layer core and part core, with no rules yet
+
+what is written where
+  make rulebook.yaml
+  make structure.yaml
+  append to history.jsonl
+This was a dry run and nothing was changed. Add --apply to make these changes.
+
+  declined   nothing was changed
+    gragas init --kind rulebook --name demo --owner team-a --apply
+--- stderr

@@ -1,0 +1,26 @@
+[
+  {
+    "contract": "1.3",
+    "proposal": {
+      "slug": "wrap-more",
+      "target": "house",
+      "change": {
+        "anatomy": "A rule about wrapping.",
+        "pair": "pairs/1",
+        "binding": "golangci-lint/wrapcheck",
+        "sources": [
+          "effective-go"
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "waiver-pattern",
+          "text": "Three waivers name one shape: an error returned bare from a loop."
+        }
+      ],
+      "state": "open",
+      "link": "https://example.org/p/1",
+      "opened": "2026-11-02"
+    }
+  }
+]

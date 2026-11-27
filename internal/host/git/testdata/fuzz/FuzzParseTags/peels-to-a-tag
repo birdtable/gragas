@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("refs/tags/v1\x00tag\x0089abcdef0123456789abcdef0123456789abcdef\x00tag\x000123456789abcdef0123456789abcdef01234567\n")

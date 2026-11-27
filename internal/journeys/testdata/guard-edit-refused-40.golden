@@ -1,0 +1,18 @@
+$ gragas guard edit
+--- exit 5
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Lifecycle fields this edit changes by
+hand
+about             field
+rule:go.errors.2  status
+3 columns not shown: the command, before, after
+
+  refused   
+  language/go/rules/errors.yaml changes
+  status of rule:go.errors.2 by hand
+    gragas rule promote go.errors.2
+--- stderr
+refused: language/go/rules/errors.yaml changes status of rule:go.errors.2 by hand
+instead: gragas rule promote go.errors.2

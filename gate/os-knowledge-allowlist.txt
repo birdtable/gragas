@@ -1,0 +1,13 @@
+# The Go files that know an operating system exists today: a system's difference is the
+# platform libraries' to name, never a gragas file's.
+# Each line is "<path> <kinds> <what empties it>", in path order: the kinds are the
+# letters A to F of internal/oscode_kinds_test.go, and the rest of the line says in
+# plain words the change that empties the file, naming no issue by its number. The reader counts what a product file may not know: it stops
+# counting an octal given to a call, filepath.ToSlash, FromSlash, SplitList and ListSeparator,
+# os.PathListSeparator, a lone backslash, the types fs.FileMode and os.FileMode, and the
+# literal "/dev/null" compared with ==, != or a case.
+# The list is exact: internal/oscode_kinds_test.go is red for a file that knows a
+# system and has no line, for a line whose file no longer does, and for a line
+# whose kinds are not the file's. The list only shrinks against its merge base with
+# origin/main. Nothing here is a permission.
+internal/host/trust/fix_test.go BCD the trust tests' system code moves to the platform libraries

@@ -1,0 +1,117 @@
+format: 3
+part: supply
+concern: scans
+rules:
+  - id: supply.scans.1
+    statement: "A known-vulnerability scan of dependencies runs in the pre-push gate (in the release gate only when it does not fit the push budget), over the source for Go and over the lockfile for web, its result is read as text, and it fails on high severity."
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "The scan is a member of the one gate command, so the pre-push hook runs it on every push; a land tier, where a repo has one, runs it again. When the scan's network wait does not fit the hook budget of gates.hooks.4 it moves to the release workflow and still blocks the release. For Go the scan is reachability-aware and runs in source mode with the tool pinned in the shared makefile fragment. For web it is the package manager audit with --audit-level high (severity-filtered) over the lockfile, pnpm-lock.yaml, with a planted vulnerable version and a clean control; its ignore entries carry an expiry date and a reason."
+      pros:
+        - "A dependency with a known vulnerability is the cheapest way in for an attacker. Before this rule the word vulnerability had no hit in the web catalogue, and audit appeared only as a tier-4 report. The Go scan was in six of seven repositories already. There is no hosted land job, so a scan placed only at land had no tier that runs."
+    relations:
+      relates:
+        - gates.hooks.4
+        - supply.scans.7
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+      - ref: operator-points
+        backs: rule
+    replaced_by: supply.scans.7
+  - id: supply.scans.2
+    statement: "The artifact that ships is scanned for known vulnerabilities, not only the source, and the gate reads the text of the result."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A zero exit can still print a module-level advisory, so the text is read. The scan runs on the candidate at land when release files change, and again on the shipped artifact after publish as a report. A library ships no binary, so the open question is whether a library is exempt. The command is govulncheck -mode=binary."
+      pros:
+        - "A scan of the source can pass while the built binary carries a vulnerable module; one binary exited 0 and printed a module-level advisory."
+  - id: supply.scans.3
+    statement: "A security static analyser runs, and every exclusion is named with a reason."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Four rule families are enabled by name so an exclusion cannot drop them silently: SQL built by formatting (G201), SQL built by concatenation (G202), subprocess launched with variable data (G204) and weak randomness (G404)."
+      pros:
+        - "The analyser is the largest source of suppressions, so an unnamed exclusion can quietly remove the families that matter."
+    relations:
+      relates:
+        - supply.scans.4
+        - supply.scans.6
+    sources:
+      - ref: hoffman-web-app-security
+        where: session vulnerabilities and SQL injection
+        backs: rule
+      - ref: harsanyi-100-go-mistakes
+        where: common SQL mistakes
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: gosec
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: supply.scans.4
+    statement: "All SQL is parameterised, so no SQL text is built from data and identifiers come from a closed list."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "SQL text built from data is the injection fault. In the Go estate no single-line Sprintf SQL existed in six repositories, so this pins good practice and fixes no live fault."
+    sources:
+      - ref: hoffman-web-app-security
+        where: SQL injection
+        backs: rule
+  - id: supply.scans.5
+    statement: "A child process starts with an argument list, never a shell string with data in it; an option terminator comes before data arguments."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A person's own pager or command line is the named exemption, with a reasoned nolint. An exempt case is a person own $PAGER or command line. The scan targets sh -c and other shell-with-data forms."
+      pros:
+        - "A shell string with data in it is command injection. The three shell-string sites in the Go estate were all a person's own pager or command line."
+    sources:
+      - ref: hoffman-web-app-security
+        where: command injection
+        backs: rule
+  - id: supply.scans.6
+    statement: "Security randomness comes from the cryptographic generator, the non-cryptographic generator is banned for tokens, and a secret is compared in constant time."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The compare scan targets == on values with secret-named variables (token, secret)."
+      pros:
+        - "A token from the ordinary generator is guessable, and an equality compare of a secret leaks it by timing. The three imports of the ordinary generator found were a tool, a solver and a fixture."
+    sources:
+      - ref: hoffman-web-app-security
+        where: session vulnerabilities
+        backs: rule
+  - id: supply.scans.7
+    statement: "A known-vulnerability scan of dependencies runs in the full gate, which the land job runs on the merged tree before main, over the source for Go and over the lockfile for web; its result is read as text, and it fails on high severity."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The scan is a member of the one gate command's full tier. The land job calls the push tier and then the full tier, so the scan runs on every change before it reaches main, and the release runs it again. The pre-push hook may leave it out: its list is a declared subset of the land job's (gates.command.1). For Go the scan is reachability-aware and runs in source mode with the tool pinned in the tools module. For web it is the package manager audit with --audit-level high (severity-filtered) over the lockfile, pnpm-lock.yaml, with a planted vulnerable version and a clean control; its ignore entries carry an expiry date and a reason."
+      pros:
+        - "A dependency with a known vulnerability is the cheapest way in for an attacker. The scan waits on the network, which the push budget cannot carry on every push, so its home is the full tier. Before main it still runs on every change: the land job runs the full tier on the merged tree, so nothing the scan would refuse reaches main."
+    relations:
+      relates:
+        - gates.command.1
+        - supply.scans.1
+    sources:
+      - ref: rulebook-55-ruling
+        backs: rule
+      - ref: fleet-decisions-pd-142
+        backs: rule
+      - ref: decision-65-supply
+        backs: rule

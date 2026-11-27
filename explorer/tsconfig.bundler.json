@@ -1,0 +1,14 @@
+{
+  "$comment": "Bundler mode (ts.compiler.3): a package the bundler reads emits nothing; the bundler resolves its imports and a relative import carries its .ts extension. The contract is read from its source, never from its dist: its build writes into the tree, and the members (typecheck, lint, test) must write nothing under the checkout (test/members-write-nothing.test.ts). packages/core/vitest.config.ts carries the same two names.",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@gragas/contract": ["./packages/contract/src/main.ts"],
+      "@gragas/contract/fixtures": ["./packages/contract/src/fixtures/index.ts"]
+    }
+  }
+}

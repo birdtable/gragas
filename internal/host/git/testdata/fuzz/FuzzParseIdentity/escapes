@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("user.name\n\x1b[31mAda\x1b[0m\x00user.email\na@\x1b]0;t\x07example.com\x00")

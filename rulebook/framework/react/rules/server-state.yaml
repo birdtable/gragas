@@ -1,0 +1,96 @@
+format: 3
+part: react
+concern: server-state
+rules:
+  - id: react.server-state.1
+    statement: "Server state lives in one query cache with a stated freshness, reached through gated hooks; none of it is copied to local state, and no second cache library is used."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The query lint plugin runs at error level with its exhaustive-deps, stable-client, no-rest-destructuring and no-unstable-deps rules. A lint for derived state flags server data copied into state by an effect (`no-derived-state`, `no-initialize-state` of the you-might-not-need-an-effect plugin; rule names from its README, not run). A restricted-imports rule bans the other server-state libraries (swr, apollo, rtk-query). No hand-made fetch cache exists. A gated read is never revived by a refetch, which is swept rather than linted. A hand store on a console page is an instruction, not a check."
+      pros:
+        - "Two stores for one resource show two answers, and a copy in local state goes stale without a signal. The import ban and the lint hold the mechanical half; the gated-read half is held by a sweep."
+    sources:
+      - ref: tanstack-query-docs
+        where: important defaults
+        backs: rule
+      - ref: react-docs
+        where: You Might Not Need an Effect
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.server-state.2
+    statement: "Cache freshness settings (stale and garbage-collection times) come only from one policy file, a query key's first segment comes from a key file, and a key namespace is declared once."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "A literal stale time or gc time anywhere else fails; a query key built with an inline first segment fails; two key files that claim the same namespace fail. The underlying rule is that a value that decides behaviour has one home."
+      pros:
+        - "Freshness set per call site drifts, and two key namespaces that collide invalidate each other's data."
+    sources:
+      - ref: tanstack-query-docs
+        where: query keys and caching
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.server-state.3
+    statement: "Fan-out reads use the gated multi-query hook, and results are joined by id through a map, never by array position."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: The combine function is hoisted so it is stable between renders. A position-based join breaks the moment the order of the requests or the responses changes.
+      pros:
+        - Results joined by position are silently attached to the wrong record once order changes.
+    sources:
+      - ref: tanstack-query-docs
+        where: parallel and dynamic queries
+        backs: rule
+  - id: react.server-state.4
+    statement: "A gated infinite query de-duplicates by id when it flattens pages, and a cursor is never put in a plain query key."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "Pages from an outside source can overlap when records are added between requests; flattening without a de-duplication shows a record twice. The cursor belongs to the infinite query's page parameter, not to the key of a plain query."
+      pros:
+        - "A cursor in a plain key creates a new cache entry per page and loses the list; overlapping pages repeat records."
+    sources:
+      - ref: tanstack-query-docs
+        where: infinite queries
+        backs: rule
+  - id: react.server-state.5
+    statement: "No `useEffect` calls fetch; data comes from the query hooks."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "A lint selects an effect call whose callback holds a `fetch` call (selector with descendant). It is partial: it misses a helper called inside the effect. The stronger form is typed lint that flags a floating promise inside an effect."
+      pros:
+        - "An effect that fetches has no cache, no dedupe, no cancel and races on fast navigation."
+    sources:
+      - ref: react-docs
+        where: You Might Not Need an Effect
+        backs: rule
+      - ref: decision-65-react
+        backs: rule

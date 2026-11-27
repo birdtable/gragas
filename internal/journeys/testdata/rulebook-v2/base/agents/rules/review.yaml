@@ -1,0 +1,304 @@
+part: agents
+concern: review
+order: 4
+title: Reviewer lenses and verdicts
+summary: >-
+  Each area of judgement has a read-only reviewer lens that stores a verdict tied to the content. A stored
+  verdict can block landing but never clears a change alone; a lens has its own plant before its verdicts
+  count; and review reads for understanding and for the rows no check can hold.
+rules:
+  - id: agents.review.1
+    slug: reviewer-verdict-blocks-land
+    since: 0.1.0
+    rule: >-
+      A missing, stale or failing reviewer verdict for a touched area blocks landing, a pass is needed but
+      never enough alone, the reviewer is a fresh session that did not write the code and re-runs the gate
+      from a clean checkout of the tip with a count that differs from the close a finding, and load-bearing
+      paths need a reviewer of a different model family from the author.
+    detail: >-
+      Decision 43 (option A1). The land check reads one stored verdict file per lens, holding the lens, the
+      model family, the content hash of the diff plus the card, and the verdict, and refuses a verdict that is
+      missing, stale (the hash names another tree) or failing for any area the change touches (the area to
+      reviewer map). A pass never clears a change by itself: an AI review is a sensor that opens a finding,
+      and the person or gate closes it. Load-bearing paths are the protected-path list and the
+      area-to-reviewer map; for them the reviewer must be of a different model family from the author, and the
+      land check refuses the same family. A block is overridden only by a second reviewer of yet another model
+      family, with a recorded reason and ticket (a reviewer-override trailer naming the reviewer, the reason
+      and the ticket), and every override appears in the weekly digest. Same-family review shares blind spots.
+      The reviewer is a session that wrote none of the change; it checks out the tip into a clean tree, runs
+      the gate there and compares its counts (tests run, checks run, findings) with the counts the author's
+      close reported; any difference is a finding in the verdict.
+    level: process
+    why: >-
+      Argued: no study supports AI review as a verdict (principles report P-09 section 5.6). Our own evidence
+      is that review finds faults: one project's designer agent found 31 of 72 and another's reviewers 16, and
+      a spec-against- diff lens found a missing case that tests had not.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-43
+        backs: rule
+      - ref: decision-31
+        backs: rule
+      - ref: decision-33
+        backs: rule
+      - ref: p-09-agentic-development
+        where: sections 5.6 and 9.3
+        backs: rule
+      - ref: decision-65-agents
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the land check reads reviewer-verdicts/<lens>.json, one stored verdict file per
+          lens (lens, model family, content hash of the diff plus card, verdict) and refuses a missing, stale
+          or failing verdict for a touched area and, on load-bearing paths, a reviewer of the same model
+          family as the author; an override is a trailer naming a reviewer of yet another family, a reason and
+          a ticket. Plant: a change with no verdict for a lens is refused; a change whose verdict hash names
+          another tree is refused; a load-bearing change reviewed by the author's own family is refused.
+          Control: a change with a current passing verdict from a different family passes this check and still
+          runs every gate
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the verdict file carries the reviewer's session id and the counts from its
+          clean-checkout gate run; the land check refuses a verdict whose session authored a commit of the
+          change or whose counts differ from the close without a finding. Plant: a verdict written by the
+          authoring session is refused; a verdict whose test count differs from the close with no finding is
+          refused. Control: a verdict from a fresh session with equal counts passes
+    review_question: >-
+      Did a lens of a different model family read this change, and does its stored verdict name the tree?
+    relates:
+      - id: agents.review.2
+        how: see
+      - id: agents.review.3
+        how: see
+      - id: agents.review.4
+        how: see
+    open:
+      - >-
+        Held at the donor as five lenses with a verdict file each; in our estate it is planned.
+      - >-
+        The lens judgement itself is review; only the presence and the tie of the verdict is enforced.
+      - The weekly digest that lists overrides does not exist yet.
+    note: >-
+      One merged rule (decision 43). It carries the reference organisation's stored-verdict-blocks-landing
+      rule, the UI reviewer-lens rule's sensor clause and the handbook rule that a review opens a finding and
+      never clears a change. The lens definition is agents.review.2, its plant is agents.review.3 and the
+      threat questions are agents.review.4.
+  - id: agents.review.2
+    slug: read-only-lens-per-area
+    since: 0.1.0
+    rule: >-
+      Each judgement area has a read-only reviewer lens that returns a verdict for one concern, stored tied to
+      the content and not the sha, run on the final content and given only the diff and the card.
+    detail: >-
+      A lens is read-only (read, search and list tools only) and the review runner, not the lens, writes its
+      verdict file. For Go the areas are command-line output, state and daemon safety; for the web the areas
+      are design system, accessibility, permissions, structure and spec-vs-diff. A model gives the pass or
+      fail on a judgement rule such as is the name accurate or is the abstraction right.
+    level: process
+    why: >-
+      A lens given more than the diff and the card can be steered by the author's account of the change, and a
+      verdict tied to a sha goes stale on a rebase while the content is unchanged.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: decision-31
+        backs: rule
+      - ref: decision-33
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.6
+        backs: rule
+    review_question: >-
+      Did the lens run on the final content, see only the diff and the card, and write a verdict that names
+      the tree?
+    relates:
+      - id: agents.review.3
+        how: see
+    open:
+      - No Go lens exists yet; the web lenses are held at the donor only.
+      - >-
+        A lens binds only once promoted (decision 44): the plant in agents.review.3 must catch the planted
+        fault in at least 9 of 10 runs.
+      - "v1 evidence, not yet a source: A (31 of 72 and 16 faults found by review)"
+  - id: agents.review.3
+    slug: lens-has-its-own-plant
+    since: 0.1.0
+    rule: >-
+      A reviewer lens has its own plant, a stored bad diff it must fail and a clean control it must pass,
+      before its verdicts count.
+    detail: >-
+      At each change to the lens and at release the gate gives the lens the stored bad diff and requires a
+      failing verdict that names the planted fault, plus a passing verdict on the clean control. Model output
+      varies, so the run is repeated: the lens is promoted when it catches the planted fault in at least 9 of
+      10 runs and wrongly flags the clean control at most once, and a lens that passes the bad diff or fails
+      the control is suspended. The stored bad diff holds a wrapper that only forwards and a swallowed error;
+      the bad page for a web lens is a known bad page. A lens prompt reduced to always-pass is suspended. The
+      lens itself is read-only.
+    level: process
+    why: >-
+      An instrument that cannot fail carries no information, and a lens is a prompt that can drift with a
+      model change.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-44
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.6
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. companion lens-test runs the lens on a stored bad-diff or page and a clean
+          control over several runs with a pass threshold, suspending a lens that fails the control or passes
+          the bad input; an eval harness with assertions could host it. Plant: the stored bad diff itself, and
+          a lens prompt reduced to always-pass is suspended. Control: the clean control diff must pass
+    open:
+      - Model calls are nondeterministic, so it needs repeated runs and a threshold.
+      - >-
+        The eval harness (promptfoo) was found by search only, not opened or run; its release dates conflict
+        between sources.
+      - >-
+        v1 evidence, not yet a source: D (a lens carries the most faults found, 31 of 72)
+    note: >-
+      Merges the UI rule and the handbook rule, and the plant half of the Go review row. The control is what
+      stops a lens that fails everything.
+  - id: agents.review.4
+    slug: trust-boundary-threat-questions
+    since: 0.1.0
+    rule: >-
+      A change that crosses a trust boundary answers a short list of threat questions in the change: what is
+      newly reachable, by whom, and what would an attacker try first.
+    detail: >-
+      This is continuous threat modelling: a full model per story is too heavy. The baseline is kept with its
+      notable changes. Paths marked as trust boundaries force the questions; a model judges the answers, and a
+      reader checks them on sensitive paths.
+    level: process
+    why: >-
+      An agent can invent an answer that passes any presence check, so the answer needs a reader.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tarandach-coles-threat-modeling
+        where: chapter 5, continuous threat modeling
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 3
+        backs: rule
+    review_question: >-
+      What is newly reachable through this change, by whom, and what would an attacker try first?
+    open:
+      - >-
+        A change-template field on trust-boundary paths could be checked for presence only; an invented answer
+        passes it.
+  - id: agents.review.5
+    slug: review-reads-for-understanding
+    since: 0.1.0
+    rule: >-
+      Review reads for understanding and for the rows no check can hold: is the name accurate, is the
+      abstraction right, and who owns the rule.
+    detail: >-
+      Each rule has one owner. The reviewer agent becomes a check only if its verdict blocks the land
+      (agents.review.1).
+    level: process
+    why: >-
+      Checks hold the mechanical rules; what remains is judgement that only a reader can make.
+    kind: instruction
+    strength: Review
+    status: proposed
+    review_question: Is the name accurate, is the abstraction right, and who owns this rule?
+    relates:
+      - id: agents.review.1
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      The reference rule's three questions; the rest of the owner-away rule belongs in the handbook.
+  - id: agents.review.6
+    slug: second-round-asks-for-the-fix-to-the-kind
+    since: 0.1.0
+    rule: >-
+      When a review round finds another instance of a gap that an earlier round found, the reviewer asks for the
+      fix to the kind of gap, with a check that fails on any new instance, and names where it belongs, not a fix
+      of the one instance.
+    detail: >-
+      The fix to a kind is the one place every instance goes through: the reader, the parser, the shared helper,
+      the check. The reviewer names it in the round, and the builder changes that place and its test; a patch of
+      the instance in hand is sent back. The check is a test, a lint rule or a tree scan that fails on the next
+      instance of the kind, so the class cannot return unseen. A third round on the same kind means the second
+      round did not name it.
+    level: process
+    why: >-
+      One review went five rounds, one spelling of the same reference per round, and the fix to the kind (read the
+      decoded data, not the raw text) came in round five; another project needed four pull requests for the
+      same class.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: birdtable-study-issue-641
+        where: item 2
+        says: >-
+          one spelling of the same token reference per round ... came only in round 5 ... needed 4 PRs for the same
+          class.
+        backs: rule
+    review_question: >-
+      Is this finding an instance of a gap found before in this change, and if so, which one place fixes the kind?
+    relates:
+      - id: agents.review.1
+        how: see
+      - id: gates.measures.5
+        how: see
+  - id: agents.review.7
+    slug: the-reviewer-breaks-each-new-guard
+    since: 0.1.0
+    rule: >-
+      A fix round reviews only the delta, and the reviewer breaks each new guard by hand; a guard that no test
+      catches when broken is a finding.
+    detail: >-
+      A guard is a check, a deny, a plant or a refusal the change adds. The reviewer makes the change the guard
+      should refuse and sees it refused, then reverts. A project may hold this in test form as a planted
+      violation and a fixed twin (gates.plants.1); the reviewer still breaks the one guard the plant does not
+      cover. On a fix round the reviewer reads what changed since the last round and the record of that round,
+      not the whole change again (agents.review.2).
+    level: process
+    why: >-
+      Every security change of one project needed two or more rounds, and breaking the guards found the ones
+      the tests did not hold.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: agents-reasons-stated
+        backs: rule
+    review_question: >-
+      Which guards does this change add, did the reviewer break each one by hand, and which had no test that
+      caught the break?
+    relates:
+      - id: agents.review.2
+        how: see
+      - id: agents.review.6
+        how: see
+      - id: gates.plants.1
+        how: see
+    open:
+      - >-
+        Planned check: the review record lists each new guard with the break the reviewer made. No tool key is
+        bound yet.

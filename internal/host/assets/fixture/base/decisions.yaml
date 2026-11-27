@@ -1,0 +1,26 @@
+format: 3
+decisions:
+  - slug: wrap-errors
+    title: Wrap every error
+    text: Wrapping keeps the cause and adds the step that failed.
+    rejected: [return errors bare, log and return]
+    cites:
+      sources: [effective-go, error-study]
+      rules: [go.errors.1]
+      bindings: ["go.errors.1 golangci-lint wrapcheck"]
+    who: alex
+    date: "2026-09-02"
+    superseded_by: wrap-errors-again
+  - slug: wrap-errors-again
+    title: Wrap every error, with the step named
+    text: The step is named in the message, not only the call.
+    cites:
+      rules: [go.errors.1]
+    who: alex
+    date: "2026-10-03"
+    supersedes: wrap-errors
+  - slug: house-call
+    title: Forms are labelled
+    text: Every form field has a label the reader can see.
+    who: alex
+    date: "2026-10-20"

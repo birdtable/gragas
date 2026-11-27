@@ -1,0 +1,19 @@
+# The caps of internal/core and internal/host that no test holds at their
+# boundary yet (tests.generated.7), one a line: the package path and the
+# constant, then two spaces, a # and what is missing. internal/caps_test.go
+# fails a cap that has no boundary test and is not listed, and a listed cap
+# that has one, so a line leaves when its test lands. gate/baselines.yaml
+# counts the lines (owed-caps), so the list only falls: a cap added with no
+# test cannot be added here to stay green.
+internal/core/link.maxText  # has no test at its cap
+internal/core/link.maxRefusals  # has no test at its cap
+internal/core/format.MaxNameWords  # has no test at its cap
+internal/host/jsonschema.maxSchemaErrors  # has no test at its cap
+internal/host/jsonschema.maxMessage  # has no test at its cap
+internal/host/term.maxLine  # has no test at its cap
+internal/host/tool.maxShebang  # has no test at its cap
+internal/host/tool.MaxOutput  # has no test at its cap
+internal/host/git.maxStdout  # has no test at its cap
+internal/host/git.maxStderr  # has no test at its cap
+internal/host/git.maxListing  # has a test one over the cap, and none at it
+internal/host/git.maxRev  # has no test at its cap

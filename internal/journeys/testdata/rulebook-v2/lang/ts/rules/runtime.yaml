@@ -1,0 +1,112 @@
+part: ts
+concern: runtime
+order: 6
+title: Node runtime and test runner
+summary: >-
+  TypeScript runs as ES modules on one Node major, declared once in the project template, with no deprecated
+  platform modules, and one unit test runner in every project.
+rules:
+  - id: ts.runtime.1
+    slug: one-node-major
+    since: 0.1.0
+    rule: >-
+      The Node version is declared in the project template, and one Node major appears in every declaration:
+      the version file, `engines`, the types package and the deploy runtime.
+    detail: >-
+      `package.json` carries `engines`; the version file the gate reads (not an nvm-only file) is byte-equal to the template's; `engine-strict` is
+      on; the types package for Node (`@types/node`) and the cloud runtime setting name the same major. The
+      check reads `engines` with npm-package-json-lint's `require-engines`.
+    level: package
+    why: >-
+      Two Node majors in one project mean the code that passes tests runs on a different runtime in
+      production. Neither of two donor sites declared Node at all (evidence A).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: nodejs-docs
+        where: release schedule
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          npm-package-json-lint 11.0.1 `require-engines` on package.json, `.nvmrc` byte-compared to the
+          template, `engine-strict` true, and a test comparing the major in engines, the types package and the
+          runtime setting. Plant: a package.json without engines fails with require-engines; a types package
+          on another major fails. Control: a package.json with engines matching `.nvmrc` passes
+    open:
+      - >-
+        The comparison across the types package and the runtime setting is written from the source's list; the
+        lint tool itself was run.
+      - "v1 evidence, not yet a source: A (neither donor site declared it)"
+  - id: ts.runtime.2
+    slug: no-deprecated-core-modules
+    since: 0.1.0
+    rule: A short list of deprecated platform core modules may not be used.
+    detail: >-
+      The list is data with the reason for each entry and the replacement; an import of a listed module fails.
+      It is a boundary rule enforced by the import lint. Biome form: `noRestrictedImports` with the same list,
+      each entry carrying its replacement in the message.
+    level: file
+    why: >-
+      A deprecated core module is removed in a later Node major and breaks the upgrade.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: nodejs-docs
+        where: deprecations
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          no-restricted-imports with the list of deprecated core modules, each with its replacement in the
+          message. Plant: an import of a listed deprecated module fails. Control: the replacement module
+          passes
+    open:
+      - The list's contents are not in the source; they are set at adoption.
+  - id: ts.runtime.3
+    slug: one-unit-test-runner
+    since: 0.1.0
+    rule: One unit test runner is used in every project.
+    detail: >-
+      The runner is Vitest. Jest, mocha and ava are banned entries in the manifest config; the built-in
+      `node:test` is banned in new files by no-restricted-imports with a baseline that only falls until the
+      existing files migrate. The rule is read per project, not per estate. Migration is ordered: the
+      recorded-reads selector is proved on the runner first, then the files move in the same change. Biome
+      form for the import half: `noRestrictedImports` on `node:test` with the same shrink-only baseline; the
+      manifest ban is engine-free.
+    level: package
+    why: >-
+      Two runners double the setup and split the test selection. A donor site had 87 of the 103 built-in
+      runner files and is the one that must migrate.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-10
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: syncpack
+        tier: "1"
+        note: >-
+          syncpack banned entries for jest, mocha and ava with vitest in the allowed groups, and
+          no-restricted-imports of `node:test` with a shrink-only baseline. Plant: an import of `node:test` in
+          a new file fails; existing files are counted down by the baseline. Control: a Vitest import passes
+    open:
+      - "Order of work set by the source row: selector proof before migration."
+      - >-
+        v1 evidence, not yet a source: D (87 of the 103 built-in runner files in one donor site)

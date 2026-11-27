@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("100644 blob 89abcdef0123456789abcdef0123456789abcdef 2\t.GIT/hooks/pre-commit\x00")

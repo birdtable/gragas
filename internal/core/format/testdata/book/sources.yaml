@@ -1,0 +1,8 @@
+format: 3
+sources:
+  - slug: effective-go
+    kind: guide
+    title: Effective Go
+    locator: https://go.dev/doc/effective_go
+    attribution: The Go authors
+    verified: "2026-11-01"

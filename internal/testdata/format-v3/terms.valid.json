@@ -1,0 +1,9 @@
+[
+  {
+    "format": 3,
+    "terms": [
+      {"slug": "digest", "definition": "The hash of some bytes, written as the algorithm, a colon and the lower-case hexadecimal digits.", "literal": "sha256"},
+      {"slug": "release", "definition": "The rules, bindings and presets at one signed tag.", "status": "retired"}
+    ]
+  }
+]

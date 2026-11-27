@@ -1,0 +1,335 @@
+part: ts
+concern: cycle
+order: 11
+title: TypeScript in the development cycle
+summary: >-
+  What a TypeScript or JavaScript project adds to the moments of the development cycle: a format check and
+  the lockfile at commit with no typed lint there, the install and the framework step behind the pin, the
+  type check and the typed lint as their own push members with their threads and cache, capped test workers,
+  coverage out of the blocking tiers, and the test shapes that set the push time. These lines add members to
+  the core moments and never a moment of their own.
+rules:
+  - id: ts.cycle.1
+    slug: format-check-and-lockfile-at-commit
+    since: 0.1.0
+    rule: >-
+      At commit, the format check reads and never rewrites, and the lockfile is checked against the manifest.
+    detail: >-
+      The formatter runs in its check mode, lists the files that differ and exits non-zero; the fix is the
+      same tool in write mode, run by the person. The lockfile member fails when the manifest and the lock
+      disagree, which is the check the clean install makes before it installs anything. A hook that formats
+      and restages is the opposite of a check (gates.command.28).
+    level: program
+    why: >-
+      Two commit hooks of one fleet ran the formatter in write mode and restaged; a stale install after a
+      lockfile change gave 170 false lint errors and one refused landing.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: prettier-cli
+        where: --check
+        says: >-
+          This will output a human-friendly message and a list of unformatted files, if any.
+        backs: check
+      - ref: npm-cli-ci
+        where: Description
+        says: >-
+          If dependencies in the package lock do not match those in package.json, npm ci will exit with an error,
+          instead of updating the package lock.
+        backs: check
+    review_question: >-
+      Does this commit tier's format member run in check mode, and does a member fail when the lockfile and
+      the manifest disagree?
+    relates:
+      - id: gates.command.28
+        how: see
+      - id: gates.hooks.3
+        how: see
+      - id: supply.install.1
+        how: see
+    open:
+      - >-
+        The format half has its parts: a member (explorer-format, gragas#706), the catalog entry (prettier) and its
+        preset (presets/prettier, gragas#1007), whose key a check can name. The row waits on a ruling: a check
+        on this rule, which is an instruction of strength Lens, raises advisory-with-checks above its
+        baseline. Still planned: the members file names the formatter's check
+        flag and the lockfile member, and a write flag in a commit member fails.
+  - id: ts.cycle.2
+    slug: no-typed-lint-at-commit
+    since: 0.1.0
+    rule: >-
+      Typed lint is never a commit member: at commit the staged files are linted without type information, or
+      not at all.
+    detail: >-
+      Lint rules that need type information build a program over the project before the first file is read,
+      and that cost is the same for one staged file as for all of them. The commit moment is seconds
+      (gates.command.17). Typed lint runs at push as its own member with its threads and cache (ts.cycle.5).
+    level: program
+    why: >-
+      One staged file cost 30 seconds of typed lint at commit in one fleet's main web application, 28 of its
+      31.4 second commit.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: typescript-eslint-typed-linting
+        where: Typed Linting
+        says: >-
+          As a result, these rules are slower than traditional lint rules but are much more powerful.
+        backs: rule
+    review_question: >-
+      Does any commit member of this project load type information, and how long does it take for one staged
+      file?
+    relates:
+      - id: gates.command.17
+        how: see
+      - id: ts.cycle.5
+        how: see
+    open:
+      - >-
+        Planned check: the commit members' lint command carries no typed config, held by a scan of the members
+        file. No tool key is bound yet.
+  - id: ts.cycle.3
+    slug: no-installed-or-built-files-in-git
+    since: 0.1.0
+    rule: >-
+      No installed dependency folder and no build output is tracked in git.
+    detail: >-
+      The dependency folder is rebuilt from the lockfile and the build output from the source; tracking either
+      makes every install or build a diff, hides the lockfile's job, and lets a hand edit to a built file
+      reach the main branch. The ignore file names both, and a tracked file under either path fails.
+    level: program
+    why: >-
+      One package of one fleet tracks 5,460 installed files.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: ts-reasons-stated
+        backs: rule
+    review_question: >-
+      Does git track any file under the dependency folder or the build output folder of this project?
+    relates:
+      - id: gates.own-rules.3
+        how: see
+    open:
+      - >-
+        Planned check: a tracked-files scan for the two paths at commit. Plant: a tracked file under the
+        dependency folder fails. Control: a clean tree passes. No tool key is bound yet. Held today in this
+        repository by a tree test over git's index, with its plants (a row would raise the checks baselines).
+  - id: ts.cycle.4
+    slug: install-behind-the-pin-and-a-prepare-that-sets-up
+    since: 0.1.0
+    rule: >-
+      The clean install and the browser install run only when the lockfile or the pin changed, and the
+      manifest's prepare step installs the hook and runs the framework's install step, so a fresh clone type
+      checks.
+    detail: >-
+      gates.command.19 holds that a tool is installed when its pin changes; for this stack the pin is the
+      lockfile and the browser version. The prepare step is the one script the package manager runs on a
+      local install with no arguments, so it is where the hook install and the framework's generate or
+      install step belong; a framework whose types come from a generated file fails the type check on a
+      fresh clone until that step has run (gates.command.21).
+    level: program
+    why: >-
+      Eight repositories of one fleet were red on a fresh clone because a framework install step was missing
+      from the prepare script, and installs of 106 to 180 seconds sat in no budget.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: npm-scripts
+        where: Life Cycle Scripts, prepare
+        says: >-
+          Runs on local npm install without any arguments
+        backs: rule
+    review_question: >-
+      What triggers this project's install, and does its prepare step install the hook and run the
+      framework's install step?
+    relates:
+      - id: gates.command.19
+        how: see
+      - id: gates.command.21
+        how: see
+      - id: gates.command.24
+        how: see
+    open:
+      - >-
+        Planned check: the tier's fresh-clone test runs the documented setup and then the type check. No tool
+        key is bound yet.
+  - id: ts.cycle.5
+    slug: type-check-and-typed-lint-as-their-own-members
+    since: 0.1.0
+    rule: >-
+      At push the type check and the lint are their own members; the lint runs typed, on the pool's thread
+      count, with its cache, in every tier.
+    detail: >-
+      The type check runs the compiler with no emit. The lint runs with type information, on as many threads
+      as the pool gives (gates.command.25), with its cache in the same folder in every tier, so a warm push,
+      land and release see the same speed. Each is a member, so a failure names one and both run beside the
+      tests.
+    level: program
+    why: >-
+      One fleet's lint took 394 seconds cold and single-threaded in one slot kind and 8.8 seconds warm with four
+      threads, and was 65 percent of a 607 second push.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tsconfig-reference
+        where: noEmit
+        says: >-
+          Do not emit compiler output files like JavaScript source code, source-maps or declarations.
+        backs: check
+      - ref: eslint-cli
+        where: --cache
+        says: >-
+          Store the info about processed files in order to only operate on the changed ones.
+        backs: check
+    review_question: >-
+      Are the type check and the lint separate members of this push tier, and does the lint take its threads
+      from the pool and its cache from one folder in every tier?
+    relates:
+      - id: gates.command.25
+        how: see
+      - id: gates.command.22
+        how: see
+      - id: ts.cycle.2
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the two members and the lint command names the thread variable
+        and the cache path. No tool key is bound yet. Held today in this repository for the type check half:
+        the type check and the tests are two push members, and no type check script emits. The lint member, its
+        thread variable and its cache are not built yet.
+  - id: ts.cycle.6
+    slug: coverage-out-of-the-blocking-tiers
+    since: 0.1.0
+    rule: >-
+      No coverage instrumentation runs in a blocking tier; coverage runs at release or on demand.
+    detail: >-
+      Coverage transforms the source to count what ran, and that cost falls on every test of every push.
+      tests.measures.5 holds that coverage is reported at the slowest tier and is never a threshold in the
+      inner loop; this line places it: the release tier or an on-demand member (gates.command.26), never
+      push or land.
+    level: program
+    why: >-
+      One fleet's unit tests took 215 seconds with coverage against 166 to 190 seconds without, in a blocking
+      tier.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: vitest-coverage-guide
+        where: Istanbul provider
+        says: >-
+          coverage tracking works by transforming your source code to add instrumentation logic
+        backs: rule
+    review_question: >-
+      Does any push or land member of this project run with coverage on, and where does coverage run instead?
+    relates:
+      - id: tests.measures.5
+        how: see
+      - id: gates.command.26
+        how: see
+    open:
+      - >-
+        Planned check: the push and land members' test commands carry no coverage flag, held by a scan of the
+        members file. No tool key is bound yet. Held today in this repository by a scan of the blocking
+        members' recipes and the package scripts they run, with its plants.
+  - id: ts.cycle.7
+    slug: one-linter-instance-per-test-file
+    since: 0.1.0
+    rule: >-
+      A test that drives the project's own lint config shares one linter instance per file, built once in the
+      file's setup.
+    detail: >-
+      Building a typed lint program inside a test body costs seconds per case. The file's setup builds the
+      program once and the cases lint their samples against it (tests.runners.5). A case that needs another
+      config says so and builds its own.
+    level: file
+    why: >-
+      Seven of the ten slowest tests in one fleet's main web application built a typed lint program inside the
+      test body.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: ts-reasons-stated
+        backs: rule
+    review_question: >-
+      How many linter instances does this test file build, and is the one it needs built in setup?
+    relates:
+      - id: tests.runners.5
+        how: see
+    open:
+      - >-
+        Planned check: the per-test time report lists the tests over a stated share of their file's time
+        beside the setup they repeat (tests.runners.5). No tool key is bound yet.
+  - id: ts.cycle.8
+    slug: import-the-handler-chain-once
+    since: 0.1.0
+    rule: >-
+      A service test imports the handler chain once per file and resets only the setting a test changes.
+    detail: >-
+      Re-importing the handler chain per test, or resetting every module between tests, rebuilds the service
+      for each case. The file imports once, each test changes the one setting it is about and puts it back
+      (tests.isolation.12 holds the list of tests that need isolation and why).
+    level: file
+    why: >-
+      Service suites of one fleet rebuilt their handler chain per test, and the tests were 126 of a 189 second
+      push in one service.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: ts-reasons-stated
+        backs: rule
+    review_question: >-
+      How many times does this test file import the handler chain, and does any test reset more than the
+      setting it changed?
+    relates:
+      - id: tests.runners.5
+        how: see
+      - id: tests.isolation.12
+        how: see
+    open:
+      - >-
+        Planned check: a scan of test files for a module reset between tests with no stated reason. No tool
+        key is bound yet.
+  - id: ts.cycle.9
+    slug: a-unit-test-never-reaches-the-network
+    since: 0.1.0
+    rule: >-
+      A unit test never makes a real network attempt: a stub client throws a marker error, so a call that
+      escaped the fake fails fast and names itself.
+    detail: >-
+      A unit test that reaches the network waits out a connect timeout on a host with no route and passes by
+      luck on one with. The client the code under test receives is a stub whose every method throws a named
+      marker error; a test that needs a real answer is an integration member (service.cycle.3), not a unit
+      test. web.testing.12 holds how the network is faked where it is faked; this line holds that a unit test
+      is never on it.
+    level: file
+    why: >-
+      Unit tests that reached for the network were among the slowest files in one fleet's services, and
+      timed out at load.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: ts-reasons-stated
+        backs: rule
+    review_question: >-
+      What client does this unit test hand the code under test, and what happens when a call reaches it?
+    relates:
+      - id: web.testing.12
+        how: see
+      - id: supply.install.2
+        how: see
+      - id: tests.measures.8
+        how: see
+    open:
+      - >-
+        Planned check: the unit-test member runs with the network blocked (supply.install.2), so an attempt
+        fails and names the test. No tool key is bound yet.

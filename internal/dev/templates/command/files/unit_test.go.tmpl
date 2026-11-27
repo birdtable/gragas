@@ -1,0 +1,13 @@
+package coreapi_test
+
+import (
+	"testing"
+
+	coreapi "github.com/birdtable/gragas/internal/core/api"
+)
+
+func Test{{.Pascal}}(t *testing.T) {
+	t.Parallel()
+	_ = coreapi.{{.Pascal}}
+	t.Fatal("{{.Name}}: write the unit test of its operation")
+}

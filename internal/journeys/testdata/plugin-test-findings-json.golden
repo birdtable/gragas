@@ -1,0 +1,186 @@
+$ gragas plugin test plugins/lint-b/2.0.0 --json
+--- exit 1
+--- stdout
+{
+  "schema": 1,
+  "bundle": "plugins/lint-b/2.0.0",
+  "cases": [
+    "1-entries"
+  ],
+  "checks": [
+    {
+      "n": 1,
+      "name": "the manifest passes its schema",
+      "status": "failed",
+      "what": [
+        "/colour is not a member of this message"
+      ]
+    },
+    {
+      "n": 2,
+      "name": "the contract is the engine's and every need is a feature it has",
+      "status": "passed"
+    },
+    {
+      "n": 3,
+      "name": "name, version and wasm digest are the bundle's",
+      "status": "failed",
+      "what": [
+        "name is \"lint-a\" and the folder is \"lint-b\"",
+        "wasm is \"sha256:93a44bbb96c751218e4c00d479e4c14358122a389acca16205b1e4d0dc5f9476\" and plugin.wasm is sha256:5f54b4ceb933d8afc6e8612bc7a08b329bd9ce1899fd7da42bbd69a047a7e401"
+      ]
+    },
+    {
+      "n": 4,
+      "name": "provides is not empty and grant ids are unique",
+      "status": "passed"
+    },
+    {
+      "n": 5,
+      "name": "the module imports nothing but WASI preview 1",
+      "status": "failed",
+      "what": [
+        "the plugin's module is refused: its sections cannot be read: section 120 runs past the module"
+      ]
+    },
+    {
+      "n": 6,
+      "name": "each request passes its schema",
+      "status": "passed"
+    },
+    {
+      "n": 7,
+      "name": "each call ends within the limits with exit code 0",
+      "status": "not run",
+      "what": [
+        "the module was refused (see C5)"
+      ]
+    },
+    {
+      "n": 8,
+      "name": "each stdout is one JSON document that passes the response schema",
+      "status": "not run",
+      "what": [
+        "the module was refused (see C5)"
+      ]
+    },
+    {
+      "n": 9,
+      "name": "each answer keeps every order rule",
+      "status": "not run",
+      "what": [
+        "the module was refused (see C5)"
+      ]
+    },
+    {
+      "n": 10,
+      "name": "each answer equals the saved answer in canonical form",
+      "status": "not run",
+      "what": [
+        "the module was refused (see C5)"
+      ]
+    },
+    {
+      "n": 11,
+      "name": "a second run gives the same bytes",
+      "status": "not run",
+      "what": [
+        "the module was refused (see C5)"
+      ]
+    },
+    {
+      "n": 12,
+      "name": "a request with one unknown field gives the same answer",
+      "status": "not run",
+      "what": [
+        "the module was refused (see C5)"
+      ]
+    },
+    {
+      "n": 13,
+      "name": "every run step names a granted program and passes the path rules",
+      "status": "not run",
+      "what": [
+        "the module was refused (see C5)"
+      ]
+    },
+    {
+      "n": 14,
+      "name": "an unknown operation, target or for answers unsupported",
+      "status": "not run",
+      "what": [
+        "the module was refused (see C5)"
+      ]
+    },
+    {
+      "n": 15,
+      "name": "an operation the plugin does not provide answers unsupported",
+      "status": "not run",
+      "what": [
+        "the module was refused (see C5)"
+      ]
+    },
+    {
+      "n": 16,
+      "name": "both ends of the tool version range are served and one outside it is unsupported",
+      "status": "not run",
+      "what": [
+        "the module was refused (see C5)"
+      ]
+    },
+    {
+      "n": 17,
+      "name": "a malformed request ends in a bug error or a crash, never in success",
+      "status": "not run",
+      "what": [
+        "the module was refused (see C5)"
+      ]
+    },
+    {
+      "n": 18,
+      "name": "entries has a recording for each tool version tested",
+      "status": "passed"
+    },
+    {
+      "n": 19,
+      "name": "findings has a planted output, a clean control and a tool failure",
+      "status": "not asked",
+      "what": [
+        "findings is not in provides"
+      ]
+    },
+    {
+      "n": 20,
+      "name": "plan has a one-round case and a refused case with a path",
+      "status": "not asked",
+      "what": [
+        "plan is not in provides"
+      ]
+    },
+    {
+      "n": 21,
+      "name": "preset has a golden, the mark on its first line and a refused option",
+      "status": "not asked",
+      "what": [
+        "preset is not in provides"
+      ]
+    },
+    {
+      "n": 22,
+      "name": "rank has a pair each for tighter, weaker and same, and a swap swaps the answer",
+      "status": "not asked",
+      "what": [
+        "rank is not in provides"
+      ]
+    },
+    {
+      "n": 23,
+      "name": "a preset, recorded, reads back as the same entries",
+      "status": "not asked",
+      "what": [
+        "preset is not in provides"
+      ]
+    }
+  ]
+}
+--- stderr

@@ -1,0 +1,7 @@
+$ gragas guard edit
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  done       language/go/rules/errors.yaml changes no lifecycle field
+--- stderr

@@ -1,0 +1,8 @@
+/* The page a part sits on, for the harness and the catalogue (the host's page
+   paints its own): the ground and the ink, from the tokens, in both themes. */
+body {
+  margin: 0;
+  padding: var(--gr-space-4);
+  color: var(--gr-text-ink);
+  background: var(--gr-ground-page);
+}

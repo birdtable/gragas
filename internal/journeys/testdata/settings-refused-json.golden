@@ -1,0 +1,15 @@
+$ GRAGAS_CONFIG=<config>/settings.yaml gragas --json check
+--- stdout
+{
+  "schema": 2,
+  "command": "check",
+  "ended": "refused",
+  "msg": "<config>/settings.yaml:3: unknown key \"colr\": the keys are version, language, colour, shell, programs, sandbox, container, userns, macos, tools, tool-paths, mirrors, keep, names-file, base-ref, mounts",
+  "next": "edit the settings file",
+  "error": {
+    "kind": "refused",
+    "msg": "<config>/settings.yaml:3: unknown key \"colr\": the keys are version, language, colour, shell, programs, sandbox, container, userns, macos, tools, tool-paths, mirrors, keep, names-file, base-ref, mounts",
+    "hint": "edit the settings file"
+  }
+}
+--- stderr

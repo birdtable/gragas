@@ -1,0 +1,16 @@
+format: 3
+part: ts
+concern: schema
+rules:
+  - id: ts.schema.1
+    statement: "One schema library holds the model, JSON Schema, types, DDL and API contracts are generated from it and held by regenerate-and-diff, no second schema library is a dependency, and what the model exports parses back to the same value."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The model is the one source. Every other shape (the JSON Schema files, the TypeScript types, the SQL DDL, the HTTP and tool contracts) is generated from it, committed, and regenerated and diffed by the gate; a hand edit to a generated file fails. The live database schema is checked against the DDL the model generates, never used to generate the model or the types. A landed migration is never edited; new SQL is appended and held to the generated DDL. The manifest names one schema library; a second one, or a query builder that owns its own schema, fails the manifest check. A round-trip test exports each model shape and parses it back to an equal value. The checks are engine-free."
+      pros:
+        - "One model that generates every other shape is the strongest guard against a type, a table and a contract drifting apart over years, and regenerate-and-diff makes it mechanical. Naming the model as the source, and checking the live schema against it, leaves no second place where the truth can start."
+    sources:
+      - ref: decision-65-ts
+        backs: rule

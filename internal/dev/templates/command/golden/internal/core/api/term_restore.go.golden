@@ -1,0 +1,7 @@
+package coreapi
+
+import "errors"
+
+// TermRestore is the operation behind gragas term restore. It is a stub that says
+// it is not built until it is.
+func TermRestore() error { return errors.New("term restore is not built yet") }

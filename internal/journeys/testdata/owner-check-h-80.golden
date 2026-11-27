@@ -1,0 +1,60 @@
+$ gragas check -h
+--- stdout
+
+  Reads every file under rulebook/ and checks it: each
+  against its JSON Schema, then across files (ids used
+  once and kept in ids.lock, a retired rule's
+  replacement, each source, kind, facet, binding and
+  tool a rule names, folders that are parts), then each
+  count against its baseline in baseline.json, which may
+  only fall, then, when gate/exemptions.yaml is there,
+  each exception row in it (an expired row, a row for a
+  rule that is not active, an id listed twice and an
+  exit file that is not there fail), and, when
+  GRAGAS_NAMES_FILE is set, for names public text
+  must not hold. It writes nothing.
+
+    gragas check
+    gragas check -C ../gragas
+    gragas check --json
+
+  In a folder that holds one rulebook.yaml it checks the
+  rulebook instead: validate's findings, then its history
+  against the merge base of HEAD and the base ref (the
+  base-ref setting, or GRAGAS_BASE_REF): no line of the
+  merge base rewritten, no broken link or gap, each commit
+  since held to its own entries as guard staged holds one,
+  no pin or governance changed without its entry, and no
+  rule on trial past the merge base's window. Where the merge
+  base holds one rulebook, a branch that removes it or adds a
+  second is a finding. With no base ref it is not ready.
+
+  Below a .gragas/pin.yaml, in the repository the pin lies
+  in, it checks the project: its tool configs held to the
+  bindings of the rulebook the pin names, its tier contract
+  and its exemptions. It ends done with the findings listed;
+  --fail-on names the kinds of finding that end it on
+  findings. A tool with bindings that could not be asked
+  ends it not ready.
+
+  USAGE
+
+
+    gragas check [--flags]
+
+
+  FLAGS
+
+    --accessible  Plain questions (ACCESSIBLE)
+    --config      The settings file (GRAGAS_CONFIG)
+    -C --dir      The repository holding rulebook/ (.)
+    --fail-on     End on findings when one is of this kind, below a pin (the
+                  kinds are tool-config, tier-contract, exemption, names,
+                  tracked-files, counts)
+    -h --help     Help for check
+    --json        Answer in one JSON document
+    --no-color    No colour (NO_COLOR)
+    --plain       Print plainly: nothing moves
+
+--- stderr
+--- exit 0

@@ -1,0 +1,4 @@
+version: 1
+container:
+  runtime: {root}/usr/bin/podman
+  network: none

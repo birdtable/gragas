@@ -1,0 +1,324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-rule.schema.json",
+  "title": "Rule (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "statement",
+    "strength",
+    "status",
+    "standing",
+    "origin"
+  ],
+  "properties": {
+    "id": {
+      "$ref": "common.schema.json#/$defs/id",
+      "x-introduced": "1.0",
+      "x-decides": "which parent rule an overlay's exclusion names, so an id the parent does not hold is refused"
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/id"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "statement": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "strength": {
+      "$ref": "common.schema.json#/$defs/strength",
+      "x-introduced": "1.0"
+    },
+    "status": {
+      "$ref": "common.schema.json#/$defs/status",
+      "x-introduced": "1.0",
+      "x-decides": "whether a parent's rule is retired, so including it in an overlay ends not ready (S4)"
+    },
+    "standing": {
+      "$ref": "common.schema.json#/$defs/standing",
+      "x-introduced": "1.0"
+    },
+    "marks": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/standingMark"
+      },
+      "uniqueItems": true,
+      "x-introduced": "1.0",
+      "default": [],
+      "description": "trial, blocked and unproven, those that apply, in that order"
+    },
+    "trial_shipped": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/semver"
+      },
+      "description": "the releases that shipped the rule on trial, in release order: each one holds an entry of the rule (by its id or an alias) that leaves it on trial, which is what the gate's trial window counts, so a reader reaches the gate's finding when its length is at or past identity.governance.trial_releases, when that is above 0 (at 0 or below the gate sets no window). Derived from the history by the engine; no rulebook file authors it. Empty when the rule is not on trial or no release shipped it so",
+      "x-introduced": "1.1",
+      "default": []
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "x-introduced": "1.0",
+          "default": []
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "x-introduced": "1.0",
+          "default": []
+        },
+        "kinds": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "x-introduced": "1.0",
+          "default": []
+        }
+      },
+      "x-introduced": "1.0",
+      "default": {}
+    },
+    "exemptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "path": {
+            "$ref": "common.schema.json#/$defs/textOrEmpty",
+            "x-introduced": "1.0",
+            "default": ""
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/slug"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "x-introduced": "1.0",
+            "default": null
+          },
+          "reason": {
+            "$ref": "common.schema.json#/$defs/reason",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "reasoning": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "reasoning_decision": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/slug"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "the slug of the decision the rule's reasoning names, a slug of decisions[]; absent or null when the reasoning names none",
+      "x-decides": "whether a rule is the attention kind missing decision: with identity.governance.decision_required, a rule that is not retired and has none is listed so, as the engine lists it",
+      "x-introduced": "1.2",
+      "default": null
+    },
+    "pros": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/text"
+      },
+      "description": "the rule's anatomy, what speaks for it, one point an item, in the rulebook's own words; beside reasoning, which stays the whole text",
+      "x-introduced": "1.3",
+      "default": []
+    },
+    "cons": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/text"
+      },
+      "description": "the rule's anatomy, what speaks against it, one point an item, in the rulebook's own words",
+      "x-introduced": "1.3",
+      "default": []
+    },
+    "pairs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "number",
+          "target_type"
+        ],
+        "properties": {
+          "number": {
+            "type": "integer",
+            "minimum": 1,
+            "x-introduced": "1.0"
+          },
+          "target_type": {
+            "$ref": "common.schema.json#/$defs/targetType",
+            "x-introduced": "1.0"
+          },
+          "good": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/text"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the pair's good example, the text of the file that follows the rule; absent or null when the bundle does not carry the pair's text",
+            "x-introduced": "1.3",
+            "default": null
+          },
+          "bad": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/text"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the pair's bad example, the text of the file that breaks the rule; absent or null when the bundle does not carry the pair's text",
+            "x-introduced": "1.3",
+            "default": null
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "owner": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "review_by": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/date"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "zero_by": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/date"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "rule"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "pairs-with",
+              "conflicts-with",
+              "refines",
+              "see-also"
+            ],
+            "x-introduced": "1.0"
+          },
+          "rule": {
+            "$ref": "common.schema.json#/$defs/id",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "origin": {
+      "$ref": "common.schema.json#/$defs/origin",
+      "x-introduced": "1.0"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/slug"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "bindings": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/text"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "translations": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-translation.schema.json"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "replaced_by": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "anchor": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    }
+  }
+}

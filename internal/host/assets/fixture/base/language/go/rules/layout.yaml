@@ -1,0 +1,61 @@
+format: 3
+part: go
+concern: layout
+rules:
+  - id: go.layout.1
+    statement: Keep the program under cmd and everything else under internal.
+    strength: must
+    status: active
+    owner: alex
+    review_by: "2027-03-01"
+    origin: authored
+    sources:
+      - {ref: house-call, backs: rule}
+    bindings:
+      - tool: review
+        target: prose
+        key: layout-reviewed
+        value: "a person looks"
+        severity: warning
+        rung: 6
+        run_point: review
+        pair: 1
+        pair_path: README.md
+    pairs:
+      - {number: 1, target: prose}
+  - id: go.layout.2
+    statement: Put every package in one folder of its own.
+    strength: must
+    status: active
+    owner: alex
+    review_by: "2027-03-01"
+    origin: authored
+    bindings:
+      - tool: golangci-lint
+        target: config
+        key: wrapcheck
+        value: false
+        severity: error
+        rung: 2
+        run_point: push
+      - tool: golangci-lint
+        target: dependency
+        key: depguard
+        value: {list-mode: lax}
+        severity: warning
+        rung: 4
+        run_point: deploy
+  - id: go.layout.3
+    statement: Keep a container image to one program.
+    strength: should
+    status: active
+    owner: alex
+    review_by: "2027-03-01"
+    origin: authored
+    bindings:
+      - tool: container-lint
+        target: container
+        key: one-process
+        severity: info
+        rung: 5
+        run_point: release

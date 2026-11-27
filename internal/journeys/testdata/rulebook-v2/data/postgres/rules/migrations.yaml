@@ -1,0 +1,272 @@
+part: postgres
+concern: migrations
+order: 3
+title: Migrations
+summary: >-
+  How the schema changes. Migrations are numbered in order and append-only, the schema stays equal to the
+  model's DDL, a start backs up before it migrates, a destructive migration has a written plan, each migration
+  stays compatible with the running version (expand, migrate, contract) and the contract step has a date, the
+  migration text follows conventions, and a lock lint and a lock timeout stop a migration that would queue the
+  application behind a lock.
+rules:
+  - id: postgres.migrations.1
+    slug: numbered-in-order-schema-in-parity
+    since: 0.1.0
+    rule: >-
+      Migrations are numbered in order and append-only: a landed migration is never edited, each carries a
+      checksum the runner checks, and the schema after replaying every migration equals the schema file and
+      the DDL the data model generates.
+    detail: >-
+      The model is the one source (postgres.queries.1): the replayed schema is compared with the DDL generated
+      from it, and a difference fails; the model is never regenerated from the replayed schema. A change to
+      the schema is a new migration. The runner refuses to start when a landed migration's checksum differs
+      from the one recorded when it ran.
+    level: file
+    why: >-
+      A gap or a reorder changes what replay produces, a schema file that drifts from replay misleads the
+      types and the review, and an edited landed migration means two databases that ran different text under
+      one number.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-postgres
+        backs: rule
+    checks:
+      - binding: sql
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that migration numbers are consecutive, that each landed migration's checksum equals the
+          recorded one, and that the schema after replaying every migration on a container equals the
+          committed schema file and the DDL the model generates. Plant: a gap in numbering fails; an edited
+          landed migration fails its checksum; a schema that differs from the model's DDL fails. Control:
+          consecutive numbers, unchanged checksums and a schema equal to the model's DDL pass
+    relates:
+      - id: postgres.queries.1
+        how: see
+      - id: store.schemas.2
+        how: see
+    open:
+      - >-
+        The source row gives no plant; both are proposed. For the embedded-store counterpart see
+        store.schemas.2.
+  - id: postgres.migrations.2
+    slug: no-destructive-migration-without-a-plan
+    since: 0.1.0
+    rule: >-
+      No destructive migration (drop, truncate, destructive type change) without a written plan.
+    level: file
+    why: >-
+      A destructive step cannot be undone by a down script, so the plan is the recovery.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: sql
+        class: preset-config
+        tier: "2"
+        note: >-
+          a migration-text check that a drop or destructive change is accompanied by a plan note in the
+          migration header. Plant: a migration that drops a column with no plan note fails. Control: the same
+          migration with a plan note passes
+    open:
+      - The source row gives no tool or plant; both are proposed.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: postgres.migrations.3
+    slug: expand-migrate-contract
+    since: 0.1.0
+    rule: >-
+      Migrations stay compatible with the running version, in the order expand, migrate, then contract.
+    level: deploy
+    why: >-
+      A Lambda deploy runs old and new code together for a while, and a queue can deliver an old message to
+      new code, so a migration that breaks the old code breaks the deploy.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ambler-sadalage-refactoring-databases
+        backs: rule
+      - ref: fowler-parallel-change
+        backs: rule
+      - ref: p-03-data
+        where: section 14
+        backs: rule
+    checks:
+      - binding: sql
+        class: preset-config
+        tool: squawk
+        tier: "2"
+        note: >-
+          Squawk over each changed migration for changes that break running code (a not-null column without a
+          default, a rename). Plant: a rename of a column in use fails Squawk. Control: an additive migration
+          passes
+    open:
+      - >-
+        The squawk rule names were read from its documentation; its exit code and configuration were not
+        confirmed.
+  - id: postgres.migrations.4
+    slug: contract-step-has-a-date
+    since: 0.1.0
+    rule: >-
+      A migration that starts an expand-and-contract change records the date by which the old column or table
+      is removed and names the readers alive during the deploy; the gate fails a leftover past its date.
+    detail: >-
+      The date sits in the migration header as contract-by in the same register as other exemptions. The
+      question for the readers is which ones will be alive during this deploy. The header line reads
+      contract-by with a date, for example contract-by: <date>.
+    level: deploy
+    why: >-
+      If the contract phase never runs you end up worse off, with two versions supported for good; agents add
+      the new column and forget the old (inference). The transition is needed only when several clients are
+      coupled to the schema.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: fowler-parallel-change
+        backs: rule
+      - ref: ambler-sadalage-refactoring-databases
+        backs: rule
+      - ref: p-03-data
+        where: section 14
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "1"
+        note: >-
+          a migration header carries contract-by when it adds a replacement; the register check fails an entry
+          past its date. Plant: an expand migration with no date fails; a leftover past its date fails.
+          Control: a dated expand with its contract in time passes
+    review_question: Which readers will be alive during this deploy?
+    note: Held by the date check for the date and by the review question for the readers.
+  - id: postgres.migrations.5
+    slug: migration-text-conventions
+    since: 0.1.0
+    rule: >-
+      Migration text has a class header and notes for renames, splits, merges and removals, no down scripts,
+      no risky extensions, and states the delete behaviour of every reference; and a program that applies
+      migrations at start backs up first, and restores the backup and refuses to start when a migration fails.
+    detail: >-
+      No CREATE EXTENSION, dblink or foreign data wrapper; every REFERENCES states ON DELETE. With no down
+      script the way back from a failed migration is the backup taken just before it; the program names the
+      backup in its log and exits non-zero after restoring.
+    level: file
+    why: >-
+      A down script gives false comfort for a step that cannot be reversed, and an unstated delete behaviour
+      is a decision nobody made. A migration that fails halfway at start leaves a store no version can read
+      unless the copy from just before is put back.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-postgres
+        backs: rule
+    checks:
+      - binding: sql
+        class: preset-config
+        tier: "1"
+        note: >-
+          a migration-text lint for the class header, the notes, the ban on down scripts and risky extensions,
+          and ON DELETE on every REFERENCES. Plant: a migration that creates an extension, or a REFERENCES
+          with no ON DELETE, fails. Control: a conforming migration passes
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a start test with a planted failing migration asserting a backup was taken before it, the store
+          equals the backup afterwards, and the program exited non-zero. Plant: a start that leaves a
+          half-applied migration and keeps running fails. Control: a restored store and a refused start pass
+    open:
+      - The source row gives no tool or plant for the text lint; both are proposed.
+  - id: postgres.migrations.6
+    slug: lock-lint
+    since: 0.1.0
+    rule: >-
+      A migration passes a lock lint: an index is built concurrently, a constraint is added in two phases, and
+      a lock timeout is set and read back before the step runs.
+    detail: >-
+      Squawk rules: require-concurrent-index-creation, require-timeout-settings, require-lock-timeout,
+      constraint-missing-not-valid and adding-foreign-key-constraint, named from the project's documentation
+      (exit code and config not confirmed). Atlas and eugene were considered. The pack binds a repository when
+      it adopts Postgres (decision 37). The lock timeout is the session setting lock_timeout, set and read
+      back before the step runs.
+    level: file
+    why: >-
+      A migration on nearly empty tables cost one payment company about 15 seconds of API downtime: the ALTER
+      waited for a strong lock behind a long read and every later query queued behind it.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: postgres-docs
+        where: ALTER TABLE and CREATE INDEX
+        backs: rule
+      - ref: p-03-data
+        where: section 8
+        backs: rule
+      - ref: decision-37
+        backs: rule
+    checks:
+      - binding: sql
+        class: preset-config
+        tool: squawk
+        tier: "2"
+        note: >-
+          Squawk on migration .sql files with the rules named in the detail. Plant: CREATE INDEX without
+          CONCURRENTLY fires, and a migration with no lock timeout fires. Control: a concurrent index with a
+          lock timeout passes
+    open:
+      - >-
+        No repository uses Postgres, so nothing can be planted in a real repository today.
+      - The alternatives Atlas and eugene were considered and not run.
+      - "v1 evidence, not yet a source: practice (the payment company's incident)"
+      - "v1 reference, not yet a source: operator points 36 and 46"
+  - id: postgres.migrations.7
+    slug: runner-sets-timeouts-and-aborts
+    since: 0.1.0
+    rule: >-
+      The migration runner sets a lock timeout and a statement timeout for the session that applies a
+      migration, and a migration that waits behind a lock aborts, shown by a test.
+    detail: >-
+      A deploy that hits the timeout fails and is retried. The test holds a lock from another connection and
+      asserts the migration aborts within the timeout, and a second test reads SHOW lock_timeout in the
+      migration session. The lint reads text; it cannot know the session setting or what runs on the table at
+      that moment.
+    level: deploy
+    why: >-
+      Removing long transactions, setting a lock timeout so aborting a deploy is better than stopping the app,
+      and splitting changes are the remedy from the payment company's incident. Its post names lock types that
+      the current manual names differently; the queue mechanism stands.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: p-03-data
+        where: section 8
+        backs: rule
+    checks:
+      - binding: sql
+        class: test-kit
+        tier: "3"
+        note: >-
+          a runner test on a container with two connections that reads SHOW lock_timeout in the migration
+          session and holds a lock on the target table while the migration runs. Plant: a runner with no
+          timeout hangs until the test's own limit and fails. Control: a migration taking a strong lock with a
+          timeout set aborts and passes
+    relates:
+      - id: postgres.migrations.6
+        how: see
+    open:
+      - >-
+        The migration ran in milliseconds in test, which is the agent-side failure (inference).
+    note: >-
+      Different from postgres.migrations.6 in that the lint reads text and this reads the live session.

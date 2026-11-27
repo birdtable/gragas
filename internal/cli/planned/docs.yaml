@@ -1,0 +1,12 @@
+name: docs
+order: 330
+context: B
+ends: report
+optin: true
+summary: "Export a rulebook's pages and their manifest"
+examples:
+  - {line: "gragas docs", does: "build the export and report"}
+  - {line: "gragas docs --accept", does: "show the plan to accept an omission"}
+writes: ["the export folder and its manifest"]
+exits: ["done", "findings", "declined", "not ready"]
+json: report

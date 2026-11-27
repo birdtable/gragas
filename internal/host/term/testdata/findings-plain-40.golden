@@ -1,0 +1,14 @@
+check
+reading rulebook/ in the project
+rule          what
+cli.look.5    A closing word is built by
+              hand, not by its
+              constructor.
+arch.ports.6  A library has two owners.
+cli.look.7    A column is dropped
+              without a mark.
+1 column not shown: where
+
+  findings   3 findings, 1 of them a
+  failure
+    gragas check --json

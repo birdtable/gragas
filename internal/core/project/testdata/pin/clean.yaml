@@ -1,0 +1,5 @@
+# A pin with nothing wrong: the rulebook beside the project, three parts.
+rulebook: fixture-base
+source: rulebook
+parts: [base, go, web]
+format: 1

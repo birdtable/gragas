@@ -1,0 +1,1717 @@
+# gragas's layer table: the one place its Go packages, their layers and the
+# imports between them are written (arch.layers.1, .8, .9). `gragas-dev layers`
+# (task gen) renders from it docs/layers.md, the ESLint boundary golden and the
+# .golangci.yml (whole, from lint/base.yml and lint/project.yml), and `task generated-files` fails
+# when any of them differs from this file. internal/layers_test.go holds the
+# tree to it with go list: every package in one row, every import on an edge a
+# row allows, tests included.
+#
+# The rows are the layers of docs/architecture.md section 3.1. A package that
+# section 3 names and the repository does not have yet is listed under
+# planned: with the layer it will join and the milestone that creates it, and
+# the rows already say what it may import. The pull request that creates it
+# moves it out of planned: and into its row's packages: in one change, and the
+# docs test fails on either half alone.
+# A command package below internal/cli/cmd is in the row of that folder already
+# (patterns: internal/cli/cmd/...), so building one only deletes its line here;
+# task gen renders what the planned: list says into docs/architecture.md.
+#
+# The folders are the Go program template's (go.layout.1, arch.structure.6),
+# named as the template names them; a row the template does not name
+# says why it sits where it does. A new package is a new line here first.
+module: github.com/birdtable/gragas
+renders:
+  doc: docs/layers.md
+  lint: .golangci.yml
+  lint-base: presets/golangci-lint/.golangci.yml
+  lint-project: lint/project.yml
+  eslint: docs/explorer-boundaries.json
+
+about: >-
+  Where gragas's Go code lives, and what each package may import. The folders
+  follow the Go program template of go.layout.1, with its names:
+  the bounded contexts under `internal/core/`, the operations every command
+  calls in `internal/core/api`, one port package with its fake, the adapters
+  under `internal/host/<tool>/`, config, the command tree under
+  `internal/cli/<group>/`, leaves, and `cmd/gragas`, which wires everything by
+  hand. Two more tables follow the layers: the contexts, which never import one
+  another, and the explorer's modules, which have the same contract in
+  TypeScript.
+
+# Each row: its packages (module-relative) that exist, what kind of layer it is,
+# what it holds, where the template puts it, what of gragas its packages may
+# import (their own package and the stand-ins come with every row, for tests),
+# the exact standard packages a pure layer's non-test files may import (std:
+# an allow list, so a new one is a reviewed line here), and the reason a
+# forbidden import says. A row may name packages that do not exist yet in its
+# may: and under planned:. A row with until: is temporary and is gone by that
+# milestone.
+#
+# A row lists its packages one by one, or a folder under patterns: as folder/...,
+# which holds every package below it, so a new package there is no new line
+# here. A pattern is also a name a row may list in may:, and a library may be
+# imported within one (external: within:). The lint rule of a pattern allows
+# everything below its folder; the layers test holds each package to its row,
+# so one package of a pattern may not import another.
+#
+# Every list is a block, one entry per line, so two pull requests that add to
+# one list at different points merge. A list is in order, except the ones whose
+# order the output shows: a row's packages, the contexts, the explorer's modules
+# and the words of the platform and source sections (internal/layers_lists_test.go
+# holds the file to it).
+#
+# Kinds: pure (non-test files import only the standard packages its std list
+# names and no library but a pure one, arch.ports.1), edge (the entry and
+# the command tree, which reach the process and the terminal), host (adapters, one per tool), stand-in
+# (imported from _test.go files only), tests (_test.go files only).
+layers:
+  - layer: entry
+    kind: edge
+    packages:
+      - cmd/gragas
+    holds: "main: the signal context, every port filled with its adapter, the exit"
+    template: "`cmd/<name>`: wires and registers, nothing else"
+    may:
+      - internal/apply
+      - internal/cli/root
+      - internal/config
+      - internal/core/api
+      - internal/core/plugins
+      - internal/core/wire
+      - internal/exit
+      - internal/host/...
+      - internal/model
+      - internal/model/plugin
+      - internal/port
+      - internal/port/legacy
+    why: "go.layout.1, arch.ports.13: cmd/gragas wires the adapters into the ports, checks the table of endings before anything runs and runs the command tree; it hands the plugin host the engine's codec (core/wire) and judgement of a manifest (core/plugins), since an adapter never imports the core (arch.layers.7); its test binds the Steps port main fills with a plugin scope, the types-only leaf model/plugin"
+
+  - layer: entry-subset
+    kind: edge
+    packages:
+      - cmd/gragas-subset
+    holds: "main of the subset build: the same wiring as the entry with the Assets port filled by an adapter that answers port.ErrUnavailable, and no host/assets, so it links no embedded file"
+    template: "`cmd/gragas-subset`: built by the gate in every run and shipped nowhere"
+    may:
+      - internal/cli/root
+      - internal/config
+      - internal/host/clock
+      - internal/host/fs
+      - internal/host/jsonschema
+      - internal/host/toml
+      - internal/host/trust
+      - internal/model
+      - internal/port
+      - internal/port/legacy
+    why: "arch.layers.13: the explorer stays separable, so the subset entry never imports host/assets"
+
+  - layer: cli
+    kind: edge
+    packages:
+      - internal/cli/root
+    holds: "the command tree over the Terminal port and model.Screen, one package of commands per context, the lock and run record around a run that writes, --json rendered from the result types"
+    template: "`cli/<group>`: the root and one group per context; it draws only through the Terminal port, so there is no `cli/ui`"
+    may:
+      - internal/cli/cmd/...
+      - internal/cli/kit
+      - internal/cli/legacy
+      - internal/cli/planned
+      - internal/cli/run
+      - internal/config
+      - internal/core/api
+      - internal/digest
+      - internal/exit
+      - internal/model
+      - internal/port
+      - internal/port/legacy
+      - internal/rendered
+    why: "arch.ports.2: a command reaches the core through its operations and the world through the ports main fills; no adapter, no context"
+
+  - layer: cli-cmd
+    kind: edge
+    patterns:
+      - internal/cli/cmd/...
+    holds: "the commands that live in a package of their own, one folder below internal/cli/cmd each: its row, its cobra command, its tests and its goldens. internal/cli/root/join_gen.go, written by gragas-dev gen commands, names them, so a new command is a new folder and no shared line"
+    template: "`cli/cmd/<command>`: one package per command family; it draws only through the session the root hands it"
+    may:
+      - internal/cli/kit
+      - internal/core/api
+      - internal/exit
+      - internal/model
+    why: "arch.ports.2: a command package reaches the core through its operations and the run through the kit's session; no adapter, no context, no root and no other command"
+
+  - layer: cli-planned
+    kind: pure
+    packages:
+      - internal/cli/planned
+    holds: "the commands decided and not built, one YAML file each, and the loader that reads them into rows; a built command deletes its file and adds its package below internal/cli/cmd in one change"
+    template: "`cli/planned/<name>.yaml`: a row of the table of spec 15.1 that has no code yet, so it is data, absent from the command tree"
+    may:
+      - internal/cli/kit
+      - internal/model
+      - internal/ordered
+    std:
+      - embed
+      - errors
+      - fmt
+      - io/fs
+      - slices
+      - strings
+    why: "arch.layers.1: the planned list is data and a loader over the kit; it imports the kit, the model and the leaves, no library, no root"
+
+  - layer: cli-kit
+    kind: pure
+    packages:
+      - internal/cli/kit
+    holds: "the row that declares a command and the registry that holds the rows to the rules of cli.commands.26, shared by the root and by every command package below internal/cli/cmd"
+    template: "`cli/kit`: what every command shares, free of cobra, so a command package and the root both build on it"
+    may:
+      - internal/model
+    std:
+      - context
+      - errors
+      - fmt
+      - slices
+      - strconv
+      - strings
+    why: "arch.layers.1: the kit is a leaf of the command tree; it imports the model and the standard packages it lists, no library, no adapter, no root"
+
+  - layer: cli-run
+    kind: edge
+    packages:
+      - internal/cli/run
+    holds: "the plan seam: the one form of the dry run, the question at a terminal and the apply, over a Host the root implements, so a command package never reaches the root to run a plan"
+    template: "`cli/run`: the form every plan command ends in, free of cobra (arch.ports.6); the root says whether a command takes --apply and was given it"
+    may:
+      - internal/core/api
+      - internal/model
+    why: "arch.ports.2: the seam reaches the core through its operations; no adapter, no root, no cobra"
+
+  - layer: legacy-cli
+    kind: edge
+    packages:
+      - internal/cli/legacy
+    holds: "the old check and gen, mounted behind the new root with their flags, annotations, output and exit codes as they were; they end and draw through the Host the root hands them"
+    template: "Temporary. The old commands are one package until the contexts' commands replace them at the M6 cut-over; only cli/root imports it (M0a-20)"
+    may:
+      - internal/config
+      - internal/core/api
+      - internal/model
+      - internal/port/legacy
+    why: "arch.ports.2: a command reaches the core through its operations and the world through the ports the root hands it; no adapter, no context"
+    until: M6
+
+  - layer: coreapi
+    kind: pure
+    packages:
+      - internal/core/api
+    holds: "the operations every command calls (load, plan, apply, count), the JSON result types, and the one place the contexts meet"
+    template: "`core/api`: the operations every client calls and their result types; the package is named coreapi, as arch.structure.7's check refuses api"
+    may:
+      - internal/apply
+      - internal/canon
+      - internal/core/agents
+      - internal/core/audit
+      - internal/core/contract
+      - internal/core/format
+      - internal/core/generate
+      - internal/core/lifecycle
+      - internal/core/link
+      - internal/core/plugins
+      - internal/core/plugintest
+      - internal/core/project
+      - internal/core/proof
+      - internal/core/publish
+      - internal/core/release
+      - internal/core/rulebook
+      - internal/core/wire
+      - internal/digest
+      - internal/exit
+      - internal/markdown
+      - internal/model
+      - internal/model/contract
+      - internal/model/plugin
+      - internal/ordered
+      - internal/pluginbundle
+      - internal/port
+      - internal/port/legacy
+      - internal/readglob
+      - internal/rendered
+    std:
+      - bytes
+      - context
+      - encoding/base64
+      - encoding/json
+      - errors
+      - fmt
+      - io
+      - io/fs
+      - maps
+      - path
+      - slices
+      - strconv
+      - strings
+      - time
+      - unicode/utf8
+    why: "arch.layers.1: the operations import the contexts, the port and the leaves, nothing above them; internal/model/contract is the bundle a parent's rules are read from, turned into the context's argument here; internal/model/plugin is the plugin contract's types, which the import's bridge over the adapter reader gives link as a plugin's entries until Ports.Plugins is wired; internal/core/plugins is the plan rounds those entries are asked through, which its tests compose over the stand-in; internal/pluginbundle is the one judge of a bundle as read, which plugin list asks for the tool a row shows"
+
+  - layer: core
+    kind: pure
+    packages:
+      - internal/core/format
+      - internal/core/audit
+      - internal/core/link
+      - internal/core/lifecycle
+      - internal/core/project
+      - internal/core/proof
+    holds: "the bounded contexts, each its own package under internal/core/, listed under contexts: and pure"
+    template: >-
+      `core`: the decisions. The template keeps its core in one package, internal/core; gragas has nine
+      contexts, and arch.ports.8 asks that no context import another, through an independence contract listing
+      them, so each is its own package under internal/core/ (go.layout.1 names internal/core/ the
+      domain) and the contexts: table is that contract. A context that reads another declares
+      the interface on its own side; internal/core/api, the operations, is where they meet
+    may:
+      - internal/canon
+      - internal/digest
+      - internal/exit
+      - internal/markdown
+      - internal/model
+      - internal/model/plugin
+      - internal/ordered
+      - internal/port
+      - internal/rendered
+    std:
+      - bufio
+      - bytes
+      - cmp
+      - context
+      - encoding/hex
+      - errors
+      - fmt
+      - go/build/constraint
+      - go/parser
+      - go/scanner
+      - go/token
+      - io
+      - io/fs
+      - path
+      - regexp
+      - slices
+      - strconv
+      - strings
+      - time
+      - unicode
+    why: "arch.ports.1, arch.ports.8: a context imports the port and the leaves, never an adapter, the operating system, the network or another context; go/parser, go/token and go/build/constraint read a Go file's text up to its package clause, as audit's os-files reads it (arch.ports.24); internal/model/plugin is the plugin contract's generated types, which link reads a plugin's entries in"
+
+  - layer: contract
+    kind: pure
+    packages:
+      - internal/core/contract
+    holds: "the contract context (domain 10): the one canonical encoder of every document, Validate against the schema of the contract version a document names, ReadBundle, and the findings-to-SARIF encoder"
+    template: >-
+      `contract`: a context like the core row's, in its own row for one leaf more: internal/model/contract, the
+      generated types, which no other context reads yet. Each type's generated ToCanon and FromCanon turn a model
+      value into canon's Value tree and a document that passed canon.Decode and its schema back into its model
+      type, so the context reads and writes JSON through canon alone and imports no encoding/json
+    may:
+      - internal/canon
+      - internal/exit
+      - internal/markdown
+      - internal/model
+      - internal/model/contract
+      - internal/ordered
+      - internal/port
+    std:
+      - bufio
+      - bytes
+      - cmp
+      - context
+      - encoding/hex
+      - errors
+      - fmt
+      - io
+      - io/fs
+      - path
+      - regexp
+      - slices
+      - strings
+      - time
+      - unicode
+    why: "arch.ports.1, arch.ports.8: a context imports the port and the leaves, never an adapter, the operating system, the network or another context; internal/model/contract is the one leaf more, and it reads and writes JSON through canon"
+
+  - layer: legacy-core
+    kind: pure
+    packages:
+      - internal/core/rulebook
+      - internal/core/generate
+    holds: "the domains the engine has before its contexts exist: rulebook (parts, rules, ids, standing, names), generate (rules.json, bindings.json, coverage.json and ids.lock)"
+    template: >-
+      Temporary. rulebook and generate are domains of the engine before its contexts, each its own package
+      under internal/core/ with no import of the other: a domain that reads another declares the interface on
+      its own side (generate's Book). The contexts of the core row replace them
+    may:
+      - internal/model
+      - internal/ordered
+      - internal/port/legacy
+    std:
+      - bufio
+      - bytes
+      - context
+      - errors
+      - fmt
+      - io
+      - io/fs
+      - path
+      - regexp
+      - slices
+      - strings
+      - unicode
+    why: "arch.ports.1, arch.ports.8: a domain imports the port and the leaves; another domain only through an interface it declares"
+    until: M6
+
+  - layer: apply
+    kind: pure
+    packages:
+      - internal/apply
+    holds: "the write path over the ports: input set, lock, intent, check, write, goal, close, recovery; it takes the plan function and the render function as arguments and runs them under the lock"
+    template: "`apply`: the write path, which no context owns"
+    may:
+      - internal/apply/jwrite
+      - internal/canon
+      - internal/digest
+      - internal/model
+      - internal/port
+    std:
+      - context
+      - encoding/hex
+      - errors
+      - fmt
+      - io/fs
+      - path
+      - slices
+      - strings
+    why: "arch.layers.1: the write path imports the port and the leaves, never a context or an adapter"
+
+  - layer: jwrite
+    kind: pure
+    packages:
+      - internal/apply/jwrite
+    holds: "the journalled write of one file in plain types: the old content kept, the copy and the step journalled, the write made and read back; and the roll back of a run from its copies, each record checked and each file held to what the run could have left before the first is put back; it names none of model, canon or port, so it can move to the library that owns files"
+    template: "a leaf package"
+    product: "gragas's until platform rules otherwise: the journalled write of one file, the owner's code in waiting for the library that owns files; no platform home is named in this table"
+    may:
+      - internal/digest
+    std:
+      - errors
+      - fmt
+      - slices
+      - strings
+    why: "arch.layers.1, arch.shared.8: the journalled write is the owner's code in waiting: it imports the digest leaf and nothing of the plan, the canonical form or the ports; shared package of the row: internal/apply/jwrite"
+
+  - layer: dev
+    kind: pure
+    patterns:
+      - internal/dev/...
+    holds: "the engine's own generators, imported by cmd/gragas-dev (and cmd/gragas-generate for generate) and the repository tests only: layers (this table and what it renders), gate (the registry under gate/ and what it says about the tree), surface (the exports of the ports and the model, with their marks), measure (coupling, size and function numbers, and what blocks), newcommand (the files of a new command from the golden example) and templates/command (that example) and generate (the contract schemas turned into Go types, TypeScript types, zod and the field reference), join (the one generated file that names the command packages), scan (the hashed-names scan and the plant and control it proves itself on first) and census (the standard library's identifiers that differ by system, read from the files go list builds for each first-class system, and gate/os-api.txt's decision for each)"
+    template: "`internal/dev/*`: the engine's own tooling, not shipped"
+    carves:
+      - internal/dev/generate/pluginwire
+      - internal/dev/say
+      - internal/dev/standin
+    may:
+      - internal/core/contract
+      - internal/dev/generate/pluginwire
+      - internal/digest
+      - internal/ordered
+      - internal/wcag
+    std:
+      - archive/zip
+      - bytes
+      - cmp
+      - context
+      - crypto/hmac
+      - embed
+      - encoding/base64
+      - encoding/hex
+      - encoding/json
+      - errors
+      - fmt
+      - go/ast
+      - go/format
+      - go/parser
+      - go/token
+      - go/types
+      - io
+      - io/fs
+      - maps
+      - net/url
+      - path
+      - regexp
+      - regexp/syntax
+      - slices
+      - strconv
+      - strings
+      - text/template
+      - time
+    why: "supply.intake.2, arch.layers.13: the shipped binary's closure holds no dev code, and a generator imports the leaves only"
+
+  - layer: dev-pluginwire
+    kind: pure
+    packages:
+      - internal/dev/generate/pluginwire
+    holds: "the second generator of gragas-generate: plugin contract 1's Go types and their ToCanon and FromCanon, read from contract/plugin/v1/*.schema.json; it reads the two schemas and writes internal/model/plugin, and nothing else"
+    template: "`internal/dev/*`: the engine's own tooling, not shipped"
+    product: "gragas's: internal/dev/generate/pluginwire turns the plugin contract, which only gragas's schemas describe, into the types the engine reads a plugin's messages with; it is the one place the schema's bounds are written down as code, so no copy of them is kept by hand, and no platform home is named in this table"
+    may:
+      - internal/ordered
+    std:
+      - bytes
+      - fmt
+      - go/format
+      - regexp
+      - slices
+      - strconv
+      - strings
+    why: "supply.intake.2, arch.layers.13: internal/dev/generate/pluginwire is imported by internal/dev/generate and cmd/gragas-generate alone, never by cmd/gragas or the product; a generator imports the leaves only"
+
+  - layer: dev-standin
+    kind: edge
+    packages:
+      - internal/dev/standin
+    holds: "the source of standin.wasm, the one plugin gragas keeps: a main package for wasip1 whose Answer is the plugin contract's five operations as small deterministic functions of the request, and whose main wraps it on stdin and stdout; the wasm host's tests build the module from it, and the gate rebuilds it and compares its digest"
+    template: "`internal/dev/*`: the engine's own tooling, not shipped; an edge for the one read of stdin and write of stdout a wasip1 program makes"
+    product: "gragas's: internal/dev/standin is the module the wasm host and the journeys are tested against; it serves no tool, and the plugins of the tools are another repository's"
+    may:
+      - internal/canon
+      - internal/core/wire
+      - internal/model/plugin
+      - internal/port
+    why: "arch.layers.13: internal/dev/standin imports the engine's own codec and generated types and the standard library alone (canon, to read a request body into the value tree the generated types read, so a body that is no request answers bug), never the SDK, which is another repository's; its test files import the port and the suite of contracttest, to run the cases through port.Plugin, and no non-test file does; it is built for the wasm target by being targeted, with no build tag and no read of a file"
+
+  - layer: dev-say
+    kind: pure
+    packages:
+      - internal/dev/say
+    holds: "the dev tools' shared first-error writer; not product: the one Speaker that cmd/gragas-* write their output and diagnostics through, in place of the copy each kept"
+    template: "`internal/dev/*`: the engine's own tooling, not shipped"
+    may: []
+    std:
+      - io
+    why: "supply.intake.2, arch.layers.13: internal/dev/say is imported by the dev tools of cmd/gragas-* alone, never by cmd/gragas or the product, and its lines count under dev-tool-lines' ceiling with theirs"
+
+  - layer: dev-entry
+    kind: edge
+    packages:
+      - cmd/gragas-dev
+    holds: "main of the engine's own generators: the flags, the files, the exit"
+    template: "`cmd/gragas-dev`: dev only, not shipped"
+    may:
+      - internal/config
+      - internal/core/project
+      - internal/dev/census
+      - internal/dev/gate
+      - internal/dev/join
+      - internal/dev/layers
+      - internal/dev/say
+      - internal/dev/scan
+      - internal/dev/surface
+      - internal/dev/tokens
+      - internal/digest
+      - internal/exit
+      - internal/host/clock
+      - internal/host/fs
+      - internal/host/jsonschema
+      - internal/host/term
+      - internal/host/treepin
+      - internal/host/trust
+      - internal/model
+    why: "supply.intake.2, arch.layers.13: cmd/gragas-dev calls the generators in internal/dev, and of what the shipped binary links only internal/core/project, the one check of gate/exemptions.yaml, which the gate runs itself with its own clock (gates.exemptions.4), and the lap log of the push tier, which it writes through internal/host/fs's Writer.Replace (gate/shared.yaml, the atomic-write owner) with the model's Root; and the settings' mounts, through internal/config's Load with host/trust's owned read, so the names scan reads its hashed list on a disk GRAGAS_MOUNTS or the mounts setting names, as the product reads the names file"
+
+  - layer: new-entry
+    kind: edge
+    packages:
+      - cmd/gragas-new
+    holds: "main of the command generator: it holds a name to the registry's rules, shows the files a new command would have and with --apply writes them, and with check runs the generator into a copy of the tree"
+    template: "`cmd/gragas-new`: dev only, not shipped, and apart from gragas-dev because it links the command tree, which the landing check's closure must not"
+    may:
+      - internal/cli/kit
+      - internal/cli/planned
+      - internal/dev/newcommand
+      - internal/dev/say
+      - internal/dev/templates/command
+      - internal/exit
+      - internal/host/term
+    why: "arch.layers.13: a generator of commands imports the kit whose rules it holds a name to and nothing the adapters hold, and links the pinned tools into its copy of the tree through go-files' confine.LinkFolder"
+
+  - layer: docs-entry
+    kind: edge
+    packages:
+      - cmd/gragas-docs
+    holds: "main of the command documents' generator: it asks the command tree for the documents the registry makes and writes them, or with --check says which differs"
+    template: "`cmd/gragas-docs`: dev only, not shipped, and apart from gragas-dev because it links the command tree, which the landing check's closure must not"
+    may:
+      - internal/cli/root
+      - internal/dev/say
+      - internal/exit
+      - internal/host/term
+      - internal/ordered
+      - internal/rendered
+    why: "arch.layers.13: a generator of documents imports the command tree it describes and nothing the adapters hold"
+  - layer: crash-entry
+    kind: edge
+    packages:
+      - cmd/gragas-crash
+    holds: "main of the crash-injection child: one scripted plan through the write path over the host's files, and each writing command of the tree run as cmd/gragas wires it with its writer and journal counted, each stopped at a numbered boundary for the journey to kill, and the recovery run after it"
+    template: "`cmd/gragas-crash`: dev only, built by the journeys and shipped nowhere, and outside the landing check's closure"
+    may:
+      - internal/apply
+      - internal/cli/root
+      - internal/config
+      - internal/core/api
+      - internal/core/plugins
+      - internal/core/wire
+      - internal/exit
+      - internal/host/...
+      - internal/model
+      - internal/port
+      - internal/port/legacy
+    why: "store.recovery.2: only a child process dies like a crash; a main of its own keeps the write path out of gragas-dev, and wires the command tree as cmd/gragas does so every writing command is killed in its own code; it hands the plugin host the engine's codec (core/wire) and judgement of a manifest (core/plugins) as cmd/gragas does, so a rule plan reaches a Plugins port that is the root's own and no port is tested for nil (arch.ports.5)"
+
+  - layer: release-entry
+    kind: edge
+    packages:
+      - cmd/gragas-release
+    holds: "main of the release's Go steps: before goreleaser builds, sources holds every source .goreleaser.yaml names to be a plain file in the clone's HEAD, never a symbolic link goreleaser would follow; after it, compare holds the checksums.txt of two builds from two clean copies to each other, and verify holds a release folder to its checksums.txt, unpacks each archive, checks its licence and notices, holds each binary to the one built, runs the host's binary (behind go-proc's network block; where the system gives none, sandbox.ErrNoBlock, the start test is refused by name and never run unblocked) and records what it found; build runs those steps around goreleaser, which it starts from two clean clones of HEAD only once the program is the sha256 tools.yaml pins for the host; it tags, signs and publishes nothing itself"
+    template: "`cmd/gragas-release`: dev only, not shipped, and apart from gragas-dev so the landing check's closure does not grow"
+    may:
+      - internal/dev/say
+      - internal/digest
+      - internal/exit
+      - internal/host/fs
+      - internal/host/term
+      - internal/host/trust
+      - internal/ordered
+    why: "supply.release.6, supply.release.11, arch.layers.13: the unpack step starts the binary it unpacked, so it is its own entry and imports no command tree; of the adapters, fs writes its record whole (gate/shared.yaml, atomic-write), trust makes the folder the binary starts in fresh at 0700 in an account temp folder of its own (FreshFolder), and its start tests run behind go-proc's sandbox (supply.install.2); it reads .goreleaser.yaml through internal/ordered, the one YAML reader, a leaf"
+
+  - layer: generate-entry
+    kind: edge
+    packages:
+      - cmd/gragas-generate
+    holds: "main of the contract generator: the flags, the files, the exit"
+    template: "`cmd/gragas-generate`: dev only, not shipped, and apart from gragas-dev so the gate links no generator"
+    may:
+      - internal/dev/generate
+      - internal/dev/generate/pluginwire
+      - internal/dev/say
+      - internal/exit
+      - internal/host/term
+    why: "supply.intake.2, arch.layers.13: the generator has its own command, so the program that judges a change does not link it"
+
+  - layer: names-entry
+    kind: edge
+    packages:
+      - cmd/gragas-names
+    holds: "main of the names gate member: it loads the format 3 rulebook through LoadBookNamed with the private names list on, the list named by the settings file's names-file key and read by the Tree's owned read, and fails when a listed name is in a line or a path the load read, or nothing was scanned"
+    template: "`cmd/gragas-names`: dev only, not shipped, and apart from gragas-dev so the landing check's closure is unchanged"
+    may:
+      - internal/config
+      - internal/core/api
+      - internal/core/format
+      - internal/dev/say
+      - internal/digest
+      - internal/exit
+      - internal/host/assets
+      - internal/host/fs
+      - internal/host/jsonschema
+      - internal/host/term
+      - internal/host/trust
+      - internal/model
+      - internal/model/plugin
+      - internal/port
+    why: "supply.secrets.4, arch.layers.13: a gate that reads the private list wires the format 3 loader, the Tree, the embedded schemas, the owned read of the settings file and a Plugins port whose every method answers ErrUnavailable (the load weighs a book's hand_written_presets against the installed plugins, and the port is filled, never nil: arch.ports.5), and nothing else"
+
+  - layer: tmp-entry
+    kind: edge
+    packages:
+      - cmd/gragas-tmp
+    holds: "main of the stable temp folder step: it makes os.TempDir()/gragas-<uid>/tmp at 0700, checks its way from / down with the trust walk, and prints it, or fails with the trust message"
+    template: "`cmd/gragas-tmp`: dev only, not shipped, and apart from gragas-dev so the landing check's closure is unchanged"
+    may:
+      - internal/host/trust
+    why: "arch.layers.13, trust-walk: the step that makes the folder the cached members hand Go's test cache calls the one trust walk and nothing else"
+
+  - layer: port
+    kind: pure
+    packages:
+      - internal/port
+    holds: "the seventeen ports, interfaces only, the typed failures, and Ports, the set main fills"
+    template: >-
+      `port`: one port package per program, interfaces only, its fake beside it (arch.ports.10, .17). The
+      name is the template's: internal/port holds the interfaces and the machine value, its fake beside
+      it. The fake takes the template's name for a stand-in, internal/port/testing
+    may:
+      - internal/model
+      - internal/model/plugin
+    std:
+      - context
+      - errors
+      - io/fs
+      - time
+    why: "arch.ports.10: the port package imports the model and nothing else of gragas's; internal/model/plugin is the plugin contract's types, which port.Plugin carries; context and time are the cancellation and the instant a port's method carries, and io/fs the read-only view Tree.FS answers"
+
+  - layer: legacy-port
+    kind: pure
+    packages:
+      - internal/port/legacy
+    holds: "the five ports of the engine's first form (Files, Writer, Schemas, Locks, Runs) and the values they carry, until the old commands move to the seventeen"
+    template: "Temporary. The old check and gen reach the world through these five until the M6 cut-over (M6-21) replaces them; nothing new imports it"
+    may: []
+    std:
+      - errors
+      - io
+      - io/fs
+    why: "arch.ports.10: a port package imports nothing of gragas's"
+    until: M6
+
+  - layer: host
+    kind: host
+    patterns:
+      - internal/host/...
+    holds: "the adapters, one per tool: fs (the disk under os.Root: the Tree that reads it and the Writer that replaces a file whole or appends a line, the Lock that keeps two writers apart, the Journal that keeps the record of a run, the old gen's writer, lock and run record until M6, and the names file), jsonschema, clock (the one place the system clock is read, and the host's load average and the processor time a process's children used, which the tier budget reads), term (the terminal and its look, over the shared kit), assets (the embedded files), git (the one place git is run, by the path programs.git names), tool (an enforcer located in the locate order, checked, asked its version, and run by its absolute path with an argv in its adapter's shape, a bare environment, capped output, a deadline, and the limits of the folder it is prepared in), sandbox (the isolated run level: a scratch folder in the cache, the run's files placed under os.Root, the resolve-from folder linked, and the limits a run in it is held to), treepin (the digest of the browsers folder Playwright's own install places, over go-files' treesum, which follows no link and refuses one leaving the folder), and the ones the milestones add"
+    template: "`host/<tool>`: one package per external tool or platform"
+    product: "gragas's adapters; internal/host/toml and internal/host/treepin are the shared ones of the row, and no platform home is named for either in this table"
+    carves:
+      - internal/host/clock
+      - internal/host/plugin
+      - internal/host/trust
+    may:
+      - internal/canon
+      - internal/digest
+      - internal/exit
+      - internal/host/trust
+      - internal/model
+      - internal/model/plugin
+      - internal/ordered
+      - internal/pluginbundle
+      - internal/port
+      - internal/port/legacy
+      - internal/readglob
+      - internal/wcag
+    why: "arch.layers.7, arch.ports.6: an adapter imports the port, the leaves, the one bundle judge, the one trust walk and the table of endings (host/term hands it the kit), never another adapter or the core; internal/model/plugin is the plugin contract's types, which port.StepRunner carries and host/tool's step runner answers in, with the caps of a step it holds a read to; shared packages of the row: internal/host/toml and internal/host/treepin"
+
+  - layer: host-clock
+    kind: host
+    packages:
+      - internal/host/clock
+    holds: "the one place the system clock is read, and the host's load average and the processor time a process's children used, which the tier budget reads (Busy); the children's time comes from host/tool's ChildrenCPU, go-proc's proc.ChildrenCPU forwarded, so host/tool stays the one importer of go-proc/proc"
+    template: "a host package that reads one thing of the system; the one adapter that may import another, host/tool, for a forwarder of go-proc/proc"
+    product: "gragas's: the clock, the load average and the children's processor time its tier budget reads; no platform home is named in this table"
+    may:
+      - internal/canon
+      - internal/digest
+      - internal/exit
+      - internal/host/tool
+      - internal/model
+      - internal/ordered
+      - internal/port
+      - internal/port/legacy
+      - internal/wcag
+    why: "arch.layers.7, arch.ports.6: clock imports host/tool for ChildrenCPU alone, so that no adapter but host/tool imports go-proc/proc whole (proc.Run among it); shared package of the row: internal/host/clock"
+
+  - layer: platformgap
+    kind: host
+    packages:
+      - internal/platformgap/goproc/commondir
+    holds: "generic code a platform library lacks, one package per capability under internal/platformgap/<library>/, kept until the library has it; commondir is where a checkout keeps what its worktrees share, git rev-parse --git-common-dir, until go-proc has it; a package here names nothing of gragas and imports none of it"
+    template: "`platformgap/<library>/<capability>`: a host package with one exported answer and no import of gragas, so that moving it to the library is a change of import"
+    product: "platform's, not gragas's: each package is the library's code in waiting; go-proc is the home of commondir"
+    may: []
+    why: "arch.layers.7, arch.shared.8: a platformgap package imports no other package of gragas, so it can move to the library that lacks it as it stands; it starts git through go-proc's proc.Run, as the git adapter does; shared package of the row: internal/platformgap/goproc/commondir"
+
+  - layer: host-plugin
+    kind: host
+    packages:
+      - internal/host/plugin
+    holds: "the host of gragas's plugins, the adapter of port.Plugins and the one importer of wazero (a tool is a plugin, run as WebAssembly): the runtime, wazero's interpreter with no compilation cache on disk and the limits of a call in one config place; Open, which reads a bundle through port.Bundles and refuses it before any of its code runs, through the one bundle judge, the engine's features and judgement of a manifest handed in, port.Trust and a module that imports WASI preview 1 alone; and each call, one fresh instance with stdin, stdout and a cut log and nothing else, its request and answer the engine's codec's, handed in"
+    template: "a host package that reads or runs one thing of the system"
+    product: "gragas's: the host of its plugins; no platform home is named in this table"
+    may:
+      - internal/canon
+      - internal/model
+      - internal/model/plugin
+      - internal/pluginbundle
+      - internal/port
+    why: "arch.layers.7, arch.ports.6: wazero is this package's library alone (the external table below); it imports the port, the leaves of the messages and the one bundle judge, and never the core: the codec, the features and the manifest judge are handed in by main; shared package of the row: internal/host/plugin"
+
+  - layer: host-trust
+    kind: host
+    packages:
+      - internal/host/trust
+    holds: "the thin adapter over go-files trust.Path, the one walk that checks a path before an adapter runs or reads what it names (trust-walk): it names the subject and its setting, maps the walk's refusal to the adapter's error and fix line, and keeps no walk, rule or hint table of its own. git, tool and gragas-tmp call it. It also reads the settings and tools files through go-files trust.ReadOwned, only when this account or root owns them and no group or other may write them (cli.config.12), for the entries that hand config.Load its reader. And it makes a private folder below a path not judged yet, Private: every name that is there judged top down first, the rest made through go-files trust.MkdirPrivate, for host/fs's state folder, host/git's releases cache and the sandbox's base (gate/shared.yaml, private-dir)"
+    template: "a host package beside the adapters, owned by none of them, so no adapter reaches another through it"
+    product: "gragas's thin adapter over go-files trust.Path: the walk is go-files', and this package keeps none of it, so nothing here is for a platform repository to hold"
+    may: []
+    why: "trust-walk, arch.shared.8: one owner for the trust check; it imports nothing of gragas's, so the adapters that share it share no other code; shared package of the row: internal/host/trust"
+
+  - layer: leaf
+    kind: pure
+    packages:
+      - internal/ordered
+      - internal/markdown
+      - internal/model
+      - internal/rendered
+      - internal/wcag
+    holds: "ordered (YAML values with their lines, the one YAML owner), model (types only), markdown (the one Markdown owner), wcag (the one WCAG contrast ratio, read by the terminal's palette check and the token generator's), rendered (the splice of a text between two marker lines and the compare of rendered files with the tree)"
+    template: "a leaf package"
+    product: "internal/ordered and internal/rendered stay in gragas until a second live program needs them; platform builds no YAML and no text package; internal/markdown and internal/wcag are gragas's too, and no platform home is named for them in this table"
+    may: []
+    std:
+      - bytes
+      - encoding/json/jsontext
+      - errors
+      - fmt
+      - io
+      - io/fs
+      - math
+      - regexp
+      - slices
+      - strconv
+      - strings
+      - unicode
+    why: "arch.layers.7, arch.layers.11: a leaf imports nothing of gragas's; shared packages of the row: internal/markdown, internal/ordered, internal/rendered and internal/wcag"
+
+  - layer: readglob
+    kind: pure
+    packages:
+      - internal/readglob
+    holds: "plugin contract 1's read-glob grammar: the glob a plugin's read step names and the match of a path against it, moved from host/tool so that the host's read step, the plugin test (C23) and the engine's codec match by one matcher and none keeps a copy; contract/plugin/v1 holds the two schemas alone; pure, no I/O"
+    template: "a leaf package"
+    product: "gragas's: the contract's read-glob grammar, which only gragas's schemas and plugins write; no platform home is named in this table"
+    may: []
+    std:
+      - errors
+      - fmt
+      - strings
+    why: "arch.layers.7, arch.layers.11: a leaf imports nothing of gragas's, so no package of internal/ can change what the contract's grammar says; internal/readglob is imported by host/tool's read step, the plugin test (core/plugintest), the engine's codec (core/wire) and core/api's mirror of the files a read step matches"
+
+  - layer: contract-model
+    kind: pure
+    packages:
+      - internal/model/contract
+    holds: "the contract's types, generated from the schemas by gragas-generate: types, constants and each type's ToCanon and FromCanon to and from canon's Value tree, with no effect and no decision"
+    template: "a leaf package of generated types and their codec, apart from model"
+    product: "gragas's: the contract's generated types, which only gragas's schemas describe; no platform home is named in this table"
+    may:
+      - internal/canon
+    std:
+      - fmt
+      - slices
+      - strconv
+      - strings
+    why: "arch.layers.7: generated types import canon alone, for the Value tree their codec reads and writes, and canon's own row imports only the digest leaf, so nothing of model or core is below them and no import closes a cycle; the std is formatting only, with no effect; shared package of the row: internal/model/contract"
+
+  - layer: plugin-model
+    kind: pure
+    packages:
+      - internal/model/plugin
+    holds: "plugin contract 1's types, generated from contract/plugin/v1/*.schema.json by gragas-generate's second generator (internal/dev/generate/pluginwire): types, constants and each type's ToCanon and FromCanon, which refuse what the schema says and a type can hold"
+    template: "a leaf package of generated types and their codec, as contract-model"
+    product: "gragas's: the plugin contract's generated types, which only gragas's schemas describe; no platform home is named in this table"
+    may:
+      - internal/canon
+      - internal/model
+    std:
+      - context
+      - fmt
+      - reflect
+      - regexp
+      - slices
+      - strconv
+      - strings
+      - unicode/utf8
+    why: "arch.layers.7: generated types import canon, for the Value tree their codec reads and writes, and the model leaf for model.Unshowable, the terminal's one rule that Shown escapes a plugin's text by, and for the root and scratch folder a step runner's Scope names; the model imports nothing of the plugin model, so no import closes a cycle; reflect compares two values of a list that must hold each once and regexp holds the schema's patterns, and neither has an effect; unicode/utf8 reads a plugin's text a character at a time; context is the type of the Scope's Note, a function the engine hands in, with no effect here; shared package of the row: internal/model/plugin"
+
+  - layer: plugin-wire
+    kind: pure
+    packages:
+      - internal/core/wire
+    holds: "the engine's codec of plugin contract 1: a request in canonical form, a response read through canon and the generated types, and every rule of the design the schemas cannot say (caps, order, paths, argv words, globs, the mark, the error codes of each operation)"
+    template: "a context as contract's row, with internal/model/plugin for its leaf"
+    may:
+      - internal/canon
+      - internal/model/plugin
+      - internal/port
+      - internal/readglob
+    std:
+      - encoding/base64
+      - errors
+      - fmt
+      - slices
+      - strconv
+      - strings
+      - unicode/utf8
+    why: "arch.ports.1, arch.ports.8: a context imports the port and the leaves, never an adapter, the operating system, the network or another context; whether a part of a path is one file's name is asked of port.FileNames, never decided here"
+
+  - layer: plugintest
+    kind: pure
+    packages:
+      - internal/core/plugintest
+    holds: "gragas plugin test's checks C1 to C23 of the plugin design: the ones that read a bundle's bytes (the manifest, the digest of plugin.wasm, a case's request and response, the recordings) and the ones that call an opened plugin handed in as an interface, each answering its number and what is wrong; the contract number, the features and the tool version range's ends arrive as arguments, since a context never imports another"
+    template: "a context as contract's row, with internal/model/plugin for its leaf"
+    may:
+      - internal/canon
+      - internal/digest
+      - internal/model
+      - internal/model/plugin
+      - internal/ordered
+      - internal/readglob
+    std:
+      - context
+      - errors
+      - fmt
+      - maps
+      - path
+      - slices
+      - sort
+      - strings
+    why: "arch.ports.1, arch.ports.8: a context imports the leaves, never an adapter, the operating system, the network or another context; the bundle is read by the core's operation through the port and handed here as bytes; the manifest is YAML read through internal/ordered, the one reader (gate/shared.yaml, ordered-yaml)"
+
+  - layer: plugins
+    kind: pure
+    packages:
+      - internal/core/plugins
+    holds: "the plugins context: the plan rounds, at most three plans of sixteen steps and one reading call, every other end an error; Judge, which refuses what the manifest schema cannot hold; and Shown, the escape of a plugin's text before a screen prints it"
+    template: "a context as contract's row, with internal/model/plugin for its leaf"
+    may:
+      - internal/canon
+      - internal/digest
+      - internal/model
+      - internal/model/plugin
+      - internal/pluginbundle
+      - internal/port
+    std:
+      - context
+      - encoding/base64
+      - errors
+      - fmt
+      - io/fs
+      - path
+      - regexp
+      - slices
+      - strconv
+      - strings
+      - unicode/utf8
+    why: "arch.ports.1, arch.ports.8: a context imports the port and the leaves, never an adapter, the operating system, the network or another context; what a step runs is host's behind the port, and whether two names are one folder is asked of model.SameName, never decided here; the recorder keeps a read's request and answer in canon's value tree and files the raw output of its steps, decoding the bytes a step gave from base64"
+
+  - layer: plugin-bundle
+    kind: pure
+    packages:
+      - internal/pluginbundle
+    holds: "the one digest of a plugin bundle and the one judgement of it as port.Bundles read it: the bundle digest, length-framed, computed from every file the reader answers, testdata/ among them, after its bounds and paths are checked (clean, relative, no two one name), against the lock's and the reader's, plugin.yaml and plugin.wasm both there, plugin.yaml held to its size cap and read strictly into its type, its name and version against the ref, and its wasm against the module's digest. host/plugin's Open and host/fs's add both call it, and neither keeps a copy"
+    template: "a leaf package beside the adapters, as host/trust is beside them: owned by none of them, so no adapter reaches another through it"
+    product: "gragas's: what a plugin bundle is, which no platform repository holds"
+    may:
+      - internal/canon
+      - internal/digest
+      - internal/model
+      - internal/model/plugin
+      - internal/ordered
+      - internal/port
+    std:
+      - errors
+      - fmt
+      - io/fs
+      - math
+      - path
+      - regexp
+      - slices
+      - strconv
+      - strings
+    why: "arch.layers.7, arch.shared.8: an adapter imports no core, so the judgement two adapters share is a leaf they both may import; it imports the port for the sentinels its refusals match, and runs nothing"
+
+  - layer: digest
+    kind: pure
+    packages:
+      - internal/digest
+    holds: "digest: SHA-256, the one owner of crypto/sha256's sums, in their raw, bare-hex, prefixed and streamed forms (arch.shared.8)"
+    template: "a leaf package"
+    product: "gragas's until platform rules otherwise: the one owner of crypto/sha256's sums in gragas; no platform home is named in this table"
+    may: []
+    std:
+      - crypto/sha256
+      - encoding/hex
+      - hash
+      - io
+    why: "arch.layers.7, arch.shared.8: a leaf imports nothing of gragas's; it alone sums with crypto/sha256, so every package that sums imports it and nothing else does; shared package of the row: internal/digest"
+
+  - layer: canon
+    kind: pure
+    packages:
+      - internal/canon
+    holds: "canon: RFC 8785 JSON, its digests and stable ordering, and the one owner of jsontext"
+    template: "a leaf package"
+    product: "gragas's until platform rules otherwise: the canonical JSON and the digests gragas records and compares; no platform home is named in this table"
+    may:
+      - internal/digest
+    std:
+      - cmp
+      - encoding/base64
+      - encoding/binary
+      - encoding/hex
+      - errors
+      - fmt
+      - hash
+      - io
+      - math
+      - slices
+      - strconv
+      - strings
+      - unicode/utf8
+    why: "arch.layers.7, arch.layers.11: a leaf imports nothing of gragas's but the digest leaf it sums through; canon alone needs hex, byte order, UTF-8 and ordering, so its row holds them and the other leaves keep their list; shared package of the row: internal/canon"
+
+  - layer: exit
+    kind: pure
+    packages:
+      - internal/exit
+    holds: "the map from a Word to the shared kit's exit code; the one place a code is declared"
+    template: "`exit`: imports the kit's exit leaf and the model, nothing else"
+    may:
+      - internal/model
+    std:
+      - errors
+    why: "cli.exit.2: the exit package imports the model and the kit's exit leaf only"
+
+  - layer: config
+    kind: pure
+    packages:
+      - internal/config
+    holds: "the settings from the environment and the settings file's bytes, the one path helper for config, state and cache, and the table of kept files"
+    template: "`config`"
+    product: "gragas's: its settings, its config, state and cache paths and its table of kept files; no platform home is named in this table"
+    may:
+      - internal/ordered
+    std:
+      - embed
+      - errors
+      - fmt
+      - io/fs
+      - net/url
+      - path
+      - path/filepath
+      - slices
+      - strconv
+      - strings
+      - unicode
+    why: "cli.config.3: config imports ordered, the one YAML owner, and nothing else of gragas's; it parses bytes main hands it and opens no file; shared package of the row: internal/config"
+
+  - layer: stand-in
+    kind: stand-in
+    packages:
+      - internal/port/testing
+      - internal/port/contracttest
+      - internal/config/testing
+    holds: "port/testing (porttest): the fake that fills every port in memory; port/contracttest: one suite per port, run on the fake and on each adapter; config/testing (configtest): the environment every test runs in, and the seeded draw a property test makes"
+    template: "`internal/*/testing`: test-only stand-ins for a layer, imported from _test.go files only"
+    product: "test-only stand-ins of gragas's layers, imported from _test.go files only; config/testing is gragas's own test environment, and no platform home is named in this table"
+    may:
+      - internal/canon
+      - internal/digest
+      - internal/model
+      - internal/model/plugin
+      - internal/pluginbundle
+      - internal/port
+      - internal/port/legacy
+    why: "arch.layers.10: a stand-in imports what the layer it stands in for may; shared package of the row: internal/config/testing; internal/canon reads and writes the plugin cases of the suite and the stand-in's answers in the one canonical form; internal/pluginbundle is the one bundle digest, which the fake's bundles and the Bundles suite sum by"
+
+  - layer: tests
+    kind: tests
+    packages:
+      - internal/journeys
+      - internal/journeys/overflow
+    holds: "the built binary, run as a person and a script run it: exit codes, streams, goldens, JSON, journeys, signals; internal/journeys/overflow, the one journey that runs in go-testkit's contain, where / is the overflow account's"
+    template: "`internal/journeys` and its sub-packages: test-only, no non-test file; they drive the binary"
+    may: []
+    why: "tests.journeys.2: the journeys, and their sub-packages, reach gragas only as its binary"
+
+  - layer: gate-tests
+    kind: stand-in
+    packages:
+      - internal/repo/gatetest
+    holds: "gatetest: the rulebook as the format for the gate's tests, the repository's own folder or, before the switch, a converted copy of it made by the engine's migration; and the shipped list of the generated presets, the rule ids the committed presets name on their generated lines"
+    template: "`internal/*/testing`: test-only stand-ins for a layer, imported from _test.go files only"
+    may:
+      - internal/core/format
+      - internal/core/link
+      - internal/model
+      - internal/ordered
+    why: "arch.layers.10: a stand-in imports what the layer it stands in for may; the gate's tests read the rulebook through the engine's reader, as internal/repo/gatetest does, and the identity's hand_written_presets through internal/ordered, the one YAML reader, a leaf, so the shipped list leaves out the tools preset --check compares none of"
+
+  - layer: repo
+    kind: tests
+    packages:
+      - internal
+      - internal/repo/rulebook
+      - internal/repo/explorer
+      - internal/repo/gocode
+      - internal/repo/docs
+    holds: "the tests over the repository: this table held against go list, the layout, the ports and the test isolation in internal, which reads the whole tree; and, split from it by what each reads so that Go's test cache replays them, the checks of the rulebook in internal/repo/rulebook, of the explorer boards in internal/repo/explorer, of the Go source files read one by one in internal/repo/gocode and of the documents in internal/repo/docs"
+    template: "`internal` itself, as the template's `internal/layers_test.go`, and `internal/repo/<group>`: test-only, in no other layer"
+    may:
+      - internal/core/audit
+      - internal/core/format
+      - internal/core/link
+      - internal/dev/census
+      - internal/dev/gate
+      - internal/dev/join
+      - internal/dev/layers
+      - internal/digest
+      - internal/exit
+      - internal/host/assets
+      - internal/host/fs
+      - internal/host/jsonschema
+      - internal/model
+      - internal/ordered
+      - internal/platformgap/goproc/commondir
+    why: "arch.layers.1: the repository tests read the table through its domain, the boards through the closing words and their exit codes (cli.look.5), a pnpm lock through the release-age judge the gate runs, and the tree's operating-system files through the test gragas check makes (arch.ports.24)"
+
+# What only an edge or an adapter imports: the operating system, the network
+# and other programs (arch.ports.1). A trailing $ matches the path exactly, so
+# net/url and net/netip stay pure. The why is the message a breach shows.
+# golang.org/x/sys is not listed: the preset's one os-host row refuses it in
+# every package outside internal/host, so no layer row repeats it.
+effects:
+  why: "arch.ports.1: the core reaches the operating system, the network and other programs only through a port"
+  packages:
+    - os
+    - os/exec
+    - net$
+    - net/http
+    - syscall
+    - unsafe
+    - plugin
+  # The calls of a package a pure layer may import that still reach the disk
+  # or the process: refused in a pure package all the same. appdirs is a pure
+  # library for HereWith, System and For alone, which read only what they are
+  # handed; Here reads the home and the environment itself, Temp and
+  # TempOverflow make and judge a folder, and Free reads a disk.
+  calls:
+    - github.com/birdtable/go-files/appdirs.Free
+    - github.com/birdtable/go-files/appdirs.Here
+    - github.com/birdtable/go-files/appdirs.Temp
+    - github.com/birdtable/go-files/appdirs.TempOverflow
+    - path/filepath.Abs
+    - path/filepath.EvalSymlinks
+    - path/filepath.Glob
+    - path/filepath.Walk
+    - path/filepath.WalkDir
+
+# Each library, by import path prefix, and the one package that imports it
+# (arch.ports.6); pure marks one a pure package may import. A library with no
+# owner is imported nowhere in gragas. Test-only packages are exempt: the
+# journeys hold the lock and use go-console's test helpers. Each package of the
+# platform's libraries (go-files, go-run, go-console) is a row of its
+# own, with its one adapter package.
+external:
+  - path: github.com/spf13/cobra
+    owner: internal/cli/root
+    within:
+      - internal/cli/cmd/...
+    # The old check and gen build their cobra commands in cli/legacy until the M6 cut-over (M6-21, M0a-20).
+    also:
+      - {owner: internal/cli/legacy, until: M6-21}
+      - {owner: internal/host/term, why: "the kit draws help from the cobra command itself, so host/term draws the tree main hands it"}
+  - path: github.com/spf13/pflag
+    owner: internal/cli/root
+  - path: github.com/birdtable/go-console/ui
+    owner: internal/host/term
+    # The command tree reaches the kit only through the Draw function main
+    # fills from host/term; no file of cli/root imports it
+    # (TestNothingOfTheKitIsImported holds them).
+  - path: github.com/birdtable/go-console/shell
+    owner: internal/config
+    pure: true
+    # The shell key and GRAGAS_SHELL are read by
+    # shell.ParseDialect and refused naming shell.Dialects, so gragas keeps no
+    # list of dialect names. A pure package imports only a pure library it
+    # owns, so config owns it, as it owns appdirs. Pure: the package imports
+    # the standard library alone and reads no system; HereDialect, which reads
+    # the parent processes, is go-console/ui's.
+    also:
+      - {owner: internal/cli/root, why: "the plan, apply, way-back and next lines are quoted by shell.Quote, not by hand-written quoters; the root is the one line maker, and contract and legacy reach it through the session"}
+      - {owner: internal/core/api, why: "test files only: its journal test reads the quoted line back"}
+      - {owner: cmd/gragas, why: "its restore test hands JournalRestore the command tree's Liner over the host Journal, and main hands the root the dialect its lines are written for"}
+      - {owner: internal/host/term, why: "HereDialect hands main go-console/ui's dialect of the shell gragas was started from, for the shell setting's auto"}
+      - {owner: internal/host/tool, why: "a version run that exits non-zero is refused with its line to paste quoted by shell.Quote for the dialect main hands tool.Config, or, with none or an argv Quote refuses, the step in words; the hand-joined line it replaces quoted the path alone", files: [tool.go, locate.go, tests]}
+      - {owner: internal/host/trust, why: "fixLine and handOver quote go-files' owner-and-mode fix steps for cmd or a POSIX shell with shell.Quote, in place of the hand-written quoters a refusal's fix line used"}
+  - path: github.com/birdtable/go-console/uitest
+    owner: internal/host/term
+    # The frames of the plan form and of the terminal's look are held to
+    # goldens through the console's test driver.
+    also:
+      - {owner: internal/cli/root, why: "its tests hold the plan frames to goldens, written with the one -update"}
+      - {owner: internal/config/testing, why: "Golden calls uitest/golden.File, the one exact compare, and links its -update into every test binary"}
+  - path: github.com/birdtable/go-run/version
+    owner: internal/cli/root
+  - path: github.com/birdtable/go-testkit
+    owner: internal/config/testing
+    # Test-only: the test helpers go-proc kept as testenv until v0.12.0, which
+    # moved them to platform's go-testkit. Every importer names
+    # it testenv, so no call site changed with the move.
+    # A test that plants a link calls testenv.Link or
+    # Links itself, which skip with testenv.NoLinks on a system that refuses
+    # this account one; configtest keeps no forwarding name of them.
+    also:
+      - {owner: cmd/gragas, why: "its tests plant links through testenv.Link"}
+      - {owner: cmd/gragas-dev, why: "its tests plant links through testenv.Link"}
+      - {owner: cmd/gragas-docs, why: "its tests plant links through testenv.Link"}
+      - {owner: cmd/gragas-generate, why: "its tests plant links through testenv.Link"}
+      - {owner: cmd/gragas-tmp, why: "its tests plant links through testenv.Link"}
+      - {owner: internal, why: "the tracked-links test plants links through testenv.Link"}
+      - {owner: internal/host/fs, why: "its tests plant links through testenv.Link"}
+      - {owner: internal/host/git, why: "its tests plant links through testenv.Link"}
+      - {owner: internal/host/sandbox, why: "its tests plant links through testenv.Link"}
+      - {owner: internal/host/tool, why: "its tests plant links through testenv.Link"}
+      - {owner: internal/host/treepin, why: "its tests plant links through testenv.Link"}
+      - {owner: internal/host/trust, why: "its tests plant links through testenv.Link"}
+      - {owner: internal/journeys, why: "its tests plant links through testenv.Link"}
+      - {owner: internal/journeys/overflow, why: "its one test builds the binary through testenv.Build, as the journeys do"}
+  - path: github.com/birdtable/go-testkit/contain
+    owner: internal/config/testing
+    # Test-only: contain runs a test binary again in a user and
+    # PID namespace that maps this account and not root. configtest.MainContained
+    # is the one call, for internal/journeys/overflow alone, because the namespace
+    # wraps a whole test binary and every program the journeys start would be
+    # refused at a / the overflow account owns.
+  - path: github.com/tetratelabs/wazero
+    owner: internal/host/plugin
+    # The one importer: no
+    # wrapper package, no second importer. Its interpreter is the only engine
+    # gragas runs, and it sets no compilation cache, so nothing is written to
+    # disk.
+  - path: github.com/birdtable/go-proc/proc
+    owner: internal/host/tool
+    # Every enforcer tool starts through proc.Run, in run.go's start: an
+    # absolute path, a fixed argv, a bare environment, capped output, a
+    # deadline and the scratch folder's memory limit, its tree killed whole.
+    # git starts git the same way, its adapter's one start;
+    # the test runner reruns its child
+    # through it. Since go-proc v0.6.0 no main asks CappedExec first: a tree's
+    # memory is held by a cgroup or a Job Object, never by a wrapper of this
+    # binary.
+    also:
+      - {owner: internal/host/git, why: "git, the only transport, runs through proc.Run in run.go's runWith, the one start of the git adapter, its tree, an ssh or a helper among it, killed whole at the deadline"}
+      - {owner: internal/platformgap/goproc/commondir, why: "commondir asks git for the common git dir through proc.Run, as the git adapter does, until go-proc has the helper"}
+      - {owner: internal/config/testing, why: "tests.isolation: Rerun starts the test binary again through proc.Run, with go-testkit (imported as testenv) beside it, and HoldOf asks proc.Holds what this system does with a run held to a memory limit, so a test expects the host's answer, never the GOOS's; a test helper, not a host adapter, so it does not go through host/tool"}
+      - {owner: cmd/gragas-release, why: "the toolchain's environment is proc.Needed, proc.Bare and proc.HomeEnv, and a program's file name is proc.FileName for the system its row names, not a list of variables or a .exe of gragas's own", files: [toolchain.go, verify.go, tests]}
+      - {owner: cmd/gragas-dev, why: "fetch names a tool's program for its row's system through proc.FileName, not a windows/ prefix and a .exe of its own, and its tests name this system's programs through proc.LocalFileName; and hook's allowlist of the environment the hooks and landing run hand git and task starts from proc.Needed and proc.HomeEnv's names, so no file of the gate names a system variable", files: [fetch.go, hook.go, tests]}
+      - {owner: cmd/gragas-tmp, why: "its base test points every home and temp variable at a folder of its own through proc.HomeEnv, and names none of them", files: [tests]}
+  - path: github.com/birdtable/go-proc/load
+    owner: internal/host/clock
+    # The host's load average is go-proc's load.Read, read by clock.Busy for
+    # the tier run, not a parser of /proc/loadavg or vm.loadavg of gragas's
+    # own; where the system keeps none it answers
+    # load.ErrNoAverage.
+  - path: github.com/birdtable/go-proc/gitenv
+    owner: internal/host/git
+    # Every run of git is handed gitenv.Env over nothing: no
+    # variable of this process's, and no GIT_ that names a repository, an
+    # index or a config, in any letter case, reaches git.
+    also:
+      - {owner: internal, why: "the taskfile test's wide git runs in gitenv.Env over the inherited environment, every GIT_ name stripped, with its global and system configuration named null, not a hand-filtered copy", files: [tests]}
+      - {owner: internal/journeys, why: "a journey's git runs in gitenv.Env of the test's environment, so the identity is the test home's .gitconfig alone and no GIT_ of this process, GIT_CONFIG_GLOBAL among them, reaches it", files: [tests]}
+      - {owner: internal/repo/docs, why: "the docs tests run git in gitenv.Env over the inherited environment, no GIT_ of this process reaching it and the global and system configuration named null", files: [tests]}
+      - {owner: internal/platformgap/goproc/commondir, why: "commondir runs git in gitenv.Env over proc.SystemEnv with the global configuration named null, as the git adapter does"}
+      - {owner: cmd/gragas-dev, why: "the tier a pre-push runs in a throwaway worktree gets gitenv.Repo of the hook's environment, so no git there names this clone; the hook's and mergeable's reads of git and the names scan's run through gitenv.ReadArgs, the scan's git in gitenv.Env with the global configuration named null, and the secrets pass names it null through gitenv.NoGlobalConfig, keeping the index git handed pre-commit, not a hand list of GIT_ names or a hand -c line", files: [hook.go, mergeable.go, scan.go, secrets.go]}
+      - {owner: cmd/gragas-new, why: "check's copy lists the tree's files through gitenv.ReadArgs in gitenv.Env with the global configuration named null, not a hand filter of three GIT_ names", files: [check.go]}
+  - path: github.com/birdtable/go-proc/gitenv/gittest
+    owner: internal
+    # The git a test runs is go-proc's gittest, moved there from go-testkit so it can
+    # leave for testkit: a git child's environment over
+    # gitenv.Env (gittest.Git) and a repository of the test's own (gittest.Repo). The
+    # installed and tiers tests read the tree's git in gittest.Git's environment, over
+    # the host's git from configtest.Git. Nothing but a test file imports it.
+    also:
+      - {owner: cmd/gragas-dev, why: "a helper runs git under a fixed identity it appends to gittest.Git's environment, every GIT_ of this process stripped", files: [tests]}
+      - {owner: cmd/gragas-new, why: "the copy test runs git in gittest.Git's environment, no configuration of the account or the system reaching it", files: [tests]}
+      - {owner: internal/journeys, why: "a journey's git runs in gittest.Git of the test's environment, so the identity is the test home's .gitconfig alone and no GIT_ of this process, GIT_CONFIG_GLOBAL among them, reaches it", files: [tests]}
+      - {owner: internal/repo/docs, why: "the ignore test builds its repository, one commit on the default branch, through gittest.Repo", files: [tests]}
+      - {owner: internal/platformgap/goproc/commondir, why: "its test makes a clone and a linked worktree through gittest.Repo and gittest.Git", files: [tests]}
+  - path: github.com/birdtable/go-files/trust
+    owner: internal/host/trust
+    # The one trust walk is go-files': host/trust names
+    # the subject and maps the refusal, and keeps no walk of its own.
+    also:
+      - {owner: internal/host/fs, why: "the writer reads a folder's owner and this run's account through trust.OwnerOf and trust.Account directly, no forwarding name of ours"}
+      - {owner: internal/host/sandbox, why: "the scratch parent's owner and this run's account are read through trust.OwnerOf and trust.Account directly, and who else may write it is judged on its handle by trust.Held, whose ErrMount refusal takes host/trust's MountFix line"}
+      - {owner: internal/host/tool, why: "whether the system starts a chain of programs for a script, and which, is go-files' answer through trust.Interpreters, not a #! reader of ours; a grant's cache folder, made by handle, is held to this account through trust.OwnerOf and trust.Account directly, as the sandbox's scratch parent is, since a make by handle keeps the mode and owner of a folder that was there"}
+  - path: github.com/birdtable/go-files/trust/trusttest
+    owner: internal/host/sandbox
+    # Who may write the base the sandbox's tests loosen: mode
+    # bits on Unix and an access list on Windows, one intent, so no test
+    # names a system. go-files asks that a test import it itself.
+    # Nothing but a test file imports it.
+    also:
+      - {owner: internal/host/git, why: "its tests plant who may write a folder or a program through go-files' trusttest, the mode bits on Unix and the access list on Windows, not os.Chmod, which on Windows touches only the read-only bit"}
+      - {owner: internal/host/tool, why: "its resolved-listing test plants the group's write on a program through go-files' trusttest, the mode bits on Unix and the access list on Windows, not os.Chmod"}
+      - {owner: cmd/gragas-tmp, why: "its base test plants a base others can write through go-files' trusttest, the mode bit on Unix and the access list on Windows, where a mode has no group or other bit, and checks the folder it makes through trusttest.Perm"}
+      - {owner: internal/host/trust, why: "its Bind plants judge the walk, Held and ReadOwned on a disk mounted nosuid, which go-files' trusttest.Bind mounts in a user namespace that keeps its capabilities, as no test may with syscall or x/sys"}
+      - {owner: cmd/gragas-dev, why: "place_test checks the mode a placed program keeps through trusttest.Perm, the mode bits on Unix and the access list on Windows, not Mode().Perm()", files: [tests]}
+      - {owner: internal/host/fs, why: "the Tree's owned read is judged on a file its group can write, planted through go-files' trusttest.Loosen, and its tests check the mode a file or folder the store, the lock or the old writer made keeps through trusttest.Perm, the mode bits on Unix and the access list on Windows, not os.Chmod or Mode().Perm() against a number", files: [tests]}
+  - path: github.com/birdtable/go-files/filestest
+    owner: internal/host/git
+    # The names a test makes in a repository are checked against every system's
+    # rules through filestest.AllPortable, so no
+    # test spells a name one system refuses, such as one with a double quote.
+    # Nothing but a test file imports it, but for the contract case of port.FileNames,
+    # whose portable.go is a stand-in's file and no test file.
+    # A test's private folder, its fake program and its planted
+    # file are filestest.Private, WriteProgram and WriteFile, not a copy in
+    # configtest, so every package whose tests plant one imports it.
+    also:
+      - {owner: internal/port/contracttest, why: "the contract case of port.FileNames takes its refused names from go-files' one list of hostile names, filestest.HostileNames, and holds the adapter and the fake to it alike; the case is a stand-in's file, not a test file", files: [portable.go]}
+      - {owner: internal/config/testing, why: "the stand-in and the fake write their programs and files through filestest.WriteProgram and WriteFile, and its tests plant a private folder through filestest.Private", files: [fake.go, standin.go, tests]}
+      - {owner: cmd/gragas-dev, why: "its tests plant a private folder, a program and a file through filestest.Private, WriteProgram and WriteFile", files: [tests]}
+      - {owner: internal, why: "its tests plant a private folder, a program and a file through filestest.Private, WriteProgram and WriteFile", files: [tests]}
+      - {owner: internal/host/fs, why: "its tests plant a private folder, a program and a file through filestest.Private, WriteProgram and WriteFile", files: [tests]}
+      - {owner: internal/host/sandbox, why: "its test plants a program through filestest.WriteProgram", files: [tests]}
+      - {owner: internal/host/tool, why: "its tests plant a private folder, a program and a file through filestest.Private, WriteProgram and WriteFile", files: [tests]}
+      - {owner: internal/host/trust, why: "its tests plant a private folder, a program and a file through filestest.Private, WriteProgram and WriteFile", files: [tests]}
+      - {owner: internal/journeys, why: "its tests plant a private folder, a program and a file through filestest.Private, WriteProgram and WriteFile", files: [tests]}
+      - {owner: internal/journeys/overflow, why: "its test plants a program through filestest.WriteProgram", files: [tests]}
+  - path: github.com/birdtable/go-files/treesum
+    # The pinned digest of the browsers folder Playwright's own install places:
+    # one owner, a host adapter; gragas-dev reads it through that.
+    owner: internal/host/treepin
+  - path: github.com/birdtable/go-files/write
+    owner: internal/host/fs
+    # The dev commands replace a file whole through the package, not a copy of
+    # their own.
+    also:
+      - {owner: cmd/gragas-dev, why: "the stamp, the tools' programs and the generated files are replaced whole through go-files/write"}
+      - {owner: cmd/gragas-generate, why: "judge-links-within: the generated files are replaced whole beneath the root through go-files/write's FileIn"}
+      - {owner: cmd/gragas-release, why: "the binary the release check starts is written through go-files/write's Runnable, which holds the fork lock until the file is closed"}
+      - {owner: cmd/gragas-new, why: "check's copy of the tree writes each file through go-files/write's File, at its owner-only mode and with no flush, as the copy is private scratch the caller removes", files: [check.go]}
+  - path: github.com/birdtable/go-files/confine
+    owner: internal/host/fs
+    # The file host holds every path to a local name, walks it by handle and
+    # opens it with no link followed through the package, not a walk of its
+    # own. A link gragas makes is
+    # a folder's, made by confine.LinkFolder: a symbolic link, or on Windows a
+    # junction. The sandbox and the dev commands that link are
+    # owners of their own, as a host adapter may not import host/fs.
+    also:
+      - {owner: internal/host/trust, why: "trust-walk: the stable temp folder's tmp is made in the folder go-files's appdirs.Temp answers, by confine.Mkdir, with no link followed and nothing made through one; and Private makes a private folder below a path not judged yet through go-files's trust.MkdirPrivate (private-dir)"}
+      - {owner: internal/host/sandbox, why: "link-folder: the sandbox links the resolve-from folder into its scratch folder through confine.LinkFolder, makes its scratch folders fresh through confine.MkdirFresh and the folders in them through confine.MkdirPrivate, its scratch folders' parents through host/trust's Private, opens through confine.Open and removes through confine.RemoveAll (go-files v0.11.0); an adapter may not import another, host/fs among them, and host/link, the carve it went through, is gone, so the call is its own", files: [sandbox.go]}
+      - {owner: internal/host/git, why: "a fetch makes the releases cache through host/trust's Private, the folders in it private by confine.MkdirPrivate and its run's folders fresh by confine.MkdirFresh, removes them by confine.RemoveAll, and moves its files in by confine.RenameNoReplace, which never replaces a folder the race made first; and WorkObjects hands git only a path confine.NoLinks finds a regular file, reached through no link; an adapter may not import another, host/fs among them, so the calls are its own; and the MERGE_HEAD file is read through confine.ReadCapped, at its cap with no link followed", files: [remote.go, merging.go, work.go, tests]}
+      - {owner: cmd/gragas-new, why: "link-folder: check links the pinned tools folder into its copy of the tree through confine.LinkFolder"}
+      - {owner: cmd/gragas-dev, why: "link-folder: the pre-push hook links the clone's pinned tools folder into its throwaway worktree through confine.LinkFolder; and the names scan follows its temp folder through confine.Resolve, not filepath.EvalSymlinks"}
+      - {owner: internal/port/testing, why: "the fake of port.FileNames is confine.Portable, the one table of what a disk does with a name, so the fake and host/fs answer alike and gragas holds none of its own", files: [world_names.go]}
+      - {owner: internal/host/tool, why: "trust-walk: makeHome makes the run's home folders by confine.Mkdir, no link followed; the version run's empty folder is made by confine.MkdirFresh and removed by confine.RemoveAll in locate.go; a plugin's step holds each path to the scratch folder by confine.Local and reads by confine.Open in step_words.go and step_read.go, and places its files by confine.MkdirPrivate and confine.Open in step.go, no link followed; a grant's cache folders, the tools cache, its key folder, each variable's folder and the folder its Home cache is kept in (proc.HomeEnvCache), are made by confine.MkdirPrivate below the folder host/trust's Private judged and made private, so no link a step left at any of them is followed", files: [cache.go, home.go, locate.go, step.go, step_read.go, step_words.go]}
+      - {owner: internal/config/testing, why: "configtest.MkdirPrivate makes the folders a test's set-up needs, each missing level of a name below a folder the test made, through confine.MkdirPrivate below an os.Root, so a test in cmd/gragas names no mode and imports no go-files package; and standin.go's moduleRootFrom finds the go.mod standin.wasm is built from by confine.Nearest, the walk host/fs's Locate makes, held to the os.Stat answer as Locate is: StandinWasm runs in a test's set-up, before any port.Tree exists, and the stand-in layer may not import host/fs (arch.layers.10), so the walk is the shared one, not a copy", files: [mkdir.go, standin.go]}
+  - path: github.com/birdtable/go-run/exit
+    owner: internal/exit
+    pure: true
+    # The table of endings is built once in internal/exit, the seven codes
+    # gragas's own (cli.exit.2); go-run/exit declares none since
+    # v0.5.0 and checks the table.
+  - path: github.com/birdtable/go-files/appdirs
+    owner: internal/config
+    pure: true
+    # Where gragas's own folders are: config reads them
+    # through HereWith with the env reader main hands it, which reads no
+    # environment and no disk of its own, and keeps no system of its own. Pure
+    # for those calls alone: Here reads the home and the environment, and Temp,
+    # TempOverflow and Free reach the disk; each is an effect call (above), so
+    # config, a pure package, calls none of them. Temp
+    # is called by the two owners below, which are no pure package; Free by
+    # none.
+    also:
+      - {owner: internal/host/trust, why: "the account's own temp folder for gragas is go-files' appdirs.Temp, asked first as TempOverflow in a test binary; host/trust asks it for the stable temp folder and keeps no walk or make of its own"}
+      - {owner: internal/config/testing, why: "isolate_test reads appdirs.HomeVar and appdirs.Sources to check the run's home is go-testkit's and that the sources are the system's own, so no name of either is written there", files: [tests]}
+  - path: github.com/birdtable/go-files/lock
+    owner: internal/host/fs
+  - path: github.com/birdtable/go-run/runlog
+    owner: internal/host/fs
+  - path: github.com/santhosh-tekuri/jsonschema
+    owner: internal/host/jsonschema
+  - path: golang.org/x/mod/semver
+    owner: internal/model
+    pure: true
+    # The version compare of a tool range, not a hand-written one.
+    # It is model's, so an adapter's tool range (core/link) and a plugin
+    # grant's versions (host/tool's step runner) are one reading.
+  - path: golang.org/x/text
+    owner: internal/host/jsonschema
+  - path: golang.org/x/crypto/ssh
+    owner: internal/host/git
+    # The ssh server and agent of the adapter's fetch tests: the
+    # test process answers the machine's ssh, so no sshd is needed and no test
+    # builds for one system alone. Nothing but a test file imports it.
+  - path: github.com/birdtable/go-socket/listen
+    owner: internal/host/git
+    # The address of the agent the adapter's fetch tests serve:
+    # listen.Local names it and listen.Listen binds it, a path or a pipe by
+    # system. Nothing but a test file imports it.
+  - path: github.com/birdtable/go-socket/peer
+    owner: internal/host/git
+    # The ssh that reaches the agent the adapter's fetch tests serve:
+    # peer.AgentSSHCommand names it where the machine's ssh
+    # cannot open the agent's address. Nothing but a test file imports it.
+  - path: github.com/birdtable/go-proc/sandbox
+    owner: cmd/gragas-release
+    # The gate's network block (supply.install.2):
+    # the start tests run the unpacked binary behind sandbox.Run, which sets
+    # go-proc's block on the blocked child and execs it; sandbox.Check says
+    # what a host holds, and on ErrNoBlock the start test is refused.
+    also:
+      - {owner: cmd/gragas-dev, why: "supply.install.2: gragas-dev started as the blocked child (exit.BlockedWord) execs its member through sandbox.Run, the block the journeys prove on the kernel"}
+  - path: go.yaml.in/yaml/v3
+    owner: internal/ordered
+    pure: true
+    replaces:
+      - gopkg.in/yaml.v3
+  - path: github.com/pelletier/go-toml/v2
+    owner: internal/host/toml
+    # The one TOML reader, for .gitleaks.toml in the config checker.
+  - path: mvdan.cc/sh/v3
+    owner: internal/core/audit
+    pure: true
+    # The one package that reads shell lines (the register's shell-parse row),
+    # for the tiers check of a member that cannot fail.
+  - path: github.com/yuin/goldmark
+    owner: internal/markdown
+    pure: true
+  - path: encoding/json/jsontext
+    owner: internal/canon
+    pure: true
+    also:
+      - {owner: internal/ordered, why: "ordered writes the committed rules.json and bindings.json layout through the jsontext encoder (strings, separators, indent); canon writes the canonical bytes"}
+    why: "jsontext, the standard library's RFC 8785, reaches gragas only through internal/canon, and through internal/ordered for its JSON writer alone"
+  - path: github.com/russross/blackfriday
+    why: "supply.intake.1: goldmark, through internal/markdown, is the one Markdown parser"
+  - path: github.com/gomarkdown/markdown
+    why: "supply.intake.1: goldmark, through internal/markdown, is the one Markdown parser"
+
+# The ports, fixed up front with their adapters (arch.ports.10, arch.ports.15):
+# each field of port.Ports, the subject it is, and the one adapter that fills
+# it. carries are the port package's other interfaces, the values a port hands
+# back. fake is the stand-in that fills every port.
+ports:
+  fake: internal/port/testing
+  carries:
+    - Bundles
+    - Plugin
+    - Plugins
+    - StepRunner
+    - Trial
+  list:
+    - port: Tree
+      subject: "a root's files, read-only: a rulebook's repository, a project, the engine's own state folder"
+      adapter: internal/host/fs
+    - port: Writer
+      subject: "one file replaced whole, or one line appended, inside a root"
+      adapter: internal/host/fs
+    - port: Lock
+      subject: "one writer per root at a time, and proof's scratch lock"
+      adapter: internal/host/fs
+    - port: Journal
+      subject: "the record of a run that writes: intent before effect, the plan, the copies, the close"
+      adapter: internal/host/fs
+    - port: History
+      subject: "a repository's own history, read-only"
+      adapter: internal/host/git
+    - port: Remote
+      subject: "releases from elsewhere, and the two writes release makes"
+      adapter: internal/host/git
+    - port: Sandbox
+      subject: "a prepared run at a named level"
+      adapter: internal/host/sandbox
+    - port: Schema
+      subject: "a document checked against a JSON Schema"
+      adapter: internal/host/jsonschema
+    - port: Clock
+      subject: "today, and the run time"
+      adapter: internal/host/clock
+    - port: Assets
+      subject: "the embedded files: the explorer app, the handbook, the schemas, the profiles, the fixture rulebook"
+      adapter: internal/host/assets
+    - port: Terminal
+      subject: "the person's terminal: width, colour depth, a question, a line out, a line in"
+      adapter: internal/host/term
+    - port: Owned
+      subject: "one file outside every root, read whole, that the settings name by an absolute path and only this account or root owns"
+      adapter: internal/host/fs
+    - port: FileNames
+      subject: "what a disk does with a file's name: its key where a disk folds names, or a refusal"
+      adapter: internal/host/fs
+    - port: Trust
+      subject: "the plugins a person approved to run on this machine, each by its bundle's digest, kept in the state folder and never in a clone"
+      adapter: internal/host/fs
+    - port: Steps
+      subject: "a plugin's steps of one read, each run or read under its manifest's grants alone, journalled before it starts"
+      adapter: internal/host/tool
+    - port: Bundles
+      subject: "the plugin bundles installed under a root as they lie on disk: the lock's list, and each bundle's files and digests as read"
+      adapter: internal/host/fs
+    - port: Plugins
+      subject: "the installed plugins of a root, each opened over its bundle and refused before any of its code runs, and each call one fresh instance of its module"
+      adapter: internal/host/plugin
+
+# The outside programs, each with the one adapter package that starts it by
+# the checked path its setting names (arch.ports.6, cli.process.1). gragas
+# gen writes a G204 exclusion in .golangci.yml for the non-test files of each
+# adapter here, and internal/lintconfig_test.go holds that no other package
+# has one. The adapter is a package of the host row: a program joins this
+# list in the pull request that builds its adapter (host/sandbox when its
+# milestone comes).
+programs:
+  - program: git
+    adapter: internal/host/git
+  # enforcer is every tool a plugin stands for: host/tool runs the one it
+  # located, by its checked absolute path, with a step inside the plugin's grants.
+  - program: enforcer
+    adapter: internal/host/tool
+    file: run.go
+
+# Packages docs/architecture.md section 3 names that do not exist yet, each
+# with the milestone of section 18 that creates it and the layer it joins.
+# internal/layers_test.go holds section 3 to this table: a package it names
+# either exists or is here. The pull request that creates a package moves it
+# into its row's packages: in the same change.
+planned:
+  - created: M1
+    layer: cli
+    packages:
+      - internal/cli/cmd/format
+  - created: M2
+    layer: cli
+    packages:
+      - internal/cli/cmd/lifecycle
+  - created: M3
+    layer: cli
+    packages:
+      - internal/cli/cmd/link
+  - created: M4
+    layer: cli
+    packages:
+      - internal/cli/cmd/proof
+  - created: M5
+    layer: cli
+    packages:
+      - internal/cli/cmd/release
+  - created: M5
+    layer: core
+    packages:
+      - internal/core/release
+  - created: M6
+    layer: cli
+    packages:
+      - internal/cli/cmd/project
+  - created: M7
+    layer: cli
+    packages:
+      - internal/cli/cmd/publish
+  - created: M7
+    layer: core
+    packages:
+      - internal/core/publish
+  - created: M8
+    layer: cli
+    packages:
+      - internal/cli/cmd/explorer
+  - created: M9
+    layer: cli
+    packages:
+      - internal/cli/cmd/agents
+  - created: M9
+    layer: core
+    packages:
+      - internal/core/agents
+
+# The bounded contexts (arch.ports.8, arch.layers.9): each is the package
+# internal/core/<name>, and the boundary lint refuses an import between any two.
+contexts:
+  why: "arch.ports.8: no context imports another; what one needs from another arrives as an argument, and the contexts meet only in internal/core/api"
+  names:
+    - link
+    - proof
+    - format
+    - lifecycle
+    - release
+    - publish
+    - project
+    - audit
+    - agents
+    - contract
+    - plugins
+
+# The explorer's modules (docs/architecture.md section 8.2) and what each may
+# import, rendered into the ESLint boundary configuration. A name ending in /*
+# stands for each folder below it, and those folders may not import one another.
+# The paths are the workspace's folders under explorer/packages (M8).
+explorer:
+  why: "arch.ports.8: the explorer's modules have the contexts' independence contract; a view reaches data through the selectors and words through the messages, and no view imports another"
+  modules:
+    - name: contract
+      path: explorer/packages/contract
+    - name: tokens
+      path: explorer/packages/tokens
+    - name: core/data
+      path: explorer/packages/core/data
+      may:
+        - contract
+    - name: core/selectors
+      path: explorer/packages/core/selectors
+      may:
+        - contract
+        - core/data
+    - name: core/messages
+      path: explorer/packages/core/messages
+    - name: core/formatter
+      path: explorer/packages/core/formatter
+    - name: core/markup
+      path: explorer/packages/core/markup
+    - name: core/parts
+      path: explorer/packages/core/parts
+      may:
+        - tokens
+        - core/messages
+        - core/formatter
+    - name: core/views/*
+      path: explorer/packages/core/views/*
+      may:
+        - contract
+        - tokens
+        - core/data
+        - core/selectors
+        - core/messages
+        - core/formatter
+        - core/markup
+        - core/parts
+    - name: standalone
+      path: explorer/packages/standalone
+      may:
+        - contract
+        - tokens
+        - core/data
+        - core/selectors
+        - core/messages
+        - core/formatter
+        - core/parts
+        - core/views/*
+    - name: element
+      path: explorer/packages/element
+      may:
+        - contract
+        - tokens
+        - core/data
+        - core/selectors
+        - core/messages
+        - core/formatter
+        - core/views/*
+    - name: plugin-docs
+      path: explorer/packages/plugin-docs
+      may:
+        - tokens
+        - element
+    - name: plugin-portal
+      path: explorer/packages/plugin-portal
+      may:
+        - tokens
+        - element
+
+# The words of one system or another (arch.ports.4, .5, .17): no non-test
+# file of a pure package starts a string with a root, names a tool or a
+# home-relative system folder, and no
+# port or fake names a system. There is no exception list; the fix is a port.
+platform:
+  roots:
+    - /sys
+    - /proc
+    - /run
+    - /opt
+    - /etc
+    - /var
+    - /usr
+    - /Library
+    - /System
+    - "C:\\"
+  tools:
+    - systemctl
+    - systemd-run
+    - journalctl
+    - launchctl
+    - apt-get
+    - dpkg
+    - brew
+    - dnf
+    - yum
+    - pacman
+    - powershell
+    - diskutil
+    - pmset
+  names:
+    - linux
+    - darwin
+    - windows
+    - macos
+    - freebsd
+  homes:
+    - Library/LaunchAgents
+    - Library/LaunchDaemons
+    - Library/Application Support
+    - Library/Preferences
+    - .config/systemd
+    - .local/share/systemd
+    - AppData/
+
+# What the source test holds (arch.ports.2, arch.structure.7, arch.layers.3):
+# no Go string or name in these folders is a rule id of the rulebook or the
+# name of a tool or of its config format, since rules are data and a tool is a
+# plugin, which lives outside the product's non-test Go; no package carries a refused name; the
+# files of one layer stay under a line limit; and init functions outside main
+# are counted, and the count only falls.
+source:
+  scope:
+    - internal/core
+    - internal/cli
+  rule_id: '\b[a-z][a-z0-9]*\.[a-z][a-z0-9-]*\.[0-9]+\b'
+  # The other list of tools is gate/tool-names.txt, which holds all of the
+  # product's Go. The two stand until one of them is retired,
+  # and differ by exactly the names that file's !
+  # line leaves out; TestTheToolListsDifferByTheLeftOut holds it.
+  tools:
+    - golangci-lint
+    - eslint
+    - tsc
+    - ast-grep
+    - depguard
+    - ruff
+    - mypy
+    - prettier
+    - biome
+    - semgrep
+    - gitleaks
+    - govulncheck
+    - staticcheck
+    - gosec
+  formats:
+    - .golangci.yml
+    - .eslintrc
+    - eslint.config
+    - pyproject.toml
+    - ruff.toml
+    - biome.json
+    - .prettierrc
+    - .gitleaks.toml
+  refused:
+    - util
+    - utils
+    - common
+    - helpers
+    - types
+    - misc
+    - api
+  limit: {layer: coreapi, lines: 300}
+  inits: 0

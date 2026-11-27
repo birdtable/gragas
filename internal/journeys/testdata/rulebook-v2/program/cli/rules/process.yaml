@@ -1,0 +1,168 @@
+part: cli
+concern: process
+order: 8
+title: Running other programs
+summary: >-
+  Every external module and program sits behind exactly one adapter package that records every outward effect
+  and names each program and verb it may run in one closed table. An adapter runs a program by absolute path
+  with a fixed argv, validated values, an output cap and a deadline; a child used as a plug-in gets a bare
+  environment and a versioned, size-capped protocol.
+rules:
+  - id: cli.process.1
+    slug: outward-effects-through-one-wrapper
+    since: 0.1.0
+    rule: >-
+      Every outward effect goes through a wrapper that records it; each external program and each verb it may
+      run is named in one adapter's closed table; the check resolves a program name through constants and
+      assignments and treats a name from any other source as a finding; and a test fails a program or verb run
+      outside the table.
+    detail: >-
+      Runs a program means a name passed to exec.Command or exec.CommandContext (or the equivalent in
+      another language), resolved as the compiler does: a variable counts only when its value
+      comes from a constant or from the one adapter's table. The table lists, per program, its absolute path
+      or lookup rule and its allowed verbs; it may only shrink in the core. forbidigo on exec.Command and exec.CommandContext,
+      and on os.StartProcess and syscall.ForkExec, outside the runner and a test (the import of os/exec is
+      not banned: exec.LookPath starts nothing, returns exec.ErrDot for a hit in the current folder and reads
+      PATHEXT on Windows, so a lookup is std's own and needs no wrapper), and the security analyser's rule
+      for a variable command (gosec G204). x/sys counts as the standard library. A package-import test on
+      net/http. The runner package, proposed, has a context, a timeout, no shell and an output cap
+      (cli.process.2). Counts on macOS, of the former import ban: os/exec appears in 90 production files across seven
+      repositories, and the ban found 24, 20, 11 and 13 in four of them; the call ban spares a lookup.
+    level: package
+    why: >-
+      An effect outside the wrapper is invisible to the record and to the journal that precedes effects (the
+      outward-effect journal of the data part, store.consistency.4). One adapter per dependency is the whole
+      value of ports: replacing a tool is one package, not a search. The resolving check and the closed table
+      close the two ways a program name is smuggled past the import rule. Own measure.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It starts no programs of its own.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: forbidigo
+        tier: "1"
+        fix: never
+        note: >-
+          forbidigo with type analysis on exec.Command, exec.CommandContext, os.StartProcess and
+          syscall.ForkExec outside the runner and tests (selector bans, held by the golangci preset, whose comment on
+          forbidigo names this rule), gosec G204, and a go/analysis pass resolving the program name of each exec call against the adapter's table. Plant: exec.Command outside the runner fails; a program
+          name read from a config string and passed to the runner fails the resolving pass; a verb not in the
+          table fails the programs test. Control: the runner package called with a name from the adapter's
+          table passes
+    relates:
+      - id: cli.process.2
+        how: see
+      - id: store.consistency.4
+        how: see
+      - id: store.consistency.5
+        how: see
+    open:
+      - The counts of the former owner-exec import ban are macOS numbers.
+      - >-
+        One repo has the import test (oneinterface_test.go); depguard was planted in an earlier trial; the
+        inference that both calls run a program without os/exec is from the third review round, not run.
+      - >-
+        The resolving pass is to build; until it exists the closed table is held by the programs test alone.
+    note: >-
+      Moved from store.consistency.5, which kept the effect record as the journal of store.consistency.4.
+  - id: cli.process.2
+    slug: how-an-adapter-runs-a-program
+    since: 0.1.0
+    rule: >-
+      An adapter runs an external program by absolute path with a fixed argv, checks each caller value against
+      a closed shape before it enters the argv, caps the program's output and sets a deadline; a port that
+      starts work takes a checked name, never an argv.
+    detail: >-
+      No shell, no PATH lookup at run time (the path is resolved once and checked; the child keeps only the variables proc.Needed names for the system), the option terminator
+      before any caller value, a value that starts with a dash refused. The output cap and the deadline are
+      named constants per program; output past the cap is a failure, not a truncation that looks like success.
+      A port's method takes a typed name checked against config, and the adapter builds the argv.
+    level: function
+    why: >-
+      Each of these is a known class of bug: PATH hijack, argv injection, a hung child, and a reply that grows
+      without bound. Every program that runs another faces them, in any language.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It starts no programs of its own.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          runner test with a fake program that sleeps past the deadline, one that writes past the cap, and a
+          caller value starting with a dash; an ast-grep rule for a port method taking a []string argv; a
+          non-absolute path refused by the runner. Plant: a runner call by bare name fails; a child that never
+          exits keeps the test past its deadline and fails; a port method Run(args []string) is reported.
+          Control: an absolute path, a fixed argv and a checked name pass
+    relates:
+      - id: supply.scans.5
+        how: see
+    open:
+      - Shell strings and the option terminator are also supply.scans.5.
+  - id: cli.process.3
+    slug: plug-in-child-protocol
+    since: 0.1.0
+    rule: >-
+      A child program used as a plug-in gets a bare environment (PATH and LANG only), no secret, a timeout,
+      one versioned request object on stdin, and a size-capped versioned reply that is refused in an unknown
+      version, with its message length-capped and stripped of control characters.
+    detail: >-
+      The request and the reply each carry a version field; the parent refuses a reply in a version it does
+      not know and a reply over the cap. Text from the reply that reaches a person goes through the sanitiser
+      of cli.errors.4.
+    level: function
+    why: >-
+      A plug-in is code the program did not write, running with the program's authority; a bare environment
+      keeps secrets out of it, and a versioned, capped protocol keeps a new or hostile plug-in from being
+      misread.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It runs no plug-ins.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          plug-in runner test with a fixture plug-in that prints its environment, one that answers an unknown
+          version, one that answers over the cap, and one whose message holds escape sequences. Plant: a
+          plug-in that sees a variable other than PATH and LANG fails; an unknown reply version accepted
+          fails. Control: a plug-in with a bare environment and a known version passes
+    relates:
+      - id: cli.errors.4
+        how: see

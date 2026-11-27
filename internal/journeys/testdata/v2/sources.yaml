@@ -1,0 +1,9 @@
+sources:
+  one-book:
+    kind: book
+    title: A Book
+    locator: isbn:9780321293534
+  a-poster:
+    kind: poster
+    title: A Poster
+    locator: url:https://example.test/poster

@@ -1,0 +1,7 @@
+$ gragas plugin add <bundles>/golangci-lint/1.0.1 --apply
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  done       39 files written, run <run>
+--- stderr

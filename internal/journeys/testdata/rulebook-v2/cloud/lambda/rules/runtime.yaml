@@ -1,0 +1,43 @@
+part: lambda
+concern: runtime
+order: 1
+title: Handlers and middleware
+summary: >-
+  A function handler is built by the shared runtime. Middleware and plumbing libraries are imported only by
+  the one package that owns their concern.
+rules:
+  - id: lambda.runtime.1
+    slug: plumbing-library-imported-by-owner
+    since: 0.1.0
+    rule: >-
+      A middleware or plumbing library is imported only by the one package that owns that concern.
+    detail: >-
+      For the handler wrapper (ordered before, after and error steps) the owner is the shared runtime package;
+      no other package imports the middleware engine. The same holds for each concern with an owner, enforced
+      by import rules; a direct dependency outside the list fails. In Go there is one importable owner per
+      concern.
+    level: package
+    why: >-
+      A library imported in many packages has many configurations, and a fix or an upgrade must be found in
+      all of them.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          import-restriction rule (ESLint no-restricted-imports or an ast-grep rule) allowing the middleware
+          engine only in the shared runtime package, and a dependency-allow-list check on package manifests.
+          Plant: a service package importing the middleware engine directly fails. Control: the runtime
+          package importing it passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      The service rule one-shared-bootstrap states the same for every entry; this is the Lambda binding naming
+      the handler middleware engine.

@@ -1,0 +1,464 @@
+part: tests
+concern: admission
+order: 4
+title: Admitting a test and keeping tests honest
+summary: >-
+  A test is worth keeping only if it can fail. New and changed tests pass a machine-run ladder at land, have a
+  real assertion, take their expected value from somewhere other than the code, and are never weakened,
+  skipped or focused without a recorded reason. Mutation testing and lint on the tests themselves hold this.
+rules:
+  - id: tests.admission.1
+    slug: admission-ladder
+    since: 0.1.0
+    rule: >-
+      Every new or changed test passes a machine-run admission ladder at land: it builds, passes in file order,
+      passes under several shuffle seeds, fails against a break the tool chooses, stays
+      inside its budget and passes a bounded repeat.
+    detail: >-
+      The land step selects new and changed test functions only. Seeds are separate runs, because a count flag
+      with one shuffle seed reuses one order for every repeat. The break is a mutant in the changed lines
+      chosen by the tool, not the author (comparisons, logic, constants, returns, removed statements); a
+      change with no mutant site prints n/a, and the n/a share is reported as the third result, since n/a is
+      otherwise a free pass. A browser journey takes a break written for its claim, not a mutant. The bounded
+      repeat is the one exception to no test twice on a tree (tests.selection.7): one step of the one proof,
+      able only to fail (decision 32). Its bound, the seeds and the kill count are not set; any number would
+      be a guess. Surviving mutants on changed lines in core logic and shared parts are reported. A test that
+      mirrors the code passes the ladder, so review keeps that question. The browser-journey break is
+      hand-written for its claim. The time limit is the per-package budget of the shared preset.
+    level: function
+    why: >-
+      Measured elsewhere: a published study admitted generated tests only if they built, passed repeatedly and
+      added coverage, and about three in four built, 57 percent passed reliably and 25 percent added coverage;
+      a scorer was tampered with in 39 of 128 agent runs (older models). Own bugs: 4 of 15 test drives in one
+      fleet pass could not turn a test red.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-32
+        backs: rule
+      - ref: p-07-testing
+        where: sections 7.4, 8.4, 10.2
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.5
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gremlins
+        tier: "3"
+        note: >-
+          v1 class our-cli. companion admit, rebuilt in Go from the trialled ladder: unshuffled baseline on
+          the target OS, several seeds, mutants on changed lines (gremlins is the candidate engine, to try),
+          budget step, n/a share printed. Plant: a vacuous test, a flaky test and an order-dependent pair
+          (plant owed) are each refused. Control: a good test is admitted
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. companion admit: select new and changed test functions from the diff, run the
+          runner in file order, under several shuffle seeds, repeat, lint for no assertion, mutation tool on
+          changed lines; refuse on any step The shuffle uses sequence.shuffle with a printed seed over the
+          changed files. Plant: a test passing on the broken tree, one passing only in file order, an empty
+          body, a log-only test and an assert of true are each refused The same ladder refuses a
+          passing-on-broken-tree test, one that passes against the broken code. Control: a test with a real
+          assertion inside budget passes
+    relates:
+      - id: tests.selection.7
+        how: see
+    open:
+      - The budget step is not designed; mirror tests pass the ladder (review).
+      - >-
+        Mutation tool for TypeScript enters through the tool record; neither stack has it installed today.
+      - >-
+        A trial on the Go side ran a vacuous test and a flaky test (refused) and a good test (admitted); the
+        file-order-only plant is owed, since one seed admitted it.
+      - >-
+        The Go ladder was trialled as ladder.py at 0.9 to 16 s a commit; the plant owed is a test that passes
+        only in file order, which one seed admitted.
+      - >-
+        v1 evidence, not yet a source: own bugs (4 of 15 drives); operator direction
+  - id: tests.admission.2
+    slug: no-vacuous-tests
+    since: 0.1.0
+    rule: >-
+      A test with no assertion, or only tautological ones, is refused, a test that loops over cases, files or
+      items asserts the loop ran at least once with a planted empty case, every guard has a test that sees it
+      refuse, and each test carries one line on what breaks for a person when it fails.
+    detail: >-
+      A tautology is a literal condition (a log, a literal truth), a comparison of an expression with itself
+      or an equality check of a value with itself, never any constant: a test comparing named constants across
+      packages is a real drift test. The check follows helpers that take the test handle, contract packages
+      and table function values to find an assertion. A single trivial assertion passes this row and the
+      ladder's mutant break catches it (tests.admission.1). A loop over cases, files or items found at run
+      time (a directory listing, a glob, a parsed list) asserts its count is above zero, and the suite holds a
+      plant that feeds it an empty set and must fail. A guard is any code that refuses (a check, a validator,
+      a permission test, a gate rule); each has a test that drives it to refuse and asserts the refusal. The
+      cost line is one comment above the test, in the words of the person who loses when it fails, not a
+      restatement of its name. No test is disabled, focused or commented out (tests.admission.5). How each
+      language writes the shape (helpers, table names) lives in its language part.
+    level: function
+    why: >-
+      Agents are the likeliest authors of weak assertions, and an empty loop is the second way a suite goes
+      vacuous: it asserts nothing and passes. A guard with no negative test is an opinion. The cost line says
+      what the signature cannot: why the test exists. Trial on the Go side of the assertion check: 11 hits in
+      5,767 tests, 0 to 1 true; the false ones trace to contract suites, table values, helper processes and
+      skip-only tests. Low yield, kept because it costs nothing.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapter 1.3
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.5
+        backs: rule
+      - ref: decision-65-tests
+        backs: rule
+    checks:
+      - binding: go
+        class: analyzer
+        tier: "1"
+        note: >-
+          v1 class our-plugin. analyzer in the shared test-hygiene plugin: a test function with no route to an
+          assertion or failure call; literal tautologies only The Go analyzer is noassert, built in the
+          testhygiene plugin; it follows R-05 trial form. Plant: an empty body, a log-only test, x != x,
+          !true, DeepEqual(x, x) and if false each fire. Control: a real test passes
+      - binding: ts
+        class: preset-rule
+        tool: vitest
+        tier: "1"
+        note: >-
+          @vitest/eslint-plugin expect-expect, no-disabled-tests, no-focused-tests, no-commented-out-tests and
+          no-conditional-expect at error, plus a syntax-tree rule for literal or identical assertion
+          arguments; Biome form: `noFocusedTests` and `noSkippedTests` at error and a GritQL plugin for a test
+          with no expect and for literal or identical assertion arguments. Plant: a test.only, a test.skip, a
+          body with no expect and expect(true).toBe(true) each fire a test that passes on the broken tree is
+          refused by the ladder (tests.admission.1). Control: a test with a real expectation passes
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. a test-shape scan: a loop over a run-time list in a test with no count assertion
+          fails, a test with no cost comment above it fails; whether every guard has a refusing test is
+          review. Plant: a test that ranges over a directory listing with no count check fails; a test with no
+          cost line fails. Control: a test with a count assertion, a planted empty case and a cost line passes
+    review_question: Which guard does this change add or touch, and which test drives it to refuse?
+    relates:
+      - id: tests.admission.1
+        how: see
+      - id: tests.admission.5
+        how: see
+    open:
+      - >-
+        The npm name eslint-plugin-vitest is stale at 0.5.4; use the scoped name @vitest/eslint-plugin.
+      - >-
+        The expect-expect rule is met by any one expect including a tautology; the literal-argument rule is
+        what adds the tautologies.
+  - id: tests.admission.3
+    slug: test-can-fail
+    since: 0.1.0
+    rule: >-
+      A test can fail: its author shows it red against a deliberate break, and mutation efficacy on the diff
+      in core logic and shared parts does not fall.
+    detail: >-
+      Mutation testing runs on shared code and core logic, on the diff only, with the threshold set in the
+      tool's config file (a flag on the command line alone does not gate). The subjects of property-test laws
+      are mutation tested. A program can repeat the break (a drive runner). Property tests also get an
+      anti-vacuity check (tests.generated.3).
+    level: function
+    why: >-
+      Own bugs: 4 of 15 test drives in one fleet pass could not go red. One run on the Go side: 86.1 percent
+      on the selector package (not re-run).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-09-agentic-development
+        where: section 4
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tool: gremlins
+        tier: "3"
+        note: >-
+          gremlins with the efficacy threshold and the timeout coefficient set in its config file, run on the
+          diff in core logic. Plant: a test asserting f(x) equal to f(x) leaves a mutant alive and fails the
+          threshold. Control: a literal expected value kills the mutant
+      - binding: ts
+        class: preset-config
+        tool: stryker
+        tier: "3"
+        note: >-
+          Stryker with the vitest runner on shared packages and pure logic, threshold in config. Plant: a test
+          that kills no mutant of the changed lines fails the threshold. Control: a test that kills it passes
+    relates:
+      - id: tests.generated.3
+        how: see
+    open:
+      - >-
+        Verified 5 Nov (gremlins v0.6.0): the threshold flag on the command line exits 0 at 83 percent
+        efficacy, the same threshold in the config file exits 10; with default timeouts all six mutants of a
+        0.3 s package timed out (0 percent) until the timeout coefficient was set to 10, so the config must
+        set both.
+      - Stryker is not in either stack's pins; it was not run.
+      - go-mutesting is dormant since 2024; other forks and ooze were not tried.
+      - >-
+        No UI row holds test efficacy on its own (the web catalogue's mutation row covers rules and checks
+        only).
+      - "v1 evidence, not yet a source: own bugs (4 of 15 drives)"
+  - id: tests.admission.4
+    slug: expected-value-from-elsewhere
+    since: 0.1.0
+    rule: >-
+      A test's expected value is a literal, the spec, a recorded sample of the real server or a generator with
+      a stated invariant, never the code under test.
+    detail: >-
+      An analyser flags an assertion whose expected value is computed by calling the function under test or a
+      copy of its expression, and a change that edits code and its expected literal together is flagged first
+      for the reader (nothing sees output pasted in as a literal). Only the trivial form is mechanical. Tests
+      are independent of the code they check: daemon samples, not mocks the agent also wrote.
+    level: function
+    why: >-
+      A test written against its own implementation verifies nothing (Khorikov); an agent will paste the
+      code's own output in as the literal. Full independence cannot be checked, the cheap detectable form can.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapters 1 and 4
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.5
+        backs: rule
+    checks:
+      - binding: go
+        class: analyzer
+        tier: "1"
+        note: >-
+          v1 class our-plugin. analyser for an expected value computed by calling the function under test or a
+          copy of its expression. Plant: a test asserting f(x) equal to f(x) and one using the code's own
+          formula each fire. Control: a literal expected value passes
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          a small ESLint rule comparing the two expressions of an assertion structurally; catches only the
+          trivial form (Biome form is a GritQL plugin on the same structural match) Web side config:
+          no-restricted-imports and no-restricted-syntax in test files ban vi.mock and vi.stubGlobal of
+          modules in the managed-dependency list (a data file on the protected list); the rule
+          vitest/prefer-strict-equal does not help here. Plant: expect(f(2)).toBe(f(2)) is listed
+          expect(f(x)).toBe(f(x)) is listed (the trivial form). Control: a literal control passes
+    review_question: >-
+      Where does this test's expected value come from, if not a literal, the spec or a recorded sample?
+    open:
+      - >-
+        For web tests only the trivial form has a mechanical check (no market tool, and D evidence does not
+        earn a plugin), so provenance stays a model lens: the best-practice strength there is Lens (a model
+        checks where expected values come from).
+      - No fault in our record is traced to test dependence on the code.
+      - "v1 evidence, not yet a source: D (Khorikov)"
+  - id: tests.admission.5
+    slug: skips-counted
+    since: 0.1.0
+    rule: >-
+      In the default tiers a skipped, focused, disabled or commented-out test fails the gate, and a test whose
+      precondition is unmet reports not measured, never a pass; an opt-in tier skips with the exact command
+      that runs it and fails when asked to run without what it needs.
+    detail: >-
+      Default tiers are the ones the gate runs on every push and release. There a skip call, a focus mark, a
+      disabled test or a commented-out test fails; a test that cannot run because a precondition is missing (a
+      tool, a permission, a platform) reports the precondition as not measured in the verdict, and an empty
+      list of cases is not a pass (tests.selection.8). An opt-in tier (real machines, root, a privileged
+      container) is declared in the gate config with the command that runs it; when it is not asked for, each
+      of its tests skips with that exact command in the skip message, and when it is asked for and its
+      precondition is missing it fails, never skips. The skip count of the default tiers is zero; an existing
+      repo that starts above zero holds a shrink-only count until it reaches zero. In Go the count is taken
+      over t.Skip calls in _test.go files.
+    level: file
+    why: >-
+      A skip in a default tier is a test that silently stopped existing. Skips per test in our repos, raw and
+      including environment skips: 102 of 1,645, 74 of 1,731, 68 of 1,020, 38 of 1,301, 25 of 271, 13 of 465.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-tests
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: forbidigo
+        tier: "3"
+        fix: never
+        note: >-
+          forbidigo on the skip calls outside files of a declared opt-in tier, with a shrink-only count per
+          repo down to zero; an opt-in skip must carry the tier's command; skip counts per package from the
+          JSON test summary. Plant: a new skip in a default-tier test fails; an opt-in skip whose message
+          lacks the command fails. Control: an opt-in test that skips with its command when not asked for
+          passes
+      - binding: ts
+        class: preset-rule
+        tool: vitest
+        tier: "3"
+        note: >-
+          @vitest/eslint-plugin no-disabled-tests, no-focused-tests and no-commented-out-tests at error (Biome
+          form: `noSkippedTests` and `noFocusedTests` at error), with a zero count of skipped tests in the
+          verdict of the default tiers. Plant: a test.skip or test.only in a default-tier file fails. Control:
+          a suite with no skip passes
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          an opt-in tier run without its precondition must exit non-zero, never zero with skips. Plant: the
+          root-only tier run as a normal user fails. Control: the same tier not asked for skips with its
+          command
+    relates:
+      - id: tests.selection.8
+        how: see
+    open:
+      - Flagging is a rule; whether the written reason is good is review.
+  - id: tests.admission.6
+    slug: weakened-tests-flagged
+    since: 0.1.0
+    rule: >-
+      A test edited in the same change as the code it judges is flagged to the reader with a reason line, not
+      refused; a removed assertion, an added skip, a focused test and a loosened literal are listed first.
+    detail: >-
+      A real behaviour change also edits its tests, so the flag is for the reader. A changed oracle, golden or
+      fixture on the protected list needs a non-author.
+    level: file
+    why: >-
+      Weakening a test is the cheapest way for an agent to get green; a diff scan makes it visible. The scan
+      with the same list serves Go and TypeScript.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-09-agentic-development
+        where: sections 5.5 and 6.3
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 7.2
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. diff scan of test file removals listing removed assertions, added skips and
+          loosened comparison literals first in the change summary; a flagged change needs a reason line.
+          Plant: a diff that removes an assertion, one that adds a skip and one that loosens a literal each
+          fire, and a test added with no removal passes. Control: a test added only is not flagged
+      - binding: ts
+        class: fact
+        tool: vitest
+        tier: "3"
+        note: >-
+          v1 class our-cli. the same diff scan with the same list, over TypeScript test files TypeScript lint
+          rules: no-focused-tests, no-disabled-tests and expect-expect from @vitest/eslint-plugin, not the
+          stale eslint-plugin-vitest package. (Biome form is noFocusedTests and noSkippedTests, with a GritQL
+          plugin for expect-expect). Plant: a diff that removes an expect fires; a focused test fires.
+          Control: an added test passes
+    open:
+      - >-
+        A removed assertion is not a lint finding; the scan lists it, so that half is a report and only skip
+        and focus fail.
+  - id: tests.admission.7
+    slug: refactor-test-edits
+    since: 0.1.0
+    rule: >-
+      Tests changed in commits marked refactor or move, and surviving mutants on changed lines, are reported.
+    level: process
+    why: >-
+      A refactor that keeps behaviour leaves tests green; tests that fail on such a commit were testing the
+      implementation.
+    kind: measure
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. a report listing tests edited in commits whose message marks refactor or move, and
+          surviving mutants on changed lines. Plant: a fixture commit marked refactor with a known test edit
+          is listed. Control: a feature commit is not listed
+    open:
+      - Report only; no plant in the source.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: tests.admission.8
+    slug: behaviour-change-has-a-test
+    since: 0.1.0
+    rule: >-
+      A change that alters behaviour (a command, flag, exit code or UI behaviour) adds or updates a test, or
+      says why not.
+    level: process
+    why: >-
+      A person-found fault becomes a planted check; nothing asks every behaviour change to carry a test.
+    kind: rule
+    strength: Review
+    status: proposed
+    review_question: >-
+      Does this change alter behaviour, and where is the test that fails before it and passes after, or why is
+      there none?
+    open:
+      - >-
+        No catalogue row of its own; the check is a diff that changes behaviour must carry a test change or
+        say why not.
+      - >-
+        The done-when of a ticket names a check that fails before the change (see the gates part).
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: tests.admission.9
+    slug: non-default-flag-tested
+    since: 0.1.0
+    rule: >-
+      A boolean switch (an exported flag, a boolean config key or a build constant) is tested for the value it
+      does not ship, or carries a reasoned and ticketed exemption.
+    detail: >-
+      The rule covers an exported top-level boolean flag, which needs a spec or story naming the value it does
+      not ship.
+    level: file
+    why: A switch only ever exercised in its default state is dead code on one side.
+    kind: rule
+    strength: Review
+    status: active
+    sources:
+      - ref: decision-27
+        backs: rule
+    review_question: Which value of this switch does the default not ship, and which test runs it?
+    open:
+      - >-
+        No check named in the sources; the catalogue holds a related rule (a boolean key has reader, default
+        and doc row) in the code part.
+      - The exemption's expiry is held by the process part.
+  - id: tests.admission.10
+    slug: test-names-are-claims
+    since: 0.1.0
+    rule: A test name is a claim in plain English, and a table test names every case.
+    level: word
+    why: >-
+      Names are how a failure is read; a naming claim cannot be machine judged, only the presence of a case
+      name can.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this test's name state what must hold, in plain English, and does every table case have a name?
+    open:
+      - >-
+        A model question on new test names; clean in our trial. Candidate promotion needs a plant test that
+        catches 9 of 10.

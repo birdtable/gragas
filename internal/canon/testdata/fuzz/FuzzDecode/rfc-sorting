@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"\\u20ac\":\"Euro Sign\",\"\\r\":\"Carriage Return\",\"\\ufb33\":\"Hebrew\",\"1\":\"One\",\"\\ud83d\\ude00\":\"Emoji\",\"\\u0080\":\"Control\",\"\\u00f6\":\"o\"}")

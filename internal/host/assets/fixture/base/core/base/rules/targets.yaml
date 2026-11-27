@@ -1,0 +1,76 @@
+format: 3
+part: base
+concern: targets
+rules:
+  - id: base.targets.1
+    statement: Keep a change to a schema in a migration of its own.
+    strength: should
+    status: active
+    owner: alex
+    review_by: "2027-03-01"
+    origin: authored
+    pairs:
+      - {number: 1, target: migration}
+      - {number: 2, target: workflow}
+    bindings:
+      - tool: sqlfluff
+        target: migration
+        key: one-change
+        value: 1
+        severity: warning
+        rung: 3
+        run_point: commit
+        pair: 1
+        pair_path: db/001.sql
+      - tool: workflow-lint
+        target: workflow
+        key: pinned-actions
+        value: true
+        severity: error
+        rung: 2
+        run_point: push
+        pair: 2
+        pair_path: .ci/build.yml
+  - id: base.targets.2
+    statement: Describe a resource in code and an interface in a spec.
+    strength: should
+    status: active
+    owner: alex
+    review_by: "2027-03-01"
+    origin: authored
+    bindings:
+      - tool: iac-lint
+        target: iac
+        key: tagged
+        value: [owner, team]
+        severity: info
+        rung: 4
+        run_point: release
+      - tool: spec-lint
+        target: api-spec
+        key: documented
+        value: true
+        severity: warning
+        rung: 2
+        run_point: review
+      - tool: message-lint
+        target: commit
+        key: subject-length
+        value: 72
+        severity: info
+        rung: 2
+        run_point: commit
+      - tool: registry-lint
+        target: telemetry-registry
+        key: named
+        value: true
+        severity: info
+        rung: 5
+        run_point: land
+      - tool: package-lint
+        target: package
+        key: licence-listed
+        value: true
+        severity: warning
+        rung: 3
+        run_point: deploy

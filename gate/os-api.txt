@@ -1,0 +1,764 @@
+# The standard library's identifiers that differ by system, and the decision
+# for each. The census,
+# `gragas-dev census`, lists them: every exported identifier of an importable
+# std package that some first-class port does not declare, declares
+# differently or in a per-system file, whose body reaches a per-system
+# helper, whose declaration names syscall, or whose doc names a system.
+# internal/osapi_test.go holds this list to that census, both ways.
+#
+# A line is <name> <kind> <rest>, in byte order of the names, each once:
+#   <path>.<Name> ban <rule>     a forbidigo row whose message opens with
+#                                <rule> refuses it
+#   <path>.* ban <rule>          a depguard rule on every file denies the
+#                                package with a desc that opens with <rule>
+#   <path>.<Name> allow <why>    any package may use it: why it is safe on
+#                                every system
+#   <name> later #1750 L<n>      row L<n> of the plan of bans is to ban
+#                                it and has not yet; the later lines only
+#                                shrink against the
+#                                merge base with origin/main
+#   <path>.<name> allow <why>    a root: a name the reach passes through that
+#   <path>..<method> allow <why> no program writes (an unexported name, a
+#                                name of an internal package, or a method of
+#                                that name of any of the package's types);
+#                                allowed only, since no lint row can refuse
+#                                what no program writes, and a later there
+#                                could never turn into a ban
+# A whole package is banned or later, never allowed.
+#
+# Only an allow stops the reach: an identifier that differs only by reaching
+# allowed names needs no line of its own, so one allow on a root settles
+# every identifier that differs only through it. A ban or a later says the
+# difference is wrong, so it stops nothing: every identifier that reaches it
+# takes its own line, banned or later too, or allowed with its own reason.
+# internal/goos.GOOS is the one allow for the standard library branching on
+# its own port. runtime's unexported names and methods are not followed at
+# all, so runtime's exported identifiers are judged on their own
+# declarations.
+#
+# filepath.IsAbs, exec.LookPath and os.Executable are allowed: each answers
+# the same question the same way on every system. filepath.IsAbs reaches
+# internal/filepathlite.IsAbs, whose line carries the same reason.
+
+archive/tar.FileInfoNames allow the doc names the lookup of a user's name that a FileInfoNames lets the caller skip; the interface itself is the same on every system
+crypto/internal/entropy/v1.0.0.Seed allow the system's randomness on every system, as crypto/rand.Read's
+crypto/internal/sysrand.read allow the system's randomness on every system, as crypto/rand.Read's
+crypto/rand.Read allow it reads the system's randomness on every system and never fails; the doc lists which call each system uses
+crypto/rand.Reader allow the system's randomness on every system; the doc lists which call each system uses
+crypto/tls.Listen allow the generic dialer or listener: a tcp or udp network means the same on every system; the unix and ip networks it also takes are row L14's, as DialUnix's and ListenIP's later lines say
+crypto/x509..systemVerify allow the system's trusted roots, which a TLS client wants on each system
+crypto/x509.Certificate.Verify allow the system's trusted roots, which a TLS client wants on each system, when Roots is nil
+crypto/x509.SetFallbackRoots allow roots a program brings for a system with none; the doc names a debug setting
+crypto/x509.SystemCertPool allow the system's trusted roots, which a TLS client wants on each system; the doc names the separator of SSL_CERT_DIR
+crypto/x509.certDirectories allow the system's trusted roots, which a TLS client wants on each system
+crypto/x509.certFiles allow the system's trusted roots, which a TLS client wants on each system
+database/sql.Conn.BeginTx allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Conn.Close allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Conn.ExecContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Conn.PingContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Conn.PrepareContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Conn.QueryContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Conn.QueryRowContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Conn.Raw allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.ConvertAssign allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.Begin allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.BeginTx allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.Close allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.Conn allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.Exec allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.ExecContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.Ping allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.PingContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.Prepare allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.PrepareContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.Query allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.QueryContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.QueryRow allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.QueryRowContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.SetConnMaxIdleTime allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.SetConnMaxLifetime allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.SetMaxIdleConns allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.DB.SetMaxOpenConns allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Null.Scan allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.NullBool.Scan allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.NullByte.Scan allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.NullFloat64.Scan allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.NullInt16.Scan allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.NullInt32.Scan allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.NullInt64.Scan allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.NullString.Scan allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.NullTime.Scan allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Open allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.OpenDB allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Row.Scan allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Rows.Close allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Rows.Next allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Rows.NextResultSet allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Rows.Scan allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Stmt.Close allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Stmt.Exec allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Stmt.ExecContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Stmt.Query allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Stmt.QueryContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Stmt.QueryRow allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Stmt.QueryRowContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Tx.Commit allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Tx.Exec allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Tx.ExecContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Tx.Prepare allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Tx.PrepareContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Tx.Query allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Tx.QueryContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Tx.QueryRow allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Tx.QueryRowContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Tx.Rollback allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Tx.Stmt allow prints to stdout only under debugGetPut, a false constant, so no build prints
+database/sql.Tx.StmtContext allow prints to stdout only under debugGetPut, a false constant, so no build prints
+debug/pe.COFFSymbolAuxFormat5 allow a field of the PE format, read as bytes on every system; the doc links a page about the format
+debug/plan9obj.NewFile allow it reads a Plan 9 binary as bytes on every system; "Plan 9" is the format, not the port
+encoding/json/v2.Deterministic allow the output is the same on every system for one build; the doc says it may change with GOOS between builds
+expvar.NewFloat allow logs a name published twice to the log package's logger and panics: a programmer's error, as a panic is
+expvar.NewInt allow logs a name published twice to the log package's logger and panics: a programmer's error, as a panic is
+expvar.NewMap allow logs a name published twice to the log package's logger and panics: a programmer's error, as a panic is
+expvar.NewString allow logs a name published twice to the log package's logger and panics: a programmer's error, as a panic is
+expvar.Publish allow logs a name published twice to the log package's logger and panics: a programmer's error, as a panic is
+flag.Bool allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.BoolFunc allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.BoolVar allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Duration allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.DurationVar allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Bool allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.BoolFunc allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.BoolVar allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Duration allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.DurationVar allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Float64 allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Float64Var allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Func allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Int allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Int64 allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Int64Var allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.IntVar allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Output allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Parse allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.PrintDefaults allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.String allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.StringVar allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.TextVar allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Uint allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Uint64 allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Uint64Var allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.UintVar allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.FlagSet.Var allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Float64 allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Float64Var allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Func allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Int allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Int64 allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Int64Var allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.IntVar allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.NewFlagSet allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Parse allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.PrintDefaults allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.String allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.StringVar allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.TextVar allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Uint allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Uint64 allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Uint64Var allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.UintVar allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Usage allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+flag.Var allow a FlagSet writes its usage and errors to the writer SetOutput names, os.Stderr by default, and the command line's set exits on a bad flag; cli.config.7's depguard keeps flag in cmd/, the program's own entry
+fmt.Print ban cli.errors.3
+fmt.Printf ban cli.errors.3
+fmt.Println ban cli.errors.3
+go/ast.Print later #1750 L12
+go/build.* later #1750 L1
+go/doc.NewFromFiles allow it reads Go files as text on every system; the doc names go/build's MatchFile, which go/build's line bans
+go/format.Node allow parses with go/parser without its Trace mode and prints with go/printer, so it writes to no console
+go/format.Source allow parses with go/parser without its Trace mode and prints with go/printer, so it writes to no console
+go/importer.Default later #1750 L1
+go/importer.For later #1750 L1
+go/importer.ForCompiler later #1750 L1
+go/parser.ParseDir allow prints a trace to stdout only under the Trace mode its caller passes; it joins the folder and each file's name with filepath, the portable spelling of a host path
+go/parser.ParseExpr allow prints a trace to stdout only under the Trace mode its caller passes
+go/parser.ParseExprFrom allow prints a trace to stdout only under the Trace mode its caller passes
+go/parser.ParseFile allow prints a trace to stdout only under the Trace mode its caller passes
+go/printer.Config.Fprint allow prints to stdout only under its false constant debug, before an internal error's panic
+go/printer.Fprint allow prints to stdout only under its false constant debug, before an internal error's panic
+go/types.Alias.SetTypeParams allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Alias.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Array.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.AssertableTo allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.AssignableTo allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Basic.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Builtin.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Chan.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.CheckExpr allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Checker.Files allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Comparable allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Config.Check allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Const.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.ConvertibleTo allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.DefPredeclaredTestFuncs allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Error.Error allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Eval allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.ExprString allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Func.FullName allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Func.Scope allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Func.Signature allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Func.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Hasher.Equal allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Hasher.Hash allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.HasherIgnoreTags.Equal allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.HasherIgnoreTags.Hash allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Identical allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.IdenticalIgnoreTags allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Implements allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Info.TypeOf allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Initializer.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Instance.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Instantiate allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Interface.Complete allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Interface.Empty allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Interface.IsComparable allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Interface.IsMethodSet allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Interface.Method allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Interface.Methods allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Interface.NumMethods allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Interface.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.IsInterface allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Label.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.LookupFieldOrMethod allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.LookupSelection allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Map.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.MissingMethod allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Named.AddMethod allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Named.Method allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Named.Methods allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Named.NumMethods allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Named.SetTypeParams allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Named.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Named.TypeParams allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Named.Underlying allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.NewAlias allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.NewInterface allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.NewInterfaceType allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.NewMethodSet allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.NewNamed allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.NewSignature allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.NewSignatureType allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.NewStruct allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.NewTypeParam allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Nil.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.ObjectString allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.PkgName.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Pointer.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Satisfies allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Scope.Insert allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Selection.Index allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Selection.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Selection.Type allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.SelectionString allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Signature.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Slice.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.StdSizes.Alignof allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.StdSizes.Offsetsof allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.StdSizes.Sizeof allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Struct.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Term.Type allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Tuple.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.TypeAndValue.IsNil allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.TypeList.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.TypeName.IsAlias allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.TypeName.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.TypeParam.Constraint allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.TypeParam.Index allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.TypeParam.SetConstraint allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.TypeParam.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.TypeParam.Underlying allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.TypeParamList.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.TypeString allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Union.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.Var.String allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.WriteExpr allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.WriteSignature allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+go/types.WriteType allow the type checker prints only on its debug and trace paths, under the false constant debug and the unexported Config._Trace, and after a panic, the positions it was checking, to stderr, before the panic goes on
+html/template.ErrJSTemplate allow "JS" is JavaScript, not the js GOOS
+html/template.ErrRangeLoopReentry allow "JS" is JavaScript, not the js GOOS
+html/template.JS allow "JS" is JavaScript, not the js GOOS
+html/template.ParseFS allow it reads an fs.FS, which has slash names on every system; the doc says so
+html/template.ParseGlob later #1750 L11
+html/template.Template.ParseFS allow it reads an fs.FS, which has slash names on every system; the doc says so
+html/template.Template.ParseGlob later #1750 L11
+image/color/palette.Plan9 allow a colour palette named after Plan 9's, the same on every system
+image/gif.Options.Quantizer allow its default is the Plan9 palette, the same on every system
+internal/filepathlite.IsAbs allow whether a host path is absolute, asked the same way on every system
+internal/filepathlite.IsPathSeparator allow the system's path form is filepath's job: it is the portable spelling of a host path
+internal/filepathlite.Separator allow the system's path form is filepath's job: it is the portable spelling of a host path
+internal/filepathlite.isLocal allow the system's path form is filepath's job: it is the portable spelling of a host path
+internal/filepathlite.localize allow the system's path form is filepath's job: it is the portable spelling of a host path
+internal/filepathlite.postClean allow the system's path form is filepath's job: it is the portable spelling of a host path
+internal/filepathlite.volumeNameLen allow the system's path form is filepath's job: it is the portable spelling of a host path
+internal/goos.GOOS allow the standard library branching on the port it was built for: std is the per-system adapter, so a name that differs only by reaching GOOS does on each system what its doc says; a program reading runtime.GOOS itself is still arch.ports.24's ban
+internal/poll.DupCloseOnExec allow a descriptor copied so that a started program does not inherit it, on every system
+internal/sysinfo.osCPUInfoName allow the CPU's name a benchmark prints in its header, which each system keeps in its own place
+io/fs.ValidPath allow the doc says fs paths are slash-separated on every system, which is why it is safe
+io/ioutil.TempDir later #1750 L9
+io/ioutil.TempFile later #1750 L9
+log.Default later #1750 L12
+log.Fatal ban go.errors.4
+log.Fatalf ban go.errors.4
+log.Fatalln ban go.errors.4
+log.Flags allow reads a setting of the log package's own logger and writes nothing
+log.Logger.Fatal later #1750 L12
+log.Logger.Fatalf later #1750 L12
+log.Logger.Fatalln later #1750 L12
+log.Output later #1750 L12
+log.Panic later #1750 L12
+log.Panicf later #1750 L12
+log.Panicln later #1750 L12
+log.Prefix allow reads a setting of the log package's own logger and writes nothing
+log.Print later #1750 L12
+log.Printf later #1750 L12
+log.Println later #1750 L12
+log.SetFlags allow sets the log package's own logger and writes nothing; what that logger writes is log.Print's, a later line
+log.SetOutput allow sets the log package's own logger and writes nothing; what that logger writes is log.Print's, a later line
+log.SetPrefix allow sets the log package's own logger and writes nothing; what that logger writes is log.Print's, a later line
+log.Writer allow reads a setting of the log package's own logger and writes nothing
+log/slog.SetDefault allow sets the default slog handler, and with it where the log package's logger writes; it writes nothing itself
+log/syslog.* later #1750 L1
+mime.ExtensionsByType allow the built-in table, with the system's own types added where it has any; gragas decides nothing by a MIME type
+mime.TypeByExtension allow the built-in table, with the system's own types added where it has any; gragas decides nothing by a MIME type
+mime/multipart.Form.RemoveAll allow keeps a large part in a temp file of its own and removes it in RemoveAll, made and removed the same way on every system
+mime/multipart.Reader.ReadForm allow keeps a large part in a temp file of its own and removes it in RemoveAll, made and removed the same way on every system
+net..Close allow the call means the same on every system: each system's sockets carry it
+net..Error allow an error's message, which each system words its own way; what the error is means the same on every system
+net..MultipathTCP allow whether a TCP socket is multipath, which a system that has none answers false
+net..Temporary allow whether an error is temporary, the same question on every system
+net..Timeout allow whether an error is a timeout, the same question on every system
+net..Write allow the call means the same on every system: each system's sockets carry it
+net..dialMPTCP allow whether a TCP socket is multipath, which a system that has none answers false
+net..dialUDP allow the call means the same on every system: each system's sockets carry it
+net..doDialTCPProto allow the call means the same on every system: each system's sockets carry it
+net..listenMPTCP allow whether a TCP socket is multipath, which a system that has none answers false
+net..listenMulticastUDP allow the call means the same on every system: each system's sockets carry it
+net..listenTCPProto allow the call means the same on every system: each system's sockets carry it
+net..listenUDP allow the call means the same on every system: each system's sockets carry it
+net..lookupAddr allow a name lookup means the same on every system: the system's resolver or Go's own answers it
+net..lookupCNAME allow a name lookup means the same on every system: the system's resolver or Go's own answers it
+net..lookupHost allow a name lookup means the same on every system: the system's resolver or Go's own answers it
+net..lookupIP allow a name lookup means the same on every system: the system's resolver or Go's own answers it
+net..lookupMX allow a name lookup means the same on every system: the system's resolver or Go's own answers it
+net..lookupNS allow a name lookup means the same on every system: the system's resolver or Go's own answers it
+net..lookupPort allow a name lookup means the same on every system: the system's resolver or Go's own answers it
+net..lookupSRV allow a name lookup means the same on every system: the system's resolver or Go's own answers it
+net..lookupTXT allow a name lookup means the same on every system: the system's resolver or Go's own answers it
+net..readFromUDP allow the call means the same on every system: each system's sockets carry it
+net..writeBuffers allow the call means the same on every system: each system's sockets carry it
+net.Buffers allow the bytes written are the same on every system; the doc says some systems write them in one call
+net.Dial allow the call means the same on every system; the doc says the system may bound how long a dial waits
+net.DialIP later #1750 L14
+net.DialTimeout allow the generic dialer or listener: a tcp or udp network means the same on every system; the unix and ip networks it also takes are row L14's, as DialUnix's and ListenIP's later lines say
+net.DialUnix later #1750 L14
+net.Dialer allow it names syscall only in the Control fields, which hand over a raw descriptor, usable only through syscall, which is banned
+net.Dialer.Control allow a raw descriptor, usable only through syscall, which is banned
+net.Dialer.ControlContext allow a raw descriptor, usable only through syscall, which is banned
+net.Dialer.Deadline allow a deadline means the same on every system; the doc says the system may end a dial sooner
+net.Dialer.Dial allow the generic dialer or listener: a tcp or udp network means the same on every system; the unix and ip networks it also takes are row L14's, as DialUnix's and ListenIP's later lines say
+net.Dialer.DialContext allow the generic dialer or listener: a tcp or udp network means the same on every system; the unix and ip networks it also takes are row L14's, as DialUnix's and ListenIP's later lines say
+net.Dialer.DialIP later #1750 L14
+net.Dialer.DialUnix later #1750 L14
+net.Dialer.KeepAlive allow keep-alive means the same on every system; the doc says the system picks the probe count
+net.Dialer.KeepAliveConfig allow keep-alive means the same on every system; the doc says a system may not take every setting
+net.Dialer.MultipathTCP allow MPTCP where the system has it and plain TCP where not, so a connection works on every system
+net.Dialer.SetMultipathTCP allow MPTCP where the system has it and plain TCP where not, so a connection works on every system
+net.Dialer.Timeout allow a timeout means the same on every system; the doc says the system may end a dial sooner
+net.FileConn later #1750 L14
+net.FileListener later #1750 L14
+net.FilePacketConn later #1750 L14
+net.IPConn.ReadFrom allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.IPConn.ReadFromIP allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.IPConn.ReadMsgIP allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.IPConn.SyscallConn allow a raw descriptor, usable only through syscall, which is banned
+net.IPConn.WriteMsgIP allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.IPConn.WriteTo allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.IPConn.WriteToIP allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.Interface.Addrs allow the machine's interfaces, read in the system's own way, with the same answer's shape on every system
+net.Interface.MulticastAddrs allow the machine's interfaces, read in the system's own way, with the same answer's shape on every system
+net.InterfaceAddrs allow the machine's interfaces, read in the system's own way, with the same answer's shape on every system
+net.InterfaceByIndex allow the machine's interfaces, read in the system's own way, with the same answer's shape on every system
+net.InterfaceByName allow the machine's interfaces, read in the system's own way, with the same answer's shape on every system
+net.Interfaces allow the machine's interfaces, read in the system's own way, with the same answer's shape on every system
+net.KeepAliveConfig allow keep-alive means the same on every system; the doc says old Windows releases take only some settings
+net.Listen allow the generic dialer or listener: a tcp or udp network means the same on every system; the unix and ip networks it also takes are row L14's, as DialUnix's and ListenIP's later lines say
+net.ListenConfig allow it names syscall only in the Control field, which hands over a raw descriptor, usable only through syscall, which is banned
+net.ListenConfig.Control allow a raw descriptor, usable only through syscall, which is banned
+net.ListenConfig.KeepAlive allow keep-alive means the same on every system; the doc says the system picks the probe count
+net.ListenConfig.KeepAliveConfig allow keep-alive means the same on every system; the doc says a system may not take every setting
+net.ListenConfig.Listen allow the generic dialer or listener: a tcp or udp network means the same on every system; the unix and ip networks it also takes are row L14's, as DialUnix's and ListenIP's later lines say
+net.ListenConfig.ListenPacket allow the generic dialer or listener: a tcp or udp network means the same on every system; the unix and ip networks it also takes are row L14's, as DialUnix's and ListenIP's later lines say
+net.ListenConfig.MultipathTCP allow MPTCP where the system has it and plain TCP where not, so a connection works on every system
+net.ListenConfig.SetMultipathTCP allow MPTCP where the system has it and plain TCP where not, so a connection works on every system
+net.ListenIP later #1750 L14
+net.ListenPacket allow the generic dialer or listener: a tcp or udp network means the same on every system; the unix and ip networks it also takes are row L14's, as DialUnix's and ListenIP's later lines say
+net.ListenUnix later #1750 L14
+net.ListenUnixgram later #1750 L14
+net.OpError.Temporary allow deprecated: it asks the wrapped error's own Temporary, the same on every system
+net.TCPConn.CloseRead allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.TCPConn.CloseWrite allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.TCPConn.MultipathTCP allow MPTCP where the system has it and plain TCP where not, so a connection works on every system
+net.TCPConn.ReadFrom allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.TCPConn.SetKeepAlive allow a socket option the system applies, with the same meaning on every system
+net.TCPConn.SetKeepAliveConfig allow a socket option the system applies, with the same meaning on every system
+net.TCPConn.SetKeepAlivePeriod allow a socket option the system applies, with the same meaning on every system
+net.TCPConn.SetLinger allow a socket option the system applies, with the same meaning on every system
+net.TCPConn.SetNoDelay allow a socket option the system applies, with the same meaning on every system
+net.TCPConn.SyscallConn allow a raw descriptor, usable only through syscall, which is banned
+net.TCPConn.WriteTo allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.TCPListener.Accept allow it names syscall only for EINVAL on a listener that is not open, the same on every system
+net.TCPListener.AcceptTCP allow it names syscall only for EINVAL on a listener that is not open, the same on every system
+net.TCPListener.Close allow it names syscall only for EINVAL on a listener that is not open, the same on every system
+net.TCPListener.File allow the socket as an os.File, to hand to a child; sockets a service manager passes are go-socket's (row unix-socket-listen)
+net.TCPListener.SetDeadline allow it names syscall only for EINVAL on a listener that is not open, the same on every system
+net.TCPListener.SyscallConn allow a raw descriptor, usable only through syscall, which is banned
+net.UDPConn.ReadFromUDPAddrPort allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UDPConn.ReadMsgUDP later #1750 L14
+net.UDPConn.ReadMsgUDPAddrPort allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UDPConn.SyscallConn allow a raw descriptor, usable only through syscall, which is banned
+net.UDPConn.WriteMsgUDP allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UDPConn.WriteMsgUDPAddrPort allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UDPConn.WriteTo allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UDPConn.WriteToUDP allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UDPConn.WriteToUDPAddrPort allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UnixAddr allow a Unix socket's address, which every first-class system has; the doc names Linux's abstract form, which a name starting with @ asks for
+net.UnixConn.CloseRead allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UnixConn.CloseWrite allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UnixConn.ReadFrom allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UnixConn.ReadFromUnix allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UnixConn.ReadMsgUnix allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UnixConn.SyscallConn allow a raw descriptor, usable only through syscall, which is banned
+net.UnixConn.WriteMsgUnix allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UnixConn.WriteTo allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UnixConn.WriteToUnix allow it names syscall only for EINVAL on a connection that is not open, the same on every system
+net.UnixListener.Accept allow it names syscall only for EINVAL on a listener that is not open, the same on every system
+net.UnixListener.AcceptUnix allow it names syscall only for EINVAL on a listener that is not open, the same on every system
+net.UnixListener.Close allow it names syscall only for EINVAL on a listener that is not open, the same on every system
+net.UnixListener.File allow the socket as an os.File, to hand to a child; sockets a service manager passes are go-socket's (row unix-socket-listen)
+net.UnixListener.SetDeadline allow it names syscall only for EINVAL on a listener that is not open, the same on every system
+net.UnixListener.SyscallConn allow a raw descriptor, usable only through syscall, which is banned
+net.lookupProtocol allow a name lookup means the same on every system: the system's resolver or Go's own answers it
+net/http.AllowQuerySemicolons allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Client.CloseIdleConnections allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Client.Do allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Client.Get allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Client.Head allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Client.Post allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Client.PostForm allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ClientConn.RoundTrip allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Cookie.String allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.CrossOriginProtection.AddInsecureBypassPattern allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.CrossOriginProtection.Check allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.CrossOriginProtection.Handler allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.DefaultTransport allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Dir.Open allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Error allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.FileSystem allow the doc says its names are slash-separated whatever the system, which is why it is safe
+net/http.Get allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Handle allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.HandleFunc allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Head allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Header.Write allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Header.WriteSubset allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ListenAndServe allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ListenAndServeTLS allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.MaxBytesHandler allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.NotFound allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.NotFoundHandler allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Post allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.PostForm allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ProxyFromEnvironment allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ReadRequest allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ReadResponse allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Redirect allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.AddCookie allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.BasicAuth allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.Clone allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.Cookie allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.Cookies allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.CookiesNamed allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.FormFile allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.FormValue allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.MultipartReader allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.ParseForm allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.ParseMultipartForm allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.PostFormValue allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.Referer allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.SetBasicAuth allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.UserAgent allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.Write allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Request.WriteProxy allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Response.Cookies allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Response.Location allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Response.Write allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ResponseController.Flush allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Serve allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ServeContent allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ServeFile allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ServeFileFS allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ServeMux.Handle allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ServeMux.HandleFunc allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ServeMux.Handler allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ServeMux.ServeHTTP allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.ServeTLS allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Server.Close allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Server.ListenAndServe allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Server.ListenAndServeTLS allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Server.Serve allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Server.ServeTLS allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Server.SetKeepAlivesEnabled allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Server.Shutdown allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.SetCookie allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.StripPrefix allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Transport.Clone allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Transport.CloseIdleConnections allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Transport.NewClientConn allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http.Transport.RoundTrip allow net/http logs to the log package's logger when a Server has no ErrorLog, a cookie is invalid or a transport answers wrongly; its transport reads the proxy variables, the same names on every system; Dir refuses a name with the system's separator; it listens and dials on TCP only
+net/http/cgi.Handler.ServeHTTP allow runs a CGI program with the variables the CGI protocol defines and logs the program's failure to the log package's logger; the protocol is the same on every system
+net/http/cgi.Request allow reads the request from the variables the CGI protocol defines, the same names on every system
+net/http/cgi.Serve allow runs a CGI program with the variables the CGI protocol defines and logs the program's failure to the log package's logger; the protocol is the same on every system
+net/http/fcgi.Serve later #1750 L14
+net/http/httptest.NewRequest allow a test server for tests: it listens on TCP on the loopback, reads the proxy variables through http.DefaultTransport, and logs a hung Close to stderr; only a test calls it
+net/http/httptest.NewRequestWithContext allow a test server for tests: it listens on TCP on the loopback, reads the proxy variables through http.DefaultTransport, and logs a hung Close to stderr; only a test calls it
+net/http/httptest.NewServer allow a test server for tests: it listens on TCP on the loopback, reads the proxy variables through http.DefaultTransport, and logs a hung Close to stderr; only a test calls it
+net/http/httptest.NewTLSServer allow a test server for tests: it listens on TCP on the loopback, reads the proxy variables through http.DefaultTransport, and logs a hung Close to stderr; only a test calls it
+net/http/httptest.NewTestServer allow a test server for tests: it listens on TCP on the loopback, reads the proxy variables through http.DefaultTransport, and logs a hung Close to stderr; only a test calls it
+net/http/httptest.NewUnstartedServer allow a test server for tests: it listens on TCP on the loopback, reads the proxy variables through http.DefaultTransport, and logs a hung Close to stderr; only a test calls it
+net/http/httptest.Server.Client allow a test server for tests: it listens on TCP on the loopback, reads the proxy variables through http.DefaultTransport, and logs a hung Close to stderr; only a test calls it
+net/http/httptest.Server.Close allow a test server for tests: it listens on TCP on the loopback, reads the proxy variables through http.DefaultTransport, and logs a hung Close to stderr; only a test calls it
+net/http/httptest.Server.CloseClientConnections allow a test server for tests: it listens on TCP on the loopback, reads the proxy variables through http.DefaultTransport, and logs a hung Close to stderr; only a test calls it
+net/http/httptest.Server.Start allow a test server for tests: it listens on TCP on the loopback, reads the proxy variables through http.DefaultTransport, and logs a hung Close to stderr; only a test calls it
+net/http/httptest.Server.StartTLS allow a test server for tests: it listens on TCP on the loopback, reads the proxy variables through http.DefaultTransport, and logs a hung Close to stderr; only a test calls it
+net/http/httputil.ClientConn.Do allow reaches the log package's logger, the environment and the network only through net/http, whose lines say why each is the same on every system
+net/http/httputil.ClientConn.Read allow reaches the log package's logger, the environment and the network only through net/http, whose lines say why each is the same on every system
+net/http/httputil.DumpRequestOut allow reaches the log package's logger, the environment and the network only through net/http, whose lines say why each is the same on every system
+net/http/httputil.ReverseProxy.ServeHTTP allow reaches the log package's logger, the environment and the network only through net/http, whose lines say why each is the same on every system
+net/http/httputil.ServerConn.Read allow reaches the log package's logger, the environment and the network only through net/http, whose lines say why each is the same on every system
+net/http/pprof.Index allow reaches the log package's logger, the environment and the network only through net/http, whose lines say why each is the same on every system
+net/mail.AddressParser.Parse allow logs only through its debug value, false in every build
+net/mail.AddressParser.ParseList allow logs only through its debug value, false in every build
+net/mail.Header.AddressList allow logs only through its debug value, false in every build
+net/mail.ParseAddress allow logs only through its debug value, false in every build
+net/mail.ParseAddressList allow logs only through its debug value, false in every build
+net/rpc.* later #1750 L12
+net/rpc/jsonrpc.* later #1750 L12
+os..Close allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os..Mode allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os..Name allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os..Size allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os..Stat allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os..Type allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os..readFrom allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os..readdir allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os..writeTo allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.Chdir later #1750 L9
+os.Chmod later #1750 L6
+os.Chown ban arch.ports.24
+os.Chtimes allow a file's access and change times, which every system keeps, set the same way
+os.Clearenv later #1750 L14
+os.CopyFS allow the file API: it takes a host path, which the system reads in its own form, and joins names inside os with the system's separator, as filepath.Join does
+os.CreateTemp ban arch.shared.8
+os.DevNull allow the system's null device by its own name: the constant is the portable spelling of it
+os.Environ ban cli.config.3
+os.Executable allow the path of the running program on every system
+os.Exit ban go.errors.4
+os.ExpandEnv later #1750 L14
+os.File.Chdir later #1750 L9
+os.File.Chmod later #1750 L6
+os.File.Close allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.File.Fd allow a raw descriptor, usable only through syscall, which is banned
+os.File.Seek allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.File.Stat allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.File.SyscallConn allow a raw descriptor, usable only through syscall, which is banned
+os.File.Write allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.FindProcess later #1750 L10
+os.Getegid ban arch.ports.24
+os.Getenv ban cli.config.3
+os.Geteuid ban arch.ports.24
+os.Getgid ban arch.ports.24
+os.Getgroups ban arch.ports.24
+os.Getpagesize allow the memory page's size, which every system has and a program sizes buffers by
+os.Getpid allow the process's own id, which every system gives it
+os.Getppid allow the parent process's id, which every system gives it
+os.Getuid ban arch.ports.24
+os.Getwd later #1750 L9
+os.Hostname later #1750 L10
+os.Interrupt allow a program's stop: go.concurrency.4 takes it through signal.NotifyContext on every system
+os.IsPathSeparator later #1750 L11
+os.Kill later #1750 L10
+os.Lchown ban arch.ports.24
+os.Link later #1750 L7
+os.LookupEnv ban cli.config.3
+os.Lstat allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.Mkdir allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.MkdirAll allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.MkdirTemp later #1750 L9
+os.NewFile allow a raw descriptor, usable only through syscall, which is banned
+os.O_APPEND allow the file API: an open flag means the same on every system
+os.O_CREATE allow the file API: an open flag means the same on every system
+os.O_EXCL allow the file API: an open flag means the same on every system
+os.O_RDONLY allow the file API: an open flag means the same on every system
+os.O_RDWR allow the file API: an open flag means the same on every system
+os.O_SYNC allow the file API: an open flag means the same on every system
+os.O_TRUNC allow the file API: an open flag means the same on every system
+os.O_WRONLY allow the file API: an open flag means the same on every system
+os.OpenFile allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.OpenInRoot allow the file API: it takes a host path, which the system reads in its own form, and joins names inside os with the system's separator, as filepath.Join does
+os.OpenRoot allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.PathListSeparator later #1750 L11
+os.PathSeparator later #1750 L11
+os.Pipe allow a pipe inside the process, the same on every system
+os.ProcAttr later #1750 L5a
+os.ProcAttr.Files later #1750 L5a
+os.ProcAttr.Sys later #1750 L5a
+os.Process.Kill later #1750 L10
+os.Process.Pid later #1750 L5
+os.Process.Release later #1750 L5
+os.Process.Signal later #1750 L10
+os.Process.Wait later #1750 L5
+os.Process.WithHandle later #1750 L5
+os.ProcessState later #1750 L5
+os.ProcessState.String later #1750 L5
+os.ProcessState.Sys later #1750 L5
+os.ProcessState.SysUsage later #1750 L5
+os.ProcessState.SystemTime later #1750 L5
+os.ProcessState.UserTime later #1750 L5
+os.ReadDir allow the file API: it takes a host path, which the system reads in its own form, and joins names inside os with the system's separator, as filepath.Join does
+os.Readlink later #1750 L7
+os.Remove later #1750 L8
+os.RemoveAll later #1750 L8
+os.Rename ban arch.shared.8
+os.Root allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.Root.Chmod later #1750 L6
+os.Root.Chown ban arch.ports.24
+os.Root.Chtimes allow a file's access and change times, which every system keeps, set the same way
+os.Root.Create allow the file API: it takes a host path, which the system reads in its own form, and joins names inside os with the system's separator, as filepath.Join does
+os.Root.Lchown ban arch.ports.24
+os.Root.Link later #1750 L7
+os.Root.Lstat allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.Root.Open allow the file API: it takes a host path, which the system reads in its own form, and joins names inside os with the system's separator, as filepath.Join does
+os.Root.OpenFile allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.Root.OpenRoot allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.Root.ReadFile allow the file API: it takes a host path, which the system reads in its own form, and joins names inside os with the system's separator, as filepath.Join does
+os.Root.Readlink later #1750 L7
+os.Root.Remove later #1750 L8
+os.Root.RemoveAll later #1750 L8
+os.Root.Rename later #1750 L8
+os.Root.Stat allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.Root.Symlink later #1750 L7
+os.Root.WriteFile allow the file API: it takes a host path, which the system reads in its own form, and joins names inside os with the system's separator, as filepath.Join does
+os.SameFile allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.Setenv later #1750 L14
+os.Signal allow the type os.Interrupt is, which go.concurrency.4 takes as a program's stop on every system
+os.StartProcess ban cli.process.1
+os.Stat allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.Stderr ban cli.errors.3
+os.Stdin allow the input every system gives a process; writing past the kit is cli.errors.3's ban
+os.Stdout ban cli.errors.3
+os.Symlink later #1750 L7
+os.TempDir later #1750 L9
+os.Truncate allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.Unsetenv later #1750 L14
+os.UserCacheDir ban cli.config.5
+os.UserConfigDir ban cli.config.5
+os.UserHomeDir ban cli.config.5
+os.doInRoot allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.epipecheck allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.mkdirat allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.openDirNolog allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.rootMkdirAll allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os.rootOpenFileNolog allow the file API: a file's operations mean the same on every system, and its modes are row L6's
+os/exec.Cmd ban cli.process.1
+os/exec.Cmd.CombinedOutput later #1750 L5
+os/exec.Cmd.Env later #1750 L5
+os/exec.Cmd.Environ later #1750 L5
+os/exec.Cmd.ExtraFiles later #1750 L5a
+os/exec.Cmd.Output later #1750 L5
+os/exec.Cmd.Run later #1750 L5
+os/exec.Cmd.Start later #1750 L5
+os/exec.Cmd.SysProcAttr later #1750 L5a
+os/exec.Command ban cli.process.1
+os/exec.CommandContext ban cli.process.1
+os/exec.ErrNotFound allow LookPath's answer for a name not on PATH
+os/exec.LookPath allow std's own answer for a name on PATH, starting nothing
+os/signal.signum allow a signal's number is the system's own; the signals a program names, as os.Interrupt, mean the same on every system
+os/user.* later #1750 L1
+path/filepath.Abs allow the system's path form is filepath's job: it is the portable spelling of a host path
+path/filepath.Clean allow the system's path form is filepath's job: it is the portable spelling of a host path
+path/filepath.EvalSymlinks later #1750 L7
+path/filepath.FromSlash allow the system's path form is filepath's job: it is the portable spelling of a host path
+path/filepath.Glob later #1750 L11
+path/filepath.HasPrefix later #1750 L11
+path/filepath.IsAbs allow whether a host path is absolute, asked the same way on every system
+path/filepath.Join allow the system's path form is filepath's job: it is the portable spelling of a host path
+path/filepath.ListSeparator later #1750 L11
+path/filepath.Localize allow the system's path form is filepath's job: it is the portable spelling of a host path
+path/filepath.Match later #1750 L11
+path/filepath.Rel allow the system's path form is filepath's job: it is the portable spelling of a host path
+path/filepath.Separator later #1750 L11
+path/filepath.SplitList later #1750 L11
+path/filepath.VolumeName later #1750 L11
+path/filepath.WalkDir allow the system's path form is filepath's job: it is the portable spelling of a host path
+runtime.Caller allow the runtime's own frames: a file name with forward slashes on every system
+runtime.Frame.File allow the runtime's own frames: a file name with forward slashes on every system, as the doc says
+runtime.GOMAXPROCS allow the runtime's own memory and scheduling, which mean the same on every system
+runtime.GOOS ban arch.ports.24
+runtime.LockOSThread allow the runtime's own memory and scheduling, which mean the same on every system
+runtime.NumCPU allow the runtime's own memory and scheduling, which mean the same on every system
+runtime.SetCgoTraceback allow cgo is off in the shipped binary (CGO_ENABLED=0), so this is never called
+runtime.UnlockOSThread allow the runtime's own memory and scheduling, which mean the same on every system
+runtime/coverage.WriteCountersDir allow writes coverage data to the folder its caller names; the settings it reads are the go tool's, the same on every system
+runtime/coverage.WriteMetaDir allow writes coverage data to the folder its caller names; the settings it reads are the go tool's, the same on every system
+runtime/debug.FreeOSMemory allow the runtime's own memory and scheduling, which mean the same on every system
+runtime/debug.PrintStack later #1750 L12
+runtime/debug.SetMaxThreads allow the runtime's own memory and scheduling, which mean the same on every system
+runtime/pprof..readMapping allow a profile's figures are the system's to measure; the profile's form is the same on every system
+runtime/pprof.addMaxRSS allow a profile's figures are the system's to measure; the profile's form is the same on every system
+syscall.* ban arch.ports.24
+testing..sub allow the test runner's own clock, which a benchmark reads the same way on every system
+testing.B.Elapsed allow the test runner's own clock, which a benchmark reads the same way on every system
+testing.B.Loop allow the test runner: it writes the run's report to the stdout go test reads and exits with its status; only a test calls it
+testing.B.ResetTimer allow the test runner's own clock, which a benchmark reads the same way on every system
+testing.B.Run allow the test runner: it writes the run's report to the stdout go test reads and exits with its status; only a test calls it
+testing.B.RunParallel allow the test runner: it writes the run's report to the stdout go test reads and exits with its status; only a test calls it
+testing.B.StartTimer allow the test runner's own clock, which a benchmark reads the same way on every system
+testing.B.StopTimer allow the test runner's own clock, which a benchmark reads the same way on every system
+testing.Benchmark allow the test runner: it writes the run's report to the stdout go test reads and exits with its status; only a test calls it
+testing.F.Fuzz allow the test runner: it writes the run's report to the stdout go test reads and exits with its status; only a test calls it
+testing.Init allow the test runner: it writes the run's report to the stdout go test reads and exits with its status; only a test calls it
+testing.M.Run allow the test runner: it writes the run's report to the stdout go test reads and exits with its status; only a test calls it
+testing.Main allow the test runner: it writes the run's report to the stdout go test reads and exits with its status; only a test calls it
+testing.MainStart allow the test runner: it writes the run's report to the stdout go test reads and exits with its status; only a test calls it
+testing.RunBenchmarks allow the test runner: it writes the run's report to the stdout go test reads and exits with its status; only a test calls it
+testing.RunExamples allow the test runner: it writes the run's report to the stdout go test reads and exits with its status; only a test calls it
+testing.RunTests allow the test runner: it writes the run's report to the stdout go test reads and exits with its status; only a test calls it
+testing.T.Parallel allow the test runner's own scheduling, the same on every system
+testing.T.Run allow the test runner's own scheduling, the same on every system
+testing.highPrecisionTimeNow allow the test runner's own clock, which a benchmark reads the same way on every system
+testing.highPrecisionTimeSince allow the test runner's own clock, which a benchmark reads the same way on every system
+testing/fstest.TestFS allow a test helper that reports through the test runner and its log; only a test calls it
+testing/iotest.TestReader allow a test helper that reports through the test runner and its log; only a test calls it
+testing/quick.Check allow a test helper: it adds its -quickchecks flag to the command line's set and reports through the test runner; only a test calls it
+testing/quick.CheckEqual allow a test helper: it adds its -quickchecks flag to the command line's set and reports through the test runner; only a test calls it
+text/scanner.Scanner.Next allow writes a scan error to stderr only when the Scanner's Error field is nil, which its caller sets
+text/scanner.Scanner.Peek allow writes a scan error to stderr only when the Scanner's Error field is nil, which its caller sets
+text/scanner.Scanner.Scan allow writes a scan error to stderr only when the Scanner's Error field is nil, which its caller sets
+text/template.ParseFS allow it reads an fs.FS, which has slash names on every system; the doc says so
+text/template.ParseGlob later #1750 L11
+text/template.Template.ParseFS allow it reads an fs.FS, which has slash names on every system; the doc says so
+text/template.Template.ParseGlob later #1750 L11
+time.LoadLocation allow a zone by its IANA name, the same names on every system, from the system's database or time/tzdata
+time.LoadLocationFromTZData allow a zone from bytes the caller gives, the same on every system
+time.Time.Unix allow seconds since 1970 UTC on every system; the doc names systems that store them in 32 bits
+time.initLocal allow the local zone, which each system keeps in its own place: a time's instant and its arithmetic are the same on every system
+unsafe.* later #1750 L1b

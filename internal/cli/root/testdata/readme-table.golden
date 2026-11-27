@@ -1,0 +1,58 @@
+| Command | What it does | Works now |
+|---|---|---|
+| `gragas validate` | Check a rulebook and list what is wrong in it | yes |
+| `gragas migrate` | Move a rulebook to the format this build reads | yes |
+| `gragas rule` | Add or change a rule, with its history. Takes new, edit, replace, retire, restore, renumber, promote, confirm, exclude, include | yes |
+| `gragas term` | Define, change or retire a term. Takes new, edit, retire | yes |
+| `gragas source` | Record or change a source a rule cites. Takes new, edit | yes |
+| `gragas decision` | Record a decision or supersede one. Takes new, supersede | yes |
+| `gragas undo` | Take back the last change the history records | yes |
+| `gragas guard` | Refuse a hand edit of a lifecycle field. Takes edit, staged | yes |
+| `gragas import` | Bring a guide and a tool's config in as rules | yes |
+| `gragas propose` | Propose a change to a rulebook you do not own | not yet |
+| `gragas fix` | Offer a fix for each finding and apply the ones you pick | not yet |
+| `gragas signals` | List the signals about the rules that need a look | not yet |
+| `gragas attention` | List what needs the owner's attention first | yes |
+| `gragas history` | List the history of a rule or of the rulebook | yes |
+| `gragas bind` | Bind a rule to the tool setting that holds it | yes |
+| `gragas rebind` | Move a rule's binding to another tool setting | yes |
+| `gragas unbind` | Remove a rule's binding | yes |
+| `gragas conflicts` | List rules whose settings disagree and offer the three resolutions | yes |
+| `gragas coverage` | List the rules tools hold and those none hold | yes |
+| `gragas tools` | List the tools the rules bind to | yes |
+| `gragas plugin` | Prove, list, approve, add or upgrade a plugin, or say which contract this gragas speaks. Takes test, contract, list, approve, add, upgrade, record | yes |
+| `gragas resolve` | List the rulebook a chain resolves to, and where each entry came from | yes |
+| `gragas explain` | Explain a rule or a tool entry by what holds it | yes |
+| `gragas preset` | Write every tool's preset from the rulebook's bindings | yes |
+| `gragas verify` | Prove that the tools hold the rules this project took | not yet |
+| `gragas prove` | Run every rule's pairs through its tool and write the proof grid | not yet |
+| `gragas release` | Cut a release of the rulebook | not yet |
+| `gragas diff` | List what changed between two releases | not yet |
+| `gragas changelog` | List the changes of a release, each with what a consumer does | not yet |
+| `gragas health` | Say how healthy a release is | not yet |
+| `gragas archive` | Archive a rulebook and name its successor | not yet |
+| `gragas withdraw` | Withdraw a release that should not be used | not yet |
+| `gragas index` | List the rulebooks the index knows | not yet |
+| `gragas docs` | Export a rulebook's pages and their manifest | not yet |
+| `gragas show` | Show one rule, term, source or decision | not yet |
+| `gragas find` | Find rules, terms, sources and decisions by a word | not yet |
+| `gragas handbook` | Read the handbook | not yet |
+| `gragas sarif` | Write the findings of a run as SARIF | not yet |
+| `gragas explorer` | Build the explorer bundle for a rulebook | not yet |
+| `gragas init` | Set up a project or a rulebook | yes |
+| `gragas status` | Say what applies to this project and which versions are in play | not yet |
+| `gragas check` | Check a project against its rules, or a rulebook against its gate | yes, the old one until M6 |
+| `gragas waive` | Waive a rule for a path, with a reason and an end date | not yet |
+| `gragas baseline` | Record today's findings so only new ones fail | not yet |
+| `gragas upgrade` | Move a pin to a newer release, or a rulebook's own parent, imports and upstream | not yet |
+| `gragas switch` | Switch a project to another rulebook | not yet |
+| `gragas report` | Write the report of the last check | not yet |
+| `gragas agents` | Write the files that tell coding agents the rules | not yet |
+| `gragas rules` | List the rules that apply to this project | not yet |
+| `gragas review` | Write the review file for a change | not yet |
+| `gragas contract` | Check documents, read fields, write a fixture. Takes validate, fields, fixture | yes |
+| `gragas help` | Show the help of a command | yes |
+| `gragas version` | Say which build this is | yes |
+| `gragas journal` | List the runs that wrote, roll an interrupted one back or print how to restore. Takes list, recover, restore | yes |
+| `gragas cache` | List what gragas keeps in its cache or clear it. Takes list, clear | yes |
+| `gragas gen` | Say which generated files are out of date, and write them | yes, the old one until M6 |

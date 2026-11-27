@@ -1,0 +1,1 @@
+{"ok":{"findings":[{"key":"k","line":12,"message":"one","path":"a.go"},{"key":"j","line":3,"message":"three","path":"b.go"},{"key":"k","line":3,"message":"two","path":"b.go"}],"ran":true}}

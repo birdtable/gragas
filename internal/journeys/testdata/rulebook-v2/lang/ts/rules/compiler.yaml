@@ -1,0 +1,249 @@
+part: ts
+concern: compiler
+order: 1
+title: The strict compiler
+summary: >-
+  TypeScript runs under one shared strict compiler core, in a library mode and an app mode, raised one flag
+  per change and never lowered. The type check has zero errors everywhere, and a replacement compiler gates
+  only once stable, with the previous one pinned beside it.
+rules:
+  - id: ts.compiler.1
+    slug: zero-type-errors
+    since: 0.1.0
+    rule: >-
+      The type check has zero errors in application and infrastructure code, under the strictest flags.
+    detail: >-
+      Each project runs its framework's checker: `tsc --noEmit` for plain and React code, and `astro check`
+      (with a tsconfig extending `astro/tsconfigs/strictest`, the framework's strictest preset) for `.astro`
+      templates, never `tsc` on `.astro` files. The check covers application code and the deployment code
+      beside it. Strict mode is on; the full flag set is in the shared base, see ts.compiler.3.
+    level: program
+    why: >-
+      A type error that the gate lets through is a fault found at run time. At the donor project the type
+      check refused its own lead's wrong ruling on one change, which is the evidence for a hard type gate
+      (evidence C).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: typescript-handbook
+        where: tsconfig strict
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: astro-check
+        tier: "1"
+        note: >-
+          v1 class compiler. `tsc --noEmit` with the shared strict base for TypeScript and React projects;
+          `astro check` (@astrojs/check) with the framework's strictest tsconfig for Astro projects. Plant: a
+          planted type error in an `.astro` frontmatter and one in a `.tsx` file must each fail. Control: a
+          project with no type errors passes
+    relates:
+      - id: ts.compiler.3
+        how: see
+      - id: ts.compiler.6
+        how: see
+    open:
+      - >-
+        TypeScript stays on the 6.0 line while typescript-eslint and the Astro checker peer ranges hold (stack
+        list); the move to the native compiler is ts.compiler.6.
+  - id: ts.compiler.2
+    slug: strictness-ratchet
+    since: 0.1.0
+    rule: >-
+      The compiler flags reach the strictest base one flag per change, the list of flags on can only grow, and
+      strictness never goes down.
+    detail: >-
+      The sequence includes `verbatimModuleSyntax` and `erasableSyntaxOnly`, with `noUncheckedIndexedAccess`
+      last (it is the one that produces the most errors). A diff check on `tsconfig.json` fails when a flag is
+      removed from the committed list. Project references are built with `tsc -b`. Extra flags beyond the
+      strict base, such as unchecked indexed access and exact optional property types, are on.
+    level: package
+    why: >-
+      Turning on all flags in one change produces a wall of errors that gets suppressed; one flag per change
+      keeps each cost small and visible.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: tsconfig-strictest
+        where: flag list
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          a flag-list check: a committed list of compiler flags that can only grow, diffed against
+          `tsconfig.json`, and a shrink-only count of errors for the next flag. Plant: removing a strict flag
+          from `tsconfig.json` fails the flag-list check. Control: adding a flag with its errors fixed in the
+          same change passes
+    open:
+      - The ratchet is a diff check on the flag list; the script is not written.
+      - >-
+        The window of one flag per change starts after the last flag flip in the source's plan.
+  - id: ts.compiler.3
+    slug: shared-compiler-base
+    since: 0.1.0
+    rule: >-
+      One published strictest compiler core is shared by every project, in two module modes: a published
+      library compiles with nodenext resolution, composite, and emits declarations to dist, and a bundled app
+      uses bundler resolution with no emit.
+    detail: >-
+      The strict core is the same in both modes: strict on, exact optional property types, unchecked indexed
+      access, verbatim module syntax, erasable syntax only, isolated modules, no switch fall-through and
+      consistent file-name casing. The mode is chosen by the package's kind (published library or bundled
+      app), never per file, and a package declares which kind it is. The base is a published package with one
+      entry per mode; a project's own compiler file extends the base for its kind and sets only lib, types and
+      jsx (ts.compiler.5). Copies in projects are byte-equal to the template. A third mode is added to the
+      base, never to a project.
+    level: package
+    why: >-
+      One base changes once and reaches every project by a version bump, where per-project files drift. A
+      library and an app are different compile targets and no single module mode serves both, while the strict
+      flags are what the rule exists to share.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: tsconfig-strictest
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          a test that reads the project's resolved compiler options and compares them with the shared base's
+          required set; a template-equality check on the compiler file. Plant: a project compiler file that
+          turns `strict` off fails; one missing `noFallthroughCasesInSwitch` fails; a library package
+          resolving with bundler, or an app package that emits, fails. Control: a project whose resolved
+          options include the whole core and the module mode of its declared kind passes
+    relates:
+      - id: ts.compiler.5
+        how: see
+    open:
+      - The check is written from the shared lists; not run.
+  - id: ts.compiler.4
+    slug: flags-left-off-are-recorded
+    since: 0.1.0
+    rule: >-
+      A strictness flag deliberately left off is recorded with its reason and pinned off by a test.
+    detail: >-
+      The base names each flag that is off (three in the source) with the reason beside it; a test fails when
+      a flag recorded as off turns on without the record changing, or the reverse.
+    level: package
+    why: >-
+      A flag that is off with no recorded reason is indistinguishable from one forgotten, and nobody turns it
+      on.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "0"
+        note: >-
+          a test that reads the base's off-list and asserts each flag in it is off and carries a reason.
+          Plant: an off-flag with no reason fails; an off-flag that is on fails. Control: an off-list that
+          matches the options passes
+    note: >-
+      A related rule in the base gates part holds that any waiver carries a reason and an expiry; this is its
+      compiler form.
+  - id: ts.compiler.5
+    slug: shared-base-listed-last
+    since: 0.1.0
+    rule: >-
+      A project's compiler file extends the shared base and sets only lib, types and jsx, and a base option
+      set in a project file fails.
+    detail: >-
+      The check reads each project compiler file and fails on any compiler option other than lib, types and
+      jsx, so no overlay can loosen strictness or change the module mode in a corner. Where a file still lists
+      more than one extended file, the shared base is listed last so it wins, and a test sets a flag in the
+      overlay that the base sets the other way and asserts the base's value is the resolved one.
+    level: package
+    why: >-
+      A shared rule that a local file can silently override is not shared. Capping the overlay to three keys
+      is the maintenance win: nobody loosens strict in a corner.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: typescript-handbook
+        where: extends in tsconfig
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test that reads each project compiler file and fails on a compiler option other than lib, types
+          and jsx, and resolves the options to assert the shared base's value wins over a conflicting overlay
+          value. Plant: a project file that sets `strict` false fails; one that sets `moduleResolution` fails;
+          an overlay listed after the base fails. Control: a project file that extends the base and sets only
+          lib, types and jsx passes
+    open:
+      - The compiler's order-of-extends behaviour is confirmed by the test, not assumed.
+  - id: ts.compiler.6
+    slug: native-compiler-shadow-run
+    since: 0.1.0
+    rule: >-
+      The native TypeScript compiler becomes the type gate once its release is stable, with the previous
+      compiler pinned beside it, and any disagreement between the two diagnostic lists is a finding.
+    detail: >-
+      Stable means the native compiler's npm release is out of beta and is not a nightly. From then on the
+      type-check step runs the native compiler as the gate and the previous major, pinned exactly, in the same
+      step; both diagnostic lists are compared by file, code and line (project builds included), and any entry
+      in one list and not the other fails the step as a finding until it is fixed or recorded with a reason.
+      There is no waiting window and no scheduled tier: both run on every type check. Decorator flags are
+      confirmed or removed first. The pinned previous compiler leaves only by a decision once the lint stack
+      and every framework checker accept the native one.
+    level: release
+    why: >-
+      Running both compilers and failing on a disagreement is the safety; a window that depends on a scheduled
+      tier cannot be met once gates run only at the push and the release. Until the
+      native release is stable nothing can fail, so the rule waits.
+    kind: rule
+    strength: Hard
+    status: later
+    when:
+      facets:
+        - ts
+    sources:
+      - ref: typescript-native-port
+        backs: rule
+      - ref: decision-44
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. the type-check step runs `tsgo --noEmit` as the gate and the pinned `tsc --noEmit`
+          beside it, compares both lists and fails on any difference, plus a pin check on the previous
+          compiler. Plant: a run in which the two diagnostic lists differ by one entry fails. Control: two
+          identical lists pass
+    open:
+      - Binds when the native compiler's npm release is stable.
+      - >-
+        Peer ranges of the lint stack and the framework checkers were read on 4 Nov 2026 and move.

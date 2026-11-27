@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": ".gragas/uses.yaml: what a repo must call, the ban row its lint holds for each, the jobs not for this repo and its findings (supply.intake.6); the published matrix is generated from it and holds nothing it does not",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["repo", "picks"],
+  "$defs": {
+    "text": {"type": "string", "minLength": 1},
+    "textOrList": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "array", "items": {"type": "string", "minLength": 1}}]},
+    "list": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  },
+  "properties": {
+    "repo": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "plan_key_prefix": {"$ref": "#/$defs/text"},
+    "issue_key": {"$ref": "#/$defs/text"},
+    "is_library": {"type": "boolean"},
+    "related": {"$ref": "#/$defs/list"},
+    "picks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item", "register_key", "job", "scope", "ban"],
+        "properties": {
+          "item": {"$ref": "#/$defs/text"},
+          "register_key": {"type": "string", "pattern": "^([a-z][a-z0-9-]*|(tool|std):[a-z0-9][a-z0-9/._-]*|first-party:[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9._-]*)+)$"},
+          "job": {"$ref": "#/$defs/text"},
+          "scope": {"$ref": "#/$defs/text"},
+          "ban": {"$ref": "#/$defs/text"},
+          "banned_calls": {"$ref": "#/$defs/list"},
+          "pattern": {"$ref": "#/$defs/text"},
+          "sources": {"$ref": "#/$defs/textOrList"},
+          "adopted_by": {"$ref": "#/$defs/list"},
+          "conditional": {"$ref": "#/$defs/text"}
+        }
+      }
+    },
+    "must_use": {"$ref": "#/$defs/list"},
+    "not_for_this_repo": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item", "why", "sources"],
+        "properties": {
+          "item": {"$ref": "#/$defs/text"},
+          "why": {"$ref": "#/$defs/text"},
+          "sources": {"$ref": "#/$defs/textOrList"}
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["where", "what"],
+        "properties": {
+          "where": {"$ref": "#/$defs/text"},
+          "what": {"$ref": "#/$defs/text"},
+          "lines": {"type": ["integer", "string", "null"], "minimum": 0},
+          "replaced_by": {"$ref": "#/$defs/list"},
+          "removed_by": {"$ref": "#/$defs/list"},
+          "sources": {"$ref": "#/$defs/textOrList"},
+          "pattern": {"$ref": "#/$defs/text"},
+          "symbol": {"$ref": "#/$defs/text"},
+          "carried": {"type": "boolean"},
+          "cut": {"type": "boolean"},
+          "later": {"type": "boolean"},
+          "kept_issue": {"$ref": "#/$defs/text"},
+          "note": {"$ref": "#/$defs/text"},
+          "state": {"enum": ["open", "later", "closed"]}
+        }
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ticket", "why"],
+        "properties": {"ticket": {"$ref": "#/$defs/text"}, "why": {"$ref": "#/$defs/text"}}
+      }
+    },
+    "notes": {"$ref": "#/$defs/textOrList"}
+  }
+}

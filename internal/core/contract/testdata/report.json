@@ -1,0 +1,27 @@
+{
+  "contract": "1.3",
+  "lock_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "pin": {
+    "rulebook": "example",
+    "version": "0.0.0"
+  },
+  "release": {
+    "bump": "patch",
+    "contract": "1.3",
+    "date": "2000-01-01",
+    "format": 1,
+    "version": "0.0.0"
+  },
+  "run_time": "2000-01-01T00:00:00Z",
+  "sections": [],
+  "trust": {
+    "digests_matched": true,
+    "release_state": "current",
+    "signature": "verified"
+  },
+  "versions": {
+    "contract": "1.3",
+    "engine": "0.0.0",
+    "format": 1
+  }
+}

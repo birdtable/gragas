@@ -1,0 +1,57 @@
+part: ts
+concern: packages
+order: 8
+title: Package surface
+summary: >-
+  A published package shows a consumer only what was chosen: its exports map has one subpath per unit and no
+  root barrel, and every entry is proved to resolve in the packed tarball, which is the only place a
+  consumer's view can be seen.
+rules:
+  - id: ts.packages.1
+    slug: exports-map-per-unit
+    since: 0.1.0
+    rule: >-
+      A published package's exports map has one subpath per unit and no root barrel, and every entry resolves
+      in the packed tarball.
+    detail: >-
+      A unit's surface is its index file; the package's surface is its exports map, with one subpath per unit
+      pointing at that unit's built index and its types. There is no `"."` entry that re-exports every unit,
+      and no wildcard subpath. The check packs the package, installs the tarball into a scratch folder and
+      resolves every subpath for import and for types; a subpath that resolves only in the source tree fails.
+      The stability mark of each export (stable, experimental or internal) lives in the surface file of the
+      architecture part (arch.shared.9), not here. The check is engine-free.
+    level: package
+    why: >-
+      A root barrel is how a package grows a surface nobody chose, and only the packed tarball shows what a
+      consumer sees: a file left out of the package or a types path that points into the source passes every
+      check run on the tree.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - library
+    sources:
+      - ref: nodejs-docs
+        where: package exports
+        backs: rule
+      - ref: publint
+        backs: rule
+      - ref: are-the-types-wrong
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. a pack check: `npm pack`, then publint and @arethetypeswrong/cli over the tarball,
+          plus a manifest check that the exports map has no root entry and one subpath per unit index. Plant:
+          a package with a `"."` entry re-exporting every unit fails; a subpath whose built file is missing
+          from the tarball fails. Control: a package with one subpath per unit, each resolving in the tarball,
+          passes
+    relates:
+      - id: arch.shared.9
+        how: see

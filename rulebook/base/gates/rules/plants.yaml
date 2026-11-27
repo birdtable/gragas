@@ -1,0 +1,186 @@
+format: 3
+part: gates
+concern: plants
+rules:
+  - id: gates.plants.1
+    statement: "Every check has a planted violation that turns it red, a clean control and a refusal case, and the gate runs that plant at least once per tier."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A check that cannot fail is not a check. A rule with no plant is a finding, and a new rule ships with its plant and a failing-test message that names the fix. Plants lead adoption in every repo. Every registered check carries a planted-violation fixture, a clean control and a refusal case, and the gate fails when a registered check lacks one (a registry walk). For analyzers the fixture form is the analysis test package with `// want` comments; for forbidigo, ast-grep and conftest-style rules the fixture is a tiny module run through the real tool. Plants run first in the gate. The plants must exist before the check is turned on, and the plant of an old check is never deleted in the change that weakens it (that is a gate weakening, see protection)."
+      pros:
+        - "No Go repo plants one for each of its gates; one repo's drift check failed 13 of 35 entries and was not in its make check. One web repo's 82 plants never ran in `make check` because the layer check ran without its self-test flag. Another has 85 plants on main (135 on a branch). A self-test run is held in one repo (73 plants)."
+    relations:
+      relates:
+        - gates.plants.4
+        - gates.plants.2
+    sources:
+      - ref: ford-bea
+        where: chapters 1 and 2
+        backs: rule
+      - ref: decision-38
+        backs: rule
+  - id: gates.plants.2
+    statement: "Every rule in the effective lint config is error or off, never warn, and every rule that is on has a planted fixture that fires at error severity; a clean fixture has zero findings."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The runner dumps the resolved config for a sample file per kind (for ESLint, `--print-config`) and fails on any rule at warn, including one that arrives from a plugin preset (a warn-level rule; the eslint-plugin-playwright recommended preset gave two warnings in one run). One planted fixture per rule the preset sets, each required to fire at error severity, including one for the unused-disable message. The clean fixture has zero findings, and an excluded spec file and a root tool config lint without a parse error. Every error-level lint rule has a failing fixture (a meta-check), so a rule on with no plant fails."
+      pros:
+        - A rule at warn is not enforced and a grid that counts it lies. A recommended plugin preset gave two warnings in one run. Hand-typed status said 3 rules enforced where the computed count was 0 at a reference team.
+  - id: gates.plants.3
+    statement: Each shared tool preset ships a test with a planted failing sample that fails naming the rule and a clean sample that passes.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Instances: a boundary test fixture that trips exactly the expected structural rules while a clean module passes; an API lint test where a bad description fails with both house rule codes and a good one passes; a spelling test where a planted misspelling fails naming the word and a good file passes; a markdown lint test where a planted skipped-heading file fails naming the rule and a good file passes. The planted and clean samples run through the real check."
+      pros:
+        - A preset that was never run against a bad sample can silently check nothing.
+  - id: gates.plants.4
+    statement: "A rule that can fail in two directions is proved by a pair run, and cannot be at gate level without all the plants."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The pair run: the too-much case planted, the too-little case planted by a different instrument, a just-right case of the same size, the cheap cure applied to each failure, and a third result for not applicable. A row marked two-sided is refused promotion to gate with only the too-much plant. The plants need a reader who is not the row's author. Applies to rules that are balances (size, duplication, coverage, test count)."
+      pros:
+        - "Single-sided rules invite the cure that fails the other side: size rules are met by splitting, coverage floors by assertion-free tests. Argued from the evolutionary-architecture guidance; no fault of ours yet."
+    sources:
+      - ref: ford-bea
+        where: chapter 2
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 6
+        backs: rule
+  - id: gates.plants.5
+    statement: "A gate fails closed on a missing tool, missing input, empty input or a pending marker unless the check declares that 0 inputs is valid, has no flag that softens a finding or an exit, and only members of the gate line count as evidence."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A zero is not an absence until a known positive proves the instrument. The runner wraps every check: an input count of 0 fails unless the check declares `zero_ok`, in which case it returns the third result (gates.plants.8). The type check runs in every gate and fails closed when its inputs, such as generated infrastructure types, are missing (for example `tsc --noEmit` after `sst install`, with the `.sst/` directory absent being red). Tools already fail on an empty glob (ESLint exits 2; a test runner with a file filter matching nothing exits 1); the runner closes the gap for custom checks and name filters. The self-test runs each check on an empty input and requires a refusal. A gate has no non-fatal mode: there is no strict, warn-only or soft flag, a finding is always exit 1, and exit 2 means could not run. A convenience hook (a phase guard, a reminder) may fail open, but it is not a gate member and is never cited as evidence that a rule holds; only members of the gate line are evidence."
+      pros:
+        - "A pending check exited 0 at a reference team; a secrets test skips when its scanner is missing; scanners that read nothing read green; a spec that cannot fail ran against nothing. A softening flag is the switch somebody turns on the day the gate is red."
+    relations:
+      relates:
+        - gates.plants.8
+    sources:
+      - ref: decision-65-gates
+        backs: rule
+  - id: gates.plants.6
+    statement: "A lint run with fatal parse errors is a failure, not a list of findings, and no run ends with one."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The lint wrapper runs the linter with JSON output and exits 1 on any message with `fatal: true` or a null rule id. The lint wrapper (`companion lint`) matches `**/*.astro` and sets `parserOptions.parser` for those template files so TypeScript front matter in `.astro` parses; the null-rule check is on `ruleId`. The same wrapper runs the rules-loaded probe of gates.plants.7."
+      pros:
+        - "Frontmatter TypeScript gave 23 fatal parse errors on one web repo, reported as ordinary findings."
+    relations:
+      relates:
+        - gates.plants.7
+  - id: gates.plants.7
+    statement: "A lint run proves it loaded its rules; a run that loaded none, or fewer than the pinned number, fails."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The wrapper (`companion lint`) prints the resolved config for a sample `.astro` file and a sample `.tsx` file and fails when fewer than the pinned number of accessibility rules are active. The plugin is the preset's own dependency so the working-directory (cwd-lookup) trap cannot arise."
+      pros:
+        - "One folder ran 33 rules and another ran 0, with no error (V-34)."
+  - id: gates.plants.8
+    statement: "A gate proves it ran its full list, a fast tier prints what it skipped, and a check has three results: pass, fail and not applicable with 0 inputs, printed with the input count."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The gate summary lists every check run against the full registry list, with each not-applicable result and its count; a step missing from the summary compared with the rule table fails (the summary-vs-table check). The third result is allowed only where the check declares that 0 inputs is a valid state, with one known-positive run per tier that proves the check reads something. Any other empty input fails (gates.plants.5)."
+      pros:
+        - "A reference gate did not run its vulnerability scan; a gate skipping a step was a regret in the platform lane."
+    relations:
+      relates:
+        - gates.plants.5
+    sources:
+      - ref: decision-26
+        backs: rule
+  - id: gates.plants.9
+    statement: A skipped gate is named with its reason in the change.
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: Every skipped gate and package has a recorded reason in the gate output and in the change description. Nothing reports green for what it skipped.
+      pros:
+        - A skip nobody wrote down is indistinguishable from a pass.
+    relations:
+      relates:
+        - gates.plants.8
+  - id: gates.plants.10
+    statement: "A gate reads a tool's output, not only its exit status, and never through a default cap."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The lint run sets `--max-same-issues=0` and `--max-issues-per-linter=0` and also `issues.uniq-by-line: false`; with the default, a second forbidigo hit on the same line was silently dropped (`http.DefaultClient` beside `*http.Client`). The formatter, import fixer and dead-code outputs are tested empty by the gate wrapper."
+      pros:
+        - "Default caps hide findings: a second forbidden use on one line was silently dropped (verified), and 60 findings of one linter would show as fewer. No repo sets both caps."
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: issues.max-issues-per-linter
+        severity: error
+        rung: 1
+        run_point: push
+  - id: gates.plants.11
+    statement: "A configured behaviour is checked by booting the thing and reading what it emitted, never by reading the config text: the lint config by a verify command plus a real run, and runtime settings by a probe that observes them."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "`golangci-lint config verify` accepts an unknown linter name, and the run does not (verify exit 0, run exit 3). The gate self-test runs both. The same holds for every runtime setting a gate claims: middleware order, log redaction, cookie attributes, content security policy, test-runner workers and timeouts are each asserted by starting the program or tool and reading its output, headers or behaviour. A gate that reads source or config text to assert a runtime fact is a finding."
+      pros:
+        - "A typo in the config silently disables nothing until a run proves it. A setting read from text says what somebody wrote, not what the running program does."
+    sources:
+      - ref: decision-65-gates
+        backs: rule
+  - id: gates.plants.12
+    statement: "The foundation's own scripts and the shared package's own gate are linted and tested by their local gate at push."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Measure, census and page-generator scripts have tests and a lint step, with a known-positive run per script. They run in the foundation repo's own gate command (make check), which its pre-push hook runs on every push, under the budget of gates.hooks.4. The shared package's own hooks and gate run tests and a format check at push. No push or pull-request workflow runs them; a check too slow for the hook moves to the release workflow. The hook install is skipped only when the hook tool is absent, which the armed check reports."
+      pros:
+        - "A reference team went from 10 errors to 0 once its own scripts were gated; ours had no gate on its scripts. Hosted minutes on every push are refused, so the local gate is the gate."
+    relations:
+      relates:
+        - gates.hooks.4
+    sources:
+      - ref: decision-65-gates
+        backs: rule
+      - ref: operator-points
+        backs: rule
+  - id: gates.plants.13
+    statement: "Adoption is proved end to end by a script that generates a repo from the template, edits a managed file and sees the push hook go red naming it."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The proof script packs the shared package, generates a repo from the template, runs the gate green, edits a root file, confirms the push hook goes red naming it, restores the file, confirms green, and runs each tool on a good and a bad sample. For Go, a sync self-test generates a repo, edits a managed file and requires the check to fail."
+      pros:
+        - A template whose generated repo was never exercised can ship a gate that does not fail.
+  - id: gates.plants.14
+    statement: "A shape rule is kept with a planted hit, a clean control and a measured false-positive and false-negative rate, and a zero from a search tool means nothing until it found a known positive."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A fixture pair per shape rule, with every known bypass kept as a fixture, and a run over every clone before the rule is required. The selftest runs them; a bypass form the rule misses is recorded."
+      pros:
+        - "The atomic-write rule had 2 of 13 hits not copies (15 percent) and 1 of 9 outside units missed. Five restructured copies planted beside a control: the rule flagged the control only (1 of 6, re-run 4 Nov), so the false-negative rate for a restructured copy is not the 1 of 9."
+    relations:
+      relates:
+        - gates.plants.1

@@ -1,0 +1,9 @@
+$ gragas plugin list
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+no plugins are locked here
+
+  done       0 plugins, 0 approved
+--- stderr

@@ -1,0 +1,11 @@
+name: explorer
+order: 380
+context: B
+ends: report
+summary: "Build the explorer bundle for a rulebook"
+examples:
+  - {line: "gragas explorer", does: "build the bundle and report"}
+  - {line: "gragas explorer --apply", does: "write it"}
+writes: ["the explorer bundle"]
+exits: ["done", "not ready"]
+json: report

@@ -1,0 +1,1087 @@
+format: 3
+sources:
+  - slug: agents-reasons-stated
+    kind: own-decision
+    title: "agents-reasons-stated: the reasons of the 6 agents rules, stated in public"
+    locator: "repo:gragas/docs/reasons/agents-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: ambler-sadalage-refactoring-databases
+    kind: guide
+    title: "Refactoring Databases: Evolutionary Database Design (Scott W. Ambler, Pramod J. Sadalage), Addison-Wesley 2006"
+    locator: "isbn:9780321293534"
+  - slug: apple-hig
+    kind: vendor-document
+    title: Human Interface Guidelines (Apple)
+    locator: "url:https://developer.apple.com/design/human-interface-guidelines"
+  - slug: arch-reasons-stated
+    kind: own-decision
+    title: "arch-reasons-stated: the reasons of the 13 arch rules, stated in public"
+    locator: "repo:gragas/docs/reasons/arch-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: are-the-types-wrong
+    kind: vendor-document
+    title: "Are the types wrong? (arethetypeswrong)"
+    locator: "url:https://arethetypeswrong.github.io/"
+  - slug: astro-docs
+    kind: vendor-document
+    title: Astro documentation
+    locator: "url:https://docs.astro.build/"
+  - slug: aws-dynamodb-docs
+    kind: vendor-document
+    title: Amazon DynamoDB Developer Guide (AWS)
+    locator: "url:https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/"
+  - slug: b-01-evolutionary-architectures
+    kind: guide
+    title: "B-01: *Building Evolutionary Architectures*, 2nd edition, read against our enforcement rules"
+    locator: "archive:principles/B-01-evolutionary-architectures.md"
+    verified: "2026-11-06"
+  - slug: b-02-code-as-a-crime-scene
+    kind: guide
+    title: "B-02: *Your Code as a Crime Scene* (Tornhill), read whole, for change-history signals"
+    locator: "archive:principles/B-02-code-as-a-crime-scene.md"
+    verified: "2026-11-06"
+  - slug: b-03-unit-testing
+    kind: guide
+    title: "B-03: Khorikov, *Unit Testing Principles, Practices, and Patterns* (Manning, 2020)"
+    locator: "archive:principles/B-03-unit-testing.md"
+    verified: "2026-11-06"
+  - slug: b-04-philosophy-of-software-design
+    kind: guide
+    title: "B-04: *A Philosophy of Software Design* (Ousterhout), read whole, for depth, wrappers, comments and size"
+    locator: "archive:principles/B-04-philosophy-of-software-design.md"
+    verified: "2026-11-06"
+  - slug: b-05-architecture-hard-parts
+    kind: guide
+    title: "B-05: *Software Architecture: The Hard Parts* read against our splitting rules"
+    locator: "archive:principles/B-05-architecture-hard-parts.md"
+    verified: "2026-11-06"
+  - slug: bailis-feral-concurrency-control
+    kind: study
+    title: "Feral Concurrency Control: An Empirical Investigation of Modern Application Integrity (Bailis, Fekete, Franklin, Ghodsi, Hellerstein, Stoica), SIGMOD 2015"
+    locator: "doi:10.1145/2723372.2737784"
+  - slug: bazel-build-files
+    kind: vendor-document
+    title: "Bazel: one build file per package, concepts/build-files"
+    locator: "url:https://bazel.build/concepts/build-files"
+  - slug: bazel-gazelle
+    kind: vendor-document
+    title: "Gazelle: generates build files and fails on a stale one with mode diff"
+    locator: "url:https://github.com/bazel-contrib/bazel-gazelle"
+  - slug: bellemare-bedm
+    kind: guide
+    title: "Building Event-Driven Microservices, 1st edition (Adam Bellemare), O'Reilly 2020"
+    locator: "isbn:9781492057895"
+  - slug: biome-docs
+    kind: vendor-document
+    title: Biome documentation
+    locator: "url:https://biomejs.dev/"
+  - slug: bors-ng-batches
+    kind: vendor-document
+    title: "bors-ng: batches of changes and bisection of a failed batch"
+    locator: "url:https://github.com/bors-ng/bors-ng"
+  - slug: breck-k8s-probes
+    kind: guide
+    title: "Kubernetes Liveness and Readiness Probes: How to Avoid Shooting Yourself in the Foot (Colin Breck)"
+    locator: "url:https://blog.colinbreck.com/kubernetes-liveness-and-readiness-probes-how-to-avoid-shooting-yourself-in-the-foot/"
+  - slug: bronson-metastable-failures
+    kind: study
+    title: "Metastable Failures in Distributed Systems (Bronson, Aghayev, Charapko, Zhu), HotOS 2021"
+    locator: "doi:10.1145/3458336.3465286"
+  - slug: builders-library-health-checks
+    kind: guide
+    title: "Implementing health checks (David Yanacek, Amazon Builders' Library)"
+    locator: "url:https://aws.amazon.com/builders-library/implementing-health-checks/"
+  - slug: builders-library-timeouts-retries
+    kind: guide
+    title: "Timeouts, retries, and backoff with jitter (Marc Brooker, Amazon Builders' Library)"
+    locator: "url:https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/"
+  - slug: cargo-commands-mod
+    kind: vendor-document
+    title: "cargo: the command join, src/bin/cargo/commands/mod.rs"
+    locator: "repo:cargo/src/bin/cargo/commands/mod.rs"
+  - slug: changesets-fragments
+    kind: vendor-document
+    title: "changesets: one markdown file per change under .changeset"
+    locator: "url:https://github.com/changesets/changesets"
+  - slug: cli-reasons-stated
+    kind: own-decision
+    title: "cli-reasons-stated: the reasons of the 23 cli rules, stated in public"
+    locator: "repo:gragas/docs/reasons/cli-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: cockburn-hexagonal
+    kind: guide
+    title: Hexagonal Architecture (Alistair Cockburn)
+    locator: "url:https://alistair.cockburn.us/hexagonal-architecture/"
+  - slug: daemon-reasons-stated
+    kind: own-decision
+    title: "daemon-reasons-stated: the reasons of the 7 daemon rules, stated in public"
+    locator: "repo:gragas/docs/reasons/daemon-reasons-stated.md"
+  - slug: code-reasons-stated
+    kind: own-decision
+    title: "code-reasons-stated: the reasons of the 7 code rules, stated in public"
+    locator: "repo:gragas/docs/reasons/code-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: debrie-dynamodb-book
+    kind: guide
+    title: "The DynamoDB Book (Alex DeBrie), self-published"
+    locator: "url:https://www.dynamodbbook.com/"
+  - slug: decision-1
+    kind: own-decision
+    title: "The shared module public with a licence, or private, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/shared-module-licence.md"
+    verified: "2026-11-16"
+  - slug: decision-10
+    kind: own-decision
+    title: "Package manager, test runner, cooldown, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/package-manager-test-runner-cooldown.md"
+    verified: "2026-11-16"
+  - slug: decision-13
+    kind: own-decision
+    title: "Shared exit codes, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/shared-exit-codes.md"
+    verified: "2026-11-16"
+  - slug: decision-14
+    kind: own-decision
+    title: "\"No nightly runs\" covers birdtable (settled by the weekly full run), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/no-nightly-runs.md"
+    verified: "2026-11-16"
+  - slug: decision-15
+    kind: own-decision
+    title: "Dependency age for Go, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/go-dependency-age.md"
+    verified: "2026-11-16"
+  - slug: decision-16
+    kind: own-decision
+    title: "The shared module releases, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/shared-module-releases.md"
+    verified: "2026-11-16"
+  - slug: decision-17
+    kind: own-decision
+    title: "Smaller items, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/smaller-gate-items.md"
+    verified: "2026-11-16"
+  - slug: decision-18
+    kind: own-decision
+    title: "What runs at land, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/what-runs-at-land.md"
+    verified: "2026-11-16"
+  - slug: decision-19
+    kind: own-decision
+    title: "Small projects, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/small-projects.md"
+    verified: "2026-11-16"
+  - slug: decision-2
+    kind: own-decision
+    title: "Named owner for the shared module, the shared UI package and the UI kit (its rollout lane is ruled apart), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/shared-module-owner.md"
+    verified: "2026-11-16"
+  - slug: decision-20
+    kind: own-decision
+    title: "Land hardening, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/land-hardening.md"
+    verified: "2026-11-16"
+  - slug: decision-21
+    kind: own-decision
+    title: "The app token of two programs, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/app-token-of-two-programs.md"
+    verified: "2026-11-16"
+  - slug: decision-26
+    kind: own-decision
+    title: "Gate result on no input, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/gate-result-on-no-input.md"
+    verified: "2026-11-16"
+  - slug: decision-27
+    kind: own-decision
+    title: "How what runs at land applies, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/how-the-land-run-applies.md"
+    verified: "2026-11-16"
+  - slug: decision-28
+    kind: own-decision
+    title: "Tokens package owner, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/tokens-package-owner.md"
+    verified: "2026-11-16"
+  - slug: decision-29
+    kind: own-decision
+    title: "One styling standard, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/one-styling-standard.md"
+    verified: "2026-11-16"
+  - slug: decision-3
+    kind: own-decision
+    title: "Where the rules live, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/where-rules-live.md"
+    verified: "2026-11-16"
+  - slug: decision-30
+    kind: own-decision
+    title: "Shadcn, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/shadcn.md"
+    verified: "2026-11-16"
+  - slug: decision-31
+    kind: own-decision
+    title: "Non-author for weakening a gate, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/non-author-weakening-a-gate.md"
+    verified: "2026-11-16"
+  - slug: decision-32
+    kind: own-decision
+    title: "Repeat runs at test admission, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/repeat-runs-at-test-admission.md"
+    verified: "2026-11-16"
+  - slug: decision-33
+    kind: own-decision
+    title: "Visual rubric sign-off, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/visual-rubric-sign-off.md"
+    verified: "2026-11-16"
+  - slug: decision-34
+    kind: own-decision
+    title: "Weekly full run, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/weekly-full-run.md"
+    verified: "2026-11-16"
+  - slug: decision-35
+    kind: own-decision
+    title: "Rollout lane, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/rollout-lane.md"
+    verified: "2026-11-16"
+  - slug: decision-37
+    kind: own-decision
+    title: "Postgres, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/postgres.md"
+    verified: "2026-11-16"
+  - slug: decision-38
+    kind: own-decision
+    title: "Adoption order, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/adoption-order.md"
+    verified: "2026-11-16"
+  - slug: decision-39
+    kind: own-decision
+    title: "Release time limit, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/release-time-limit.md"
+    verified: "2026-11-16"
+  - slug: decision-4
+    kind: own-decision
+    title: "Copier or a sync program, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/project-template-sync.md"
+    verified: "2026-11-16"
+  - slug: decision-40
+    kind: own-decision
+    title: "Selector oracle, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/selector-oracle.md"
+    verified: "2026-11-16"
+  - slug: decision-41
+    kind: own-decision
+    title: "Cognitive complexity line, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/cognitive-complexity-line.md"
+    verified: "2026-11-16"
+  - slug: decision-43
+    kind: own-decision
+    title: "What a stored reviewer verdict does, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/stored-reviewer-verdict.md"
+    verified: "2026-11-16"
+  - slug: decision-44
+    kind: own-decision
+    title: "Which strengths count as a rule, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/which-strengths-count-as-a-rule.md"
+    verified: "2026-11-16"
+  - slug: decision-47
+    kind: own-decision
+    title: "Sources, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/sources.md"
+    verified: "2026-11-16"
+  - slug: decision-5
+    kind: own-decision
+    title: "Token home and format, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/token-home-and-format.md"
+    verified: "2026-11-16"
+  - slug: decision-50
+    kind: own-decision
+    title: "CLI scope, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/cli-scope.md"
+    verified: "2026-11-16"
+  - slug: decision-63
+    kind: own-decision
+    title: "Licence and Semgrep timing, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/licence-and-semgrep-timing.md"
+    verified: "2026-11-16"
+  - slug: decision-64
+    kind: own-decision
+    title: "Where rules come from, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/where-rules-come-from.md"
+    verified: "2026-11-16"
+  - slug: decision-65-agents
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/agents-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-arch
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/arch-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-astro
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/astro-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-cli
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/cli-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-code
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/code-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-daemon
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/daemon-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-docs
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/docs-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-gates
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/gates-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-go
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/go-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-postgres
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/postgres-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-react
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/react-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-service
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/service-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-store
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/store-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-supply
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/supply-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-tests
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/tests-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-ts
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/ts-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-65-web
+    kind: own-decision
+    title: "The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/web-choices.md"
+    verified: "2026-11-16"
+  - slug: decision-7
+    kind: own-decision
+    title: "UI stack by kind, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/ui-stack-by-kind.md"
+    verified: "2026-11-16"
+  - slug: decision-8
+    kind: own-decision
+    title: "Component primitives, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/component-primitives.md"
+    verified: "2026-11-16"
+  - slug: decision-9
+    kind: own-decision
+    title: "Forms, router, styling, restated from the rules that cite it"
+    locator: "repo:gragas/docs/reasons/forms-router-styling.md"
+    verified: "2026-11-16"
+  - slug: docker-commands-register
+    kind: vendor-document
+    title: "docker CLI: commands that register themselves from init functions, cli/command/commands"
+    locator: "repo:docker-cli/cli/command/commands"
+  - slug: docs-reasons-stated
+    kind: own-decision
+    title: "docs-reasons-stated: the reasons of the 2 docs rules, stated in public"
+    locator: "repo:gragas/docs/reasons/docs-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: dynamodb-atc22
+    kind: study
+    title: "Amazon DynamoDB: A Scalable, Predictably Performant, and Fully Managed NoSQL Database Service (Elhemali et al.), USENIX ATC 2022"
+    locator: "url:https://www.usenix.org/conference/atc22/presentation/elhemali"
+  - slug: eslint-docs
+    kind: vendor-document
+    title: ESLint documentation
+    locator: "url:https://eslint.org/docs/latest/"
+  - slug: eslint-plugin-jsx-a11y
+    kind: vendor-document
+    title: eslint-plugin-jsx-a11y documentation
+    locator: "url:https://github.com/jsx-eslint/eslint-plugin-jsx-a11y"
+  - slug: birdtable-study-issue-641
+    kind: guide
+    title: "Rulebook: four tier rules from the birdtable study, the study of five other projects"
+    locator: "url:https://github.com/birdtable/gragas/issues/641"
+  - slug: fleet-decisions-gd-28-29
+    kind: standard
+    title: "The rulings of 9 November 2026: fuzz and the heavy race tests on demand, the release tier cut back, narrow widths as property checks; and the tier study adopted, P1 to P8 first"
+    locator: "archive:decisions/gragas.md"
+  - slug: ford-bea
+    kind: guide
+    title: "Building Evolutionary Architectures: Automated Software Governance, 2nd edition (Neal Ford, Rebecca Parsons, Patrick Kua, Pramod Sadalage), O'Reilly 2022"
+    locator: "isbn:9781492097549"
+  - slug: ford-sathp
+    kind: guide
+    title: "Software Architecture: The Hard Parts (Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani), O'Reilly 2021"
+    locator: "isbn:9781492086895"
+  - slug: fowler-non-determinism
+    kind: guide
+    title: Eradicating Non-Determinism in Tests (Martin Fowler)
+    locator: "url:https://martinfowler.com/articles/nonDeterminism.html"
+  - slug: fowler-parallel-change
+    kind: guide
+    title: "ParallelChange (Danilo Sato, martinfowler.com bliki)"
+    locator: "url:https://martinfowler.com/bliki/ParallelChange.html"
+  - slug: gates-reasons-stated
+    kind: own-decision
+    title: "gates-reasons-stated: the reasons of the 29 gates rules, stated in public"
+    locator: "repo:gragas/docs/reasons/gates-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: gh-gen-docs
+    kind: vendor-document
+    title: "gh: command documents generated and not committed, cmd/gen-docs"
+    locator: "repo:gh/cmd/gen-docs"
+  - slug: gh-help-test
+    kind: vendor-document
+    title: "gh: a test that walks the command tree for help, pkg/cmd/root/help_test.go"
+    locator: "repo:gh/pkg/cmd/root/help_test.go"
+  - slug: gh-root-join
+    kind: vendor-document
+    title: "gh: the hand-written join of the command packages, pkg/cmd/root/root.go"
+    locator: "repo:gh/pkg/cmd/root/root.go"
+  - slug: git-command-list
+    kind: vendor-document
+    title: "git: the command list as data, command-list.txt"
+    locator: "repo:git/command-list.txt"
+  - slug: git-config-core-ignorecase
+    kind: vendor-document
+    title: "git: core.ignoreCase, how git treats a file system that folds case"
+    locator: "url:https://git-scm.com/docs/git-config#Documentation/git-config.txt-coreignoreCase"
+  - slug: git-config-core-symlinks
+    kind: vendor-document
+    title: "git: core.symlinks, a symbolic link checked out as a plain file"
+    locator: "url:https://git-scm.com/docs/git-config#Documentation/git-config.txt-coresymlinks"
+  - slug: git-gitattributes
+    kind: vendor-document
+    title: "git: gitattributes, merge drivers and the union merge"
+    locator: "url:https://git-scm.com/docs/gitattributes"
+  - slug: git-rerere
+    kind: vendor-document
+    title: "git: rerere, recorded resolutions under .git/rr-cache"
+    locator: "url:https://git-scm.com/docs/git-rerere"
+  - slug: github-linguist-generated
+    kind: vendor-document
+    title: "GitHub: how changed files appear, and the linguist-generated attribute"
+    locator: "url:https://docs.github.com/en/repositories/working-with-files/managing-files/customizing-how-changed-files-appear-on-github"
+  - slug: github-merge-queue
+    kind: vendor-document
+    title: "GitHub: managing a merge queue (queue branches that include the changes ahead)"
+    locator: "url:https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue"
+  - slug: gragas-spec-s73
+    kind: own-decision
+    title: "S73 and S61 of the gragas spec: a trait that switches rules off is a kind"
+    locator: "repo:gragas/docs/spec.md"
+  - slug: go-api-next
+    kind: vendor-document
+    title: "Go: api/next, one file per proposal, joined at release"
+    locator: "repo:go/api/README"
+  - slug: go-doc-next
+    kind: vendor-document
+    title: "Go: doc/next, release-note fragments joined at the end of the cycle"
+    locator: "repo:go/doc/README.md"
+  - slug: go-fuzzing
+    kind: vendor-document
+    title: "Go: Fuzzing, native fuzz tests with a checked-in seed corpus"
+    locator: "url:https://go.dev/doc/security/fuzz/"
+  - slug: go-reasons-stated
+    kind: own-decision
+    title: "go-reasons-stated: the reasons of the 8 Go rules, stated in public"
+    locator: "repo:gragas/docs/reasons/go-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: go-synctest
+    kind: vendor-document
+    title: "Go: package testing/synctest, tests of concurrent code on a fake clock"
+    locator: "url:https://pkg.go.dev/testing/synctest"
+  - slug: go-1-23-release-notes
+    kind: vendor-document
+    title: "Go 1.23 release notes: the linker disallows //go:linkname references to standard library internals"
+    locator: "url:https://go.dev/doc/go1.23#linker"
+    verified: "2026-11-13"
+  - slug: go-race-detector
+    kind: vendor-document
+    title: "Go: Data Race Detector, its cost in memory and time"
+    locator: "url:https://go.dev/doc/articles/race_detector"
+  - slug: go-review-r-02-donor-section-gap
+    kind: guide
+    title: "R-02: What the donor research has that our Go foundation lacks"
+    locator: "archive:go/review/R-02-donor-section-gap.md"
+    verified: "2026-11-06"
+  - slug: go-testing-package
+    kind: vendor-document
+    title: "Go: package testing, T.Parallel, TestMain and subtests"
+    locator: "url:https://pkg.go.dev/testing"
+  - slug: golangci-lint-cache-source
+    kind: vendor-document
+    title: "golangci-lint: internal/go/cache/cache.go, the disk cache shared by processes on one machine (read at v2.14.0)"
+    locator: "url:https://github.com/golangci/golangci-lint/blob/v2.14.0/internal/go/cache/cache.go"
+  - slug: golangci-lint-cli
+    kind: vendor-document
+    title: "golangci-lint: command line flags, the run lock and the two ways around it"
+    locator: "url:https://golangci-lint.run/docs/configuration/cli/"
+  - slug: golangci-lint-config-file
+    kind: vendor-document
+    title: "golangci-lint: one configuration file, no include or extends"
+    locator: "url:https://golangci-lint.run/docs/configuration/file/"
+  - slug: golangci-lint-linters
+    kind: vendor-document
+    title: golangci-lint linters (gochecknoinits and the others)
+    locator: "url:https://golangci-lint.run/usage/linters/"
+  - slug: google-sre-book
+    kind: guide
+    title: "Site Reliability Engineering: How Google Runs Production Systems (Beyer, Jones, Petoff, Murphy), O'Reilly 2016"
+    locator: "isbn:9781491929124"
+  - slug: gotestsum
+    kind: vendor-document
+    title: gotestsum (gotestyourself)
+    locator: "url:https://github.com/gotestyourself/gotestsum"
+  - slug: shared-kit-agents
+    kind: own-decision
+    title: "The shared kit: AGENTS.md, The rules (G1 to G6)"
+    locator: "archive:shared-kit/AGENTS.md"
+  - slug: handbook
+    kind: guide
+    title: birdtable Principles Handbook
+    locator: "archive:principles/handbook.md"
+    verified: "2026-11-06"
+  - slug: harsanyi-100-go-mistakes
+    kind: guide
+    title: "100 Go Mistakes and How to Avoid Them (Teiva Harsanyi), Manning 2022"
+    locator: "isbn:9781617299599"
+  - slug: helm-golden-output
+    kind: vendor-document
+    title: "helm: one golden file per command, pkg/cmd/testdata/output"
+    locator: "repo:helm/pkg/cmd/testdata/output"
+  - slug: hoffman-web-app-security
+    kind: guide
+    title: "Web Application Security: Exploitation and Countermeasures for Modern Web Applications, 2nd edition (Andrew Hoffman), O'Reilly 2024"
+    locator: "isbn:9781098143930"
+  - slug: gragas-readme
+    kind: own-decision
+    title: "gragas: gragas"
+    locator: "repo:gragas/README.md"
+    verified: "2026-11-16"
+  - slug: hugo-commands
+    kind: vendor-document
+    title: "hugo: one file per command, commands/"
+    locator: "repo:hugo/commands"
+  - slug: jepsen-postgresql-12-3
+    kind: guide
+    title: "Jepsen: PostgreSQL 12.3 (Kyle Kingsbury)"
+    locator: "url:https://jepsen.io/analyses/postgresql-12.3"
+  - slug: khorikov-unit-testing
+    kind: guide
+    title: "Unit Testing Principles, Practices, and Patterns (Vladimir Khorikov), Manning 2020"
+    locator: "isbn:9781617296277"
+  - slug: kleppmann-ddia
+    kind: guide
+    title: "Designing Data-Intensive Applications, 2nd edition (Martin Kleppmann, Chris Riccomini), O'Reilly 2026"
+    locator: "isbn:9781098119065"
+  - slug: kubectl-cmd-join
+    kind: vendor-document
+    title: "kubectl: the hand-written join with named groups, pkg/cmd/cmd.go"
+    locator: "repo:kubectl/pkg/cmd/cmd.go"
+  - slug: kubectl-cmd-sanity
+    kind: vendor-document
+    title: "kubectl: cross-cutting command checks that walk the tree, pkg/cmd/util/sanity/cmd_sanity.go"
+    locator: "repo:kubectl/pkg/cmd/util/sanity/cmd_sanity.go"
+  - slug: kubectl-verify-docs
+    kind: vendor-document
+    title: "kubernetes: committed generated documents held by hack/verify-generated-docs.sh"
+    locator: "repo:kubernetes/hack/verify-generated-docs.sh"
+  - slug: kubernetes-owners
+    kind: vendor-document
+    title: "Kubernetes: an OWNERS file per directory, inherited upward"
+    locator: "url:https://github.com/kubernetes/community/blob/master/contributors/guide/owners.md"
+  - slug: kubernetes-verify-codegen
+    kind: vendor-document
+    title: "Kubernetes: committed generated files held by hack/verify-codegen.sh"
+    locator: "repo:kubernetes/hack/verify-codegen.sh"
+  - slug: linux-maintainers
+    kind: vendor-document
+    title: "Linux: the MAINTAINERS file, one hot shared registry kept by an integrator"
+    locator: "repo:linux/MAINTAINERS"
+  - slug: liquid-reasons-stated
+    kind: own-decision
+    title: "liquid-reasons-stated: the reasons of the 5 liquid rules, stated in public"
+    locator: "repo:gragas/docs/reasons/liquid-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: madr
+    kind: standard
+    title: "MADR: Markdown Architectural Decision Records"
+    locator: "url:https://adr.github.io/madr/"
+  - slug: magda-just-use-postgres
+    kind: guide
+    title: "Just Use Postgres! All the Database You Need (Denis Magda), Manning 2025"
+    locator: "isbn:9781633435698"
+  - slug: mcdonald-grokking-web-app-security
+    kind: guide
+    title: "Grokking Web Application Security (Malcolm McDonald), Manning 2024"
+    locator: "isbn:9781633438262"
+  - slug: mergify-parallel-checks
+    kind: vendor-document
+    title: "Mergify: batch size and parallel checks of a merge queue"
+    locator: "url:https://docs.mergify.com/merge-queue/parallel-checks/"
+  - slug: minsky-effective-ml
+    kind: guide
+    title: "Effective ML Revisited (Yaron Minsky, Jane Street blog), source of \"make illegal states unrepresentable\""
+    locator: "url:https://blog.janestreet.com/effective-ml-revisited/"
+  - slug: msw-docs
+    kind: vendor-document
+    title: Mock Service Worker documentation
+    locator: "url:https://mswjs.io/docs/"
+  - slug: nodejs-docs
+    kind: vendor-document
+    title: Node.js documentation
+    locator: "url:https://nodejs.org/api/"
+  - slug: operator-points
+    kind: decision-record
+    title: "The operator's points, verbatim"
+    locator: "archive:operator-points.md"
+    verified: "2026-11-06"
+  - slug: ousterhout-aposd
+    kind: guide
+    title: "A Philosophy of Software Design, 1st edition (John Ousterhout), Yaknyam Press 2018"
+    locator: "isbn:9781732102200"
+  - slug: owasp-xss-prevention
+    kind: standard
+    title: Cross Site Scripting Prevention Cheat Sheet (OWASP Cheat Sheet Series)
+    locator: "url:https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"
+  - slug: owner-rules-in-hub-standards
+    kind: standard
+    title: "The owner's standing rules of 4 November 2026 and the lesson of 8 November 2026 drawn from them, as the hub standards record them: every connection has an interface and an adapter, always; one program on every machine with operating-system differences in adapters; a rule is only as wide as its check"
+    locator: "archive:docs/hub-standards.md"
+  - slug: p-01-core-programming
+    kind: guide
+    title: "P-01: Core programming principles that apply in every language"
+    locator: "archive:principles/P-01-core-programming.md"
+    verified: "2026-11-06"
+  - slug: p-02-enforcement-and-measure
+    kind: guide
+    title: "P-02: What is known about enforcing design theory, and whether a balance can be enforced"
+    locator: "archive:principles/P-02-enforcement-and-measure.md"
+    verified: "2026-11-06"
+  - slug: p-03-data
+    kind: guide
+    title: "P-03: Data: SQLite, Postgres, DynamoDB and distributed data"
+    locator: "archive:principles/P-03-data.md"
+    verified: "2026-11-06"
+  - slug: p-04-systems-and-delivery
+    kind: guide
+    title: "P-04: Systems and delivery: Linux, containers, serverless, packaging, releases, reliability"
+    locator: "archive:principles/P-04-systems-and-delivery.md"
+    verified: "2026-11-06"
+  - slug: p-07-testing
+    kind: guide
+    title: "P-07: Testing — what each kind of test is for, what it costs, and how to run only what the change needs"
+    locator: "archive:principles/P-07-testing.md"
+    verified: "2026-11-06"
+  - slug: p-08-splitting
+    kind: guide
+    title: "P-08: Splitting software into pieces: where the line goes, and when it is a cut through the middle"
+    locator: "archive:principles/P-08-splitting.md"
+    verified: "2026-11-06"
+  - slug: p-09-agentic-development
+    kind: guide
+    title: "P-09: Which software engineering rules change when agents write the code"
+    locator: "archive:principles/P-09-agentic-development.md"
+    verified: "2026-11-06"
+  - slug: pages-reasons-stated
+    kind: own-decision
+    title: "pages-reasons-stated: the reasons of the 3 pages rules, stated in public"
+    locator: "repo:gragas/docs/reasons/pages-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: postgres-docs
+    kind: vendor-document
+    title: PostgreSQL documentation
+    locator: "url:https://www.postgresql.org/docs/current/"
+  - slug: publint
+    kind: vendor-document
+    title: publint
+    locator: "url:https://publint.dev/"
+  - slug: py-reasons-stated
+    kind: own-decision
+    title: "py-reasons-stated: the reasons of the 3 Python rules, stated in public"
+    locator: "repo:gragas/docs/reasons/py-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: r-03-criteria-enforcement
+    kind: guide
+    title: "R-03: Criteria and enforcement review of `go/criteria.md` and `ui/criteria.md`"
+    locator: "archive:review/R-03-criteria-enforcement.md"
+    verified: "2026-11-06"
+  - slug: r-04-seams
+    kind: guide
+    title: "R-04: Seams that break when a new case arrives, against `go/criteria.md` and `ui/criteria.md`"
+    locator: "archive:review/R-04-seams.md"
+    verified: "2026-11-06"
+  - slug: r-05-gates-on-real-code
+    kind: guide
+    title: "R-05: The proposed gates, run on real code"
+    locator: "archive:review/R-05-gates-on-real-code.md"
+    verified: "2026-11-06"
+  - slug: react-docs
+    kind: vendor-document
+    title: React documentation (react.dev)
+    locator: "url:https://react.dev/"
+  - slug: react-reasons-stated
+    kind: own-decision
+    title: "react-reasons-stated: the reasons of the 3 React rules, stated in public"
+    locator: "repo:gragas/docs/reasons/react-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: refactoring-ui
+    kind: guide
+    title: "Refactoring UI (Adam Wathan, Steve Schoger), self-published"
+    locator: "url:https://www.refactoringui.com/"
+  - slug: rfc-2606
+    kind: standard
+    title: "RFC 2606: Reserved Top Level DNS Names"
+    locator: "rfc:2606"
+  - slug: rfc-3849
+    kind: standard
+    title: "RFC 3849: IPv6 Address Prefix Reserved for Documentation"
+    locator: "rfc:3849"
+  - slug: rfc-5737
+    kind: standard
+    title: "RFC 5737: IPv4 Address Blocks Reserved for Documentation"
+    locator: "rfc:5737"
+  - slug: robinson-consumer-driven-contracts
+    kind: guide
+    title: "Consumer-Driven Contracts: A Service Evolution Pattern (Ian Robinson)"
+    locator: "url:https://martinfowler.com/articles/consumerDrivenContracts.html"
+  - slug: sadowski-tricorder
+    kind: study
+    title: "Tricorder: Building a Program Analysis Ecosystem (Sadowski, van Gogh, Jaspan, Soderberg, Winter), ICSE 2015"
+    locator: "doi:10.1109/ICSE.2015.76"
+  - slug: service-reasons-stated
+    kind: own-decision
+    title: "service-reasons-stated: the reasons of the 14 service rules, stated in public"
+    locator: "repo:gragas/docs/reasons/service-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: stopford-designing-event-driven-systems
+    kind: guide
+    title: "Designing Event-Driven Systems (Ben Stopford), O'Reilly 2018"
+    locator: "isbn:9781492038245"
+  - slug: store-reasons-stated
+    kind: own-decision
+    title: "store-reasons-stated: the reasons of the 2 store rules, stated in public"
+    locator: "repo:gragas/docs/reasons/store-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: supply-reasons-stated
+    kind: own-decision
+    title: "supply-reasons-stated: the reasons of the 11 supply-chain rules, stated in public"
+    locator: "repo:gragas/docs/reasons/supply-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: tanstack-query-docs
+    kind: vendor-document
+    title: TanStack Query documentation
+    locator: "url:https://tanstack.com/query/latest/docs"
+  - slug: tanstack-router-docs
+    kind: vendor-document
+    title: TanStack Router documentation
+    locator: "url:https://tanstack.com/router/latest/docs"
+  - slug: tarandach-coles-threat-modeling
+    kind: guide
+    title: "Threat Modeling: A Practical Guide for Development Teams (Izar Tarandach, Matthew J. Coles), O'Reilly 2020"
+    locator: "isbn:9781492056553"
+  - slug: terraform-commands
+    kind: vendor-document
+    title: "terraform: the command table with primary and hidden lists, commands.go"
+    locator: "repo:terraform/commands.go"
+  - slug: testing-library-docs
+    kind: vendor-document
+    title: Testing Library documentation
+    locator: "url:https://testing-library.com/docs/guiding-principles/"
+  - slug: tests-reasons-stated
+    kind: own-decision
+    title: "tests-reasons-stated: the reasons of the 23 tests rules, stated in public"
+    locator: "repo:gragas/docs/reasons/tests-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: tide-batches
+    kind: vendor-document
+    title: "Tide: batch tests and merges of several changes together"
+    locator: "url:https://docs.prow.k8s.io/docs/components/core/tide/"
+  - slug: tier-study-2026-11-09
+    kind: guide
+    title: "Where the gate's time goes, and how to get a push under a minute: the measured breakdown of the pre-push and release tiers and the proposals P1 to P12 (9 November 2026)"
+    locator: "archive:docs/tier-study.md"
+  - slug: tornhill-code-crime-scene
+    kind: guide
+    title: "Your Code as a Crime Scene, 1st edition (Adam Tornhill), Pragmatic Bookshelf 2015"
+    locator: "isbn:9781680500387"
+  - slug: towncrier-fragments
+    kind: vendor-document
+    title: "towncrier: news fragments against one file all developers write to"
+    locator: "url:https://towncrier.readthedocs.io/en/stable/"
+  - slug: ts-reasons-stated
+    kind: own-decision
+    title: "ts-reasons-stated: the reasons of the 4 TypeScript rules, stated in public"
+    locator: "repo:gragas/docs/reasons/ts-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: tsconfig-strictest
+    kind: vendor-document
+    title: "@tsconfig/strictest (tsconfig/bases)"
+    locator: "url:https://github.com/tsconfig/bases"
+  - slug: type-coverage
+    kind: vendor-document
+    title: type-coverage
+    locator: "url:https://github.com/plantain-00/type-coverage"
+  - slug: typescript-eslint-docs
+    kind: vendor-document
+    title: typescript-eslint documentation
+    locator: "url:https://typescript-eslint.io/"
+  - slug: typescript-handbook
+    kind: vendor-document
+    title: TypeScript documentation (handbook and TSConfig reference)
+    locator: "url:https://www.typescriptlang.org/docs/"
+  - slug: typescript-native-port
+    kind: guide
+    title: "A 10x Faster TypeScript (Anders Hejlsberg, TypeScript blog, March 2025)"
+    locator: "url:https://devblogs.microsoft.com/typescript/typescript-native-port/"
+  - slug: w3c-csp3
+    kind: standard
+    title: Content Security Policy Level 3 (W3C)
+    locator: "url:https://www.w3.org/TR/CSP3/"
+  - slug: w3c-trusted-types
+    kind: standard
+    title: Trusted Types (W3C)
+    locator: "url:https://www.w3.org/TR/trusted-types/"
+  - slug: wcag-22
+    kind: standard
+    title: Web Content Accessibility Guidelines (WCAG) 2.2 (W3C)
+    locator: "url:https://www.w3.org/TR/WCAG22/"
+  - slug: web-reasons-stated
+    kind: own-decision
+    title: "web-reasons-stated: the reasons of the 6 web rules, stated in public"
+    locator: "repo:gragas/docs/reasons/web-reasons-stated.md"
+    verified: "2026-11-16"
+  - slug: winand-sql-performance-explained
+    kind: guide
+    title: "SQL Performance Explained (Markus Winand), 2012"
+    locator: "isbn:9783950307825"
+  - slug: wlaschin-dmmf
+    kind: guide
+    title: "Domain Modeling Made Functional (Scott Wlaschin), Pragmatic Bookshelf 2018"
+    locator: "isbn:9781680502541"
+  - slug: xz-backdoor-2024
+    kind: incident
+    title: "xz Utils backdoor, CVE-2024-3094 (March 2024)"
+    locator: "url:https://nvd.nist.gov/vuln/detail/CVE-2024-3094"
+  - slug: zod-docs
+    kind: vendor-document
+    title: Zod documentation
+    locator: "url:https://zod.dev/"
+  - slug: zuul-gating
+    kind: vendor-document
+    title: "Zuul: changes tested on top of those ahead, and again without a failure"
+    locator: "url:https://zuul-ci.org/docs/zuul/latest/gating.html"
+  - slug: development-cycle-standard-2026-11-09
+    kind: standard
+    title: "The Development Cycle Standard, draft 2: one cycle of six moments for every project, the core rules C1 to C24, T1 to T12 and R1 to R8, the stack additions, the mistakes and the new-project checklist (9 November 2026)"
+    locator: "archive:docs/development-cycle-standard.md"
+  - slug: fleet-decisions-gd-34
+    kind: standard
+    title: "The ruling of 9 November 2026: the Development Cycle Standard adopted with its recommendations and written into the rulebook; the six owner decisions d1 to d6"
+    locator: "archive:decisions/gragas.md"
+  - slug: go-cmd-gofmt
+    kind: vendor-document
+    title: "Go: the gofmt command, its flags"
+    locator: "url:https://pkg.go.dev/cmd/gofmt"
+    verified: "2026-11-09"
+  - slug: go-cmd-go
+    kind: vendor-document
+    title: "Go: the go command, its testing flags and environment variables"
+    locator: "url:https://pkg.go.dev/cmd/go"
+    verified: "2026-11-09"
+  - slug: go-modules-reference
+    kind: vendor-document
+    title: "Go: Go Modules Reference, go mod tidy and workspaces"
+    locator: "url:https://go.dev/ref/mod"
+    verified: "2026-11-09"
+  - slug: prettier-cli
+    kind: vendor-document
+    title: "Prettier: the command line, the --check flag"
+    locator: "url:https://prettier.io/docs/cli"
+    verified: "2026-11-09"
+  - slug: npm-cli-ci
+    kind: vendor-document
+    title: "npm: the ci command, a clean install from the lockfile"
+    locator: "url:https://docs.npmjs.com/cli/v10/commands/npm-ci"
+    verified: "2026-11-09"
+  - slug: npm-scripts
+    kind: vendor-document
+    title: "npm: scripts, the life cycle scripts and when prepare runs"
+    locator: "url:https://docs.npmjs.com/cli/v10/using-npm/scripts"
+    verified: "2026-11-09"
+  - slug: tsconfig-reference
+    kind: vendor-document
+    title: "TypeScript: the tsconfig reference, noEmit"
+    locator: "url:https://www.typescriptlang.org/tsconfig/"
+    verified: "2026-11-09"
+  - slug: typescript-eslint-typed-linting
+    kind: vendor-document
+    title: "typescript-eslint: typed linting, what it costs and gives"
+    locator: "url:https://typescript-eslint.io/getting-started/typed-linting/"
+    verified: "2026-11-09"
+  - slug: eslint-cli
+    kind: vendor-document
+    title: "ESLint: the command line interface, the --cache option"
+    locator: "url:https://eslint.org/docs/latest/use/command-line-interface"
+    verified: "2026-11-09"
+  - slug: vitest-coverage-guide
+    kind: vendor-document
+    title: "Vitest: the coverage guide, how the providers instrument"
+    locator: "url:https://vitest.dev/guide/coverage"
+    verified: "2026-11-09"
+  - slug: vite-guide-build
+    kind: vendor-document
+    title: "Vite: building for production"
+    locator: "url:https://vite.dev/guide/build"
+    verified: "2026-11-09"
+  - slug: vite-dep-pre-bundling
+    kind: vendor-document
+    title: "Vite: dependency pre-bundling and its file system cache"
+    locator: "url:https://vite.dev/guide/dep-pre-bundling"
+    verified: "2026-11-09"
+  - slug: storybook-accessibility-testing
+    kind: vendor-document
+    title: "Storybook: accessibility testing with the engine, the error level"
+    locator: "url:https://storybook.js.org/docs/writing-tests/accessibility-testing"
+    verified: "2026-11-09"
+  - slug: storybook-vitest-addon
+    kind: vendor-document
+    title: "Storybook: the Vitest addon, stories as browser tests"
+    locator: "url:https://storybook.js.org/docs/writing-tests/integrations/vitest-addon"
+    verified: "2026-11-09"
+  - slug: storybook-publish
+    kind: vendor-document
+    title: "Storybook: publishing, the static build"
+    locator: "url:https://storybook.js.org/docs/sharing/publish-storybook"
+    verified: "2026-11-09"
+  - slug: playwright-test-sharding
+    kind: vendor-document
+    title: "Playwright: sharding the test suite across machines"
+    locator: "url:https://playwright.dev/docs/test-sharding"
+    verified: "2026-11-09"
+  - slug: playwright-actionability
+    kind: vendor-document
+    title: "Playwright: actionability, the auto-wait before an action"
+    locator: "url:https://playwright.dev/docs/actionability"
+    verified: "2026-11-09"
+  - slug: playwright-clock
+    kind: vendor-document
+    title: "Playwright: the clock, controlling time in a page"
+    locator: "url:https://playwright.dev/docs/clock"
+    verified: "2026-11-09"
+  - slug: playwright-class-page
+    kind: vendor-document
+    title: "Playwright: the Page class, unrouteAll"
+    locator: "url:https://playwright.dev/docs/api/class-page"
+    verified: "2026-11-09"
+  - slug: playwright-locators
+    kind: vendor-document
+    title: "Playwright: locators, re-resolved on each action"
+    locator: "url:https://playwright.dev/docs/locators"
+    verified: "2026-11-09"
+  - slug: testcontainers-node
+    kind: vendor-document
+    title: "Testcontainers for Node: throwaway containers for tests"
+    locator: "url:https://node.testcontainers.org/"
+    verified: "2026-11-09"
+  - slug: docker-cli-image-pull
+    kind: vendor-document
+    title: "Docker: the image pull command, pulling by digest"
+    locator: "url:https://docs.docker.com/reference/cli/docker/image/pull/"
+    verified: "2026-11-09"
+  - slug: ruff-formatter
+    kind: vendor-document
+    title: "Ruff: the formatter, its --check mode"
+    locator: "url:https://docs.astral.sh/ruff/formatter/"
+    verified: "2026-11-09"
+  - slug: ruff-linter
+    kind: vendor-document
+    title: "Ruff: the linter, what ruff check reads and fixes"
+    locator: "url:https://docs.astral.sh/ruff/linter/"
+    verified: "2026-11-09"
+  - slug: pip-secure-installs
+    kind: vendor-document
+    title: "pip: secure installs, hash-checking mode and requirements pinned with =="
+    locator: "url:https://pip.pypa.io/en/stable/topics/secure-installs/"
+    verified: "2026-11-09"
+  - slug: python-compileall
+    kind: vendor-document
+    title: "Python: the compileall module, byte-compiling a directory tree"
+    locator: "url:https://docs.python.org/3/library/compileall.html"
+    verified: "2026-11-09"
+  - slug: pytest-xdist-docs
+    kind: vendor-document
+    title: "pytest-xdist: running tests across multiple CPUs"
+    locator: "url:https://pytest-xdist.readthedocs.io/en/stable/distribution.html"
+    verified: "2026-11-09"
+  - slug: lychee-readme
+    kind: vendor-document
+    title: "lychee: the link checker, its offline option"
+    locator: "url:https://github.com/lycheeverse/lychee"
+    verified: "2026-11-09"
+  - slug: axe-core-readme
+    kind: vendor-document
+    title: "axe-core: the accessibility testing engine"
+    locator: "url:https://github.com/dequelabs/axe-core"
+    verified: "2026-11-09"
+  - slug: gitleaks-readme
+    kind: vendor-document
+    title: "gitleaks: the secrets scanner and its ignore file"
+    locator: "url:https://github.com/gitleaks/gitleaks"
+    verified: "2026-11-09"
+  - slug: gragas-907-ticket
+    kind: own-decision
+    title: "The ticket for the gate rules, written on the recommended answer to the operator's question 9; no first-hand operator line states that question"
+    locator: "url:https://github.com/birdtable/gragas/issues/907"
+    verified: "2026-11-14"
+  - slug: rulebook-55-ruling
+    kind: standard
+    title: "The ruling that the rulebook takes a tier contract with a full tier; the hook's list is a declared subset of the land job's, and every member of the land job runs before main"
+    locator: "archive:rule-source/issues/55"
+    verified: "2026-11-19"
+  - slug: fleet-decisions-pd-142
+    kind: standard
+    title: "The ruling of 19 November 2026: the rulebook takes a tier contract with a full tier"
+    locator: "archive:decisions/platform.md"
+  - slug: fleet-decisions-pd-134
+    kind: standard
+    title: "The ruling of 19 November 2026: a product imports no x/sys or syscall at all, the host layer included, since that knowledge belongs to the platform libraries"
+    locator: "archive:decisions/platform.md"
+  - slug: gragas-1605-no-host-layer
+    kind: guide
+    title: "The commit that settles that gragas has no host layer: the os-host row spares no folder"
+    locator: "url:https://github.com/birdtable/gragas/commit/f300ad37644c11e87b6df6336b50abde45a67184"
+  - slug: yaml-1-2-2-mapping-keys
+    kind: standard
+    title: "YAML Ain't Markup Language (YAML) revision 1.2.2, section 3.2.1.1, Keys Order (the keys of a mapping are unique)"
+    locator: "url:https://yaml.org/spec/1.2.2/#3211-nodes-comparison"

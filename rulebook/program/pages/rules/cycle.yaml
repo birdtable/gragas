@@ -1,0 +1,90 @@
+format: 3
+part: pages
+concern: cycle
+rules:
+  - id: pages.cycle.1
+    statement: "At commit every link between pages and to an asset resolves offline, and for a docs repository every Markdown link too; the first run freezes a reviewed baseline of the broken links that exist, and it only shrinks."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "docs.links.1 holds that docs have no broken file link, checked offline in the gate. This line places the check at commit for pages, where it took 0.16 seconds for 1,747 inputs, and gives it a baseline (gates.ratchets.1) for a repository that already breaks it, so the member is green on the day it lands and red on the first new broken link. External links are a release step, never a gate member (docs.links.1). The secrets scan of the staged diff runs at commit as for every project (supply.secrets.1)."
+      pros:
+        - "One organisation's design pages had 1,752 broken references on the first run, 1,733 of them from one file; a check with no baseline would stay red and be ignored."
+    relations:
+      relates:
+        - docs.links.1
+        - gates.ratchets.1
+        - supply.secrets.1
+    sources:
+      - ref: lychee-readme
+        where: the --offline option
+        says: Only check local files and block network requests
+        backs: check
+  - id: pages.cycle.2
+    statement: "At commit the ledger or index that lists the pages matches the pages on disk: every page is listed and every listing is a page."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A repository of pages keeps a list of them, as an index page or a data file. The check compares the list with the files both ways in 0.16 seconds. docs.freshness.1 holds that an index is generated and never written by hand; where the ledger is generated this check is the generated-files diff, and where it is written this check is what keeps it true."
+      pros:
+        - "A page not in the ledger is a page nobody finds, and a ledger row with no page is a broken link on the index."
+    relations:
+      relates:
+        - docs.freshness.1
+        - gates.own-rules.3
+    sources:
+      - ref: pages-reasons-stated
+        backs: rule
+  - id: pages.cycle.3
+    statement: "At push every page has a rendered golden at one width a person reads, updated only by a person reading the diff, a narrow-width property that the page does not overflow sideways, and the accessibility engine over it."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "tests.journeys.8 holds one golden width and properties at the narrower ones for any screen; this line is its form for a page. The golden is the rendered page at the width a person reads; the property at a phone width is no horizontal overflow; and the engine runs over each page as web.accessibility.1 has it for an application. Neither was measured on the host that studied the stack, which had no browser run."
+      pros:
+        - "A page with no rendered check changes under its author's eyes only, and a page that overflows at a phone width is read by nobody on a phone."
+    relations:
+      relates:
+        - tests.journeys.8
+        - web.accessibility.1
+        - gates.command.30
+    sources:
+      - ref: axe-core-readme
+        where: axe-core
+        says: Axe is an accessibility testing engine for websites and other HTML-based user interfaces.
+        backs: check
+  - id: pages.cycle.4
+    statement: "A repository with no code has no push tier beyond the commit checks, and its members file says so."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "gates.command.23 holds that a repository with nothing to run says so in its members file, so an empty file and a missing file differ. For a docs repository the push tier is the commit members run again on the whole tree, and the file lists them and nothing else. A push tier that runs nothing and says nothing is a green nobody can read."
+      pros:
+        - "One repository of one organisation had no file at all and 36 of 38 checked nothing at commit; a file that says what is not run is the difference between nothing to do and nothing done."
+    relations:
+      relates:
+        - gates.command.23
+        - gates.plants.8
+    sources:
+      - ref: pages-reasons-stated
+        backs: rule
+  - id: pages.cycle.5
+    statement: "At release the pack and the site index rebuild on a fresh clone, and a build that skips either on a clean clone fails."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "gates.command.21 holds that every member passes on a fresh clone after the documented setup. A pages repository that bundles its pages into a pack and an index must build both from the clone alone; a build that finds no earlier output and skips is a build that never ran. The release member clones the tag (supply.release.10) and checks the two outputs exist and match the pages."
+      pros:
+        - "One organisation's design pages skipped both the pack and the index on a clean clone, so the published set was whatever the last machine had built."
+    relations:
+      relates:
+        - gates.command.21
+        - supply.release.10
+    sources:
+      - ref: pages-reasons-stated
+        backs: rule

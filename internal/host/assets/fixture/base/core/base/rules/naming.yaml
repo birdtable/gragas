@@ -1,0 +1,27 @@
+format: 3
+part: base
+concern: naming
+rules:
+  - id: base.naming.1
+    statement: Name a thing for what it holds.
+    strength: may
+    status: active
+    owner: alex
+    review_by: "2027-03-01"
+    origin: authored
+    sources:
+      - {ref: house-call, backs: rule}
+    bindings:
+      - tool: golangci-lint
+        target: config
+        key: revive.var-naming
+        value: [{name: var-naming}]
+        severity: info
+        rung: 1
+        run_point: edit
+  - id: base.naming.2
+    statement: Name a thing for what it is.
+    strength: may
+    status: retired
+    origin: authored
+    replaced_by: base.naming.1

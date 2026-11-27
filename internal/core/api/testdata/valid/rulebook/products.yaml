@@ -1,0 +1,9 @@
+# The product kinds every fixture tree uses, unless the tree has its own.
+kinds:
+  - key: cli
+    name: Command-line program
+    description: A program run from a terminal, one command at a time.
+  - key: library
+    name: Library
+    description: Code other code imports, with no program of its own.
+    note: No fixture product is a library.

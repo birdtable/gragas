@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-release.schema.json",
+  "title": "Release (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "bump",
+    "date",
+    "format",
+    "contract"
+  ],
+  "properties": {
+    "version": {
+      "$ref": "common.schema.json#/$defs/semver",
+      "x-introduced": "1.0"
+    },
+    "bump": {
+      "type": "string",
+      "enum": [
+        "major",
+        "minor",
+        "patch"
+      ],
+      "x-introduced": "1.0"
+    },
+    "date": {
+      "$ref": "common.schema.json#/$defs/date",
+      "x-introduced": "1.0"
+    },
+    "release_note": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "description": "one note on the release, plain words, display only (S75)",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "digest"
+        ],
+        "properties": {
+          "path": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "digest": {
+            "$ref": "common.schema.json#/$defs/digest",
+            "x-introduced": "1.0",
+            "x-decides": "whether a fetched asset is the one the release lists, so whether it is accepted"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "checker_code": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "publisher",
+          "digest"
+        ],
+        "properties": {
+          "name": {
+            "$ref": "common.schema.json#/$defs/slug",
+            "x-introduced": "1.0"
+          },
+          "publisher": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "digest": {
+            "$ref": "common.schema.json#/$defs/digest",
+            "x-introduced": "1.0",
+            "x-decides": "whether fetched checker code is the code the release lists, so whether it is accepted"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "tested_set": {
+      "anyOf": [
+        {
+          "$ref": "entity-tested-set.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "health": {
+      "anyOf": [
+        {
+          "$ref": "entity-health.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "format": {
+      "type": "integer",
+      "minimum": 1,
+      "x-introduced": "1.0"
+    },
+    "contract": {
+      "$ref": "common.schema.json#/$defs/contract",
+      "x-introduced": "1.0",
+      "x-decides": "which contract version's schema reads the release's documents, and whether they are read or end not ready on a newer major"
+    },
+    "withdrawn": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "date",
+            "reason"
+          ],
+          "properties": {
+            "date": {
+              "$ref": "common.schema.json#/$defs/date",
+              "x-introduced": "1.0"
+            },
+            "reason": {
+              "$ref": "common.schema.json#/$defs/reason",
+              "x-introduced": "1.0"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    }
+  }
+}

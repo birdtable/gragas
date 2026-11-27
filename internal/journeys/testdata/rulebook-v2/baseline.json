@@ -1,0 +1,14 @@
+{
+ "about": "The gaps the move to schema v2 left, counted honestly (R-12, milestone M3). gragas check fails when a count rises above its baseline, and when it falls below, so the commit that closes a gap lowers its number here. A baseline may only fall.",
+ "baselines": {
+  "rules-without-source": 380,
+  "hard-rules-without-check": 2,
+  "checks-unresolved": 1086,
+  "relates-unknown": 0,
+  "checks-without-test": 258,
+  "checks-without-fix": 1073,
+  "enforced-without-examples": 36,
+  "measures-not-one-fact": 17,
+  "advisory-with-checks": 5
+ }
+}

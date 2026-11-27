@@ -1,0 +1,194 @@
+part: react
+concern: components
+order: 4
+title: Components and the design system
+summary: >-
+  What a React component may do: only an orchestrating layer fetches, interactive widgets come from one
+  unstyled accessible primitive library, and HTML from data renders only through a sanitiser.
+rules:
+  - id: react.components.1
+    slug: only-orchestrators-fetch
+    since: 0.1.0
+    rule: >-
+      A component that fetches is a page orchestrator or a container with a marked name, never a file in the
+      presentational components folder.
+    detail: >-
+      Pages orchestrate and containers carry a marked file name; leaf parts take data as props and import no
+      data layer. The import rule is the one that holds it: the presentational folder may not depend on the
+      api, store or query folders.
+    level: file
+    why: >-
+      A leaf part that fetches cannot be reused or tested without the network, and data access spreads into
+      the design system.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          the layer import rule (eslint-plugin-boundaries) with the presentational element barred from the
+          data element, so `components/` imports no `api/` (Biome form: the separate boundary checker of the
+          architecture part). Plant: a component in the components folder importing the api client fails.
+          Control: a container-named file that imports the api client passes
+    open:
+      - >-
+        Vacuous when no components folder exists; the check then prints not applicable with the count of
+        folders.
+    note: >-
+      React folder form of the base rule that leaf presentation never reaches data; also held by the
+      layered-imports rule.
+  - id: react.components.2
+    slug: primitives-from-one-library
+    since: 0.1.0
+    rule: >-
+      Interactive parts come from one unstyled accessible primitive library; nobody hand-writes a combobox,
+      menu or similar widget.
+    detail: >-
+      Widget roles written by hand (`<div role="combobox">`; combobox, menu, menuitem, listbox, option,
+      tablist, tab, dialog, tooltip) written by hand outside the shared parts package fail. Other primitive
+      libraries (Radix, react-aria-components, Ark, Headless UI, cmdk, vaul) and the old
+      `@base-ui-components/react` package name are banned in the manifest; hand-written widgets are replaced
+      by the library's. The threshold for a hand copy (more than 3) is rule data with its reason, not a
+      project's choice. A copy-in component set is allowed on the same base when its source lives in the
+      shared parts package. The dialog behaviour is held by the accessibility rules either way; this rule is
+      also the component-stack lint of web.accessibility.11: the primitive library's dialog is the overlay,
+      and a hand-rolled `role="dialog"` outside an import from the primitive fails.
+    level: file
+    why: >-
+      Hand-built widgets drift from the accessibility contract: in the source a hand-built combobox was 416
+      lines and a date picker 371 lines. The chosen library gave zero violations under the script and style
+      policy.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: decision-8
+        backs: rule
+      - ref: decision-30
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint no-restricted-syntax on a role attribute with a widget value outside the shared parts
+          package, plus the manifest ban of the other primitive libraries (Biome form: a GritQL plugin on the
+          role attribute, with the same manifest ban). Plant: a `div` with role combobox in a feature file
+          fails; adding `@radix-ui/react-dialog` to the dependencies fails. Control: the library's wrapper in
+          the shared parts package passes
+    relates:
+      - id: web.accessibility.11
+        how: see
+    open:
+      - Never run on a real React tree.
+    note: >-
+      The pick is the tool entry primitive library. The swap of the hand-built parts for the library is swept
+      by a deadline.
+  - id: react.components.3
+    slug: html-from-data-through-sanitiser
+    since: 0.1.0
+    rule: >-
+      HTML that comes from data renders only through a markdown renderer and a sanitiser under the
+      trusted-types default policy; no component uses raw `dangerouslySetInnerHTML`.
+    detail: >-
+      The renderer is react-markdown with dompurify as the sanitiser. The raw-markup funnel names the property
+      so the React recommended lint set flags it (`react/no-danger`); the one funnel module is the only place
+      it may appear. The policy for scripts never contains unsafe-inline.
+    level: function
+    why: Markup built from data is the way untrusted input reaches the page as script.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: owasp-xss-prevention
+        backs: rule
+      - ref: w3c-trusted-types
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          eslint-plugin-react no-danger as error with the funnel module as the only exemption, plus the
+          trusted-types default policy in the built page (Biome form: `noDangerouslySetInnerHtml` at error
+          with an override for the funnel module). Plant: dangerouslySetInnerHTML in a feature file fails.
+          Control: rendering through the funnel's markdown component passes
+    relates:
+      - id: web.structure.2
+        how: see
+    open:
+      - Never run on a real React tree.
+      - >-
+        v1 evidence, not yet a source: D, and A for the absence (no hits in the catalogue)
+    note: >-
+      React form of web.structure.2 (raw markup only through one funnel): its component-stack lint,
+      `react/no-danger` from `eslint-plugin-react`, was moved here from the web part.
+  - id: react.components.4
+    slug: no-style-prop
+    since: 0.1.0
+    rule: >-
+      No component passes a `style` prop to a DOM element; styling comes from token-generated classes.
+    detail: >-
+      `react/forbid-dom-props` with `style` as an error (`react/forbid-dom-props: style`); `forbid-dom-props`
+      is component-stack only. This is the component-stack form of the inline-style ban in web.tokens.3 (no
+      colour literal) and web.tokens.15 (theme from tokens); the template stack holds it with html-validate
+      `no-inline-style`.
+    level: file
+    why: >-
+      An inline style carries colours, sizes and fonts past the token theme and the colour-literal lint; a
+      regex that matched only some shapes reported zero and missed the rest.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          eslint-plugin-react `forbid-dom-props` with `style`, as an error (Biome form is a GritQL plugin on a
+          style prop of a DOM element). Plant: `<div style={{ color: "red" }}>` in a component fails. Control:
+          a component styled through theme classes passes
+    relates:
+      - id: web.tokens.3
+        how: see
+      - id: web.tokens.15
+        how: see
+    open:
+      - Never run on a real React tree.
+      - The plant was written at the move and has not been run.
+      - >-
+        v1 evidence, not yet a source: A: both sites at zero colour literals (web.tokens.3); D for the theme
+        rule
+    note: >-
+      The React forbid-dom-props form of the inline-style ban, moved here from web.tokens.3 and web.tokens.15.

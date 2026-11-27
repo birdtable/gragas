@@ -1,0 +1,11 @@
+$ gragas explain go.errors.9
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+go.errors.1: planned, unproven (active)
+entry                            severity  rung  proof    preset
+golangci-lint config: errorlint  error     1     not run  not shipped
+
+  done       go.errors.9 is now go.errors.1
+--- stderr

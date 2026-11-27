@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-plan.schema.json",
+  "title": "Plan (entity, spec 16.1 and 15.3): one shape for every changing command",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "digest",
+    "command",
+    "changes",
+    "writes",
+    "question"
+  ],
+  "properties": {
+    "digest": {
+      "$ref": "common.schema.json#/$defs/digest",
+      "x-introduced": "1.0"
+    },
+    "command": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entity",
+          "what"
+        ],
+        "properties": {
+          "entity": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "standing_before": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/standing"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null means not applicable: the entry is not about a rule, or the plan creates the rule and it had no standing before",
+            "x-introduced": "1.0",
+            "default": null
+          },
+          "standing_after": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/standing"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null means not applicable: the entry is not about a rule",
+            "x-introduced": "1.0",
+            "default": null
+          },
+          "what": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0"
+    },
+    "consumer_actions": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/text"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "writes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "what"
+        ],
+        "properties": {
+          "path": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "what": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0"
+    },
+    "rekeyed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entity",
+          "slug",
+          "state"
+        ],
+        "properties": {
+          "entity": {
+            "type": "string",
+            "enum": [
+              "waiver",
+              "baseline"
+            ],
+            "x-introduced": "1.0"
+          },
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug",
+            "x-introduced": "1.0"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "re-keyed",
+              "orphaned"
+            ],
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "renderings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "what"
+        ],
+        "properties": {
+          "path": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "what": {
+            "type": "string",
+            "enum": [
+              "agent file",
+              "review file",
+              "preset copy",
+              "page"
+            ],
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "checker_code": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "$ref": "common.schema.json#/$defs/slug",
+            "x-introduced": "1.0"
+          },
+          "diff": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/url"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "x-introduced": "1.0",
+            "default": null
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "question": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    }
+  }
+}

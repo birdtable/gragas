@@ -1,0 +1,47 @@
+[
+  {
+    "contract": 1,
+    "features": [],
+    "op": "plan",
+    "body": {
+      "for": "config",
+      "target": "source",
+      "tool_version": "10.13.0",
+      "round": 0,
+      "config": [
+        {
+          "path": "lint-a.config.js",
+          "data": {
+            "text": "export default [{rules:{a:[\"error\",\"always\"]}}];\n"
+          }
+        }
+      ],
+      "have": []
+    }
+  },
+  {
+    "contract": 1,
+    "features": [
+      "describe"
+    ],
+    "op": "rank",
+    "body": {
+      "tool_version": "10.13.0",
+      "pairs": [
+        {
+          "key": "a",
+          "aspect": "options",
+          "preset": [
+            "always",
+            {
+              "null": "ignore"
+            }
+          ],
+          "found": [
+            "always"
+          ]
+        }
+      ]
+    }
+  }
+]

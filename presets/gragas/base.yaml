@@ -1,0 +1,33 @@
+# The gragas tool's preset: the checks gragas check computes
+# itself, from a repository's own files, so a rule's check row with tool gragas
+# names one of these keys and resolves. A project copies nothing
+# from it: each key is a kind of gragas's own row in
+# internal/host/assets/audit/readers.yaml, and the test
+# internal/preset_gragas_test.go holds the two lists equal.
+
+# The file-name and build-line half of arch.ports.24: the Go files whose name
+# ends in an operating system's suffix, or whose build line names one, outside
+# the folders golangci-lint's os-host row spares. A product has no host layer,
+# so its row is "$all", spares nothing, and every such file is a finding unless a
+# row of the exemptions file names it. A project that has not moved a folder of
+# operating-system code yet spares that folder in the row until it has.
+os-files:
+  reads: linters.settings.depguard.rules.os-host.files
+
+# The kinds gragas check computes from the repository itself, read from git and
+# the work tree and not from a tool's config. A key with
+# computes is no reader's kind: the readers table holds no row for it, and
+# the audit's config reader leaves it alone. Each is the key a rule's check row
+# with tool gragas names, and the key the finding is reported under.
+link:
+  computes: no tracked path is a symbolic link
+fold:
+  computes: no two tracked paths differ only by case
+names:
+  computes: the private names list against the tracked files, their paths and, with --range, the commit messages since the merge base
+replace:
+  computes: a replace or a workspace, which lets in a module with no age at all
+debt:
+  computes: the counted lines of the work tree against the merge base's
+directive:
+  computes: the disable directives of the work tree against the merge base's

@@ -1,0 +1,6 @@
+?         strict                 the value false differs from the preset's true, and which is the tighter is the plugin's rank, not asked yet
+?         target                 the value "es2020" differs from the preset's "es2022", and which is the tighter is the plugin's rank, not asked yet
+?         noImplicitAny          the value false differs from the preset's true, and which is the tighter is the plugin's rank, not asked yet
+?         skipLibCheck           the value false differs from the preset's true, and which is the tighter is the plugin's rank, not asked yet
+unmapped  noEmit                 was excluded by team (emit-here)
+unmapped  extra

@@ -1,0 +1,89 @@
+{
+  "contract": "1.3",
+  "plan": {
+    "changes": [
+      {
+        "entity": "go.errors.1",
+        "standing_after": "enforced",
+        "standing_before": null,
+        "what": "asks wrapcheck and errorlint of golangci-lint"
+      },
+      {
+        "entity": "go.errors.2",
+        "standing_after": "proposed",
+        "standing_before": null,
+        "what": "is kept as a proposal and asks no tool"
+      },
+      {
+        "entity": "web.forms.1",
+        "standing_after": "enforced",
+        "standing_before": null,
+        "what": "asks field-label of stylelint"
+      },
+      {
+        "entity": ".golangci.yml",
+        "what": "gains the four linters the rules ask"
+      }
+    ],
+    "checker_code": [
+      {
+        "diff": "https://example.com/fixture-base/compare/wrapcheck-plugin",
+        "name": "wrapcheck-plugin"
+      },
+      {
+        "diff": null,
+        "name": "nilerr-plugin"
+      }
+    ],
+    "command": "init",
+    "consumer_actions": [
+      "Run gragas check once and read the report before the first push."
+    ],
+    "digest": "sha256:f3991ea69c1ebab6edc98474da465b2f53f1dc9bd3de2f7f73cc0986e4f17304",
+    "question": "Write these three files and adopt fixture-base 1.2.0?",
+    "rekeyed": [
+      {
+        "entity": "waiver",
+        "slug": "w-legacy-a",
+        "state": "re-keyed"
+      },
+      {
+        "entity": "baseline",
+        "slug": "b-wrap",
+        "state": "orphaned"
+      }
+    ],
+    "renderings": [
+      {
+        "path": "REVIEW.md",
+        "what": "review file"
+      },
+      {
+        "path": ".claude/settings.json",
+        "what": "agent file"
+      },
+      {
+        "path": ".gragas/presets/stylelint/base.json",
+        "what": "preset copy"
+      },
+      {
+        "path": "pages/go/errors.md",
+        "what": "page"
+      }
+    ],
+    "writes": [
+      {
+        "path": ".golangci.yml",
+        "what": "linters from the golangci-lint preset"
+      },
+      {
+        "path": ".gragas/lock.yaml",
+        "what": "the pin of fixture-base 1.2.0"
+      },
+      {
+        "path": "REVIEW.md",
+        "what": "the reviewer rules, rendered"
+      }
+    ]
+  }
+}

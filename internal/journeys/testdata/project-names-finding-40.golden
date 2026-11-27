@@ -1,0 +1,26 @@
+$ gragas check --fail-on names
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Findings
+kind   about       what is wrong, and
+                   the fix
+names  notes.md:2  go.errors.1 (gragas
+                   names): holds a name
+                   from the private
+                   names list Fix: take
+                   the name out, and out
+                   of the commit that
+                   holds it before the
+                   branch is pushed
+
+Not checked
+  no rule of the pinned parts binds a
+  tool, so no tool config was judged
+  task: a member's timeout holds only
+  from go-task 3.53.1; this check cannot
+  see the go-task version
+
+  findings   1 finding, 0 exempt, 2 not
+  checked
+--- stderr

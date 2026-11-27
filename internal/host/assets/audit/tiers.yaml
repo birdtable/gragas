@@ -1,0 +1,74 @@
+# The tier contract gragas check reads: the four tiers a
+# repository's Taskfile must have, what each holds, the
+# land job's task, and the rule each kind of finding cites. The check reads the Taskfile and the pre-push hook
+# file; it runs no tier, keeps no stamp and reads no time budget. A member is
+# held by a command of the tier's cmds: that carries every word of `all` and,
+# when `any` is there, one of its words. `tree` says the command starts a
+# process tree, so it needs a `timeout:`; `per_system` asks one command for
+# each system the repository declares in .gragas/systems; `flag` is a word the
+# command must carry. A command counts only when go-task runs it on every host and
+# its failure fails the tier: a mapping with a key beyond cmd, timeout, silent, set,
+# shopt and vars (ignore_error, platforms, if, for, defer, task, env) holds nothing,
+# and a tier task with ignore_error, platforms, if, status, sources or generates is
+# a finding of the runs rule; so is set: n or noexec on a member, a tier task or the
+# file, which makes go-task's shell read each command and run none. Release holds what only a release proves, which no rule
+# names yet, so its members are empty: the task must exist. A tier that is `whole` runs every member whole:
+# a status: guarded by CLI_FORCE (the declared skip the commit and the push may hold) is no excuse there, and
+# a status:, sources: or generates: is ignored only where the tier task itself refuses to run without --force.
+# A tier that is `staged` (the commit tier alone) also excuses one shape of skip, a status: that is the guard, then
+# a test that none of the task's own `vars: INPUTS` is staged, and nothing after it.
+# A task a tier calls is a member that is Linux-only by design when its own `platforms:` lists linux
+# and its own `vars: PLATFORMS_WHY` is a literal that says why: its own `platforms:` is then no skip, in every
+# tier, and only when every member of the tier that its commands carry is listed here as `linux_only: true`
+# (a task that holds go vet, say, is not excused by saying why; no member is listed yet, so the process-signalling
+# task, which holds none, is the one excused). The `platforms:` of its commands and of the
+# tasks it calls stay findings. Without the reason, without linux or with a "!" entry, it stays a finding.
+rules:
+  tier: gates.command.1
+  order: gates.command.12
+  timeout: gates.command.8
+  background: gates.command.8
+  parallel: gates.command.22
+  hook: gates.hooks.1
+  hook_calls: gates.hooks.4
+  empty: gates.command.1
+  systems: gates.command.1
+  runs: gates.command.1
+  land: gates.command.1
+hook:
+  files: [hooks/pre-push, .githooks/pre-push, .husky/pre-push]
+  calls: ["task pre-push"]
+# The land job: the task the lander runs on the merged tree before main. It calls pre-push and
+# then full, each as one of its cmds with no key beyond task, silent and timeout (no vars, which reach every
+# member and can turn a member's skip on), so the hook's list is a declared subset
+# of the land job's and every member of both runs before main. A land task that is missing, skips, or leaves
+# out or reorders a call is a finding of the land rule.
+land:
+  task: landing
+  calls: [pre-push, full]
+# The words a member that reads gotestsum's count carries: a shell grep for EMPTY or DONE 0 tests, or a count reader called
+# as tests count, as gragas-dev's was until gragas's own members moved to hatch tests.
+# A tests member may also be hatch tests, which judges an empty run itself; the empty rule reads
+# gotestsum's members alone, so whether hatch tests's --red-when names none-ran is not read yet.
+empty: ["EMPTY", "DONE 0 tests", "tests count"]
+tiers:
+  - name: pre-commit
+    staged: true
+    members:
+      - {id: format, rule: go.cycle.1, any: [gofmt, "golangci-lint fmt"]}
+      - {id: tidy, rule: go.cycle.1, all: ["go mod tidy", "-diff"]}
+  - name: pre-push
+    members:
+      - {id: vet, rule: go.cycle.2, all: ["go vet"], tree: true}
+      - {id: build, rule: gates.command.1, all: ["go build"], tree: true, per_system: true}
+      - {id: lint, rule: go.cycle.2, all: ["golangci-lint run"], tree: true, per_system: true, flag: "--allow-parallel-runners", flag_rule: gates.command.22}
+      - {id: gitleaks, rule: supply.secrets.1, all: [gitleaks], tree: true}
+  # full holds what the push leaves out: the land job runs it after pre-push, before main.
+  - name: full
+    members:
+      - {id: tests, rule: gates.command.1, any: [gotestsum, "hatch tests"], tree: true}
+      - {id: govulncheck, rule: supply.scans.7, all: [govulncheck], tree: true}
+      - {id: check, rule: gates.command.1, all: ["gragas check"], tree: true}
+  - name: release
+    members: []
+    whole: true

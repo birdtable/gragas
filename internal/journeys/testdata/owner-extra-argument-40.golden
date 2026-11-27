@@ -1,0 +1,6 @@
+$ gragas check extra
+--- stdout
+--- stderr
+error: unknown command "extra" for "gragas check"
+       did you mean `gragas check`?
+--- exit 2

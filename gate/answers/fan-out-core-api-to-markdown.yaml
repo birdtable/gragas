@@ -1,0 +1,5 @@
+rule: arch.measures.1
+path: internal/core/api/import.go
+fingerprint: 154d5e3cdaa96886a0fd0cefef3e0a1d03a5171bcd4be6b9cf0b5805b3be164e
+answer: keep
+reason: "Import reads the guide's Markdown files through the Tree port and parses each with internal/markdown, the one parser, so the lifecycle context plans from parsed documents and not from bytes; the layers.yaml row for core/api allows the import, so the edge reaches no further and no second parser is written"

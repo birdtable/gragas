@@ -1,0 +1,35 @@
+# The faults a test or a reviewer found twice, and what refuses each now: a fault found
+# twice gets a catch, so it is not found a third time. Each row names its class, how many times it was
+# found, and its catch: a lint rule, a test, a task member or a hook, or the ticket that will
+# be it. internal/left_test.go reads this file: a row marked lint names a rule the generated
+# .golangci.yml holds, a test names a test the repository defines, a task names a Taskfile
+# member, a hook names its file, and a ticket says in plain words what will catch it, naming
+# no issue by its number; a row with no catch fails.
+# count is the number of finds the row stands for, 2 or more. A 2 is the line (a fault found twice)
+# where the finds were not counted, not a measured count; the gate's owners correct it.
+left:
+  - class: "a head that does not merge"
+    count: 2
+    catch: hook
+    rule: cmd/gragas-dev/mergeable.go
+    why: "a pushed head that conflicts with origin/main is refused before any member runs, naming the files"
+  - class: "a reader that takes a duplicate key"
+    count: 2
+    catch: lint
+    rule: ParseYAML
+    why: "forbidigo refuses ordered.ParseYAML in the gate, the repo checks and the dev tool, in favour of ParseStrict"
+  - class: "a gate list not updated"
+    count: 2
+    catch: task
+    rule: gate-lists
+    why: "task pre-push runs the list tests of ./internal as the member gate-lists"
+  - class: "a writing command without its annotation"
+    count: 2
+    catch: test
+    rule: TestWritesTreeHoldsApplyAndTheAnnotationTogether
+    why: "one test over the registry tree holds --apply and the writes annotation together, both ways"
+  - class: "a stale exclusion"
+    count: 2
+    catch: ticket
+    ticket: "the whole-tree lint member fails on an exclusion that no longer matches"
+    why: "linters.exclusions.warn-unused with the whole-tree lint member failing on its warning; its own ticket, after release 1"

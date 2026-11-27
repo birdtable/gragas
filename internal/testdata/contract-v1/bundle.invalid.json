@@ -1,0 +1,7 @@
+[
+  {"name": "an unknown field", "patch": [{"op":"add","path":"/0/project","value":"x"}], "problem": "Additional properties are not allowed ('project' was unexpected)"},
+  {"name": "a missing contract", "patch": [{"op":"remove","path":"/0/contract"}], "problem": "'contract' is a required property"},
+  {"name": "a wrong enum", "patch": [{"op":"replace","path":"/0/rules/0/strength","value":"always"}], "problem": "is not one of"},
+  {"name": "a contract of another major", "patch": [{"op":"replace","path":"/0/contract","value":"2.0"}], "problem": "does not match"},
+  {"name": "a digest that is not one", "patch": [{"op":"replace","path":"/0/presets/0/digest","value":"abc"}], "problem": "does not match"}
+]

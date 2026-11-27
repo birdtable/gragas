@@ -1,0 +1,52 @@
+format: 3
+part: sst
+concern: constructs
+rules:
+  - id: sst.constructs.1
+    statement: "Infrastructure is declared only through the shared constructs, not raw cloud resources or overrides."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "A raw function resource (sst.aws.Function), a raw table (aws.dynamodb.Table), raw gateway resources (aws.apigateway.*), a bundler override, function layers, local components and a bare network configuration (vpcConfig) each fail; the shared construct sets them. In Go, unit files come from a template and are checked, not hand-written."
+      pros:
+        - "A raw resource skips everything the shared construct sets (grants, logging, retention, naming), and the gap appears in the one service that used it."
+  - id: sst.constructs.2
+    statement: The program name is written in exactly one place in the infrastructure code.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, every path and identifier of persistent state is made from the program name in one function."
+      pros:
+        - A name repeated in many places is renamed in some.
+  - id: sst.constructs.3
+    statement: "The log format, log groups and the stage name are set only by one shared component or file."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "No logFormat: JSON option set per function, no raw LogGroup, and the stage variable ($app.stage) read only in the one stages file (stages.ts). In Go, one logging handler with version and run id, and the environment read only in config."
+      pros:
+        - "A log format or stage read set in many places drifts: the metric filters and alarms then miss some functions."
+  - id: sst.constructs.4
+    statement: Infrastructure code never imports application source.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, the entry and storage layers follow a layer table, and deploy code under its own folder imports no program package."
+      pros:
+        - Infrastructure code that pulls in application modules runs them at deploy time and ties a deploy to application internals.

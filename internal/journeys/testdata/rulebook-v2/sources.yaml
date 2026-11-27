@@ -1,0 +1,1418 @@
+# Every source a rule cites, by key (R-12, section 2). A locator is one of
+# isbn:, doi:, url:, rfc:, decision:<n>, archive:<path under the archive's
+# docs/foundation>, repo:<product>/<path>, rule:<rulebook>/<id>. verified is
+# set only where the source was opened.
+sources:
+  agents-reasons-stated:
+    kind: target
+    title: "agents-reasons-stated: the reasons of the 6 agents rules, stated in public"
+    locator: repo:gragas/docs/reasons/agents-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  ambler-sadalage-refactoring-databases:
+    kind: book
+    title: >-
+      Refactoring Databases: Evolutionary Database Design (Scott W. Ambler, Pramod J. Sadalage),
+      Addison-Wesley 2006
+    locator: isbn:9780321293534
+  apple-hig:
+    kind: vendor-doc
+    title: Human Interface Guidelines (Apple)
+    locator: url:https://developer.apple.com/design/human-interface-guidelines
+  arch-reasons-stated:
+    kind: target
+    title: "arch-reasons-stated: the reasons of the 13 arch rules, stated in public"
+    locator: repo:gragas/docs/reasons/arch-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  are-the-types-wrong:
+    kind: vendor-doc
+    title: Are the types wrong? (arethetypeswrong)
+    locator: url:https://arethetypeswrong.github.io/
+  astro-docs:
+    kind: vendor-doc
+    title: Astro documentation
+    locator: url:https://docs.astro.build/
+  aws-dynamodb-docs:
+    kind: vendor-doc
+    title: Amazon DynamoDB Developer Guide (AWS)
+    locator: url:https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/
+  b-01-evolutionary-architectures:
+    kind: article
+    title: >-
+      B-01: *Building Evolutionary Architectures*, 2nd edition, read against our enforcement rules
+    locator: archive:principles/B-01-evolutionary-architectures.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  b-02-code-as-a-crime-scene:
+    kind: article
+    title: >-
+      B-02: *Your Code as a Crime Scene* (Tornhill), read whole, for change-history signals
+    locator: archive:principles/B-02-code-as-a-crime-scene.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  b-03-unit-testing:
+    kind: article
+    title: >-
+      B-03: Khorikov, *Unit Testing Principles, Practices, and Patterns* (Manning, 2020)
+    locator: archive:principles/B-03-unit-testing.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  b-04-philosophy-of-software-design:
+    kind: article
+    title: >-
+      B-04: *A Philosophy of Software Design* (Ousterhout), read whole, for depth, wrappers, comments and size
+    locator: archive:principles/B-04-philosophy-of-software-design.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  b-05-architecture-hard-parts:
+    kind: article
+    title: "B-05: *Software Architecture: The Hard Parts* read against our splitting rules"
+    locator: archive:principles/B-05-architecture-hard-parts.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  bailis-feral-concurrency-control:
+    kind: paper
+    title: >-
+      Feral Concurrency Control: An Empirical Investigation of Modern Application Integrity (Bailis, Fekete,
+      Franklin, Ghodsi, Hellerstein, Stoica), SIGMOD 2015
+    locator: doi:10.1145/2723372.2737784
+  bazel-build-files:
+    kind: vendor-doc
+    title: "Bazel: one build file per package, concepts/build-files"
+    locator: url:https://bazel.build/concepts/build-files
+  bazel-gazelle:
+    kind: vendor-doc
+    title: "Gazelle: generates build files and fails on a stale one with mode diff"
+    locator: url:https://github.com/bazel-contrib/bazel-gazelle
+  bellemare-bedm:
+    kind: book
+    title: Building Event-Driven Microservices, 1st edition (Adam Bellemare), O'Reilly 2020
+    locator: isbn:9781492057895
+  biome-docs:
+    kind: vendor-doc
+    title: Biome documentation
+    locator: url:https://biomejs.dev/
+  bors-ng-batches:
+    kind: vendor-doc
+    title: "bors-ng: batches of changes and bisection of a failed batch"
+    locator: url:https://github.com/bors-ng/bors-ng
+  breck-k8s-probes:
+    kind: article
+    title: >-
+      Kubernetes Liveness and Readiness Probes: How to Avoid Shooting Yourself in the Foot (Colin Breck)
+    locator: >-
+      url:https://blog.colinbreck.com/kubernetes-liveness-and-readiness-probes-how-to-avoid-shooting-yourself-in-the-foot/
+  bronson-metastable-failures:
+    kind: paper
+    title: >-
+      Metastable Failures in Distributed Systems (Bronson, Aghayev, Charapko, Zhu), HotOS 2021
+    locator: doi:10.1145/3458336.3465286
+  builders-library-health-checks:
+    kind: article
+    title: Implementing health checks (David Yanacek, Amazon Builders' Library)
+    locator: url:https://aws.amazon.com/builders-library/implementing-health-checks/
+  builders-library-timeouts-retries:
+    kind: article
+    title: >-
+      Timeouts, retries, and backoff with jitter (Marc Brooker, Amazon Builders' Library)
+    locator: >-
+      url:https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/
+  cargo-commands-mod:
+    kind: vendor-doc
+    title: "cargo: the command join, src/bin/cargo/commands/mod.rs"
+    locator: repo:cargo/src/bin/cargo/commands/mod.rs
+  changesets-fragments:
+    kind: vendor-doc
+    title: "changesets: one markdown file per change under .changeset"
+    locator: url:https://github.com/changesets/changesets
+  cli-reasons-stated:
+    kind: target
+    title: "cli-reasons-stated: the reasons of the 23 cli rules, stated in public"
+    locator: repo:gragas/docs/reasons/cli-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  cockburn-hexagonal:
+    kind: article
+    title: Hexagonal Architecture (Alistair Cockburn)
+    locator: url:https://alistair.cockburn.us/hexagonal-architecture/
+  daemon-reasons-stated:
+    kind: target
+    title: "daemon-reasons-stated: the reasons of the 7 daemon rules, stated in public"
+    locator: repo:gragas/docs/reasons/daemon-reasons-stated.md
+  code-reasons-stated:
+    kind: target
+    title: "code-reasons-stated: the reasons of the 7 code rules, stated in public"
+    locator: repo:gragas/docs/reasons/code-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  debrie-dynamodb-book:
+    kind: book
+    title: The DynamoDB Book (Alex DeBrie), self-published
+    locator: url:https://www.dynamodbbook.com/
+  decision-1:
+    kind: target
+    title: "Decision 1: the shared module public with a licence, or private, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/shared-module-licence.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-10:
+    kind: target
+    title: "Decision 10: Package manager, test runner, cooldown, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/package-manager-test-runner-cooldown.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-13:
+    kind: target
+    title: "Decision 13: Shared exit codes, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/shared-exit-codes.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-14:
+    kind: target
+    title: "Decision 14: \"No nightly runs\" covers birdtable (settled by decision 34), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/no-nightly-runs.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-15:
+    kind: target
+    title: "Decision 15: Dependency age for Go, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/go-dependency-age.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-16:
+    kind: target
+    title: "Decision 16: the shared module releases, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/shared-module-releases.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-17:
+    kind: target
+    title: "Decision 17: Smaller G-16 items, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/smaller-gate-items.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-18:
+    kind: target
+    title: "Decision 18: What runs at land, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/what-runs-at-land.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-19:
+    kind: target
+    title: "Decision 19: Small projects, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/small-projects.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-2:
+    kind: target
+    title: "Decision 2: Named owner for the shared module, the shared UI package and the UI kit (lane: decision 35), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/shared-module-owner.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-20:
+    kind: target
+    title: "Decision 20: Land hardening, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/land-hardening.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-21:
+    kind: target
+    title: "Decision 21: the app token of two programs, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/app-token-of-two-programs.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-26:
+    kind: target
+    title: "Decision 26: Gate result on no input, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/gate-result-on-no-input.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-27:
+    kind: target
+    title: "Decision 27: How decision 18 applies, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/how-the-land-run-applies.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-28:
+    kind: target
+    title: "Decision 28: Tokens package owner, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/tokens-package-owner.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-29:
+    kind: target
+    title: "Decision 29: One styling standard, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/one-styling-standard.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-3:
+    kind: target
+    title: "Decision 3: Where the rules live, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/where-rules-live.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-30:
+    kind: target
+    title: "Decision 30: shadcn, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/shadcn.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-31:
+    kind: target
+    title: "Decision 31: Non-author for weakening a gate, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/non-author-weakening-a-gate.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-32:
+    kind: target
+    title: "Decision 32: Repeat runs at test admission, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/repeat-runs-at-test-admission.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-33:
+    kind: target
+    title: "Decision 33: Visual rubric sign-off, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/visual-rubric-sign-off.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-34:
+    kind: target
+    title: "Decision 34: Weekly full run (decision 14), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/weekly-full-run.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-35:
+    kind: target
+    title: "Decision 35: Rollout lane (decision 2), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/rollout-lane.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-37:
+    kind: target
+    title: "Decision 37: Postgres, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/postgres.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-38:
+    kind: target
+    title: "Decision 38: Adoption order (decision 19), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/adoption-order.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-39:
+    kind: target
+    title: "Decision 39: Release time limit, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/release-time-limit.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-4:
+    kind: target
+    title: "Decision 4: Copier or `companion sync`, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/project-template-sync.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-40:
+    kind: target
+    title: "Decision 40: Selector oracle against decision 27, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/selector-oracle.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-41:
+    kind: target
+    title: "Decision 41: Cognitive complexity line, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/cognitive-complexity-line.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-43:
+    kind: target
+    title: "Decision 43: What a stored reviewer verdict does (D-K), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/stored-reviewer-verdict.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-44:
+    kind: target
+    title: "Decision 44: Which strengths count as a rule (D-A), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/which-strengths-count-as-a-rule.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-47:
+    kind: target
+    title: "Decision 47: Sources (R-12), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/sources.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-5:
+    kind: target
+    title: "Decision 5: Token home and format, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/token-home-and-format.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-50:
+    kind: target
+    title: "Decision 50: CLI scope (R-12), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/cli-scope.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-63:
+    kind: target
+    title: "Decision 63: Licence and Semgrep timing (R-13), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/licence-and-semgrep-timing.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-64:
+    kind: target
+    title: "Decision 64: Where rules come from, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/where-rules-come-from.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-agents:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/agents-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-arch:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/arch-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-astro:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/astro-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-cli:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/cli-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-code:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/code-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-daemon:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/daemon-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-docs:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/docs-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-gates:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/gates-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-go:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/go-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-postgres:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/postgres-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-react:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/react-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-service:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/service-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-store:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/store-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-supply:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/supply-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-tests:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/tests-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-ts:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/ts-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-65-web:
+    kind: target
+    title: "Decision 65: The target-state rulings (121 cards), restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/web-choices.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-7:
+    kind: target
+    title: "Decision 7: UI stack by kind, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/ui-stack-by-kind.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-8:
+    kind: target
+    title: "Decision 8: Component primitives, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/component-primitives.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  decision-9:
+    kind: target
+    title: "Decision 9: Forms, router, styling, restated from the rules that cite it"
+    locator: repo:gragas/docs/reasons/forms-router-styling.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#174)
+  docker-commands-register:
+    kind: vendor-doc
+    title: "docker CLI: commands that register themselves from init functions, cli/command/commands"
+    locator: repo:docker-cli/cli/command/commands
+  docs-reasons-stated:
+    kind: target
+    title: "docs-reasons-stated: the reasons of the 2 docs rules, stated in public"
+    locator: repo:gragas/docs/reasons/docs-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  dynamodb-atc22:
+    kind: paper
+    title: >-
+      Amazon DynamoDB: A Scalable, Predictably Performant, and Fully Managed NoSQL Database Service (Elhemali
+      et al.), USENIX ATC 2022
+    locator: url:https://www.usenix.org/conference/atc22/presentation/elhemali
+  eslint-docs:
+    kind: vendor-doc
+    title: ESLint documentation
+    locator: url:https://eslint.org/docs/latest/
+  eslint-plugin-jsx-a11y:
+    kind: vendor-doc
+    title: eslint-plugin-jsx-a11y documentation
+    locator: url:https://github.com/jsx-eslint/eslint-plugin-jsx-a11y
+  birdtable-study-issue-641:
+    kind: article
+    title: >-
+      Rulebook: four tier rules from the birdtable study (gragas#641), the study of five other projects
+    locator: url:https://github.com/birdtable/gragas/issues/641
+  fleet-decisions-gd-28-29:
+    kind: standard
+    title: >-
+      Two rulings: fuzz and the heavy race tests on demand, the release tier cut back, narrow widths as
+      property checks; and the tier study adopted, P1 to P8 first, 9 November 2026
+    locator: archive:decisions/gragas.md
+  ford-bea:
+    kind: book
+    title: >-
+      Building Evolutionary Architectures: Automated Software Governance, 2nd edition (Neal Ford, Rebecca
+      Parsons, Patrick Kua, Pramod Sadalage), O'Reilly 2022
+    locator: isbn:9781492097549
+  ford-sathp:
+    kind: book
+    title: >-
+      Software Architecture: The Hard Parts (Neal Ford, Mark Richards, Pramod Sadalage, Zhamak Dehghani),
+      O'Reilly 2021
+    locator: isbn:9781492086895
+  fowler-non-determinism:
+    kind: article
+    title: Eradicating Non-Determinism in Tests (Martin Fowler)
+    locator: url:https://martinfowler.com/articles/nonDeterminism.html
+  fowler-parallel-change:
+    kind: article
+    title: ParallelChange (Danilo Sato, martinfowler.com bliki)
+    locator: url:https://martinfowler.com/bliki/ParallelChange.html
+  gates-reasons-stated:
+    kind: target
+    title: "gates-reasons-stated: the reasons of the 29 gates rules, stated in public"
+    locator: repo:gragas/docs/reasons/gates-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  gh-gen-docs:
+    kind: vendor-doc
+    title: "gh: command documents generated and not committed, cmd/gen-docs"
+    locator: repo:gh/cmd/gen-docs
+  gh-help-test:
+    kind: vendor-doc
+    title: "gh: a test that walks the command tree for help, pkg/cmd/root/help_test.go"
+    locator: repo:gh/pkg/cmd/root/help_test.go
+  gh-root-join:
+    kind: vendor-doc
+    title: "gh: the hand-written join of the command packages, pkg/cmd/root/root.go"
+    locator: repo:gh/pkg/cmd/root/root.go
+  git-command-list:
+    kind: vendor-doc
+    title: "git: the command list as data, command-list.txt"
+    locator: repo:git/command-list.txt
+  git-config-core-ignorecase:
+    kind: vendor-doc
+    title: "git: core.ignoreCase, how git treats a file system that folds case"
+    locator: url:https://git-scm.com/docs/git-config#Documentation/git-config.txt-coreignoreCase
+  git-config-core-symlinks:
+    kind: vendor-doc
+    title: "git: core.symlinks, a symbolic link checked out as a plain file"
+    locator: url:https://git-scm.com/docs/git-config#Documentation/git-config.txt-coresymlinks
+  git-gitattributes:
+    kind: vendor-doc
+    title: "git: gitattributes, merge drivers and the union merge"
+    locator: url:https://git-scm.com/docs/gitattributes
+  git-rerere:
+    kind: vendor-doc
+    title: "git: rerere, recorded resolutions under .git/rr-cache"
+    locator: url:https://git-scm.com/docs/git-rerere
+  github-linguist-generated:
+    kind: vendor-doc
+    title: "GitHub: how changed files appear, and the linguist-generated attribute"
+    locator: url:https://docs.github.com/en/repositories/working-with-files/managing-files/customizing-how-changed-files-appear-on-github
+  github-merge-queue:
+    kind: vendor-doc
+    title: "GitHub: managing a merge queue (queue branches that include the changes ahead)"
+    locator: url:https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue
+  gragas-spec-s73:
+    kind: target
+    title: "S73 and S61 of the gragas spec: a trait that switches rules off is a kind"
+    locator: repo:gragas/docs/spec.md
+  go-api-next:
+    kind: vendor-doc
+    title: "Go: api/next, one file per proposal, joined at release"
+    locator: repo:go/api/README
+  go-doc-next:
+    kind: vendor-doc
+    title: "Go: doc/next, release-note fragments joined at the end of the cycle"
+    locator: repo:go/doc/README.md
+  go-fuzzing:
+    kind: vendor-doc
+    title: "Go: Fuzzing, native fuzz tests with a checked-in seed corpus"
+    locator: url:https://go.dev/doc/security/fuzz/
+  go-reasons-stated:
+    kind: target
+    title: "go-reasons-stated: the reasons of the 8 Go rules, stated in public"
+    locator: repo:gragas/docs/reasons/go-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  go-synctest:
+    kind: vendor-doc
+    title: "Go: package testing/synctest, tests of concurrent code on a fake clock"
+    locator: url:https://pkg.go.dev/testing/synctest
+  go-1-23-release-notes:
+    kind: vendor-doc
+    title: "Go 1.23 release notes: the linker disallows //go:linkname references to standard library internals"
+    locator: url:https://go.dev/doc/go1.23#linker
+    verified:
+      "on": "2026-11-13"
+      by: the page read and the quoted words found in its text
+  go-race-detector:
+    kind: vendor-doc
+    title: "Go: Data Race Detector, its cost in memory and time"
+    locator: url:https://go.dev/doc/articles/race_detector
+  go-review-r-02-donor-section-gap:
+    kind: article
+    title: "R-02: What the donor research has that our Go foundation lacks"
+    locator: archive:go/review/R-02-donor-section-gap.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  go-testing-package:
+    kind: vendor-doc
+    title: "Go: package testing, T.Parallel, TestMain and subtests"
+    locator: url:https://pkg.go.dev/testing
+  golangci-lint-cache-source:
+    kind: vendor-doc
+    title: "golangci-lint: internal/go/cache/cache.go, the disk cache shared by processes on one machine (read at v2.14.0)"
+    locator: url:https://github.com/golangci/golangci-lint/blob/v2.14.0/internal/go/cache/cache.go
+  golangci-lint-cli:
+    kind: vendor-doc
+    title: "golangci-lint: command line flags, the run lock and the two ways around it"
+    locator: url:https://golangci-lint.run/docs/configuration/cli/
+  golangci-lint-config-file:
+    kind: vendor-doc
+    title: "golangci-lint: one configuration file, no include or extends"
+    locator: url:https://golangci-lint.run/docs/configuration/file/
+  golangci-lint-linters:
+    kind: vendor-doc
+    title: golangci-lint linters (gochecknoinits and the others)
+    locator: url:https://golangci-lint.run/usage/linters/
+  google-sre-book:
+    kind: book
+    title: >-
+      Site Reliability Engineering: How Google Runs Production Systems (Beyer, Jones, Petoff, Murphy),
+      O'Reilly 2016
+    locator: isbn:9781491929124
+  gotestsum:
+    kind: vendor-doc
+    title: gotestsum (gotestyourself)
+    locator: url:https://github.com/gotestyourself/gotestsum
+  shared-kit-agents:
+    kind: target
+    title: "The shared kit: AGENTS.md, The rules (G1 to G6)"
+    locator: archive:shared-kit/AGENTS.md
+  handbook:
+    kind: article
+    title: birdtable Principles Handbook
+    locator: archive:principles/handbook.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  harsanyi-100-go-mistakes:
+    kind: book
+    title: 100 Go Mistakes and How to Avoid Them (Teiva Harsanyi), Manning 2022
+    locator: isbn:9781617299599
+  helm-golden-output:
+    kind: vendor-doc
+    title: "helm: one golden file per command, pkg/cmd/testdata/output"
+    locator: repo:helm/pkg/cmd/testdata/output
+  hoffman-web-app-security:
+    kind: book
+    title: >-
+      Web Application Security: Exploitation and Countermeasures for Modern Web Applications, 2nd edition
+      (Andrew Hoffman), O'Reilly 2024
+    locator: isbn:9781098143930
+  gragas-readme:
+    kind: target
+    title: "gragas: gragas"
+    locator: repo:gragas/README.md
+    verified:
+      "on": "2026-11-16"
+      by: the file read in birdtable/gragas at its root (#171)
+  hugo-commands:
+    kind: vendor-doc
+    title: "hugo: one file per command, commands/"
+    locator: repo:hugo/commands
+  jepsen-postgresql-12-3:
+    kind: article
+    title: "Jepsen: PostgreSQL 12.3 (Kyle Kingsbury)"
+    locator: url:https://jepsen.io/analyses/postgresql-12.3
+  khorikov-unit-testing:
+    kind: book
+    title: >-
+      Unit Testing Principles, Practices, and Patterns (Vladimir Khorikov), Manning 2020
+    locator: isbn:9781617296277
+  kleppmann-ddia:
+    kind: book
+    title: >-
+      Designing Data-Intensive Applications, 2nd edition (Martin Kleppmann, Chris Riccomini), O'Reilly 2026
+    locator: isbn:9781098119065
+  kubectl-cmd-join:
+    kind: vendor-doc
+    title: "kubectl: the hand-written join with named groups, pkg/cmd/cmd.go"
+    locator: repo:kubectl/pkg/cmd/cmd.go
+  kubectl-cmd-sanity:
+    kind: vendor-doc
+    title: "kubectl: cross-cutting command checks that walk the tree, pkg/cmd/util/sanity/cmd_sanity.go"
+    locator: repo:kubectl/pkg/cmd/util/sanity/cmd_sanity.go
+  kubectl-verify-docs:
+    kind: vendor-doc
+    title: "kubernetes: committed generated documents held by hack/verify-generated-docs.sh"
+    locator: repo:kubernetes/hack/verify-generated-docs.sh
+  kubernetes-owners:
+    kind: vendor-doc
+    title: "Kubernetes: an OWNERS file per directory, inherited upward"
+    locator: url:https://github.com/kubernetes/community/blob/master/contributors/guide/owners.md
+  kubernetes-verify-codegen:
+    kind: vendor-doc
+    title: "Kubernetes: committed generated files held by hack/verify-codegen.sh"
+    locator: repo:kubernetes/hack/verify-codegen.sh
+  linux-maintainers:
+    kind: vendor-doc
+    title: "Linux: the MAINTAINERS file, one hot shared registry kept by an integrator"
+    locator: repo:linux/MAINTAINERS
+  liquid-reasons-stated:
+    kind: target
+    title: "liquid-reasons-stated: the reasons of the 5 liquid rules, stated in public"
+    locator: repo:gragas/docs/reasons/liquid-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  madr:
+    kind: standard
+    title: "MADR: Markdown Architectural Decision Records"
+    locator: url:https://adr.github.io/madr/
+  magda-just-use-postgres:
+    kind: book
+    title: Just Use Postgres! All the Database You Need (Denis Magda), Manning 2025
+    locator: isbn:9781633435698
+  mcdonald-grokking-web-app-security:
+    kind: book
+    title: Grokking Web Application Security (Malcolm McDonald), Manning 2024
+    locator: isbn:9781633438262
+  mergify-parallel-checks:
+    kind: vendor-doc
+    title: "Mergify: batch size and parallel checks of a merge queue"
+    locator: url:https://docs.mergify.com/merge-queue/parallel-checks/
+  minsky-effective-ml:
+    kind: article
+    title: >-
+      Effective ML Revisited (Yaron Minsky, Jane Street blog), source of "make illegal states unrepresentable"
+    locator: url:https://blog.janestreet.com/effective-ml-revisited/
+  msw-docs:
+    kind: vendor-doc
+    title: Mock Service Worker documentation
+    locator: url:https://mswjs.io/docs/
+  nodejs-docs:
+    kind: vendor-doc
+    title: Node.js documentation
+    locator: url:https://nodejs.org/api/
+  operator-points:
+    kind: decision
+    title: The operator's points, verbatim
+    locator: archive:operator-points.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  ousterhout-aposd:
+    kind: book
+    title: >-
+      A Philosophy of Software Design, 1st edition (John Ousterhout), Yaknyam Press 2018
+    locator: isbn:9781732102200
+  owasp-xss-prevention:
+    kind: standard
+    title: Cross Site Scripting Prevention Cheat Sheet (OWASP Cheat Sheet Series)
+    locator: >-
+      url:https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
+  owner-rules-in-hub-standards:
+    kind: standard
+    title: >-
+      The owner's standing rules of 4 November 2026 and the lesson of 8 November 2026 drawn from them, as the
+      fleet's hub standards record them: every connection has an interface and an adapter, always; one program
+      on every machine with operating-system differences in adapters; a rule is only as wide as its check
+    locator: archive:docs/hub-standards.md
+  p-01-core-programming:
+    kind: article
+    title: "P-01: Core programming principles that apply in every language"
+    locator: archive:principles/P-01-core-programming.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  p-02-enforcement-and-measure:
+    kind: article
+    title: >-
+      P-02: What is known about enforcing design theory, and whether a balance can be enforced
+    locator: archive:principles/P-02-enforcement-and-measure.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  p-03-data:
+    kind: article
+    title: "P-03: Data: SQLite, Postgres, DynamoDB and distributed data"
+    locator: archive:principles/P-03-data.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  p-04-systems-and-delivery:
+    kind: article
+    title: >-
+      P-04: Systems and delivery: Linux, containers, serverless, packaging, releases, reliability
+    locator: archive:principles/P-04-systems-and-delivery.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  p-07-testing:
+    kind: article
+    title: >-
+      P-07: Testing — what each kind of test is for, what it costs, and how to run only what the change
+      needs
+    locator: archive:principles/P-07-testing.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  p-08-splitting:
+    kind: article
+    title: >-
+      P-08: Splitting software into pieces: where the line goes, and when it is a cut through the middle
+    locator: archive:principles/P-08-splitting.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  p-09-agentic-development:
+    kind: article
+    title: "P-09: Which software engineering rules change when agents write the code"
+    locator: archive:principles/P-09-agentic-development.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  pages-reasons-stated:
+    kind: target
+    title: "pages-reasons-stated: the reasons of the 3 pages rules, stated in public"
+    locator: repo:gragas/docs/reasons/pages-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  postgres-docs:
+    kind: vendor-doc
+    title: PostgreSQL documentation
+    locator: url:https://www.postgresql.org/docs/current/
+  publint:
+    kind: vendor-doc
+    title: publint
+    locator: url:https://publint.dev/
+  py-reasons-stated:
+    kind: target
+    title: "py-reasons-stated: the reasons of the 3 Python rules, stated in public"
+    locator: repo:gragas/docs/reasons/py-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  r-03-criteria-enforcement:
+    kind: article
+    title: "R-03: Criteria and enforcement review of `go/criteria.md` and `ui/criteria.md`"
+    locator: archive:review/R-03-criteria-enforcement.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  r-04-seams:
+    kind: article
+    title: >-
+      R-04: Seams that break when a new case arrives, against `go/criteria.md` and `ui/criteria.md`
+    locator: archive:review/R-04-seams.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  r-05-gates-on-real-code:
+    kind: article
+    title: "R-05: The proposed gates, run on real code"
+    locator: archive:review/R-05-gates-on-real-code.md
+    verified:
+      "on": "2026-11-06"
+      by: gragas migrate-v2 (file found)
+  react-docs:
+    kind: vendor-doc
+    title: React documentation (react.dev)
+    locator: url:https://react.dev/
+  react-reasons-stated:
+    kind: target
+    title: "react-reasons-stated: the reasons of the 3 React rules, stated in public"
+    locator: repo:gragas/docs/reasons/react-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  refactoring-ui:
+    kind: book
+    title: Refactoring UI (Adam Wathan, Steve Schoger), self-published
+    locator: url:https://www.refactoringui.com/
+  rfc-2606:
+    kind: standard
+    title: "RFC 2606: Reserved Top Level DNS Names"
+    locator: rfc:2606
+  rfc-3849:
+    kind: standard
+    title: "RFC 3849: IPv6 Address Prefix Reserved for Documentation"
+    locator: rfc:3849
+  rfc-5737:
+    kind: standard
+    title: "RFC 5737: IPv4 Address Blocks Reserved for Documentation"
+    locator: rfc:5737
+  robinson-consumer-driven-contracts:
+    kind: article
+    title: "Consumer-Driven Contracts: A Service Evolution Pattern (Ian Robinson)"
+    locator: url:https://martinfowler.com/articles/consumerDrivenContracts.html
+  sadowski-tricorder:
+    kind: paper
+    title: >-
+      Tricorder: Building a Program Analysis Ecosystem (Sadowski, van Gogh, Jaspan, Soderberg, Winter), ICSE
+      2015
+    locator: doi:10.1109/ICSE.2015.76
+  service-reasons-stated:
+    kind: target
+    title: "service-reasons-stated: the reasons of the 14 service rules, stated in public"
+    locator: repo:gragas/docs/reasons/service-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  stopford-designing-event-driven-systems:
+    kind: book
+    title: Designing Event-Driven Systems (Ben Stopford), O'Reilly 2018
+    locator: isbn:9781492038245
+  store-reasons-stated:
+    kind: target
+    title: "store-reasons-stated: the reasons of the 2 store rules, stated in public"
+    locator: repo:gragas/docs/reasons/store-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  supply-reasons-stated:
+    kind: target
+    title: "supply-reasons-stated: the reasons of the 11 supply-chain rules, stated in public"
+    locator: repo:gragas/docs/reasons/supply-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  tanstack-query-docs:
+    kind: vendor-doc
+    title: TanStack Query documentation
+    locator: url:https://tanstack.com/query/latest/docs
+  tanstack-router-docs:
+    kind: vendor-doc
+    title: TanStack Router documentation
+    locator: url:https://tanstack.com/router/latest/docs
+  tarandach-coles-threat-modeling:
+    kind: book
+    title: >-
+      Threat Modeling: A Practical Guide for Development Teams (Izar Tarandach, Matthew J. Coles), O'Reilly
+      2020
+    locator: isbn:9781492056553
+  terraform-commands:
+    kind: vendor-doc
+    title: "terraform: the command table with primary and hidden lists, commands.go"
+    locator: repo:terraform/commands.go
+  testing-library-docs:
+    kind: vendor-doc
+    title: Testing Library documentation
+    locator: url:https://testing-library.com/docs/guiding-principles/
+  tests-reasons-stated:
+    kind: target
+    title: "tests-reasons-stated: the reasons of the 23 tests rules, stated in public"
+    locator: repo:gragas/docs/reasons/tests-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  tide-batches:
+    kind: vendor-doc
+    title: "Tide: batch tests and merges of several changes together"
+    locator: url:https://docs.prow.k8s.io/docs/components/core/tide/
+  tier-study-2026-11-09:
+    kind: article
+    title: >-
+      Where the gate's time goes, and how to get a push under a minute: the measured breakdown of the pre-push and
+      release tiers and the proposals P1 to P12 (9 November 2026)
+    locator: archive:docs/tier-study.md
+  tornhill-code-crime-scene:
+    kind: book
+    title: >-
+      Your Code as a Crime Scene, 1st edition (Adam Tornhill), Pragmatic Bookshelf 2015
+    locator: isbn:9781680500387
+  towncrier-fragments:
+    kind: vendor-doc
+    title: "towncrier: news fragments against one file all developers write to"
+    locator: url:https://towncrier.readthedocs.io/en/stable/
+  ts-reasons-stated:
+    kind: target
+    title: "ts-reasons-stated: the reasons of the 4 TypeScript rules, stated in public"
+    locator: repo:gragas/docs/reasons/ts-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  tsconfig-strictest:
+    kind: vendor-doc
+    title: "@tsconfig/strictest (tsconfig/bases)"
+    locator: url:https://github.com/tsconfig/bases
+  type-coverage:
+    kind: vendor-doc
+    title: type-coverage
+    locator: url:https://github.com/plantain-00/type-coverage
+  typescript-eslint-docs:
+    kind: vendor-doc
+    title: typescript-eslint documentation
+    locator: url:https://typescript-eslint.io/
+  typescript-handbook:
+    kind: vendor-doc
+    title: TypeScript documentation (handbook and TSConfig reference)
+    locator: url:https://www.typescriptlang.org/docs/
+  typescript-native-port:
+    kind: article
+    title: A 10x Faster TypeScript (Anders Hejlsberg, TypeScript blog, March 2025)
+    locator: url:https://devblogs.microsoft.com/typescript/typescript-native-port/
+  w3c-csp3:
+    kind: standard
+    title: Content Security Policy Level 3 (W3C)
+    locator: url:https://www.w3.org/TR/CSP3/
+  w3c-trusted-types:
+    kind: standard
+    title: Trusted Types (W3C)
+    locator: url:https://www.w3.org/TR/trusted-types/
+  wcag-22:
+    kind: standard
+    title: Web Content Accessibility Guidelines (WCAG) 2.2 (W3C)
+    locator: url:https://www.w3.org/TR/WCAG22/
+  web-reasons-stated:
+    kind: target
+    title: "web-reasons-stated: the reasons of the 6 web rules, stated in public"
+    locator: repo:gragas/docs/reasons/web-reasons-stated.md
+    verified:
+      "on": "2026-11-16"
+      by: the file written in birdtable/gragas (#177)
+  winand-sql-performance-explained:
+    kind: book
+    title: SQL Performance Explained (Markus Winand), 2012
+    locator: isbn:9783950307825
+  wlaschin-dmmf:
+    kind: book
+    title: Domain Modeling Made Functional (Scott Wlaschin), Pragmatic Bookshelf 2018
+    locator: isbn:9781680502541
+  xz-backdoor-2024:
+    kind: incident
+    title: xz Utils backdoor, CVE-2024-3094 (March 2024)
+    locator: url:https://nvd.nist.gov/vuln/detail/CVE-2024-3094
+  zod-docs:
+    kind: vendor-doc
+    title: Zod documentation
+    locator: url:https://zod.dev/
+  zuul-gating:
+    kind: vendor-doc
+    title: "Zuul: changes tested on top of those ahead, and again without a failure"
+    locator: url:https://zuul-ci.org/docs/zuul/latest/gating.html
+  development-cycle-standard-2026-11-09:
+    kind: standard
+    title: >-
+      The Development Cycle Standard, draft 2: one cycle of six moments for every project, the core rules C1 to
+      C24, T1 to T12 and R1 to R8, the stack additions, the mistakes and the new-project checklist (9 November
+      2026, fleet commit 0da2709f)
+    locator: archive:docs/development-cycle-standard.md
+  fleet-decisions-gd-34:
+    kind: standard
+    title: >-
+      A ruling: the Development Cycle Standard adopted with its recommendations and written into
+      the rulebook; the six owner decisions d1 to d6, 9 November 2026
+    locator: archive:decisions/gragas.md
+  go-cmd-gofmt:
+    kind: vendor-doc
+    title: "Go: the gofmt command, its flags"
+    locator: url:https://pkg.go.dev/cmd/gofmt
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  go-cmd-go:
+    kind: vendor-doc
+    title: "Go: the go command, its testing flags and environment variables"
+    locator: url:https://pkg.go.dev/cmd/go
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  go-modules-reference:
+    kind: vendor-doc
+    title: "Go: Go Modules Reference, go mod tidy and workspaces"
+    locator: url:https://go.dev/ref/mod
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  prettier-cli:
+    kind: vendor-doc
+    title: "Prettier: the command line, the --check flag"
+    locator: url:https://prettier.io/docs/cli
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  npm-cli-ci:
+    kind: vendor-doc
+    title: "npm: the ci command, a clean install from the lockfile"
+    locator: url:https://docs.npmjs.com/cli/v10/commands/npm-ci
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  npm-scripts:
+    kind: vendor-doc
+    title: "npm: scripts, the life cycle scripts and when prepare runs"
+    locator: url:https://docs.npmjs.com/cli/v10/using-npm/scripts
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  tsconfig-reference:
+    kind: vendor-doc
+    title: "TypeScript: the tsconfig reference, noEmit"
+    locator: url:https://www.typescriptlang.org/tsconfig/
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  typescript-eslint-typed-linting:
+    kind: vendor-doc
+    title: "typescript-eslint: typed linting, what it costs and gives"
+    locator: url:https://typescript-eslint.io/getting-started/typed-linting/
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  eslint-cli:
+    kind: vendor-doc
+    title: "ESLint: the command line interface, the --cache option"
+    locator: url:https://eslint.org/docs/latest/use/command-line-interface
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  vitest-coverage-guide:
+    kind: vendor-doc
+    title: "Vitest: the coverage guide, how the providers instrument"
+    locator: url:https://vitest.dev/guide/coverage
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  vite-guide-build:
+    kind: vendor-doc
+    title: "Vite: building for production"
+    locator: url:https://vite.dev/guide/build
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  vite-dep-pre-bundling:
+    kind: vendor-doc
+    title: "Vite: dependency pre-bundling and its file system cache"
+    locator: url:https://vite.dev/guide/dep-pre-bundling
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  storybook-accessibility-testing:
+    kind: vendor-doc
+    title: "Storybook: accessibility testing with the engine, the error level"
+    locator: url:https://storybook.js.org/docs/writing-tests/accessibility-testing
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  storybook-vitest-addon:
+    kind: vendor-doc
+    title: "Storybook: the Vitest addon, stories as browser tests"
+    locator: url:https://storybook.js.org/docs/writing-tests/integrations/vitest-addon
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  storybook-publish:
+    kind: vendor-doc
+    title: "Storybook: publishing, the static build"
+    locator: url:https://storybook.js.org/docs/sharing/publish-storybook
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  playwright-test-sharding:
+    kind: vendor-doc
+    title: "Playwright: sharding the test suite across machines"
+    locator: url:https://playwright.dev/docs/test-sharding
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  playwright-actionability:
+    kind: vendor-doc
+    title: "Playwright: actionability, the auto-wait before an action"
+    locator: url:https://playwright.dev/docs/actionability
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  playwright-clock:
+    kind: vendor-doc
+    title: "Playwright: the clock, controlling time in a page"
+    locator: url:https://playwright.dev/docs/clock
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  playwright-class-page:
+    kind: vendor-doc
+    title: "Playwright: the Page class, unrouteAll"
+    locator: url:https://playwright.dev/docs/api/class-page
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  playwright-locators:
+    kind: vendor-doc
+    title: "Playwright: locators, re-resolved on each action"
+    locator: url:https://playwright.dev/docs/locators
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  testcontainers-node:
+    kind: vendor-doc
+    title: "Testcontainers for Node: throwaway containers for tests"
+    locator: url:https://node.testcontainers.org/
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  docker-cli-image-pull:
+    kind: vendor-doc
+    title: "Docker: the image pull command, pulling by digest"
+    locator: url:https://docs.docker.com/reference/cli/docker/image/pull/
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  ruff-formatter:
+    kind: vendor-doc
+    title: "Ruff: the formatter, its --check mode"
+    locator: url:https://docs.astral.sh/ruff/formatter/
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  ruff-linter:
+    kind: vendor-doc
+    title: "Ruff: the linter, what ruff check reads and fixes"
+    locator: url:https://docs.astral.sh/ruff/linter/
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  pip-secure-installs:
+    kind: vendor-doc
+    title: "pip: secure installs, hash-checking mode and requirements pinned with =="
+    locator: url:https://pip.pypa.io/en/stable/topics/secure-installs/
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  python-compileall:
+    kind: vendor-doc
+    title: "Python: the compileall module, byte-compiling a directory tree"
+    locator: url:https://docs.python.org/3/library/compileall.html
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  pytest-xdist-docs:
+    kind: vendor-doc
+    title: "pytest-xdist: running tests across multiple CPUs"
+    locator: url:https://pytest-xdist.readthedocs.io/en/stable/distribution.html
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  lychee-readme:
+    kind: vendor-doc
+    title: "lychee: the link checker, its offline option"
+    locator: url:https://github.com/lycheeverse/lychee
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  axe-core-readme:
+    kind: vendor-doc
+    title: "axe-core: the accessibility testing engine"
+    locator: url:https://github.com/dequelabs/axe-core
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  gitleaks-readme:
+    kind: vendor-doc
+    title: "gitleaks: the secrets scanner and its ignore file"
+    locator: url:https://github.com/gitleaks/gitleaks
+    verified:
+      "on": "2026-11-09"
+      by: the page read and the quoted words found in its text
+  gragas-907-ticket:
+    kind: target
+    title: >-
+      gragas#907, the ticket for the gate rules, written on the recommended answer to the operator's question 9;
+      no first-hand operator line states that question
+    locator: url:https://github.com/birdtable/gragas/issues/907
+    verified:
+      "on": "2026-11-14"
+      by: the page read and its table of rules found in its text
+  gragas-926-linux-spike:
+    kind: trial
+    title: >-
+      The Linux half of the spike gragas#926: go-task v3.54.0 and gotestsum v1.13.0 carry the three tiers in a
+      Taskfile, comment 6883855603
+    locator: url:https://github.com/birdtable/gragas/issues/926#issuecomment-6883855603
+    verified:
+      "on": "2026-11-14"
+      by: the comment read and its answers found in its text
+  gragas-926-windows-spike:
+    kind: trial
+    title: >-
+      The Windows half of the spike gragas#926: the same tiers and probes on Windows, comment 6883909209
+    locator: url:https://github.com/birdtable/gragas/issues/926#issuecomment-6883909209
+    verified:
+      "on": "2026-11-14"
+      by: the comment read and its answers found in its text
+  rulebook-55-ruling:
+    kind: standard
+    title: >-
+      The ruling on rulebook#55: the rulebook takes a tier contract with a full tier; the hook's list is a
+      declared subset of the land job's, and every member of the land job runs before main, comment 7022000390
+    locator: archive:rule-source/issues/55
+    verified:
+      "on": "2026-11-19"
+      by: the comment read and its ruling found in its text
+  fleet-decisions-pd-142:
+    kind: standard
+    title: >-
+      A ruling: the rulebook takes a tier contract with a full tier, rulebook#55,
+      19 November 2026, fleet commit 39ae1fa01
+    locator: archive:decisions/platform.md
+  fleet-decisions-pd-134:
+    kind: standard
+    title: >-
+      A ruling: a product imports no x/sys or syscall at all, the host layer included: that
+      knowledge belongs to the platform libraries, 19 November 2026
+    locator: archive:decisions/platform.md
+  gragas-1605-no-host-layer:
+    kind: article
+    title: >-
+      gragas#1605, commit f300ad376: gragas has no host layer, the os-host row spares no folder
+    locator: url:https://github.com/birdtable/gragas/commit/f300ad37644c11e87b6df6336b50abde45a67184
+  yaml-1-2-2-mapping-keys:
+    kind: standard
+    title: YAML Ain't Markup Language (YAML) revision 1.2.2, section 3.2.1.1, Keys Order (the keys of a mapping are unique)
+    locator: url:https://yaml.org/spec/1.2.2/#3211-nodes-comparison

@@ -1,0 +1,177 @@
+part: react
+concern: cycle
+order: 9
+title: React with Vite in the development cycle
+summary: >-
+  What a React application or library built with Vite adds to the push moment: the production build as the
+  build member with a bundle budget after it, mounts and documents shared across a file, the dependency
+  pre-bundle kept between runs, and a request budget checked with the render. These lines add members to the
+  core moments and never a moment of their own.
+rules:
+  - id: react.cycle.1
+    slug: the-build-is-the-build-member
+    since: 0.1.0
+    rule: >-
+      The production build is the push tier's build member, and a bundle-size budget runs after it as its
+      own member that declares it runs after the build.
+    detail: >-
+      The build proves the application compiles and bundles; the budget reads its output (web.speed.1). The
+      budget is a member of its own, so a budget failure names the budget and a build failure the build, and
+      its `after` edge is the one ordering the pool shows (gates.command.18, gates.command.28).
+    level: program
+    why: >-
+      A build that is a step of the test command, or a budget that rebuilds, runs the same work twice and
+      hides which one failed.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: vite-guide-build
+        where: Building for Production
+        says: >-
+          When it is time to deploy your app for production, simply run the vite build command.
+        backs: check
+    review_question: >-
+      Is the production build this tier's build member, and is the bundle budget a member of its own that
+      declares it runs after the build?
+    relates:
+      - id: web.speed.1
+        how: see
+      - id: gates.command.18
+        how: see
+      - id: gates.command.28
+        how: see
+    open:
+      - >-
+        Planned check: the members file names the build member and a budget member with an after edge to it.
+        No tool key is bound yet.
+  - id: react.cycle.2
+    slug: heavy-mounts-are-sharded-across-files
+    since: 0.1.0
+    rule: >-
+      Heavy page mounts are spread across test files, so the workers share them instead of one file holding
+      the path.
+    detail: >-
+      A file of fifty stories or page mounts runs on one worker however many the pool has, and it sets the
+      member's time. Splitting it across files lets the runner spread the mounts (tests.runners.4). The split
+      is by page or by story group, not by count alone, so a reader still finds the file.
+    level: file
+    why: >-
+      One file of 55 stories took 33.6 seconds in one fleet's design system, on one worker, while the others
+      idled.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: react-reasons-stated
+        backs: rule
+    review_question: >-
+      Which test file of this project holds the most mounts, how long does it take alone, and does it set the
+      member's time?
+    relates:
+      - id: tests.runners.4
+        how: see
+      - id: web.testing.15
+        how: see
+    open:
+      - >-
+        The standard's line names a DOM shim; web.testing.15 holds that component tests run in a real browser
+        engine and a shim is not a dependency. This rule holds the sharding and leaves the engine to
+        web.testing.15.
+      - >-
+        Planned check: the per-file time report lists the slowest file and its share of the member. No tool
+        key is bound yet.
+  - id: react.cycle.3
+    slug: parse-large-documents-once
+    since: 0.1.0
+    rule: >-
+      A large document a test reads is parsed once per file, and a scan over the whole repository belongs to
+      the gate, not to a test.
+    detail: >-
+      A test that parses a token document, a route table or a schema per case does the same work per case
+      (tests.runners.5). A test that walks the repository is the tree-reading package of this stack
+      (tests.runners.10), and where its check is a rule of the gate, it is a gate member with a count, not a
+      test hidden in the unit suite.
+    level: file
+    why: >-
+      Repository-wide scans inside unit tests were among the slowest files of one fleet's React applications.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: react-reasons-stated
+        backs: rule
+    review_question: >-
+      How many times does this test file parse its large input, and does any test walk the repository?
+    relates:
+      - id: tests.runners.5
+        how: see
+      - id: tests.runners.10
+        how: see
+    open:
+      - >-
+        Planned check: the per-test time report lists repeated parses beside the setup they repeat. No tool key
+        is bound yet.
+  - id: react.cycle.4
+    slug: keep-the-dependency-pre-bundle
+    since: 0.1.0
+    rule: >-
+      Shared dependencies are pre-bundled and the bundler's cache is kept between runs, in every tier.
+    detail: >-
+      The bundler pre-bundles the dependencies once and keeps them in its cache folder; a run that starts
+      with an empty cache pays that again for its first file. The cache folder is kept between tiers and
+      between runs, and is never pruned by a member (gates.command.24), and the tool's settings are the same
+      in every tier (gates.command.25).
+    level: program
+    why: >-
+      The first story of each file was 74 percent of one fleet's design-system story time, paid again on every
+      cold run.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: vite-dep-pre-bundling
+        where: File System Cache
+        says: >-
+          Vite caches the pre-bundled dependencies in node_modules/.vite.
+        backs: rule
+    review_question: >-
+      Is the bundler's cache kept between runs of this project's tiers, and does any member clear it?
+    relates:
+      - id: gates.command.24
+        how: see
+      - id: gates.command.25
+        how: see
+    open:
+      - >-
+        Planned check: a scan of the members for a clean of the cache folder, and a report of the first-file
+        time against the rest. No tool key is bound yet.
+  - id: react.cycle.5
+    slug: a-request-budget-is-a-property-of-the-render
+    since: 0.1.0
+    rule: >-
+      A request budget per page or story is a property checked in the same run as the render, never a second
+      run.
+    detail: >-
+      The render already opens the page; the count of requests it made is read from that run and judged
+      against the budget, as the narrow-width properties are judged on the same render (tests.journeys.8). A
+      second run for the count is the page rendered twice.
+    level: program
+    why: >-
+      A count taken in a second run doubles the render time and can disagree with the first.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: react-reasons-stated
+        backs: rule
+    review_question: >-
+      Where is this project's request budget checked, and is it the same run that renders the page?
+    relates:
+      - id: tests.journeys.8
+        how: see
+      - id: web.speed.1
+        how: see
+    open:
+      - >-
+        Planned check: the render member's report carries a request count per page. No tool key is bound yet.

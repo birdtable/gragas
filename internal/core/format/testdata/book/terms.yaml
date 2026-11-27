@@ -1,0 +1,5 @@
+format: 3
+terms:
+  - slug: gate
+    definition: A check that stops a push.
+    literal: make check

@@ -1,0 +1,6 @@
+kind: Security
+body: >-
+  **A folder below the top of its repository is no longer listed as if it were the top.** The history reads
+  now end not ready when git finds the repository above the folder, so a `.git` that is not a repository
+  can no longer make `check` judge another repository's paths under this folder's names.
+time: 2026-11-23T00:05:00.00000+01:00

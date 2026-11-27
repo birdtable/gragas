@@ -1,0 +1,84 @@
+format: 3
+part: go
+concern: cycle
+rules:
+  - id: go.cycle.1
+    statement: "At commit, gofmt and go mod tidy run as diffs that list what differs and never rewrite the tree."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The format member runs gofmt with the list flag and fails on any file named; the tidy member runs go mod tidy with the diff flag and fails on any output. Neither writes, so both run beside the other members (gates.command.28) and inside the commit hook's seconds (gates.command.17). The fix is the same command in write mode, run by the person, not by the hook."
+      pros:
+        - "A commit hook that rewrites files and restages them is the opposite of a check, and two hooks of one organisation did exactly that; a tidy that writes in the hook races the members beside it."
+    relations:
+      relates:
+        - gates.command.28
+        - gates.hooks.3
+        - supply.install.11
+    sources:
+      - ref: go-cmd-gofmt
+        where: the -l flag
+        says: "If a file's formatting is different from gofmt's, print its name to standard output."
+        backs: check
+      - ref: go-modules-reference
+        where: go mod tidy
+        says: The -diff flag causes go mod tidy not to modify go.mod or go.sum but instead print the necessary changes as a unified diff.
+        backs: check
+  - id: go.cycle.2
+    statement: "The push lint runs vet and the shared lint preset with the parallel-test linters on, and a test that runs alone carries a serial comment that names the process state it needs."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "tests.runners.4 holds that a test is parallel by default and a serial one says why. This line names the tools that hold it in Go: the linter that reports a test without a parallel call, and the one that reports a parallel call in the wrong place. The stated reason is a comment of the form `// serial:` with the state the test needs, and the linter's own disable comment is not the reason. A test that only needs a variable for a child process sets it on the child's environment and stays parallel."
+      pros:
+        - "Four of five projects in one organisation had zero parallel tests, and one project's 152 serial tests took 136 seconds on about one CPU; the linter finds the missing call before the tier report does."
+    relations:
+      relates:
+        - tests.runners.4
+        - gates.command.22
+    sources:
+      - ref: golangci-lint-linters
+        where: "paralleltest; tparallel"
+        says: Detects missing usage of t.Parallel() method in your Go test. ... Tparallel detects inappropriate usage of t.Parallel() method in your Go test codes.
+        backs: check
+  - id: go.cycle.3
+    statement: "The stamp key holds the Go build settings that change a verdict, the flags variable, the cgo switch, the experiment variable and the toolchain, and a run inside a workspace file gets no key."
+    strength: may
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "gates.land.15 holds that a stamp is keyed to the exact tree, its settings and its tools. For Go the settings are GOFLAGS, CGO_ENABLED, GOEXPERIMENT and the toolchain version, read from the go tool, not from the shell. A workspace file changes which module code a build sees without changing the tree, so a run under one is not keyed: it runs, and nothing is stamped or served."
+      pros:
+        - "A stamp that ignores a build setting serves a green for a build nobody ran; a workspace can point a build at a sibling checkout the tree does not hold."
+    relations:
+      relates:
+        - gates.land.15
+        - gates.land.11
+    sources:
+      - ref: go-cmd-go
+        where: "Environment variables, GOFLAGS"
+        says: "A space-separated list of -flag=value settings to apply to go commands by default"
+        backs: rule
+      - ref: go-modules-reference
+        where: Workspaces
+        says: "If GOWORK is set to off, the command will be in a single-module context."
+        backs: rule
+  - id: go.cycle.4
+    statement: "The tools step fetches the whole module graph, so a fresh clone builds, and cross-compiles once for one other system as a smoke, with the network blocked."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "gates.command.21 holds that a fresh clone passes after the documented setup, and supply.install.2 that the build runs with the network blocked after the install. A cross-compile for another system pulls modules the first never needed; the tools step downloads them once and the one cross-compile smoke runs offline. It is a smoke that no code of one system crept into the product, not a build per shipped system. One run that primed the cache is not setup."
+      pros:
+        - "A second machine's first push was red on a module graph that only an earlier run had fetched."
+    relations:
+      relates:
+        - gates.command.21
+        - supply.install.2
+        - supply.release.7
+    sources:
+      - ref: go-reasons-stated
+        backs: rule

@@ -1,0 +1,73 @@
+{
+  "schema": 2,
+  "command": "migrate",
+  "apply": false,
+  "ended": "declined",
+  "msg": "nothing was changed",
+  "next": "gragas migrate --name demo --owner team-a --apply",
+  "changes": [
+    "would replace base/arch/rules/layers.yaml",
+    "would replace sources.yaml",
+    "would make rulebook.yaml",
+    "would make structure.yaml",
+    "would make parked.yaml",
+    "would append to history.jsonl"
+  ],
+  "data": {
+    "schema": 1,
+    "carried": {
+      "rules": 2,
+      "bindings": 1,
+      "sources": 1,
+      "guides": 1,
+      "kinds": 2
+    },
+    "converted": [
+      "no-identity"
+    ],
+    "parked": {
+      "path": "parked.yaml",
+      "lines": 8
+    },
+    "not_carried": [
+      {
+        "item": "source a-poster",
+        "reason": "the kind poster has no kind at format 3"
+      },
+      {
+        "item": "id arch.gone.1",
+        "reason": "the lock holds it and no rule does, so no rule can keep it as an alias"
+      }
+    ],
+    "strengths": [
+      {
+        "from": [
+          "Hard"
+        ],
+        "to": "must",
+        "rules": 1
+      },
+      {
+        "from": [
+          "Answered",
+          "Session",
+          "Record"
+        ],
+        "to": "should",
+        "rules": 1
+      },
+      {
+        "from": [
+          "Lens",
+          "Review"
+        ],
+        "to": "may",
+        "rules": 0
+      }
+    ],
+    "relations": [],
+    "wins": 0,
+    "prose_findings": 0,
+    "statements": 2
+  }
+}

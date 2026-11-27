@@ -1,0 +1,8 @@
+kind: Security
+body: >-
+  **A line gragas prints to paste is one shell word per word.** The apply line of a rule command, gen's
+  -C folder, its git way back, and contract's --out and validate lines now quote each argument and
+  value in single quotes when it holds anything but plain characters. Before, a rule id, a title or a
+  folder name holding a semicolon, a pipe, an ampersand, a backtick, a dollar or a tilde pasted as a
+  second command, or expanded; one starting with an equals sign became a command's path in zsh.
+time: 2026-11-20T00:10:00.00000+01:00

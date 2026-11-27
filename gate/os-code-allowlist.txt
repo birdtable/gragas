@@ -1,0 +1,6 @@
+# The Go files that carry operating-system code today: a system's difference is the
+# platform libraries' to name, never a gragas file's. Each line is "<path> <the change
+# that deletes it>", in path order. The list only shrinks: internal/oscode_test.go is red
+# when it holds a path the list at the merge base with origin/main does not (an addition,
+# a swap or a rename), when a listed file no longer carries any, and when a file that is
+# not listed does. Nothing here is a permission: a file's line goes when its code does.

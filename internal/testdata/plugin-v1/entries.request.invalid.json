@@ -1,0 +1,5 @@
+[
+  {"name":"no target","patch":[{"op":"remove","path":"/0/target"}],"problem":"'target' is a required property"},
+  {"name":"no config","patch":[{"op":"remove","path":"/0/config"}],"problem":"'config' is a required property"},
+  {"name":"a target that is not one","patch":[{"op":"replace","path":"/0/target","value":"code"}],"problem":"is not one of"}
+]

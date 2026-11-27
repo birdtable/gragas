@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-structure.schema.json",
+  "title": "Layers, parts, concerns and kinds (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "layers",
+    "parts",
+    "kinds"
+  ],
+  "properties": {
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slug",
+          "name",
+          "order"
+        ],
+        "properties": {
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug",
+            "x-introduced": "1.0"
+          },
+          "name": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0,
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0"
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slug",
+          "name",
+          "layer",
+          "order"
+        ],
+        "properties": {
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug",
+            "x-introduced": "1.0"
+          },
+          "name": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "layer": {
+            "$ref": "common.schema.json#/$defs/slug",
+            "x-introduced": "1.0"
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0,
+            "x-introduced": "1.0"
+          },
+          "guide": {
+            "$ref": "common.schema.json#/$defs/textOrEmpty",
+            "x-introduced": "1.0",
+            "default": ""
+          },
+          "owners": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/text"
+            },
+            "x-introduced": "1.0",
+            "default": []
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/slug"
+            },
+            "x-introduced": "1.0",
+            "default": []
+          },
+          "concerns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "slug",
+                "name",
+                "order"
+              ],
+              "properties": {
+                "slug": {
+                  "$ref": "common.schema.json#/$defs/slug",
+                  "x-introduced": "1.0"
+                },
+                "name": {
+                  "$ref": "common.schema.json#/$defs/text",
+                  "x-introduced": "1.0"
+                },
+                "order": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "x-introduced": "1.0"
+                }
+              }
+            },
+            "x-introduced": "1.0",
+            "default": []
+          }
+        }
+      },
+      "x-introduced": "1.0"
+    },
+    "kinds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slug",
+          "name"
+        ],
+        "properties": {
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug",
+            "x-introduced": "1.0"
+          },
+          "name": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "description": {
+            "$ref": "common.schema.json#/$defs/textOrEmpty",
+            "x-introduced": "1.0",
+            "default": ""
+          }
+        }
+      },
+      "x-introduced": "1.0"
+    }
+  }
+}

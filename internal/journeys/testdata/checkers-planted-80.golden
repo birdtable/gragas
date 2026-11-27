@@ -1,0 +1,23 @@
+$ gragas validate
+--- exit 1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Findings
+about                  what is wrong, and the fix
+checkers/stray-plugin  checker code in checkers/stray-plugin/ has no
+                       declaration, so a consumer's tools would load code the
+                       rulebook does not declare Fix: declare it in
+                       checkers/stray-plugin/checker.yaml by its tool, publisher
+                       and tests (docs/format/checkers.md)
+
+Notices
+  names check: the names check did not run: no names list was given; set the
+  names-file key or GRAGAS_NAMES_FILE
+  rulebook.yaml: import not fetched: shared-go 2.0.0, so the import contract
+  against it was not checked: its parts ui are not checked to exist, and no
+  tightening of its rules is checked
+0 migrated rules held from the prose lint until reworded; the count only falls.
+
+  findings   1 finding, 2 notices
+--- stderr

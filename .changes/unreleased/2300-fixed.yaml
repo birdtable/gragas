@@ -1,0 +1,8 @@
+kind: Fixed
+body: >-
+  **Listing the repository no longer opens every file in it.** `gragas preset --check`, `check` and the
+  other commands that find `rulebook.yaml` or read the whole tree list it, and the listing opened each
+  file to ask whether it was runnable, an answer none of them reads. In a checkout with tens of thousands of
+  ignored files, on a Mac whose scanner reads every file opened, that took minutes for seconds of work.
+  The listing now reads the folders alone; whether a file is runnable is asked of that one file.
+time: 2026-11-24T02:30:00.00000+01:00

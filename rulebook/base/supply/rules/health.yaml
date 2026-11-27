@@ -1,0 +1,22 @@
+format: 3
+part: supply
+concern: health
+rules:
+  - id: supply.health.1
+    statement: "A dependency is maintained: no module is archived and none has gone without a release or a push for 24 months in Go, and a web dependency has a release within 12 months or a written finished note."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "An unmaintained or abandoned dependency is removed. A banned one that is already present stays on a shrink-only list. Go checks archived and last-pushed state per direct module through the host API (the network is needed, so at land or after release). The web check reads the newest release date of each direct dependency from the registry, and a finished note is an exception record. Transitive age is a report only. Examples removed in the reference: @uiw/react-json-view (alpha), @dnd-kit, zpl-renderer, and other rotting packages."
+      pros:
+        - A library nobody maintains carries unfixed vulnerabilities. One archived Go module was found in the baseline and nothing else.
+  - id: supply.health.2
+    statement: "No prerelease, 0.x, alpha or release-candidate major enters production except through a labelled pilot with a removal path."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "For Go, v0.x is normal and the shared modules are below 1.0, so only a prerelease tag or a pseudo-version on a direct requirement needs a pilot entry in the allow file; indirect lines are left out because the module graph brings them in. For the web, a 0.x browser dependency needs a pilot record. The 0.x transitives of an accepted pilot are accepted through that pilot. Example: the 0.x transitives of @inlang/paraglide-js are accepted through one named pilot."
+      pros:
+        - A prerelease or an unreleased commit changes without notice and carries the same risk as a bump mixed with other edits.

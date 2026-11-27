@@ -1,0 +1,208 @@
+part: gates
+tools:
+  - key: lefthook
+    name: "hook runner: lefthook"
+    role: >-
+      Runs the checks at pre-commit and pre-push from one committed file, and runs the commit-message job that
+      checks the gate-change record.
+    binding: any
+    ships: the committed hook file and the shared hook jobs
+    state: replaced
+    why: >-
+      One committed file serves both hooks, a staged-file run was timed at 1.9 s, and lefthook is itself a Go
+      binary.
+    lost:
+      - name: a hand-written hook script per repo
+        why: Five repos had five different versions of the hook.
+    open:
+      - >-
+        On the Go side the hook runner is not ruled; a hook must run the gate list and must be installed,
+        whichever runner.
+      - Candidate only; trialled on the web side.
+    note: >-
+      Replaced: the Taskfile's own hook task runs the checks at each moment, so no hook runner is a pick. A hook must still run the gate list and must be installed.
+  - key: shared-git-hook-template
+    name: shared git-hook template
+    role: >-
+      The exported hook template every repo extends: a cheap check-only commit hook and a push hook that runs
+      the structural check.
+    binding: any
+    ships: the template hook file and its jobs
+    state: chosen
+    why: >-
+      A repo's hook file must contain the shared jobs (gates.hooks.6), so the shared template is the single
+      source.
+    open:
+      - >-
+        Commit-time job runs the supply-chain config check in parallel and check-only; push-time job runs the
+        root-file structural check.
+  - key: eslint-bulk-suppressions
+    name: "suppression baseline: ESLint bulk suppressions"
+    role: >-
+      ESLint's built-in suppressions file: existing violations are recorded once, new ones fail, and the file
+      can only shrink.
+    binding: ts
+    ships: ESLint config and the suppressions file
+    state: chosen
+    why: >-
+      A shrink-only list that the linter itself enforces; an unused suppression fails by default.
+    lost:
+      - name: a hand-rolled baseline script
+        why: >-
+          Bulk suppression is not a ratchet alone, so it needs the registry beside it; hand-rolled scripts are
+          replaced by standard tools (gates.shared.8).
+    open:
+      - >-
+        Bulk suppression alone is not a ratchet: it needs the zero-by registry and a record of growth
+        (gates.ratchets.4).
+      - On the Go side the baseline is a per-file ceiling that only falls, built by us.
+  - key: eslint-suppressions-with-expiring-todo-comments-and-a-debt-registry
+    name: >-
+      debt zero-by dates: ESLint suppressions with expiring-todo comments and a debt registry
+    role: >-
+      Each baseline has an owner and a zero-by date: an unused suppression fails ESLint, the zero-by date is a
+      dated TODO (`unicorn/expiring-todo-comments`) that a lint rule turns into an error on the day, and the
+      owner is the baseline's entry in `debt-registry.json`.
+    binding: ts
+    ships: ESLint config, the expiring-todo rule, the debt registry file
+    state: chosen
+    why: >-
+      The expiry fails the gate with no code change, so a baseline cannot outlive its stage.
+    open:
+      - The pass-on-unpruned-suppressions flag is never used in a gate.
+  - key: rule-page-generator
+    name: rule page generator
+    role: >-
+      Generates the rulebook pages and the status board from the same data files as the enforcement model, and
+      generated pages show the rules, the debt and the progress.
+    binding: any
+    ships: the generator in the rulebook tools
+    state: chosen
+    why: >-
+      A hand-typed grid lies; a page generated from the data and diffed cannot (gates.registry.12).
+    open:
+      - Page generators are unfinished today.
+  - key: ast-grep
+    name: "structural matcher: ast-grep"
+    role: >-
+      Matches code by its syntax tree with rules in YAML, so a rule can say "a template-literal storage key"
+      or "a connection pool created outside its toolkit"; finds shapes a name search misses.
+    version: 0.51.1
+    binding: any
+    ships: shape-rule files and their fixture pairs
+    state: candidate
+    why: >-
+      It is the shape-rule pick for the Go side, proven on Go and not yet on the web; advice, not a gate.
+    lost:
+      - name: name search with grep
+        why: A name search misses restructured copies of the same shape.
+    open:
+      - Proven on Go; not yet proven on the web.
+      - Moved here from the DynamoDB part because the matcher is general.
+  - key: one-gate-command-per-tier
+    name: "gate orchestration: one gate command per tier"
+    role: >-
+      One command that runs the right checks per tier and a land gate that refuses a tree without a green
+      verdict.
+    binding: any
+    ships: the gate command and the land check
+    state: chosen
+    why: >-
+      Tiers with one home each, a printed skip list and a verdict bound to the tree (gates.command.1,
+      gates.land.2).
+  - key: stored-verdict-with-a-gate-change-record
+    name: "gate-config protection: stored verdict with a gate-change record"
+    role: >-
+      A commit that touches a gate, a baseline or a hook names its reason and a non-author reviewer, and the
+      land check requires a stored verdict from a different session.
+    binding: any
+    ships: the commit-message job and the land check
+    state: unsure
+    why: >-
+      A trailer is text an agent can type, so the stored verdict carries the weight (gates.protection.1).
+    open:
+      - Independence depends on the delivery tool exposing the session identity.
+  - key: a-planted-fixture-per-rule
+    name: "gate self-tests: a planted fixture per rule"
+    role: >-
+      Each check proves it can fail: a negative fixture per rule, and self-tests for the gate scripts.
+    binding: any
+    ships: the selftest command and the plant fixtures
+    state: chosen
+    why: A check that cannot fail is not a check (gates.plants.1).
+  - key: shrink-only-baselines
+    name: "ratchets and debt registers: shrink-only baselines"
+    role: >-
+      Baselines that can only shrink, a register naming each one's owner and zero-by date, and exemptions that
+      expire.
+    binding: any
+    ships: the ratchet helper and the debt registry
+    state: chosen
+    why: Debt may not grow, and each baseline has an end (gates.ratchets.1 to 5).
+  - key: named-non-author-reviewer
+    name: "ownership and review routing: named non-author reviewer"
+    role: >-
+      A named owner reads changes to sensitive paths; where CODEOWNERS is not available, a named non-author
+      reviewer by record carries it.
+    binding: any
+    ships: the reviewer list read by the land check
+    state: replaced
+    why: >-
+      One GitHub identity means no branch protection or CODEOWNERS, so the land check is the only holder.
+    lost:
+      - name: CODEOWNERS file
+        why: Every agent pushes as one identity, so owner routing cannot tell authors apart.
+    open:
+      - No row names an owners file on either the Go or the web side.
+  - key: fixed-command-counters
+    name: "code measurement and censuses: fixed-command counters"
+    role: >-
+      Scripts that count the debt with a fixed command and print the count with the input count.
+    binding: any
+    ships: the census and baseline scripts
+    state: chosen
+    why: Every number comes from a script (gates.measures.1).
+    open:
+      - A census of copies, a trend and hotspot list are named on the Go side.
+  - key: weekly-measures
+    name: "repo-health and delivery metrics: weekly measures"
+    role: Per-repo scores and delivery metrics across all repos.
+    binding: any
+    ships: the weekly measure script
+    state: candidate
+    why: >-
+      A short list of weekly measures (first-pass green rate, review rounds, rework) keeps the estate
+      comparable (gates.measures.1).
+    open:
+      - Go has no row naming delivery measures.
+  - key: generators-with-a-drift-check
+    name: generators with a drift check
+    role: >-
+      Tools that derive one artifact from another (spec from schema, types from database, enums from glossary,
+      token output, route trees) and fail when the copy differs.
+    binding: any
+    ships: the generate-then-check step
+    state: chosen
+    why: Regenerating leaves no diff (gates.own-rules.3).
+  - key: custom-lint-rules-and-structural-patterns
+    name: "own-code rules: custom lint rules and structural patterns"
+    role: >-
+      Rules written for the repo's own code: custom lint rules, ast-grep patterns and domain check scripts,
+      each with a plant.
+    binding: any
+    ships: the custom rule folder and the rule table
+    state: chosen
+    why: A domain rule that is only prose is not held (gates.own-rules.2).
+    open:
+      - >-
+        Primitives are banned outside the owner and hand-built twins are counted (web side).
+  - key: gragas
+    name: "rulebook tool: gragas"
+    role: >-
+      Validates the rulebook and computes the facts a fact check reads, through gragas check.
+    binding: any
+    ships: presets/gragas/base.yaml, the checks gragas check computes itself, which a check row with tool gragas keys
+    state: chosen
+    preset: presets/gragas/base.yaml
+    note: >-
+      Added by schema v2: the tool of a fact check that names no other tool (v1 class our-cli).

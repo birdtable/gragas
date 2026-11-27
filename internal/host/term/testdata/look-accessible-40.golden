@@ -1,0 +1,47 @@
+=== banner
+gragas  v0.1.0
+=== table
+rule          status  reason
+cli.look.5    active  The closing words
+                      are a closed set,
+                      built with their
+                      next line by
+                      constructors only,
+                      and nothing else
+                      ends a run.
+arch.ports.6  active  Every library has
+                      one owner.
+cli.look.7    active  Short.
+1 column not shown: owner
+=== closing done
+  * done       what happened to the run,
+  in its own terms
+=== closing failed
+  # failed     what happened to the run,
+  in its own terms
+=== closing findings
+  ! findings   what happened to the run,
+  in its own terms
+=== closing usage
+  / usage      what happened to the run,
+  in its own terms
+    gragas usage --help
+=== closing busy
+  & busy       what happened to the run,
+  in its own terms
+    gragas busy --help
+=== closing not ready
+  % not ready  what happened to the run,
+  in its own terms
+    gragas not-ready --help
+=== closing refused
+  < refused    what happened to the run,
+  in its own terms
+    gragas refused --help
+=== closing declined
+  > declined   what happened to the run,
+  in its own terms
+    gragas declined --help
+=== error with a pasted hint
+unknown flag: --aply
+did you mean `gragas gen --apply`?

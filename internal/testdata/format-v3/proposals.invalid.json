@@ -1,0 +1,5 @@
+[
+  {"name": "an unknown field", "patch": [{"op": "add", "path": "/0/evidence", "value": []}], "problem": "Additional properties are not allowed ('evidence' was unexpected)"},
+  {"name": "a missing required field", "patch": [{"op": "remove", "path": "/0/target"}], "problem": "'target' is a required property"},
+  {"name": "a wrong enum", "patch": [{"op": "replace", "path": "/0/state", "value": "merged"}], "problem": "is not one of"}
+]

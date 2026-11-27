@@ -1,0 +1,292 @@
+part: service
+concern: outbox
+order: 3
+title: Outbox and publishing
+summary: >-
+  An event leaves a service through one funnel and one outbox, written in the same transaction as the change
+  it announces, shaped as the public contract, and published idempotently with failures read and kept.
+rules:
+  - id: service.outbox.1
+    slug: one-funnel-imports-bus-client
+    since: 0.1.0
+    rule: >-
+      Only one funnel module imports the event bus client; every service publishes through it.
+    detail: In Go, every outward effect goes through one wrapper that records it.
+    level: package
+    why: >-
+      A bus client imported in many places gives many publish paths, each with its own failure handling and
+      none that can be replayed.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          import-restriction rule allowing the bus client package in the funnel module only. Plant: a handler
+          importing the bus client directly fails. Control: the funnel module importing it passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          depguard rule allowing the bus client package in the one effect wrapper only. Plant: a program
+          package importing the bus client fails. Control: the wrapper passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.outbox.2
+    slug: one-outbox-implementation
+    since: 0.1.0
+    rule: There is exactly one outbox implementation, in the shared toolkit.
+    detail: >-
+      In Go, one shared implementation of write-ahead intent and atomic state replace, with no copies.
+    level: package
+    why: >-
+      Each service writing its own outbox repeats the transaction, retry and replay logic and gets different
+      gaps.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing an insert into the outbox table outside the shared toolkit. Plant: an insert
+          into the outbox table from a service fails. Control: the toolkit write call passes
+      - binding: go
+        class: preset-rule
+        tier: "1"
+        note: >-
+          import rule and duplicate-implementation scan limiting write-ahead intent code to the shared
+          package. Plant: a second implementation of an intent journal fails. Control: the shared package
+          passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.outbox.3
+    slug: outbox-written-in-open-transaction
+    since: 0.1.0
+    rule: >-
+      The outbox is written only by the toolkit call that takes the open transaction, so the event and the
+      change commit or roll back together.
+    level: function
+    why: >-
+      An event written after the commit can be lost when the process dies between the two writes; an event
+      written before it can announce a change that rolled back.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: G
+        note: >-
+          toolkit test that the outbox write function requires a transaction argument, and a scan failing any
+          outbox write outside it. Plant: an outbox write outside a transaction fails. Control: a write inside
+          the toolkit transaction call passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that the intent is written before the effect and the journal is append-only with atomic
+          replace. Plant: an effect run before its record is written fails. Control: intent then effect passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.outbox.4
+    slug: outbox-publish-idempotent-replayable
+    since: 0.1.0
+    rule: >-
+      The relay publishes an outbox row idempotently and supports replay, and in production it always creates
+      the sweep that picks up rows the live path missed.
+    level: program
+    why: >-
+      A relay that publishes twice on a retry, or cannot be told to publish again, turns every outage into
+      manual work.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          relay test publishing the same row twice and asserting one delivery key, a replay of a range of
+          rows, and the production sweep being created. Plant: a relay that publishes a duplicate on retry
+          fails. Control: a replay of a past range passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.outbox.5
+    slug: failed-outbox-rows-kept
+    since: 0.1.0
+    rule: A failed outbox row is never deleted.
+    level: function
+    why: >-
+      A deleted failed row is an event that happened and can never be published or investigated.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing a delete on the outbox table, and a toolkit test that a failed row is
+          retained. Plant: a delete of a failed row fails. Control: marking a row failed and keeping it passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.outbox.6
+    slug: outbox-holds-public-contract
+    since: 0.1.0
+    rule: >-
+      The outbox row is the event as the public contract defines it, not a copy of the internal row, and the
+      toolkit call that writes it validates the event against its registered schema inside the transaction, so
+      a bad event rolls the change back.
+    detail: >-
+      The relay check at publish time stays as a second line. For a store whose stream forwards item images,
+      the outbox is an explicit item written in the same transaction and shaped as the contract, and the
+      stream forwards only those items; a plain stream of item images publishes the internal shape.
+    level: function
+    why: >-
+      Serialising after the write leaves a pile of unpublishable events that people must salvage and can
+      reorder what was published; serialising before the write fails the business operation instead. That is
+      the trade, and why it needs a decision and not a default. Exposing the internal model is an
+      anti-pattern: consumers should see only public contracts.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: bellemare-bedm
+        where: >-
+          ch. 4 (liberating data using outbox tables; isolating internal data models; ensuring schema
+          compatibility)
+        backs: rule
+      - ref: p-03-data
+        where: section 21
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: G
+        note: >-
+          toolkit test that hands the writer an event failing its schema and asserts the transaction rolled
+          back and no outbox row exists; a second test asserts the outbox payload equals the contract and
+          holds no internal column names. Plant: an invalid event must not persist the business change; an
+          outbox row copied from the table own columns fails. Control: a contract-shaped event passes
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          a scan for outbox payloads built from a table row object. Plant: an outbox write whose payload is a
+          table row fails. Control: a payload built from the contract type passes
+    open:
+      - Argued, not measured; no case from the reference estate.
+      - >-
+        With agents: an agent writes the internal struct straight into the row because it is the shortest path
+        (inference).
+    note: >-
+      Extends validate-before-publish (validation at publish time, after the commit) and
+      outbox-written-in-open-transaction.
+  - id: service.outbox.7
+    slug: bus-name-derived-from-stage
+    since: 0.1.0
+    rule: The event bus name is derived from the stage, never declared by hand.
+    detail: >-
+      In Go, every path and identifier of persistent state is made by one function from the program name.
+    level: function
+    why: >-
+      A hand-declared bus name drifts between stages and lets a stage publish onto another stage bus.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing a string literal in a bus name position and requiring the derivation helper.
+          Plant: a literal bus name fails. Control: the derived name passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          forbidigo and an identifier-builder rule requiring state paths to come from the one naming function.
+          Plant: a hand-built state path fails. Control: the naming function passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.outbox.8
+    slug: bus-exists-before-publish
+    since: 0.1.0
+    rule: The derived bus exists before a service publishes to it.
+    detail: >-
+      In Go, a daemon signals readiness before it serves and a missing dependency is not silent.
+    level: deploy
+    why: >-
+      Publishing to a bus that has not been created fails silently or at first use in production.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          an infrastructure scan asserting every bus a service publishes to is declared by a stack that
+          deploys earlier or in the same stack. Plant: a service that publishes to an undeclared bus fails.
+          Control: a service with its bus declared passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.outbox.9
+    slug: batch-publish-failures-read
+    since: 0.1.0
+    rule: Per-entry failures of a batch publish are read and retried.
+    detail: >-
+      A batch call can succeed as a whole and still report failed entries. In Go, every error is handled or
+      returned and a multi-step change says rollback, resume or none.
+    level: function
+    why: >-
+      A batch publish that returns success while some entries failed loses those events with no error.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing a bus batch call whose result failed-entry count is not read. Plant: a batch
+          publish ignoring the failed entry count fails. Control: a call that retries failed entries passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

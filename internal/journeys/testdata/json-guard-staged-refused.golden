@@ -1,0 +1,24 @@
+$ gragas guard staged --json
+--- exit 5
+--- stdout
+{
+  "schema": 1,
+  "contract": "1.3",
+  "command": "gragas guard staged",
+  "word": "refused",
+  "path": "history.jsonl",
+  "changes": [
+    {
+      "entity": "rule:go.errors.2",
+      "field": "status",
+      "before": "proposed",
+      "after": "active",
+      "command": "gragas rule promote go.errors.2"
+    }
+  ],
+  "why": "status of rule:go.errors.2 is staged with no line of history.jsonl",
+  "next": "gragas rule promote go.errors.2"
+}
+--- stderr
+refused: status of rule:go.errors.2 is staged with no line of history.jsonl
+instead: gragas rule promote go.errors.2

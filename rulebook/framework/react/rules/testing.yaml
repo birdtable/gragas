@@ -1,0 +1,91 @@
+format: 3
+part: react
+concern: testing
+rules:
+  - id: react.testing.1
+    statement: "Specs and stories render through one harness; the memory router is banned outside it, stories use the shared providers with a route parameter instead of their own router, and the harness registers the router's types."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: The harness builds the app with its providers and router. A test that builds a private router or imports the memory router outside the harness fails. Registration of the router types in the harness keeps typed links working in tests.
+      pros:
+        - A private router in a test hides provider and routing bugs that the real app has.
+    sources:
+      - ref: testing-library-docs
+        where: guiding principles
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.testing.2
+    statement: "Tests do not stub the network by hand; the sanctioned mock is a request-handler mock fed by server samples."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "A lint bans `vi.mock('fetch')` and `vi.stubGlobal('fetch')` in tests (the double-quoted forms `vi.stubGlobal(\"fetch\")` and `vi.mock(\"...fetch\")` too), and the manifest bans nock and mockttp there. The request-handler mock (msw) is the sanctioned form, with handlers fed by sample responses taken from the server."
+      pros:
+        - "A hand stub tests the stub; a sample from the server tests the contract."
+    sources:
+      - ref: msw-docs
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.testing.3
+    statement: "Every exported part of the shared kit renders with no provider and no wrapper, through the component render test, and its words come from the part's own defaults."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "Component render test: `@testing-library/react`. A test renders every exported part from the catalogue with no provider and no wrapper and asserts it does not throw and its words come from the part's own defaults (a strings object with English defaults that the host may override in part). A part that reads a context must give the context a default."
+      pros:
+        - "The donor's design system added a provider and an English defaults object for this at its 0.13.0 release. A part that needs a provider breaks every host that does not mount it."
+    relations:
+      relates:
+        - web.parts.14
+  - id: react.testing.4
+    statement: "Every page has a sibling story file with the stories Default, Loading, Empty, Error, NoPermission and Phone390, plus Allowed, Denied, CheckingAccess and Degraded."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "There is no Allowed, Denied, CheckingAccess or Degraded state to write a story for."
+    reasoning:
+      definition: "The story-tool form of web.testing.8 (an example per page state): the sibling story file sits next to the page file, and the required story names are its exports. Phone390 is the phone-width story."
+      pros:
+        - A page with no example for a state has never been looked at in that state.
+    relations:
+      relates:
+        - web.testing.8
+  - id: react.testing.5
+    statement: "The story tool is the single test runner through its Vitest addon: every story renders and its play function passes in one pass, and every affected story also passes the config proof."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "Runner addon: `addon-vitest`. The config proof is the canary brand and pseudo-locale (en-XA) rule. The platform's single runner is Vitest; this is the React stack's story-tool binding of web.testing.11."
+      pros:
+        - Two runners split the evidence and double the maintenance.
+    relations:
+      relates:
+        - web.testing.11

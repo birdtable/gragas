@@ -1,0 +1,58 @@
+format: 3
+part: daemon
+concern: health
+rules:
+  - id: daemon.health.1
+    statement: "A daemon serves one health document (ready flag, program version, commit, start time) of the same shape from one shared handler; liveness never calls a dependency and readiness does."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "A deployed program alerts a person on failing health. Staged rollout is not required. The version fields repeat the CLI's --version (cli.exit.3)."
+      pros:
+        - "Practice and own measure; the shared handler is what makes the shape the same."
+    relations:
+      relates:
+        - cli.exit.3
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+  - id: daemon.health.2
+    statement: "A daemon signals readiness by its service manager's own mechanism, only after it can serve; a daemon that can hang also sends the watchdog ping while it runs, or its notes say why not; and a test proves the signal follows the listen."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "Under systemd a resident daemon is Type=notify and sends READY=1 after it listens; a socket-activated daemon (daemon.lifecycle.5) takes its listener from the manager, which holds the socket before the daemon starts, and still sends READY=1 once it can answer the request that woke it. Under launchd, which gives no readiness call, the daemon writes a version file in its run folder once it listens, and the install check reads that file and asks the socket for an answer. A daemon that leaves on idle stops sending the watchdog ping only as it exits. A manager added later names its mechanism in the test table; the rule does not change."
+      pros:
+        - "Practice (systemd man page). Without a signal the manager or the install check treats a daemon that has not yet listened as up, and starts dependants or keeps a broken upgrade."
+    relations:
+      relates:
+        - daemon.lifecycle.5
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.health.3
+    statement: "An observation of another machine or device changes nothing on it: the kinds of probe are a closed list in one function, a test refuses a planted new kind, and a probe that disturbs its target is dropped."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "A probe that wakes a disk, wakes a sleeping machine, opens a session (an SSH or TCP connection to a service port) or asks a power state that spins a device up is a disturbance. The closed list is the only place a probe kind is added, and adding one is a reviewed change with its reason written beside it."
+      pros:
+        - A monitor that wakes what it watches is lying about idle and breaks idle by default (daemon.lifecycle.5) silently.
+    relations:
+      relates:
+        - daemon.lifecycle.5
+    sources:
+      - ref: decision-65-daemon
+        backs: rule

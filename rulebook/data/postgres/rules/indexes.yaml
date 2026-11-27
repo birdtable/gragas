@@ -1,0 +1,22 @@
+format: 3
+part: postgres
+concern: indexes
+rules:
+  - id: postgres.indexes.1
+    statement: "A migration that adds an index names the query it serves and the write path that pays for it, and unused indexes are listed from the engine's own statistics at release."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The measure is a count of indexes with no scans, from the statistics views, with no limit set. A two-column index is useless to a query on only its second column, and an index on every column makes every write maintain all of them. A failed concurrent build leaves an invalid index that still costs writes."
+      pros:
+        - "A small development database hides an index that no query uses; agents add an index per query just in case (inference)."
+    sources:
+      - ref: winand-sql-performance-explained
+        backs: rule
+      - ref: magda-just-use-postgres
+        where: ch. 4 indexes
+        backs: rule
+      - ref: p-03-data
+        where: section 9
+        backs: rule

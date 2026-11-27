@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-preset.schema.json",
+  "title": "Preset by name and digest (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tool",
+    "name",
+    "release",
+    "digest"
+  ],
+  "properties": {
+    "tool": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "name": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0"
+    },
+    "release": {
+      "$ref": "common.schema.json#/$defs/semver",
+      "x-introduced": "1.0"
+    },
+    "digest": {
+      "$ref": "common.schema.json#/$defs/digest",
+      "x-introduced": "1.0"
+    },
+    "entries": {
+      "type": "integer",
+      "minimum": 0,
+      "x-introduced": "1.0",
+      "default": 0
+    },
+    "extends": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rulebook",
+          "version"
+        ],
+        "properties": {
+          "rulebook": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "version": {
+            "$ref": "common.schema.json#/$defs/semver",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "licence": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    }
+  }
+}

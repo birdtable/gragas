@@ -1,0 +1,348 @@
+part: gates
+concern: exemptions
+order: 7
+title: Suppressions and exemptions
+summary: >-
+  A limit is an exemption with an exit. Every lint disable names its rule and gives a reason, unused ones are
+  refused, suppressions are counted and only fall, and every exemption, disable and baseline uses one record
+  format with a reason that names an artifact, an owner and an expiry.
+rules:
+  - id: gates.exemptions.1
+    slug: directive-names-rule-and-reason
+    since: 0.1.0
+    rule: >-
+      Every lint disable directive names the rule it disables and gives a reason; a blanket disable is an
+      error.
+    detail: >-
+      For Go, the `//nolint` directive names its linter (`nolintlint` with require-specific and
+      require-explanation) and gives an explanation; a bare directive is refused. For TypeScript, a disable
+      directive must carry a description and name the rule it disables (the eslint-comments rules). The reason
+      follows the one record format of gates.exemptions.4. nolintlint cannot check an expiry or an owner; that
+      is the record check.
+    level: word
+    why: >-
+      2,435 live nolint lines in Go with no exit record; the shared nolintlint is enabled nowhere (V-2, V-5).
+      One repo has 662 suppression lines, 318 outside tests. A reference trial counted 548 and 624 nolintlint
+      findings in two repos, mostly test files.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-4
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: nolintlint
+        tier: "1"
+        fix: auto
+        note: >-
+          golangci-lint nolintlint with `allow-unused: false`, `require-explanation: true`, `require-specific:
+          true`. Plant: A nolint with no linter is reported ("should mention specific linter"); a
+          nolint:errcheck with no reason is reported ("should provide explanation"). Control: A nolint naming
+          the linter with a reason passes (control not run).
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint eslint-comments rules (require-description, no-unlimited-disable) in the shared preset.
+          Plant: A blanket disable comment and a disable with no description each fail. Control: A disable
+          naming the rule with a description passes.
+    relates:
+      - id: gates.exemptions.4
+        how: see
+    open:
+      - >-
+        Debt: adopt with a ratchet, since the first run reports hundreds of findings, mostly in tests.
+      - >-
+        The TypeScript rule names are from the preset design; their plant has not been run.
+    note: >-
+      Merges the Go nolint rule, the TypeScript description rule, the TypeScript no-blanket rule and the plain
+      "every lint disable carries a reason".
+  - id: gates.exemptions.2
+    slug: unused-directive-error
+    since: 0.1.0
+    rule: >-
+      An unused lint disable directive is reported as an error, and a fixed finding makes the run fail until
+      its suppression is pruned.
+    detail: >-
+      For Go, nolintlint refuses an unused directive. For TypeScript the linter setting reports unused disable
+      directives as errors, and bulk suppressions fail on an unused entry (the flag that passes on unpruned
+      suppressions is never used in a gate).
+    level: word
+    why: >-
+      A directive that no longer suppresses anything is dead debt and hides the next real violation at the
+      same line.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    examples:
+      bad:
+        lang: go
+        code: |
+          x := f() //nolint:gosec // one more directive than at the merge base
+      good:
+        lang: go
+        code: |
+          x := f() // the finding is fixed, so no directive is added
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: nolintlint
+        tier: "1"
+        fix: auto
+        note: >-
+          nolintlint with `allow-unused: false`. Plant: An unused nolint directive is reported. Control: A
+          used directive passes.
+      - binding: ts
+        class: preset-config
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint `reportUnusedDisableDirectives: error` and bulk suppression failing on an unused entry.
+          Plant: A disable comment over a line with no finding fails. Control: A used disable passes.
+      - binding: any
+        class: preset-rule
+        tool: gragas
+        key: directive
+        tier: "3"
+        fix: never
+        note: >-
+          The directive key of the gragas preset, which gragas check computes: a disable directive is counted,
+          and one more than at the merge base is a finding. Plant: a new nolint line is a finding. Control:
+          the same count passes (internal/core/audit/repo_test.go)
+  - id: gates.exemptions.3
+    slug: block-disable-reenabled
+    since: 0.1.0
+    rule: A block-level lint disable is re-enabled in the same file.
+    detail: >-
+      Applies to TypeScript, where a block disable opens a range. A Go nolint scopes to one line or
+      declaration, so there is no open block to close. Suppression comments are counted and only fall; an open
+      block is the same debt.
+    level: file
+    why: An open block silently disables the rule for the rest of the file.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint eslint-comments `disable-enable-pair` in the shared preset. Plant: A block disable with no
+          matching enable fails. Control: A disable and enable pair passes.
+    open:
+      - "Go answer: not applicable, no open block exists, so there is no Go check."
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: gates.exemptions.4
+    slug: one-exit-record
+    since: 0.1.0
+    rule: >-
+      Every exception has a recorded exit in one format, across `//nolint` disables, exemptions, allow-file
+      entries and baselines: a reason that names an artifact, an owner and an expiry, and the gate fails on an
+      expired entry.
+    detail: >-
+      The reason names an artifact (a ticket, a decision or a measurement). One parser reads all three kinds
+      of list and fails on empty fields, a past date, a missing owner, or a reason naming a ticket that does
+      not resolve; it prints the count of renewals. Every exemption and suppression entry (feature-flags,
+      connector gates, lint suppressions, every exemptions file and baseline) carries a ticket and an expiry.
+      Vulnerability ignores are entries of the same lists, with a ticket and an expiry. The expiry horizon is capped by data, and that cap is a guess; an expiry makes a gate fail with no
+      code change, so the notice window is designed.
+    level: process
+    why: >-
+      Nolint lines, baselines and allow files have reasons but mostly no dates (none have owners). The ten
+      other rows lean on this one format (counted exemptions, debt registry, rule-pack exemptions and others).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ford-bea
+        where: chapter 4
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 7.2
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. An exceptions check: one record format (path or rule, reason naming an artifact,
+          owner, expiry) in JSON validated by a schema; parses lint comments, allow files and baselines; fails
+          a missing owner, an expired entry or an unresolvable artifact id. Plant: An entry with a past expiry
+          fails; an entry whose reason names a nonexistent ticket fails; a vulnerability ignore with a past
+          date exits 1 (the same with a future date exits 0). Control: A current entry with a resolving reason
+          and an owner passes.
+    relates:
+      - id: gates.ratchets.4
+        how: see
+    open:
+      - >-
+        Weakest build among the Go rows: if not wanted, the reason rule covers it and this row falls to best
+        practice.
+      - The Go side needs the same parser; one home in the shared package.
+      - A renewals count is shown but no renewal limit is decided.
+    note: >-
+      Merges the Go exit-record half, the web record format, the ticket-and-expiry rule and the
+      ticket-and-expiry half of the old gate rule. The baseline-owner half is gates.ratchets.4.
+  - id: gates.exemptions.5
+    slug: suppressions-counted-only-fall
+    since: 0.1.0
+    rule: >-
+      Suppressions are counted, separately inside and outside test files, and each count only falls; skipped
+      tests count too.
+    detail: >-
+      The shared ratchet counts nolint and lint-ignore lines per repo (and `eslint-disable` comments,
+      type-ignore directives and skipped tests for TypeScript), split test and non-test files by filename,
+      with a baseline file per class that only falls. No new escape hatch: no new suppression, no skipped hook
+      (gates.hooks.5), no skipped test.
+    level: program
+    why: >-
+      There were 1,362 suppression lines outside tests; in one repo 231 of 548 unused findings were outside
+      test files (V-8). The built baseline split exists but no repo gate uses it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. Shared ratchet counting `//nolint` and `//lint:ignore` lines per repo, split by
+          test and non-test filename, with baseline files per class. Plant: Add a nolint:gosec in a non-test
+          file; the count rises and fails. Control: Removing one lowers the count.
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The same ratchet over disable comments, ts-ignore directives and skipped tests.
+          Plant: A new disable comment fails the count. Control: Removing one passes.
+    relates:
+      - id: gates.hooks.5
+        how: see
+    open:
+      - Built baseline split exists in the baseline tool; no repo gate yet.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+    note: >-
+      Merges the Go count rule with the suppression half of the no-escape-hatch rule; the bypass-flag half is
+      gates.hooks.5.
+  - id: gates.exemptions.6
+    slug: exemption-counted-shrink
+    since: 0.1.0
+    rule: >-
+      An exemption names a path and a reason, is counted so it can only shrink, and an unused one is a
+      finding.
+    detail: >-
+      The exemption list is held as records (gates.exemptions.4) counted in the shrink-only baseline; an
+      exemption that matches nothing is a finding; a new exemption raises the count and is refused. Narrowing
+      where a rule applies also takes a gate-change record (gates.protection.1).
+    level: file
+    why: >-
+      An exemption nobody counts does not shrink. A reference team's `showsRecordId` became a counted list
+      only after a ticket (V-64).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. Exemption list as exception records counted in the shrink-only baseline; unused
+          exemption reported (lift of an existing mechanism with its self-test). Plant: An unused exemption is
+          reported; a new exemption raises the count and is refused. Control: A used, counted exemption
+          passes.
+    relates:
+      - id: gates.exemptions.4
+        how: see
+      - id: gates.protection.1
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+  - id: gates.exemptions.7
+    slug: extend-rather-than-exempt
+    since: 0.1.0
+    rule: >-
+      Extend rather than exempt: an exemption is time-boxed with a ticket and a zero-by date, and a rule
+      exempted repeatedly for the same kind of reason is reviewed.
+    detail: >-
+      When the same rule is exempted three times (a set number) for the same kind of reason, a change request
+      on the rule is due: either the rule or the structure is wrong.
+    level: process
+    why: >-
+      Repeated exemptions mean the rule or the structure is wrong; an exemption count that nobody reads hides
+      it.
+    kind: instruction
+    strength: Review
+    status: proposed
+    review_question: >-
+      Has this rule been exempted several times for the same reason, and is the rule or the structure wrong?
+    open:
+      - The threshold of three is a guess and is data.
+      - No row on the Go side counts exemptions per rule.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: gates.exemptions.8
+    slug: switched-off-rule-has-measured-reason
+    since: 0.1.0
+    rule: >-
+      A rule that is switched off in a shared config carries its measured reason beside it, and a pack states
+      for each row the reason it narrows a base row.
+    detail: >-
+      For example the markdown table-alignment rule switched off for producing most of the findings on one
+      service carries that measurement next to the setting. A check is measured on a real repo before it is
+      required.
+    level: file
+    why: An unexplained off switch is indistinguishable from an accident.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. A config check that every `off` setting in a shared lint config has an adjacent
+          comment naming the measured reason. Plant: A rule turned off with no comment fails. Control: A rule
+          turned off with its measured reason passes.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: gates.exemptions.9
+    slug: parked-item-reentry-trigger
+    since: 0.1.0
+    rule: >-
+      Every banned or parked item has a re-entry trigger, a recheck date and an owner, and a check fails when
+      a recheck date passes.
+    detail: >-
+      A watch-list of parked or held items, each with a trigger, a recheck date, an owner and the card it
+      reopens; a size trigger gets a measured signal. The ban covers the family of the banned library. A
+      concern not needed yet has its owner named in advance.
+    level: process
+    why: A ban with no way back is a permanent decision made by default.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. A date check over the watch-list file failing when a recheck date has passed.
+          Plant: A watch-list entry whose recheck date is yesterday fails. Control: An entry with a future
+          date passes.
+    open:
+      - >-
+        The Go side holds no recheck date or trigger list for a banned module; only a named owner is held.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

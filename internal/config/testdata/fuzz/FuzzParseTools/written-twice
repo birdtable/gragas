@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("version: 1\ntools:\n  eslint@9.12.0: /opt/a\n  eslint@9.12.0: /opt/b\n")

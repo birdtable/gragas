@@ -1,0 +1,8 @@
+# The settings help table's rows that differ by system: name, default, holds and refused, tab apart.
+# One row a line; the text is kept byte for byte, so a backslash is a backslash.
+XDG_CONFIG_HOME	$HOME/.config	the config folder's parent	never; a relative path is ignored
+XDG_STATE_HOME	$HOME/.local/state	the state folder's parent: the lock and the run log	never; a relative path is ignored
+XDG_CACHE_HOME	$HOME/.cache	the cache folder's parent	never; a relative path is ignored
+HOME	unset: not ready	the home folder, which the folders are under when no XDG variable says (Unix and macOS)	unset, or a path that is not absolute and clean, or holds a control character: not ready
+USERPROFILE	unset: not ready	the home folder on Windows, which the folders are under when LOCALAPPDATA is unset	unset, or a path that is not absolute and clean, or holds a control character: not ready
+LOCALAPPDATA	%USERPROFILE%\AppData\Local	on Windows, the folders' parent: gragas\ in it, with State and Cache under that	never; a path that is not absolute is ignored

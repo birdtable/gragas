@@ -1,0 +1,135 @@
+format: 3
+part: cli
+concern: errors
+rules:
+  - id: cli.errors.1
+    statement: "An error for a person names the next step, an error in JSON is structured, a mistyped command prints nothing on stdout, an error shown to a person carries a run or request id they can quote, and every warning, as well as every error, names where to read more or what to type."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    exemptions:
+      - kinds:
+          - library
+        reason: It prints no errors of its own.
+    reasoning:
+      definition: "The matrix runs a failing command twice with and without --json and asserts: stderr holds a next-step line (a regex for run or try followed by a command the registry knows); the JSON error is an object with a code and a next field; stdout is empty for a mistyped command; the run id differs between the two runs while a golden with the id masked is equal. Warnings (doctor findings included) are built by one constructor that takes the pointer as a required argument; a test reads the code for warnings built any other way and fails, and every pointer resolves (cli.commands.8). Whether the next step is useful is review; the check proves presence and form only."
+      pros:
+        - "Own measure; one program prints its version line on stdout after a typo. A warning with no pointer leaves the person where an error would have; marginal assertion on the matrix helper."
+    relations:
+      relates:
+        - cli.commands.8
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 21
+        backs: rule
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.errors.2
+    statement: "A refusal is one value, a word from a closed list and a hint as a line to paste, built by a constructor that requires both, and the CLI, the API body and the audit line all print from that value unchanged."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "Go: the refusal constructor takes the word and the hint as required parameters, so omission is a compile error; the word is a typed constant from one list, and a new refusal is a word added to the list with a test, never a new string. A golden per refusal asserts the hint is pasteable; forbidigo bans building the refusal struct literal outside the module. A test drives each word through the CLI, an API route and the audit writer and compares the word and hint in all three. TypeScript: the error table entries have a required word and next field in their type."
+      pros:
+        - "Held in Go. One value for one refusal makes a new surface (MCP, HTTP, a page) print the right thing with no new code."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.errors.3
+    statement: "Go words reach a person only through the shared module and its refusal constructors; nothing writes to the terminal or decides how to paint except the module."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "forbidigo on the print family, writes to stdout and stderr, and the raw write calls outside the shared terminal module (path exclusion), plus reads of NO_COLOR, PAGER and TERM through the environment calls outside the module and the program's config package (an AST helper checks the names that forbidigo cannot see in arguments), plus an AST test for string literals that look like sentences passed to writers."
+      pros:
+        - "Forbidigo matches identifiers, not argument text; its licence shows as unasserted on GitHub, and golangci-lint bundles it."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: cli.errors.4
+    statement: "Text the program did not write (agent output, file names, peer data) is safe to show: terminal output of such text strips control sequences, and a log line strips CR and LF from data."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It prints nothing.
+    reasoning:
+      pros:
+        - "Practice. A sanitiser in the shared module with a test; the structured log handler covers logs; a raw print is cli.errors.3's to catch."
+    relations:
+      relates:
+        - cli.errors.3
+        - cli.environment.1
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.errors.5
+    statement: "A command never throws past its executor: every outcome is a result the renderer prints, a failure the caller branches on is a typed result, and an exception or panic means a bug."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no executor.
+      - kinds:
+          - single-client
+        reason: "A program with one client has no second path to keep equal; the go.errors rules hold it."
+    reasoning:
+      definition: "Binds a program with more than one client (CLI and MCP, HTTP or a worker) where every write runs through one executor. The executor is driven with a malformed input for every registered command and must answer with a result (the refused or failed ending and its fields), never an uncaught exception or panic. A panic or exception that reaches the executor is caught once, reported as a bug with the run id, and ends with the failed code."
+      pros:
+        - "Typed results through one place are what make a CLI and an API print the same refusal; an exception crossing the executor is an outcome no client renders."
+    relations:
+      relates:
+        - arch.ports.14
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.errors.6
+    statement: "A refusal carries what was observed as the person named it, the closed set of valid choices (never the caller's own input), the rule or state in the person's terms, and the next command as a line to paste; it never holds a secret or blame, and the word invalid is refused in printed text."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It prints no refusals.
+    reasoning:
+      definition: "The refusal type has observed, valid, rule and hint fields; valid is filled from the set the command accepts, never echoed from input. A check over printed strings and goldens fails on the word invalid (in any case) in text a person reads; the closed word list may keep it as an internal code that is not printed."
+      pros:
+        - "Observed plus valid plus the next line is the shape that lets an agent fix its own mistake without a second round trip; the ban on invalid is a one-word lint that forces the message to say what is wrong."
+    sources:
+      - ref: decision-65-cli
+        backs: rule

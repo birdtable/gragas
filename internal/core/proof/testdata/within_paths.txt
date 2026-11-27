@@ -1,0 +1,39 @@
+# The cases of within, the folder's containment of a finding's path.
+# One case a line, four fields split by a tab: the claim, the
+# folder, the finding's path, and the path it is read as inside the folder, or
+# "refused". \\ is a backslash. The folders are written in two systems'
+# spellings, so that every system tests both.
+#
+# A finding inside the folder is read relative to it.
+a drive-letter folder holds a finding at its own prefix	C:/scratch/2	C:/scratch/2/src/a.go	src/a.go
+a rooted folder holds a finding at its own prefix	/scratch/2	/scratch/2/src/a.go	src/a.go
+a relative finding is inside a drive-letter folder	C:/scratch/2	src/a.go	src/a.go
+a relative finding is inside a rooted folder	/scratch/2	src/a.go	src/a.go
+a leading dot is dropped	C:/scratch/2	./src/a.go	src/a.go
+a leading dot after the prefix is dropped	C:/scratch/2	C:/scratch/2/./src/a.go	src/a.go
+#
+# A finding outside the folder, in any spelling, is refused.
+a relative climb is refused	C:/scratch/2	../x.go	refused
+a climb after a drive-letter prefix is refused	C:/scratch/2	C:/scratch/2/../x.go	refused
+a climb after a rooted prefix is refused	/scratch/2	/scratch/2/../x.go	refused
+a climb out from inside is refused	C:/scratch/2	C:/scratch/2/src/../../x.go	refused
+an unclean path inside is refused	C:/scratch/2	C:/scratch/2/src//a.go	refused
+a rooted path elsewhere is refused by a drive-letter folder	C:/scratch/2	/etc/passwd	refused
+a rooted path elsewhere is refused by a rooted folder	/scratch/2	/etc/passwd	refused
+another folder on the same drive is refused	C:/scratch/2	C:/other/x.go	refused
+the same folder on another drive is refused	C:/scratch/2	D:/scratch/2/x.go	refused
+a drive-letter path is refused by a rooted folder	/scratch/2	C:/scratch/2/x.go	refused
+a lower-case drive letter is not folded and is refused	C:/scratch/2	c:/scratch/2/x.go	refused
+a drive-relative path is refused	C:/scratch/2	C:x.go	refused
+a drive letter after the prefix is refused	C:/scratch/2	C:/scratch/2/C:/x.go	refused
+a slash UNC path is refused	C:/scratch/2	//server/share/x.go	refused
+a backslash UNC path is refused	C:/scratch/2	\\\\server\\share\\x.go	refused
+a backslash path in the folder is refused	C:/scratch/2	C:\\scratch\\2\\x.go	refused
+a backslash after the prefix is refused	C:/scratch/2	C:/scratch/2/src\\x.go	refused
+a prefix with no separator after it is refused	C:/scratch/2	C:/scratch/22/x.go	refused
+a rooted prefix with no separator after it is refused	/scratch/2	/scratch/22/x.go	refused
+the drive-letter folder itself is refused	C:/scratch/2	C:/scratch/2	refused
+the rooted folder itself is refused	/scratch/2	/scratch/2	refused
+the folder with a trailing slash is refused	C:/scratch/2	C:/scratch/2/	refused
+an empty path is refused	C:/scratch/2		refused
+an empty folder holds no rooted path	(empty)	/x.go	refused

@@ -1,0 +1,55 @@
+format: 3
+part: docs
+concern: links
+rules:
+  - id: docs.links.1
+    statement: "Docs have no broken file link or anchor, checked offline in the gate, and external links are checked by a separate command that runs as a non-blocking step of the release recipe, never as a gate step and never on a schedule."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Relative links and heading anchors are checked offline, with fragments included (without --include-fragments the anchor breaks are not seen). External links are checked by their own command over the network, with a cache; the release recipe runs it and prints its result in the release record, and a dead link opens a finding but does not stop the release. The gate never reaches the network for links. A docs-site build that fails on broken links is the same rule when a site exists; no docs site is run today. Docs and agent instruction files are checked alike. Docs also have no markdown error and pass spelling."
+      pros:
+        - "One broken file link in one repo and 36 fragment failures in one file of another, on 5,800 links of which 4,200 are remote. A site that is down for an hour is not the repo's fault, so it must not stop a push, but a dead source must still be seen before a release goes out."
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+  - id: docs.links.2
+    statement: "No comment, doc or code cites a rule, decision or ticket id that does not exist."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A shared citation resolver reads comments and docs and resolves each id pattern against the rule list, the decision files and the ticket index. Citations are never required by count."
+      pros:
+        - "Seven repos' agent files all held dangling references; of 258 backticked references in instruction files about 3 were dangling, and 4 of 26 source contradictions were knowledge-layer pointers."
+    sources:
+      - ref: ousterhout-aposd
+        where: ch. 16
+        backs: rule
+  - id: docs.links.3
+    statement: "A backticked path in a comment or doc resolves or the comment says it is a dead path and why, a dependency version named in prose equals the lockfile's, and a sentence claiming CI or a workflow runs a command is checked against the workflow files."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The resolver reads comments and docs. A version is a package name followed by a version in prose; it is compared with the lockfile (go.sum, the package lock) and fails on a mismatch. A CI claim is a sentence that names a workflow, CI or a hosted runner and a command; the command must appear in a workflow file with the trigger the sentence names, so a doc that says CI runs the gate on push fails when no workflow does."
+      pros:
+        - "A comment that points at a path that is gone sends a reader and an agent to nothing; a version or a CI claim in prose is a second copy of a fact whose home is the lockfile or the workflow, and it goes stale first."
+    sources:
+      - ref: ousterhout-aposd
+        where: ch. 16
+        backs: rule
+      - ref: decision-65-docs
+        backs: rule
+  - id: docs.links.4
+    statement: "No comment restates a fact that has a home elsewhere, and no code is commented out."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - A restated fact goes stale in one of its two places.
+    sources:
+      - ref: docs-reasons-stated
+        backs: rule

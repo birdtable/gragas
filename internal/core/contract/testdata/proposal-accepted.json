@@ -1,0 +1,25 @@
+{
+  "contract": "1.3",
+  "proposal": {
+    "change": {
+      "anatomy": "A wrapped error names the step that failed, so its message says where.",
+      "binding": "bindings/std-errors-1.yaml",
+      "pair": "pairs/go.errors.1/1",
+      "sources": [
+        "effective-go",
+        "outage-note"
+      ]
+    },
+    "evidence": [
+      {
+        "kind": "incident-example",
+        "text": "An outage's log held \"open failed\" and no step, so its cause took an hour to find."
+      }
+    ],
+    "link": "https://example.com/fixture-parent/pull/1",
+    "opened": "2026-10-12",
+    "slug": "tighten-accepted",
+    "state": "accepted",
+    "target": "fixture-parent"
+  }
+}

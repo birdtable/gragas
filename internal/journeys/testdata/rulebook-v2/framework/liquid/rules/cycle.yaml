@@ -1,0 +1,209 @@
+part: liquid
+concern: cycle
+order: 1
+title: A Liquid theme in the development cycle
+summary: >-
+  What a theme written in Liquid adds to the moments of the development cycle: every JSON file and schema
+  block parses and the locales match at commit; every reference resolves, the tags balance, the theme linter
+  runs and the layout files are scanned for secrets at push; and a release pushes to an unpublished theme and
+  renders three pages before anything reaches the live one. These lines add members to the core moments and
+  never a moment of their own. The theme linter was not measured on the host that studied the stack.
+rules:
+  - id: liquid.cycle.1
+    slug: json-and-schema-blocks-parse-at-commit
+    since: 0.1.0
+    rule: >-
+      At commit every JSON file of the theme parses, comments allowed where the platform allows them, and every
+      schema block in a section parses.
+    detail: >-
+      A theme's settings, templates and locales are JSON, and each section carries a schema block the platform
+      reads. A file that does not parse is a page that does not render, found at publish otherwise. The check
+      read 395 files in 0.06 seconds on the measuring host. It reads and never writes (gates.command.28).
+    level: program
+    why: >-
+      A broken JSON file or schema block reaches the live theme if nothing parses it first.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: liquid-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this commit tier parse every JSON file and every schema block of the theme?
+    relates:
+      - id: gates.command.28
+        how: see
+      - id: gates.command.17
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the parse member at commit with its file count in the report. No
+        tool key is bound yet; the stack has no tool record in this rulebook.
+  - id: liquid.cycle.2
+    slug: locale-parity-with-a-shrinking-baseline
+    since: 0.1.0
+    rule: >-
+      Every locale file has every key of the default locale; a new gap fails, and the gaps that exist today sit
+      in a reviewed baseline with an owner that only shrinks.
+    detail: >-
+      gates.ratchets.1 holds that debt is a shrink-only list frozen at adoption. The parity check compares each
+      locale's keys with the default's, and the baseline holds the missing keys per file at adoption, so the
+      member is green on the day it lands and red on the first new gap. The baseline's length prints in the
+      report.
+    level: program
+    why: >-
+      Eleven locale files of one fleet's theme miss 3 to 9 of 315 keys today; a check with no baseline would
+      stay red and be ignored.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: liquid-reasons-stated
+        backs: rule
+    review_question: >-
+      Does every locale of this theme carry every key of the default, and how long is the parity baseline
+      today against last release?
+    relates:
+      - id: gates.ratchets.1
+        how: see
+      - id: gates.ratchets.4
+        how: see
+    open:
+      - >-
+        Planned check: the parity member reads the baseline and fails on a key missing that the baseline does
+        not list. No tool key is bound yet.
+  - id: liquid.cycle.3
+    slug: references-resolve-and-tags-balance
+    since: 0.1.0
+    rule: >-
+      At push every render, include, section and asset reference resolves to a file, and every block tag is
+      closed.
+    detail: >-
+      A reference to a snippet that does not exist and an unclosed conditional each render as an error on the
+      live page. The check walks the templates, resolves each reference against the theme's folders and
+      counts the tag pairs; a prototype did both in 0.06 seconds. It is a push member because it reads the
+      whole theme, and it reads and never writes.
+    level: program
+    why: >-
+      A missing snippet and an unclosed conditional were both found by a prototype of this check in one fleet's
+      theme, and nothing else would have found them before the page rendered.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: liquid-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this push tier resolve every reference of the theme to a file and check that every block tag is
+      closed?
+    relates:
+      - id: docs.links.1
+        how: see
+      - id: gates.command.17
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the reference member at push with its reference count in the
+        report. No tool key is bound yet.
+  - id: liquid.cycle.4
+    slug: the-theme-linter-is-a-member
+    since: 0.1.0
+    rule: >-
+      The platform's theme linter runs at push with the repository's own config, as a member beside the
+      reference check.
+    detail: >-
+      The linter knows the platform's objects, filters and deprecations, which the reference check does not;
+      the reference check runs in milliseconds, which the linter may not. Both are members, so a failure
+      names one. The linter's cost was not measured on the host that studied the stack, so its moment is
+      push until a measurement says otherwise (gates.command.3).
+    level: program
+    why: >-
+      A theme with no linter in its gate ships the deprecations and the misused filters the platform's own tool
+      would have named.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: liquid-reasons-stated
+        backs: rule
+    review_question: >-
+      Is the theme linter a member of this push tier with the repository's config, and what did it cost in the
+      last run?
+    relates:
+      - id: liquid.cycle.3
+        how: see
+      - id: gates.command.3
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the linter member with its cost once measured. No tool key is
+        bound yet.
+  - id: liquid.cycle.5
+    slug: secrets-scan-of-the-layout-files
+    since: 0.1.0
+    rule: >-
+      At push the layout files are scanned for secrets, with an allowlist that holds a third-party widget's
+      public embed id and nothing that is a credential.
+    detail: >-
+      supply.secrets.1 holds the secrets scan; a theme's layout files are where a script tag with a key would
+      sit. A public embed id of a widget looks like a secret to a scanner and is not one; it goes on the
+      allowlist with its owner (gates.ratchets.1), and the list prints its length.
+    level: program
+    why: >-
+      A trial secrets scan found hits that were not credentials in three repositories of one fleet, and a
+      theme's layout carries exactly the kind of public id that a scanner flags.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gitleaks-readme
+        where: .gitleaksignore
+        says: >-
+          You can ignore specific findings by creating a .gitleaksignore file at the root of your repo.
+        backs: check
+    review_question: >-
+      Does this push tier scan the layout files for secrets, and does every allowlist entry name a public id
+      with an owner?
+    relates:
+      - id: supply.secrets.1
+        how: see
+      - id: gates.ratchets.1
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the scan member and the allowlist is a registered baseline. No
+        tool key is bound yet.
+  - id: liquid.cycle.6
+    slug: an-unpublished-theme-first
+    since: 0.1.0
+    rule: >-
+      A release pushes the theme to an unpublished theme and renders the home, a product and a cart page as a
+      preview before anything is published; a change is never deployed straight to the live theme, and the
+      gate holds that rule, not a script alone.
+    detail: >-
+      The store's command line pushes to a theme by id. The release member pushes to an unpublished one, then
+      a render member fetches the three pages from the preview and fails on an error or an empty page. The
+      live theme changes only by publishing the previewed one. A repository script that does this is the
+      convention; the release tier is the rule, so a push that names the live theme fails the member. The
+      cost was not measured on the host that studied the stack.
+    level: release
+    why: >-
+      A theme deployed straight to the live store is live before anyone has seen a page of it.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: liquid-reasons-stated
+        backs: rule
+    review_question: >-
+      Which theme id does this release push to, which pages does the preview render, and can any member reach
+      the live theme?
+    relates:
+      - id: supply.release.1
+        how: see
+      - id: gates.command.31
+        how: see
+    open:
+      - >-
+        Planned check: the release member's command names a theme id that is not the live one, held by a test
+        over the members file. No tool key is bound yet.

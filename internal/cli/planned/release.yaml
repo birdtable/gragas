@@ -1,0 +1,11 @@
+name: release
+order: 260
+context: R
+ends: plan
+summary: "Cut a release of the rulebook"
+examples:
+  - {line: "gragas release", does: "show the plan"}
+  - {line: "gragas release --apply", does: "carry it out"}
+writes: ["release/", "rulebook.yaml", "history.jsonl"]
+exits: ["done", "declined", "refused", "findings"]
+json: plan

@@ -1,0 +1,234 @@
+$ gragas contract fields rule --json
+--- exit 0
+--- stdout
+{
+  "schema": 1,
+  "entity": "rule",
+  "source": "entity-rule",
+  "contract": "1.3",
+  "fields": [
+    {
+      "name": "aliases",
+      "type": "array",
+      "since": "1.0",
+      "default": "[]"
+    },
+    {
+      "name": "anchor",
+      "type": "textOrEmpty",
+      "since": "1.0",
+      "default": "\"\""
+    },
+    {
+      "name": "bindings",
+      "type": "array",
+      "since": "1.0",
+      "default": "[]"
+    },
+    {
+      "name": "cons",
+      "type": "array",
+      "since": "1.3",
+      "default": "[]"
+    },
+    {
+      "name": "exemptions",
+      "type": "array",
+      "since": "1.0",
+      "default": "[]"
+    },
+    {
+      "name": "exemptions[].kind",
+      "type": "",
+      "since": "1.0",
+      "default": "null"
+    },
+    {
+      "name": "exemptions[].path",
+      "type": "textOrEmpty",
+      "since": "1.0",
+      "default": "\"\""
+    },
+    {
+      "name": "exemptions[].reason",
+      "type": "reason",
+      "since": "1.0",
+      "default": "required"
+    },
+    {
+      "name": "id",
+      "type": "id",
+      "since": "1.0",
+      "default": "required"
+    },
+    {
+      "name": "marks",
+      "type": "array",
+      "since": "1.0",
+      "default": "[]"
+    },
+    {
+      "name": "origin",
+      "type": "origin",
+      "since": "1.0",
+      "default": "required"
+    },
+    {
+      "name": "owner",
+      "type": "textOrEmpty",
+      "since": "1.0",
+      "default": "\"\""
+    },
+    {
+      "name": "pairs",
+      "type": "array",
+      "since": "1.0",
+      "default": "[]"
+    },
+    {
+      "name": "pairs[].bad",
+      "type": "",
+      "since": "1.3",
+      "default": "null"
+    },
+    {
+      "name": "pairs[].good",
+      "type": "",
+      "since": "1.3",
+      "default": "null"
+    },
+    {
+      "name": "pairs[].number",
+      "type": "integer",
+      "since": "1.0",
+      "default": "required"
+    },
+    {
+      "name": "pairs[].target_type",
+      "type": "targetType",
+      "since": "1.0",
+      "default": "required"
+    },
+    {
+      "name": "pros",
+      "type": "array",
+      "since": "1.3",
+      "default": "[]"
+    },
+    {
+      "name": "reasoning",
+      "type": "textOrEmpty",
+      "since": "1.0",
+      "default": "\"\""
+    },
+    {
+      "name": "reasoning_decision",
+      "type": "",
+      "since": "1.2",
+      "default": "null"
+    },
+    {
+      "name": "relations",
+      "type": "array",
+      "since": "1.0",
+      "default": "[]"
+    },
+    {
+      "name": "relations[].kind",
+      "type": "enum",
+      "since": "1.0",
+      "default": "required"
+    },
+    {
+      "name": "relations[].rule",
+      "type": "id",
+      "since": "1.0",
+      "default": "required"
+    },
+    {
+      "name": "replaced_by",
+      "type": "",
+      "since": "1.0",
+      "default": "null"
+    },
+    {
+      "name": "review_by",
+      "type": "",
+      "since": "1.0",
+      "default": "null"
+    },
+    {
+      "name": "scope",
+      "type": "object",
+      "since": "1.0",
+      "default": "{}"
+    },
+    {
+      "name": "scope.kinds",
+      "type": "array",
+      "since": "1.0",
+      "default": "[]"
+    },
+    {
+      "name": "scope.parts",
+      "type": "array",
+      "since": "1.0",
+      "default": "[]"
+    },
+    {
+      "name": "scope.paths",
+      "type": "array",
+      "since": "1.0",
+      "default": "[]"
+    },
+    {
+      "name": "sources",
+      "type": "array",
+      "since": "1.0",
+      "default": "[]"
+    },
+    {
+      "name": "standing",
+      "type": "standing",
+      "since": "1.0",
+      "default": "required"
+    },
+    {
+      "name": "statement",
+      "type": "text",
+      "since": "1.0",
+      "default": "required"
+    },
+    {
+      "name": "status",
+      "type": "status",
+      "since": "1.0",
+      "default": "required"
+    },
+    {
+      "name": "strength",
+      "type": "strength",
+      "since": "1.0",
+      "default": "required"
+    },
+    {
+      "name": "translations",
+      "type": "array",
+      "since": "1.0",
+      "default": "[]"
+    },
+    {
+      "name": "trial_shipped",
+      "type": "array",
+      "since": "1.1",
+      "default": "[]"
+    },
+    {
+      "name": "zero_by",
+      "type": "",
+      "since": "1.0",
+      "default": "null"
+    }
+  ]
+}
+--- stderr

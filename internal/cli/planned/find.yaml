@@ -1,0 +1,10 @@
+name: find
+order: 350
+context: B
+ends: listing
+summary: "Find rules, terms, sources and decisions by a word"
+examples:
+  - {line: "gragas find <word>", does: "list what matches"}
+  - {line: "gragas find <word> --json", does: "as one JSON document"}
+exits: ["done"]
+json: find

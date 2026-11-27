@@ -1,0 +1,9 @@
+$ gragas coverage
+--- exit 4
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  not ready  upstream/golangci-lint.flat.json: the flattened upstream set is
+  version 2 and this engine reads version 1
+    gragas version
+--- stderr

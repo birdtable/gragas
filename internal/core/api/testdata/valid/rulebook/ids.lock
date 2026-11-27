@@ -1,0 +1,9 @@
+# Every rule id ever issued, one per line. gragas gen writes it
+# as this list and the rulebook's ids together; gragas check fails when an id
+# here is no longer in the rulebook. A retired rule keeps its id.
+arch.layers.1
+arch.layers.2
+arch.layers.3
+arch.layers.4
+arch.layers.5
+go.errors.1

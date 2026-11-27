@@ -1,0 +1,16 @@
+$ gragas plugin list --json
+--- exit 0
+--- stdout
+{
+  "rows": [
+    {
+      "name": "lint-a",
+      "version": "1.0.0",
+      "tool": "lint-a",
+      "digest": "<digest>",
+      "approved": true,
+      "note": ""
+    }
+  ]
+}
+--- stderr

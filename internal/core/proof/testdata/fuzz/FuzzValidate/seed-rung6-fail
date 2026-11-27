@@ -1,0 +1,7 @@
+go test fuzz v1
+string("a")
+string("1")
+string("fail")
+int(6)
+string("pair")
+string("")

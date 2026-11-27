@@ -1,0 +1,67 @@
+format: 3
+part: ts
+concern: errors
+rules:
+  - id: ts.errors.1
+    statement: "Page code has no empty block, no empty catch and no swallowed rejection; a catch rethrows, returns a typed result or shows a user-visible state."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "ESLint `no-empty` with `allowEmptyCatch` false as an error, plus a `no-restricted-syntax` for a catch clause whose body is a single `return <literal>` (a catch that returns a default). Tests are excluded by `files`. Typescript-eslint `no-floating-promises` and `only-throw-error` sit beside them in the typed set (ts.lint.1). Biome form: `noEmptyBlockStatements` at error and a GritQL plugin for a catch whose body is one `return` of a literal."
+      pros:
+        - "The reader-facing rule covers what the person sees, and the runtime listener catches errors at run time; nothing covered the source."
+    relations:
+      relates:
+        - ts.lint.1
+    sources:
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.errors.2
+    statement: A rethrown error keeps the original as its cause.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "ESLint `preserve-caught-error` (core in ESLint 10) as an error: a `throw new Error(msg)` inside a catch needs the `cause` option. Biome form: a GritQL plugin for a `throw new Error(...)` inside a catch with no `cause`."
+      pros:
+        - A rethrow without a cause loses the stack that says where it started.
+    sources:
+      - ref: eslint-docs
+        where: preserve-caught-error
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.errors.3
+    statement: No catch clause only rethrows.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A catch whose only statement is `throw err` adds nothing and hides the real handling point; remove it or add context with a cause. Biome form: `noUselessCatch` at error."
+      pros:
+        - It is noise that reads like handling.
+    sources:
+      - ref: eslint-docs
+        where: no-useless-catch
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.errors.4
+    statement: Shipped code has no console output.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "ESLint `no-console` as an error in shipped source; tests and scripts are exempt by `files`. Logging goes through the program's logger. Biome form: `noConsole` at error, with an `overrides` entry that exempts tests and scripts."
+      pros:
+        - Console output in a page is invisible to the log pipeline and leaks internals to the browser.
+    sources:
+      - ref: eslint-docs
+        where: no-console
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule

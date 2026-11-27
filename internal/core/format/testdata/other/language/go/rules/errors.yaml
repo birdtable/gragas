@@ -1,0 +1,12 @@
+format: 3
+part: go
+concern: errors
+rules:
+  - id: go.errors.1
+    statement: Hold to this rule of the fixture parent or import.
+    strength: must
+    status: active
+  - id: go.errors.5
+    statement: Hold to this rule of the fixture parent or import.
+    strength: must
+    status: active

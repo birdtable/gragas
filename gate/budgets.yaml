@@ -1,0 +1,173 @@
+# The budget of each tier (tests.measures.2, gates.command.3; A45). The
+# Taskfile's tiers run under `hatch budget --cpu`, which judges a tier on the
+# CPU time of its own process tree against its `cpu_limit` (seconds). CPU time
+# grows with load, so a cpu_limit holds at the load a push meets, not on a quiet
+# host: a push shares the machine with other work. Move
+# the heaviest member to the next tier, never skip it. `limit` is wall time and only a hang guard: a tier still
+# running at ten times it is killed. A cpu_limit is the worst measured run with
+# a margin of half again, the runs cited above its row. A floor is the measured
+# best; it is unmeasured until a quiet host has measured it.
+#
+# Each limit is a CEILING, not the target. The target of each tier is the
+# row's gd80_target, in the unit of the row; none is met today.
+# Each row's exit says in plain words what reaches them, naming no issue by
+# its number: when it lands, each limit drops to its target. A tier id has one row: hatch refuses two.
+budgets:
+  # CPU, one host, five runs: 25.2, 24.4, 24.5, 21.0 and one at 31.7 under load. 50 is the worst of them with a margin of half again.
+  - id: tier-pre-commit
+    kind: tier
+    scope: "task pre-commit: the check-only members"
+    unit: seconds
+    limit: 20
+    cpu_limit: 50
+    gd80_target: 2
+    exit: "the tiers reach their targets: commit 2 s, push 10 s, release 15 s"
+    floor: unmeasured
+    floor_by: M0b
+  # CPU, one host, seven runs: 79.7, 76.1, 80.2, 104.3 (on a push, load 127), 136.2 (the tree with release-1 merged twice), 216.5 and 150.1 (two pushes of one tree, load 21 and 15). 325 is the worst of them, 216.5, with a margin of half again. CPU is not load-free: one tree took 216.5 on one push and 150.1 on the next.
+  # Re-measured under load, four more runs, each green in every member: 398.1 and 357.2 (load 19.0 and 20.9 at the end, 11 CPUs), 419.5 (load 26.8) and 709.5 (load 19.2). 1065 is the worst of all eleven runs, 709.5, with a margin of half again; it replaces 325, the worst of the first seven.
+  - id: tier-pre-push
+    kind: tier
+    scope: "task pre-push: the commit-level members a push must pass, gate-lists among them"
+    unit: seconds
+    limit: 360
+    cpu_limit: 1065
+    gd80_target: 10
+    exit: "the tiers reach their targets: commit 2 s, push 10 s, release 15 s"
+    floor: unmeasured
+    floor_by: M0b
+  # Provisional: no green run of full has been measured yet (the runs so far ended red, before hatch prints the CPU line). It is set from the three green runs once full passes.
+  - id: tier-full
+    kind: tier
+    scope: "task full: every member the push leaves out, which landing runs"
+    unit: seconds
+    limit: 360
+    cpu_limit: 1500
+    gd80_target: 10
+    exit: "the tiers reach their targets: commit 2 s, push 10 s, release 15 s"
+    floor: unmeasured
+    floor_by: M0b
+  # warm's limit is set from one host's solo landings of one tree, whose times
+  # are in the run record: full's cold time
+  # less its warm time, the most a cold compile of full's tests cost there, and
+  # a margin of a third of that for a slower host and a tree that grows, rounded
+  # up to the next hundred. The times stay in that record (docs.freshness.4).
+  # CPU, one host: 51.4 cold, 3.5 and 3.6 warm. 80 is the cold run with a margin of half again.
+  - id: tier-warm
+    kind: tier
+    scope: "task warm: every test package full runs, compiled and run never (landing and release, before full)"
+    unit: seconds
+    limit: 300
+    cpu_limit: 80
+    gd80_target: 10
+    exit: "the tiers reach their targets: commit 2 s, push 10 s, release 15 s"
+    floor: unmeasured
+    floor_by: M0b
+  # Provisional: no run of release has been measured yet, and a release cannot fail on a guessed number before it has been measured once.
+  - id: tier-release
+    kind: tier
+    scope: "task release: the push and full members and what moved out of them"
+    unit: seconds
+    limit: 1800
+    cpu_limit: 6000
+    gd80_target: 15
+    exit: "the tiers reach their targets: commit 2 s, push 10 s, release 15 s"
+    floor: unmeasured
+    floor_by: the first `task release` run
+  # A member's row: the push's standin, which builds standin.wasm and runs C24's two modules (the endless loop's
+  # run is the host's own time limit, so a floor sits under it). The limit is a CEILING over the figure measured when the
+  # member was added, with room; the member's own command timeouts are the guard for a hang.
+  - id: member-standin
+    kind: member
+    scope: "task standin: the push member that holds standin.wasm to the digest the tree holds and runs C24's two modules against the host's limits"
+    unit: seconds
+    limit: 60
+
+# The standalone page's bytes, per kind of file, measured on the built output
+# (web.speed.4; A47). A limit is a CEILING over today's build with
+# a margin, in bytes; the build test reads these rows and fails a build over
+# one (the plant is a large dependency). Each row has an owner, its ticket and
+# the stage the limit is cut to its target by.
+  - id: page-script
+    kind: bytes
+    scope: "the one classic script of the standalone build (explorer.js)"
+    unit: bytes
+    limit: 680000
+    owner: explorer
+    ticket: "the standalone page is built as files: one script, a CSP, data blocks"
+    zero_by: M8
+  - id: page-style
+    kind: bytes
+    scope: "the one stylesheet of the standalone build (explorer.css)"
+    unit: bytes
+    limit: 27000
+    owner: explorer
+    ticket: "the standalone page is built as files: one script, a CSP, data blocks"
+    zero_by: M8
+  - id: page-fonts
+    kind: bytes
+    scope: "every self-hosted font file of the standalone build, together"
+    unit: bytes
+    limit: 320000
+    owner: explorer
+    ticket: "the standalone page is built as files: one script, a CSP, data blocks"
+    zero_by: M8
+  - id: page-html
+    kind: bytes
+    scope: "index.html of the standalone build, before the engine fills its blocks"
+    unit: bytes
+    limit: 4096
+    owner: explorer
+    ticket: "the standalone page is built as files: one script, a CSP, data blocks"
+    zero_by: M8
+  - id: page-inline-data
+    kind: bytes
+    scope: "the bundle the engine writes into the page, without the proof grid: above this the explorer says so and writes the fetched form"
+    unit: bytes
+    limit: 8388608
+    owner: explorer
+    ticket: "the standalone page is built as files: one script, a CSP, data blocks"
+    zero_by: M8
+
+# The size of the dev tools, in lines.
+# kind: lines counts the non-test Go lines of cmd/gragas-*, the tools of the gate that
+# are not the product, as wc -l counts them, and internal/dev_closed_test.go fails a
+# tree over the limit. The limit is a CEILING set at the count of the day it was made;
+# it only falls: a change that raises it is a reviewed line that names the product
+# reason, and one that removes lines lowers it in the same change. Raised by 5, to
+# 10220, for the browser pin's row for a system with no measured tree. Raised by 14,
+# to 10234, because the tools step ends green on a system whose browsers row says unmeasured (--unmeasured-ok), so no fresh clone
+# of such a system ends its setup red or downloads a browser it may not run. Raised
+# by 25, to 10259, for gragas-crash's records mode, which says each run
+# of a crashed root's journal as the Journal port reads it, so the crash journeys
+# judge a run by the engine's reader and never by the fields of a line; the journeys
+# may import nothing (tests.journeys.2), so the port is reached through this binary.
+# Raised by 11, because cmd/gragas-generate runs the second generator
+# (internal/dev/generate/pluginwire, which has its own row), the 11 lines of its flags and
+# files, so plugin contract 1's Go types are generated and no copy of the schemas' bounds
+# is kept by hand. The ceiling is 10270, the count on the merged tree.
+  - id: dev-tool-lines
+    kind: lines
+    scope: "the non-test Go lines of cmd/gragas-*, every package of the folders but cmd/gragas"
+    unit: lines
+  # raised by 40, from 10270 to 10310: the exemption check reads the active rules from the format 3 rule
+  # files and an unread rulebook is a finding of its own (11, cmd/gragas-dev/gate_exemptions.go), and cmd/gragas-names loads the
+  # format 3 book through LoadBookNamed, since the legacy loader it ran cannot read the live rulebook (29: its own world, the Owned
+  # port, and a run that scanned nothing is not ready)
+  # raised by 34, from 10310 to 10344: the hook drops the caller's switches of the tiers' tools (go-task's TASK_,
+  # golangci-lint's, pnpm's, node's preload, go's cache program and GOENV) before it starts git or task (cmd/gragas-dev/hook.go:
+  # switchPrefixes, whose comment names each route and where its tool reads it, and withoutSwitches)
+  # raised by 22, from 10344 to 10366: gragas-dev landing run starts the landing through the hook's cut, and
+  # begin, check and merge refuse while a switch is set, so a TASK_DRY landing never reaches the merge (cmd/gragas-dev/landing.go)
+  # raised by 104, from 10366 to 10470: the hook and landing run hand git and task an allowlist of the environment,
+  # not the caller's less a named list (cmd/gragas-dev/hook.go: hookKept, the gate's table with a reason for each name;
+  # allowedNames and allowed, from proc.Needed and proc.HomeEnv's names; goPrivate, go's three private-module names read
+  # with the caller's GOENV left out); withoutSwitches, which nothing calls now, went
+  # raised by 23, from 10470 to 10493, at review: GIT_INDEX_FILE leaves hookKept and is handed to
+  # task pre-commit alone, as git names it to that hook alone, so a caller's index reaches no git or member of pre-push or the
+  # landing (cmd/gragas-dev/hook.go: indexOf, preCommit)
+  # raised by 7, from 10493 to 10500: the parse of go env -json is its own function, parseGoPrivate, so a fuzz target
+  # pairs it (cmd/gragas-dev/hook.go)
+    limit: 10500
+    owner: gate
+    ticket: "no shared package or dev tool arrives unnamed, under a line ceiling that only falls"

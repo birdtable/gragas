@@ -1,0 +1,8 @@
+format: 3
+part: web
+concern: forms
+rules:
+  - id: web.forms.1
+    statement: Hold to this rule of the fixture parent or import.
+    strength: must
+    status: active

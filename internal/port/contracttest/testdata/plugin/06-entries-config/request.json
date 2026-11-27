@@ -1,0 +1,1 @@
+{"contract":1,"features":[],"op":"entries","body":{"tool_version":"1.0.0","config":[{"path":"standin.conf","data":{"text":"b warning\n# c\n-d\na error\ne\n"}}],"have":[],"target":"source"}}

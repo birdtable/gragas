@@ -1,0 +1,28 @@
+== against the claimed set
+tools [lint@1.0.0 lint@2.0.0]
+adapters [lint@1.0.0 lint@1.1.0]
+plugins [] kits []
+min engine "0.4.0"
+unknown: plugins and kits: no proof run records their versions yet
+finding: a tested-set version with no proof column: tool lint@3.0.0
+finding: a proof column for a version outside the tested set: adapter lint@1.1.0
+finding: a proof column for a version outside the tested set: tool lint@2.0.0
+finding: a tool version whose cells were not run: tool lint@3.0.0
+finding: a proof column that names no tool: tool @9.0.0
+== with no claimed set
+tools [lint@1.0.0 lint@2.0.0]
+adapters [lint@1.0.0 lint@1.1.0]
+plugins [] kits []
+min engine "0.4.0"
+unknown: plugins and kits: no proof run records their versions yet
+finding: a tool version whose cells were not run: tool lint@3.0.0
+finding: a proof column that names no tool: tool @9.0.0
+== an empty grid
+tools []
+adapters []
+plugins [] kits []
+min engine "0.4.0"
+unknown: plugins and kits: no proof run records their versions yet
+finding: a tested-set version with no proof column: adapter lint@1.0.0
+finding: a tested-set version with no proof column: tool lint@1.0.0
+finding: a tested-set version with no proof column: tool lint@3.0.0

@@ -1,0 +1,46 @@
+[data-view="rule"] {
+  display: grid;
+  gap: var(--gr-space-4);
+}
+
+.gr-rule-question {
+  margin: 0;
+  color: var(--gr-text-muted);
+}
+
+.gr-rule-list,
+.gr-rule-terms {
+  display: grid;
+  gap: var(--gr-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gr-rule-terms {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+[data-part="rule"] {
+  display: grid;
+  gap: var(--gr-space-4);
+}
+
+.gr-rule-fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--gr-space-2) var(--gr-space-4);
+  margin: 0;
+}
+
+.gr-rule-fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .gr-rule-fields {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,411 @@
+part: cli
+concern: environment
+order: 6
+title: Behaviour in every terminal condition
+summary: >-
+  A program behaves correctly in each condition the terminal standards name: colour off for NO_COLOR, a pipe,
+  a dumb terminal, CI and the flag; width capped; no query unless rendering; no question when nobody can
+  answer; no animation while nobody watches; plain output with the same facts; colour depth matched. One
+  conformance function runs the rows against each program's real binary.
+rules:
+  - id: cli.environment.1
+    slug: no-colour-when-told
+    since: 0.1.0
+    rule: >-
+      A non-empty NO_COLOR wins over every other setting, even when colour is forced, and so do non-TTY
+      output, TERM=dumb and --no-color; output that is not to a terminal has no escape codes.
+    detail: >-
+      The matrix runs every command (help and one real path) with NO_COLOR=1 together with the force variables
+      set, non-TTY, TERM=dumb and --no-color, in a pty and a pipe, and fails on any 0x1b byte in stdout or
+      stderr. The shared terminal module is the one reader of these variables (cli.config.3). One check holds
+      this row, the TERM=dumb row and the pipe row.
+    level: program
+    why: >-
+      Own measure: all four CLIs print escape codes with both NO_COLOR and the force variable set (292, 150,
+      216 and 256 escapes); the module passes and no repo gates on it. This is the fault that earns the matrix
+      helper.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    unless:
+      - kinds:
+          - library
+        reason: It prints nothing.
+      - kinds:
+          - daemon
+        facets:
+          - no-terminal
+        reason: A daemon with no terminal has no colour to switch off.
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          matrix in the shared test package with the environment table, driving the pty with a pty library,
+          asserting zero ESC bytes Force variables set are CLICOLOR_FORCE and FORCE_COLOR, together with
+          NO_COLOR=1; the matrix is uitest. Plant: a command printing an escape code directly with
+          fmt.Print("\x1b[31m") fails under NO_COLOR; the four copies fail under forced colour with TERM=dumb.
+          Control: output through the shared module passes
+    relates:
+      - id: cli.config.3
+        how: see
+    open:
+      - >-
+        Planted in two earlier trials on four copies; the matrix form is not yet run in any repo.
+  - id: cli.environment.2
+    slug: terminal-width
+    since: 0.1.0
+    rule: >-
+      Terminal width wins, else COLUMNS, never above 96; help fits and keeps the palette.
+    level: program
+    why: >-
+      Evidence M; the matrix is trialled and the copy printing 120 to 179 cells at COLUMNS=200 fails.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          matrix at COLUMNS 40, 80 and 200 and pty window sizes 40 and 200; no output line wider than
+          min(width, 96) cells by a cell-width library Cell width is measured by uniseg or go-runewidth; the
+          matrix is uitest. Plant: a copy printing 120 to 179 cells at COLUMNS=200 fails. Control: the module
+          caps at 96
+  - id: cli.environment.3
+    slug: no-terminal-query-unless-rendering
+    since: 0.1.0
+    rule: No terminal query unless rendering, and a bounded wait.
+    level: program
+    why: >-
+      The silent-pty trial fails everywhere today, the module included (fix A1 first); hold adoption order
+      accordingly.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          silent-pty test, a pty that never answers terminal queries, with the command finishing within a
+          stated bound and writing no query sequence when not rendering. Plant: a command that waits 4.1 s for
+          a reply fails the 1 s bound. Control: a command that does not query passes
+    open:
+      - The check cannot pass until the module is fixed.
+  - id: cli.environment.4
+    slug: ci-means-plain
+    since: 0.1.0
+    rule: "CI set means plain: no animation, no banner, no question."
+    level: program
+    why: Held in the shared module; five shims in programs are removed by adoption.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - cli
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          matrix row with CI=1 and a pty The matrix row is uitest with CI=1 on a pty. Plant: a program that
+          animates under CI=1 fails. Control: plain output passes
+    open:
+      - Fix A2 in the module first.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: cli.environment.5
+    slug: not-a-terminal-means-plain
+    since: 0.1.0
+    rule: Not a terminal means no colour, animation, banner or question.
+    level: program
+    why: Matrix trialled; passes in all programs today.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          matrix on a pipe asserting no colour, animation, banner or question The matrix is uitest on a pipe.
+          Plant: a command that prints a banner to a pipe fails. Control: plain pipe output passes
+  - id: cli.environment.6
+    slug: streams-decided-separately
+    since: 0.1.0
+    rule: >-
+      stdout and stderr are decided separately: colour appears only on the stream that is a terminal.
+    level: function
+    why: >-
+      A test already held in the module (a warning is painted against stderr, not stdout); generalised in the
+      matrix.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - cli
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          matrix with stdout piped and stderr a pty, then the reverse Generalises the held test
+          TestAWarningIsPaintedAgainstStderrNotStdout in the shared module, run through uitest. Plant: a
+          program colouring stdout when only stderr is a terminal fails. Control: colour only on the terminal
+          stream passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: cli.environment.7
+    slug: accessible-mode
+    since: 0.1.0
+    rule: >-
+      Accessible mode gives plain questions, plain bars, no banner and no escape byte in labels.
+    level: program
+    why: Planned matrix; the module already has the switch.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          matrix with the accessible switch asserting plain questions, plain bars, no banner and no ESC in
+          labels The switch is --accessible; it is already present at forms.go:27 of the module; the matrix is
+          uitest. Plant: a program with the flag still printing a bar of block glyphs fails. Control: plain
+          output passes
+  - id: cli.environment.8
+    slug: no-question-nobody-can-answer
+    since: 0.1.0
+    rule: >-
+      Questions are never asked when nobody can answer; the refusal names the flag that answers it and ends
+      with the refused code; and one shared --yes answers every yes/no question, so --apply --yes runs any
+      command without a terminal, a destructive step excepted (cli.commands.3).
+    detail: >-
+      --yes is registered once by the shared module. It answers plain yes/no confirmations only; a choice
+      among values is answered by its own flag (cli.environment.14), and a destructive step only by --confirm
+      NAME.
+    level: function
+    why: >-
+      The refused code is 5 (decision 13). One shared --yes is what lets an agent run any command
+      non-interactively without learning a flag per prompt.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    sources:
+      - ref: decision-13
+        backs: rule
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          terminal test through uitest with stdin closed and with a non-TTY stdin; a command that would ask
+          must write no prompt, exit with the refused code and name the flag; a matrix run of every writing
+          command with --apply --yes and no terminal must not refuse for a yes/no question. Plant: a program
+          that blocks on a prompt with stdin closed fails; a command that still refuses a yes/no question
+          under --apply --yes fails. Control: a refusal naming the flag passes
+    relates:
+      - id: cli.commands.3
+        how: see
+      - id: cli.environment.14
+        how: see
+  - id: cli.environment.9
+    slug: nothing-animates-unwatched
+    since: 0.1.0
+    rule: Nothing animates while nobody watches.
+    level: program
+    why: The test fails today (a live-update loop still ticks after focus-out; fix A4).
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          terminal test that sends the focus-out sequence on the pty and runs non-TTY, asserting no frame is
+          written while nobody watches Focus-out is simulated with the terminal focus-event sequence; the
+          failing site is live.go:206; the test runs through uitest. Plant: a live loop still ticking after
+          focus-out fails. Control: a loop that pauses passes
+  - id: cli.environment.10
+    slug: pager-rules
+    since: 0.1.0
+    rule: >-
+      A pager is used only when stdin and stdout are terminals, and a failing pager never loses the page.
+    level: function
+    why: Evidence S; the test is planned.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          terminal-test combinations of terminal and pipe, and a failing pager (a Go fake installed by testenv.Binary.Install) asserting the full text still
+          reaches stdout The combinations run through uitest. Plant: a failing pager that swallows the page
+          fails. Control: the text reaches stdout passes
+  - id: cli.environment.11
+    slug: plain-carries-the-same-facts
+    since: 0.1.0
+    rule: Plain output carries the same facts as coloured output.
+    detail: >-
+      Strip test: run a command forced to colour and again plain; strip ANSI sequences from the coloured
+      output with a stripper library and compare byte for byte with the plain output.
+    level: program
+    why: A status that says ok only by a green colour is invisible without colour.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          strip test using a maintained ANSI stripper library The stripper is Strip from charmbracelet/x/ansi
+          (MIT, active 2 Nov 2026). Plant: a status line that carries ok only by a green colour fails the
+          compare. Control: a line with a text word passes
+  - id: cli.environment.12
+    slug: colour-depth-downsampled
+    since: 0.1.0
+    rule: Output downsamples to the stream's real colour depth.
+    detail: >-
+      Forced runs set the colour-capability variables to truecolor, 256-colour, plain xterm and dumb; the SGR
+      parameters are parsed and the depth checked: 38;2 only under truecolor, 38;5 only under 256, 30 to 37
+      and 90 to 97 otherwise.
+    level: function
+    why: One program's truecolor output under TERM=xterm fails (fix A8).
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - cli
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          forced-run test over the environment table, parsing SGR parameters COLORTERM and TERM are set to
+          truecolor, xterm-256color, xterm and dumb. Plant: truecolor output under TERM=xterm fails. Control:
+          downsampled output passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: cli.environment.13
+    slug: conformance-in-one-call
+    since: 0.1.0
+    rule: >-
+      One conformance function runs the terminal rows against each program's real binary, and each program
+      calls it from its own tests.
+    detail: >-
+      It runs the rows for colour off, width, CI, pipe, TERM=dumb, no question and depth. Trialled once; not
+      in the shared test package yet.
+    level: program
+    why: A program that does not call it can skip every terminal row.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - cli
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          shared conformance function in the test package, with a repo-check that each program's tests call it
+          The function is uitest.Conformance(t, program). Plant: the four copies fail force plus NO_COLOR.
+          Control: a program calling the function and passing is accepted
+    open:
+      - Trialled by an earlier study but not in the shared test package yet.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: cli.environment.14
+    slug: every-form-names-its-flag
+    since: 0.1.0
+    rule: >-
+      Every interactive question names, in code, the flag or argument that answers it, and a test walks every
+      form.
+    detail: >-
+      The shared form constructor takes the answering flag as a required argument and prints it beside the
+      question; a test enumerates every form in the program and checks the named flag is registered on the
+      command that asks.
+    level: function
+    why: >-
+      A form with no flag blocks an agent and a script; naming it in code is what lets cli.environment.8
+      refuse with the flag.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          form constructor with a required flag argument plus a test walking every form against the command's
+          registered flags. Plant: a form whose named flag is not registered on its command fails. Control: a
+          form naming a registered flag passes
+    relates:
+      - id: cli.environment.8
+        how: see

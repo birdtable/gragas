@@ -1,0 +1,866 @@
+[
+  {
+    "name": "Contract",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Version",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Versions",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Id",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Slug",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Text",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Date",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Timestamp",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Semver",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Digest",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Language",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Url",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Reason",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Strength",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Bump",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Status",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Origin",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Rung",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RunPoint",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "TargetType",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Severity",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Standing",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "StandingMark",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Deprecation",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Mark",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Result",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "TextOrEmpty",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "DigestOrEmpty",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "BundleDocument",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "The rulebook bundle (document, spec 16.9)"
+  },
+  {
+    "name": "BundleDocumentAdaptersUsed",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "BundleDocumentCoverage",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ChangelogDocument",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "The changelog across releases (document)"
+  },
+  {
+    "name": "ChangelogDocumentReleases",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "GridDocument",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "The proof grid, binding by tool version (document, spec S57)"
+  },
+  {
+    "name": "PlanDocument",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "A plan as a document (spec 15.3)"
+  },
+  {
+    "name": "ProposalDocument",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "A proposal as a document (spec 16.1)"
+  },
+  {
+    "name": "ReportDocument",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "The project report (document, spec 16.8): carries no project name, path, remote or author"
+  },
+  {
+    "name": "ReportDocumentPin",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentSectionsPerRuleObservation",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentSectionsPerRuleProvenance",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentSectionsPerRule",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentSections",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentDriftKind",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentDrift",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentMismatchesWhat",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentMismatches",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentRenderingsState",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentRenderings",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentWiring",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentTrustSignature",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentTrustReleaseState",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentTrust",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentLastChangeKind",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReportDocumentLastChange",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocument",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "SARIF 2.1.0 with the engine's extension (document)"
+  },
+  {
+    "name": "SarifDocumentRunsToolDriverRulesShortDescription",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRunsToolDriverRules",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRunsToolDriver",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRunsTool",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRunsResultsLevel",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRunsResultsMessage",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRunsResultsLocationsPhysicalLocationArtifactLocation",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRunsResultsLocationsPhysicalLocationRegion",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRunsResultsLocationsPhysicalLocation",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRunsResultsLocations",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRunsResultsPropertiesGragas",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRunsResultsProperties",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRunsResults",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "SarifDocumentRuns",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Baseline",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Baseline as a report counts it (entity, spec 16.7)"
+  },
+  {
+    "name": "Binding",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Binding of a rule to a tool key (entity, spec 16.1)"
+  },
+  {
+    "name": "ChangelogEntry",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Changelog entry (entity, spec 16.1)"
+  },
+  {
+    "name": "ChangelogEntryChange",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "CheckerCode",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Checker-code artifact (entity, spec 16.1)"
+  },
+  {
+    "name": "Decision",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Decision (entity, spec 16.1)"
+  },
+  {
+    "name": "DecisionCites",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Exclusion",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Exclusion of a parent rule by an overlay (entity, spec 16.1)"
+  },
+  {
+    "name": "ExclusionLifted",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Finding",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Finding or notice (entity, spec 16.1)"
+  },
+  {
+    "name": "Health",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "The seven health numbers of a release (entity, spec 16.1)"
+  },
+  {
+    "name": "HealthNumbers",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "HistoryEntry",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "History entry (entity, spec 16.1)"
+  },
+  {
+    "name": "Plan",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Plan (entity, spec 16.1 and 15.3): one shape for every changing command"
+  },
+  {
+    "name": "PlanChanges",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "PlanWrites",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "PlanRekeyedEntity",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "PlanRekeyedState",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "PlanRekeyed",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "PlanRenderingsWhat",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "PlanRenderings",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "PlanCheckerCode",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Preset",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Preset by name and digest (entity, spec 16.1)"
+  },
+  {
+    "name": "PresetExtends",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ProofResult",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Proof result of one binding under one tool version (entity, spec 16.1)"
+  },
+  {
+    "name": "ProofResultRunLevel",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ProofResultReason",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Proposal",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Proposal (entity, spec 16.1)"
+  },
+  {
+    "name": "ProposalChange",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ProposalEvidenceKind",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ProposalEvidence",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ProposalState",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Release",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Release (entity, spec 16.1)"
+  },
+  {
+    "name": "ReleaseBump",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReleaseAssets",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReleaseCheckerCode",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "ReleaseWithdrawn",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RenderingManifest",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Rendering manifest of a release and target (entity, spec 16.1)"
+  },
+  {
+    "name": "RenderingManifestRenderingsRules",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RenderingManifestRenderingsOmissions",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RenderingManifestRenderings",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RuleMap",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Rule map toward one mapped rulebook (entity, spec 16.1)"
+  },
+  {
+    "name": "RuleMapRows",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Rule",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Rule (entity, spec 16.1)"
+  },
+  {
+    "name": "RuleScope",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RuleExemptions",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RulePairs",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RuleRelationsKind",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RuleRelations",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Rulebook",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Rulebook: the identity a document carries (entity, spec 16.1)"
+  },
+  {
+    "name": "RulebookKind",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RulebookLicences",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RulebookExtends",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RulebookImports",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RulebookGovernanceContribution",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "RulebookGovernance",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Source",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Source (entity, spec 16.1)"
+  },
+  {
+    "name": "SourceKind",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Structure",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Layers, parts, concerns and kinds (entity, spec 16.1)"
+  },
+  {
+    "name": "StructureLayers",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "StructurePartsConcerns",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "StructureParts",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "StructureKinds",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Term",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Term (entity, spec 16.1)"
+  },
+  {
+    "name": "TestedSet",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Tested set of a release (entity, spec 16.1)"
+  },
+  {
+    "name": "TestedSetTools",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "TestedSetPlugins",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "TestedSetKits",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "TestedSetAdapters",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Translation",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Translation of one field of one entity (entity, spec 16.1)"
+  },
+  {
+    "name": "UpstreamSet",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "The flattened upstream set of one tool (entity)"
+  },
+  {
+    "name": "UpstreamSetSets",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "Waiver",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": "Waiver as a report counts it (entity, spec 16.6): never the path"
+  },
+  {
+    "name": "WaiverKind",
+    "kind": "const",
+    "signature": "zod schema; z.infer of it is the type of the same name",
+    "summary": ""
+  },
+  {
+    "name": "explorerReads",
+    "kind": "const",
+    "signature": "the fields of each document the explorer reads",
+    "summary": ""
+  }
+]

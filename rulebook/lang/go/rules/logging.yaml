@@ -1,0 +1,59 @@
+format: 3
+part: go
+concern: logging
+rules:
+  - id: go.logging.1
+    statement: "A daemon logs through log/slog or a handler of it, output for a person goes to stderr, and no fatal log call appears outside main."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    exemptions:
+      - kinds:
+          - cli
+        reason: "The shared logger leaf that wraps the handler does not exist yet; go.logging.2 holds for both kinds once it is built."
+    reasoning:
+      definition: "A handler of slog includes a library that implements slog.Handler (for example a terminal-styled handler at a terminal and JSON without one); the program logs through the slog API either way. The standard log package is denied in the daemon kind; the logger is passed in and messages are static with key-value attributes, so a printf-built message is a finding. A fatal log call outside main is held by go.errors.4. A CLI is exempt until the shared logger leaf exists. What a daemon log holds and where it goes is daemon.logging.1; the audit record is daemon.logging.3."
+      pros:
+        - "Own measure: only one of our repos uses slog (3 files); another has a log.Fatal. One logging API with a choice of handler keeps styled terminal output and machine logs from being two code paths."
+    relations:
+      relates:
+        - go.errors.4
+        - daemon.logging.1
+        - daemon.logging.3
+    sources:
+      - ref: decision-65-go
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: sloglint
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: go.logging.2
+    statement: "Every log line from a daemon or a long CLI run carries the program version and a run id from one handler, so a CLI call and the daemon it spoke to can be joined."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no log output of its own.
+    reasoning:
+      definition: "One shared logger constructor adds the version and the run id. A matrix test runs the binary or daemon with logging on, parses every stderr or log line as JSON and asserts both fields; the default logger is banned so lines cannot bypass the handler."
+      pros:
+        - "Practice. A run id exists in 10 files of one repo and 2 of another; a request id nowhere; 21 files write to stderr directly."
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: sloglint
+        severity: error
+        rung: 0
+        run_point: push

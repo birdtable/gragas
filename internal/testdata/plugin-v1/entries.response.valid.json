@@ -1,0 +1,24 @@
+[
+  {
+    "entries": [
+      {
+        "key": "a",
+        "on": true,
+        "severity": "error",
+        "options": [
+          "always"
+        ]
+      },
+      {
+        "key": "b",
+        "on": false
+      },
+      {
+        "key": "c",
+        "on": true,
+        "severity": "warning",
+        "value": null
+      }
+    ]
+  }
+]

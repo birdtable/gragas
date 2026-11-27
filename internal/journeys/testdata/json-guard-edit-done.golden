@@ -1,0 +1,12 @@
+$ gragas guard edit --json
+--- exit 0
+--- stdout
+{
+  "schema": 1,
+  "contract": "1.3",
+  "command": "gragas guard edit",
+  "word": "done",
+  "path": "language/go/rules/errors.yaml",
+  "changes": []
+}
+--- stderr

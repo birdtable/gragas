@@ -1,0 +1,24 @@
+# docs.voice.2: the refused filler words and phrases, the ones a reader stops
+# trusting. A repository adds its own tokens to a copy of this list.
+extends: existence
+message: "Filler '%s': say the point plainly."
+level: error
+ignorecase: true
+tokens:
+  - delve
+  - delves
+  - leverage
+  - leverages
+  - leveraging
+  - seamless
+  - seamlessly
+  - robust
+  - utilize
+  - utilizes
+  - utilizing
+  - game-changer
+  - cutting-edge
+  - state-of-the-art
+  - it is worth noting
+  - it's worth noting
+  - in today's fast-paced

@@ -1,0 +1,41 @@
+format: 3
+part: astro
+concern: build
+rules:
+  - id: astro.build.1
+    statement: "A static Astro project uses no actions and no server islands, because both need on-demand rendering and an adapter."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "A test loads the Astro config and fails on an adapter, on an output mode other than static, and on a `src/actions` directory. A lint on `.astro` files fails on a `server:defer` island. A new rendering mode is admitted only with its own pack and a decision."
+      pros:
+        - "On-demand rendering adds a server and an adapter to a site that was built to be a folder of files. The rule was rated C from the framework's own guides; no site uses either feature yet."
+    sources:
+      - ref: astro-docs
+        where: actions and server islands
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+  - id: astro.build.2
+    statement: "The framework generates the script policy, so `script-src` lists hashes and never contains `unsafe-inline`."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The Astro security.csp option is set in the config. A test parses each built page for the policy meta element and fails when `script-src` lacks hashes or holds `unsafe-inline`. Islands stay banned. An unhashed inline script in a template is in no hash list, so the browser refuses it at run time: a loud failure the violation listener catches, not a bypass."
+      pros:
+        - "A policy that allows inline scripts gives no protection against injected ones. The option was tried on one framework version: four pages built, a policy meta element on the two counted, no script on the plain page and two inline scripts on an island page."
+    sources:
+      - ref: astro-docs
+        where: configuration reference (security.csp)
+        backs: rule
+      - ref: w3c-csp3
+        backs: rule

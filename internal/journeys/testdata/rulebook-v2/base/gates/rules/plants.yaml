@@ -1,0 +1,515 @@
+part: gates
+concern: plants
+order: 3
+title: Every check proves it can fail
+summary: >-
+  A check that cannot fail is not a check. Every check has a planted violation that turns it red and a clean
+  control, the gate runs the plants, empty or missing input fails closed, and the gate proves it ran its whole
+  list and prints what it skipped.
+rules:
+  - id: gates.plants.1
+    slug: every-check-has-a-plant
+    since: 0.1.0
+    rule: >-
+      Every check has a planted violation that turns it red, a clean control and a refusal case, and the gate
+      runs that plant at least once per tier.
+    detail: >-
+      A check that cannot fail is not a check. A rule with no plant is a finding, and a new rule ships with
+      its plant and a failing-test message that names the fix. Plants lead adoption in every repo (decision
+      38). Every registered check carries a planted-violation fixture, a clean control and a refusal case, and
+      the gate fails when a registered check lacks one (a registry walk). For analyzers the fixture form is
+      the analysis test package with `// want` comments; for forbidigo, ast-grep and conftest-style rules the
+      fixture is a tiny module run through the real tool. Plants run first in the gate. The plants must exist
+      before the check is turned on, and the plant of an old check is never deleted in the change that weakens
+      it (that is a gate weakening, see protection).
+    level: program
+    why: >-
+      No Go repo plants one for each of its gates; one repo's drift check failed 13 of 35 entries and was not
+      in its make check. One web repo's 82 plants never ran in `make check` because the layer check ran
+      without its self-test flag. Another has 85 plants on main (135 on a branch). A self-test run is held in
+      one repo (73 plants).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ford-bea
+        where: chapters 1 and 2
+        backs: rule
+      - ref: decision-38
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. A selftest command: the runner executes every plant fixture per rule and per tier,
+          plant plus clean control, and a registered rule with no plant directory fails. Plant: Register a
+          check with no fixture; delete one plant fixture and the runner fails. Control: A check with the full
+          triple (plant, control, refusal) passes.
+    relates:
+      - id: gates.plants.4
+        how: see
+      - id: gates.plants.2
+        how: see
+    open:
+      - The selftest is the command `companion selftest`, to build.
+      - >-
+        Shared runner and the pair-plant harness are planned; the self-test flag exists in one repo and is
+        lifted from there.
+    note: >-
+      Merges "gates test themselves", the planted-violation rule from both sides and the self-test kind (see
+      tools). The two-sided half is gates.plants.4; the lint-specific half is gates.plants.2.
+  - id: gates.plants.2
+    slug: lint-config-error-or-off-with-plants
+    since: 0.1.0
+    rule: >-
+      Every rule in the effective lint config is error or off, never warn, and every rule that is on has a
+      planted fixture that fires at error severity; a clean fixture has zero findings.
+    detail: >-
+      The runner dumps the resolved config for a sample file per kind (for ESLint, `--print-config`) and fails
+      on any rule at warn, including one that arrives from a plugin preset (a warn-level rule; the
+      eslint-plugin-playwright recommended preset gave two warnings in one run). One planted fixture per rule
+      the preset sets, each required to fire at error severity, including one for the unused-disable message.
+      The clean fixture has zero findings, and an excluded spec file and a root tool config lint without a
+      parse error. Every error-level lint rule has a failing fixture (a meta-check), so a rule on with no
+      plant fails.
+    level: program
+    why: >-
+      A rule at warn is not enforced and a grid that counts it lies. A recommended plugin preset gave two
+      warnings in one run. Hand-typed status said 3 rules enforced where the computed count was 0 at a
+      reference team.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: eslint
+        tier: "1"
+        note: >-
+          v1 class our-cli. ESLint `--print-config` per sample file dumped by the runner: every rule is error
+          or off; every error rule has a fixture that fires; the clean fixture yields zero findings. Plant: A
+          rule left at warn fails; a rule on with no plant fixture fails. Control: A config with every rule
+          error or off and a fixture each passes.
+    open:
+      - >-
+        Go has no direct row; its grid reads resolved configs and a rule at warn is not counted (see the
+        registry concern).
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+    note: >-
+      Merges: no rule at warn, one planted fixture per rule, a clean fixture with zero findings, and the "rule
+      is error or off, every rule on has a plant" row.
+  - id: gates.plants.3
+    slug: tool-preset-tests
+    since: 0.1.0
+    rule: >-
+      Each shared tool preset ships a test with a planted failing sample that fails naming the rule and a
+      clean sample that passes.
+    detail: >-
+      Instances: a boundary test fixture that trips exactly the expected structural rules while a clean module
+      passes; an API lint test where a bad description fails with both house rule codes and a good one passes;
+      a spelling test where a planted misspelling fails naming the word and a good file passes; a markdown
+      lint test where a planted skipped-heading file fails naming the rule and a good file passes. The planted
+      and clean samples run through the real check.
+    level: package
+    why: A preset that was never run against a bad sample can silently check nothing.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          One test per preset in the shared package that runs the real tool on a good and a bad sample. Plant:
+          A preset whose rule is removed makes the planted sample pass, and the test fails. Control: Intact
+          preset fails the bad sample and passes the good one.
+    open:
+      - >-
+        Go spell check has no chosen tool yet; its sample pair is waiting for the choice.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: gates.plants.4
+    slug: two-sided-pair-run
+    since: 0.1.0
+    rule: >-
+      A rule that can fail in two directions is proved by a pair run, and cannot be at gate level without all
+      the plants.
+    detail: >-
+      The pair run: the too-much case planted, the too-little case planted by a different instrument, a
+      just-right case of the same size, the cheap cure applied to each failure, and a third result for not
+      applicable. A row marked two-sided is refused promotion to gate with only the too-much plant. The plants
+      need a reader who is not the row's author. Applies to rules that are balances (size, duplication,
+      coverage, test count).
+    level: process
+    why: >-
+      Single-sided rules invite the cure that fails the other side: size rules are met by splitting, coverage
+      floors by assertion-free tests. Argued from the evolutionary-architecture guidance; no fault of ours
+      yet.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ford-bea
+        where: chapter 2
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 6
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. Pair-plant harness in the registry: promotion of a row to gate is refused unless
+          too-much, too-little, just-right, cheap-cure and not-applicable plants exist. Plant: A pair with
+          only the too-much plant is refused promotion. Control: A row with all five plants is promoted.
+    open:
+      - No pair run exists today (inference about agents).
+    note: >-
+      Agents take the cheapest cure, so the cure itself is planted. The known way round is planting only easy
+      cases; hence the independent reader.
+  - id: gates.plants.5
+    slug: fail-closed
+    since: 0.1.0
+    rule: >-
+      A gate fails closed on a missing tool, missing input, empty input or a pending marker unless the check
+      declares that 0 inputs is valid, has no flag that softens a finding or an exit, and only members of the
+      gate line count as evidence.
+    detail: >-
+      A zero is not an absence until a known positive proves the instrument. The runner wraps every check: an
+      input count of 0 fails unless the check declares `zero_ok`, in which case it returns the third result
+      (gates.plants.8). The type check runs in every gate and fails closed when its inputs, such as generated
+      infrastructure types, are missing (for example `tsc --noEmit` after `sst install`, with the `.sst/`
+      directory absent being red). Tools already fail on an empty glob (ESLint exits 2; a test runner with a
+      file filter matching nothing exits 1); the runner closes the gap for custom checks and name filters. The
+      self-test runs each check on an empty input and requires a refusal. A gate has no non-fatal mode: there
+      is no strict, warn-only or soft flag, a finding is always exit 1, and exit 2 means could not run. A
+      convenience hook (a phase guard, a reminder) may fail open, but it is not a gate member and is never
+      cited as evidence that a rule holds; only members of the gate line are evidence.
+    level: program
+    why: >-
+      A pending check exited 0 at a reference team; a secrets test skips when its scanner is missing; scanners
+      that read nothing read green; a spec that cannot fail ran against nothing. A softening flag is the
+      switch somebody turns on the day the gate is red.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-gates
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. Shared fail-closed helper returning pass, findings, refused or not applicable
+          (with the count); the selftest runs each check on an empty input and requires refused unless zero is
+          declared valid, and fails a check that accepts a flag on the softening list (strict, warn, no-fail
+          and the like). Plant: A check that exits 0 on a missing tool fails the self-test; a check that exits
+          0 on an empty glob fails; a check with a warn-only flag fails. Control: A check declaring `zero_ok`
+          prints not applicable with its count.
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. The type check step requires its generated inputs to exist and fails when they are
+          absent. Plant: Remove the generated types directory; the type check step fails. Control: With the
+          directory present it passes.
+    relates:
+      - id: gates.plants.8
+        how: see
+    open:
+      - >-
+        The generated-inputs example is an infrastructure tool's directory; the rule is any generated input.
+    note: >-
+      Merges the Go fail-closed rule, the web fail-closed rule and the type-check-in-every-gate rule.
+  - id: gates.plants.6
+    slug: fatal-parse-is-failure
+    since: 0.1.0
+    rule: >-
+      A lint run with fatal parse errors is a failure, not a list of findings, and no run ends with one.
+    detail: >-
+      The lint wrapper runs the linter with JSON output and exits 1 on any message with `fatal: true` or a
+      null rule id. The lint wrapper (`companion lint`) matches `**/*.astro` and sets `parserOptions.parser`
+      for those template files so TypeScript front matter in `.astro` parses; the null-rule check is on
+      `ruleId`. The same wrapper runs the rules-loaded probe of gates.plants.7.
+    level: file
+    why: >-
+      Frontmatter TypeScript gave 23 fatal parse errors on one web repo, reported as ordinary findings.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: eslint
+        tier: "1"
+        note: >-
+          v1 class our-cli. A shared lint wrapper over ESLint `--format json` that exits 1 on any fatal
+          message or null rule id. Plant: A template file with TypeScript front matter and no parser option
+          fails the run instead of being listed as a finding. Control: The same file with the parser set
+          passes.
+    relates:
+      - id: gates.plants.7
+        how: see
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C (23 fatal parse errors counted as
+        findings)
+    note: Shares its wrapper (about 30 lines) with gates.plants.7.
+  - id: gates.plants.7
+    slug: lint-proves-rules-loaded
+    since: 0.1.0
+    rule: >-
+      A lint run proves it loaded its rules; a run that loaded none, or fewer than the pinned number, fails.
+    detail: >-
+      The wrapper (`companion lint`) prints the resolved config for a sample `.astro` file and a sample
+      `.tsx` file and fails when fewer than the pinned number of accessibility rules are active. The plugin is
+      the preset's own dependency so the working-directory (cwd-lookup) trap cannot arise.
+    level: program
+    why: One folder ran 33 rules and another ran 0, with no error (V-34).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: eslint
+        tier: "1"
+        note: >-
+          v1 class our-cli. Lint wrapper runs `eslint --print-config` on sample files and fails when fewer
+          than the pinned count of rules are active; the plugin is the preset's own dependency. Plant: Running
+          the lint from a folder without the plugin yields 0 rules and exit 1. Control: Running from the repo
+          with the plugin yields the pinned count.
+    open:
+      - >-
+        The print-config rule-count probe was not run in the enforcement trial; an existing script (trialled,
+        exit 1 with 0 rules) is the form to lift.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A for the trap"
+  - id: gates.plants.8
+    slug: full-list-and-three-results
+    since: 0.1.0
+    rule: >-
+      A gate proves it ran its full list, a fast tier prints what it skipped, and a check has three results:
+      pass, fail and not applicable with 0 inputs, printed with the input count.
+    detail: >-
+      The gate summary lists every check run against the full registry list, with each not-applicable result
+      and its count; a step missing from the summary compared with the rule table fails (the summary-vs-table
+      check). The third result is allowed only where the check declares that 0 inputs is a valid state, with
+      one known-positive run per tier that proves the check reads something. Any other empty input fails
+      (gates.plants.5).
+    level: program
+    why: >-
+      A reference gate did not run its vulnerability scan; a gate skipping a step was a regret in the platform
+      lane.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-26
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The runner summary lists each step with pass, fail or not applicable plus input
+          count; a summary versus rule-table comparison fails when a step is missing; one known-positive run
+          per tier. Plant: A gate run with one check dropped from the list fails the summary comparison.
+          Control: A full run with one declared zero-input check passes and prints its count.
+    relates:
+      - id: gates.plants.5
+        how: see
+    note: Merges the Go and web forms and the gate orchestration kind.
+  - id: gates.plants.9
+    slug: skipped-gate-named-in-change
+    since: 0.1.0
+    rule: A skipped gate is named with its reason in the change.
+    detail: >-
+      Every skipped gate and package has a recorded reason in the gate output and in the change description.
+      Nothing reports green for what it skipped.
+    level: process
+    why: A skip nobody wrote down is indistinguishable from a pass.
+    kind: instruction
+    strength: Review
+    status: proposed
+    review_question: Which gate or package did this change skip, and where is the reason written?
+    relates:
+      - id: gates.plants.8
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: The mechanical half (printing the skipped list) is gates.plants.8.
+  - id: gates.plants.10
+    slug: read-output-not-exit-status
+    since: 0.1.0
+    rule: >-
+      A gate reads a tool's output, not only its exit status, and never through a default cap.
+    detail: >-
+      The lint run sets `--max-same-issues=0` and `--max-issues-per-linter=0` and also `issues.uniq-by-line:
+      false`; with the default, a second forbidigo hit on the same line was silently dropped
+      (`http.DefaultClient` beside `*http.Client`). The formatter, import fixer and dead-code outputs are
+      tested empty by the gate wrapper.
+    level: program
+    why: >-
+      Default caps hide findings: a second forbidden use on one line was silently dropped (verified), and 60
+      findings of one linter would show as fewer. No repo sets both caps.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-config
+        tool: golangci-lint
+        key: issues.max-issues-per-linter
+        tier: "2"
+        note: >-
+          golangci-lint run with both caps at 0 and `uniq-by-line: false`; gofmt -l, goimports -l and deadcode
+          output asserted empty by the gate wrapper (the caps are `--max-same-issues=0
+          --max-issues-per-linter=0`). Plant: Two forbidden uses on one line, the second must still be
+          reported; 60 findings of one linter all shown. Control: The caps at 0 with a clean tree report
+          nothing.
+    open:
+      - >-
+        New finding from the trial: the two caps are not enough; uniq-by-line is a third hiding default.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+  - id: gates.plants.11
+    slug: lint-config-verified-by-run
+    since: 0.1.0
+    rule: >-
+      A configured behaviour is checked by booting the thing and reading what it emitted, never by reading the
+      config text: the lint config by a verify command plus a real run, and runtime settings by a probe that
+      observes them.
+    detail: >-
+      `golangci-lint config verify` accepts an unknown linter name, and the run does not (verify exit 0, run
+      exit 3). The gate self-test runs both. The same holds for every runtime setting a gate claims:
+      middleware order, log redaction, cookie attributes, content security policy, test-runner workers and
+      timeouts are each asserted by starting the program or tool and reading its output, headers or behaviour.
+      A gate that reads source or config text to assert a runtime fact is a finding.
+    level: file
+    why: >-
+      A typo in the config silently disables nothing until a run proves it. A setting read from text says what
+      somebody wrote, not what the running program does.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-gates
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tool: golangci-lint
+        tier: "2"
+        note: >-
+          Gate self-test runs `golangci-lint config verify` and a real run on an empty package. Plant: A
+          config with an unknown linter name fails the run. Control: A valid config passes both.
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a probe test per claimed runtime setting that starts the program or tool and asserts on what it
+          emitted (response headers, log lines, worker count). Plant: a redaction setting removed from config
+          makes the probe see the secret in a log line and fail. Control: the configured redaction observed in
+          the emitted log passes
+  - id: gates.plants.12
+    slug: foundation-scripts-tested
+    since: 0.1.0
+    rule: >-
+      The foundation's own scripts and the shared package's own gate are linted and tested by their local gate
+      at push.
+    detail: >-
+      Measure, census and page-generator scripts have tests and a lint step, with a known-positive run per
+      script. They run in the foundation repo's own gate command (make check), which its pre-push hook runs on
+      every push, under the budget of gates.hooks.4. The shared package's own hooks and gate run tests and a
+      format check at push. No push or pull-request workflow runs them; a check too slow for the hook moves to
+      the release workflow. The hook install is skipped only when the hook tool is absent, which the armed
+      check reports.
+    level: package
+    why: >-
+      A reference team went from 10 errors to 0 once its own scripts were gated; ours had no gate on its
+      scripts. Hosted minutes on every push are refused, so the local gate is the gate.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-gates
+        backs: rule
+      - ref: operator-points
+        backs: rule
+    checks:
+      - binding: any
+        class: hook
+        tier: "2"
+        note: >-
+          the foundation repo's gate command runs each script's own tests and linters, and its pre-push hook
+          runs the gate command. Plant: A script with a failing test makes the pre-push hook refuse the push.
+          Control: Green scripts pass.
+    relates:
+      - id: gates.hooks.4
+        how: see
+  - id: gates.plants.13
+    slug: template-proof-end-to-end
+    since: 0.1.0
+    rule: >-
+      Adoption is proved end to end by a script that generates a repo from the template, edits a managed file
+      and sees the push hook go red naming it.
+    detail: >-
+      The proof script packs the shared package, generates a repo from the template, runs the gate green,
+      edits a root file, confirms the push hook goes red naming it, restores the file, confirms green, and
+      runs each tool on a good and a bad sample. For Go, a sync self-test generates a repo, edits a managed
+      file and requires the check to fail.
+    level: package
+    why: >-
+      A template whose generated repo was never exercised can ship a gate that does not fail.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          A proof script in the shared package run in its gate, generating a repo from the template. Plant:
+          Editing a managed root file in the generated repo makes the push hook fail naming the file. Control:
+          Restoring the file makes the gate green.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: gates.plants.14
+    slug: shape-rule-measured
+    since: 0.1.0
+    rule: >-
+      A shape rule is kept with a planted hit, a clean control and a measured false-positive and
+      false-negative rate, and a zero from a search tool means nothing until it found a known positive.
+    detail: >-
+      A fixture pair per shape rule, with every known bypass kept as a fixture, and a run over every clone
+      before the rule is required. The selftest runs them; a bypass form the rule misses is recorded.
+    level: program
+    why: >-
+      The atomic-write rule had 2 of 13 hits not copies (15 percent) and 1 of 9 outside units missed. Five
+      restructured copies planted beside a control: the rule flagged the control only (1 of 6, re-run 4 Nov),
+      so the false-negative rate for a restructured copy is not the 1 of 9.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. Fixture pair per shape rule and measured rates against the clones before the rule
+          is required, run by the selftest. Plant: A bypass form that the rule misses is recorded as a fixture
+          and must fire. Control: The clean control stays clean.
+    relates:
+      - id: gates.plants.1
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+    note: >-
+      A field of the selftest registry in gates.plants.1; pairs with the structural-matcher guidance in the
+      own-rules concern.

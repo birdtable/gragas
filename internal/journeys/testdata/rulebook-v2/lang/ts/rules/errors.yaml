@@ -1,0 +1,137 @@
+part: ts
+concern: errors
+order: 4
+title: Error handling and logging in source
+summary: >-
+  How TypeScript source handles failure: no empty or swallowing catch, a rethrown error keeps its cause, and
+  shipped code writes no console output. The reader-facing side is held in the web part.
+rules:
+  - id: ts.errors.1
+    slug: no-empty-catch
+    since: 0.1.0
+    rule: >-
+      Page code has no empty block, no empty catch and no swallowed rejection; a catch rethrows, returns a
+      typed result or shows a user-visible state.
+    detail: >-
+      ESLint `no-empty` with `allowEmptyCatch` false as an error, plus a `no-restricted-syntax` for a catch
+      clause whose body is a single `return <literal>` (a catch that returns a default). Tests are excluded by
+      `files`. Typescript-eslint `no-floating-promises` and `only-throw-error` sit beside them in the typed
+      set (ts.lint.1). Biome form: `noEmptyBlockStatements` at error and a GritQL plugin for a catch whose
+      body is one `return` of a literal.
+    level: function
+    why: >-
+      The reader-facing rule covers what the person sees, and the runtime listener catches errors at run time;
+      nothing covered the source.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint `no-empty` (allowEmptyCatch false) and no-restricted-syntax on a catch whose body is one
+          `return` of a literal. Plant: an empty catch fails; a catch returning `null` fails. Control: a catch
+          that rethrows or sets an error state passes
+    relates:
+      - id: ts.lint.1
+        how: see
+    open:
+      - >-
+        `no-empty` flagged `catch {}` in a trial; the catch-returns-a-default selector and the `.astro`
+        virtual-file glob were not run.
+  - id: ts.errors.2
+    slug: rethrow-keeps-cause
+    since: 0.1.0
+    rule: A rethrown error keeps the original as its cause.
+    detail: >-
+      ESLint `preserve-caught-error` (core in ESLint 10) as an error: a `throw new Error(msg)` inside a catch
+      needs the `cause` option. Biome form: a GritQL plugin for a `throw new Error(...)` inside a catch with no
+      `cause`.
+    level: function
+    why: A rethrow without a cause loses the stack that says where it started.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: eslint-docs
+        where: preserve-caught-error
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint `preserve-caught-error` as an error. Plant: a `throw new Error(msg)` inside a catch with no
+          cause fails. Control: the same throw with `{ cause: err }` passes
+    open:
+      - "`preserve-caught-error` flagged a throw with no cause in a trial on ESLint 10."
+  - id: ts.errors.3
+    slug: no-pointless-rethrow
+    since: 0.1.0
+    rule: No catch clause only rethrows.
+    detail: >-
+      A catch whose only statement is `throw err` adds nothing and hides the real handling point; remove it or
+      add context with a cause. Biome form: `noUselessCatch` at error.
+    level: function
+    why: It is noise that reads like handling.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: eslint-docs
+        where: no-useless-catch
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint `no-useless-catch` as an error. Plant: a catch with only `throw e` fails. Control: a catch
+          that wraps the error with context passes
+    open:
+      - The rule name is chosen here; the source states the rule only as a lint rule.
+  - id: ts.errors.4
+    slug: no-console-in-shipped-code
+    since: 0.1.0
+    rule: Shipped code has no console output.
+    detail: >-
+      ESLint `no-console` as an error in shipped source; tests and scripts are exempt by `files`. Logging goes
+      through the program's logger. Biome form: `noConsole` at error, with an `overrides` entry that exempts
+      tests and scripts.
+    level: function
+    why: >-
+      Console output in a page is invisible to the log pipeline and leaks internals to the browser.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: eslint-docs
+        where: no-console
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint `no-console` as an error, tests excluded by `files`. Plant: a `console.log` in a page file
+          fails. Control: a logger call passes
+    open:
+      - >-
+        The trial's `no-console` plant was masked by its own disable comment, so it must be re-planted.

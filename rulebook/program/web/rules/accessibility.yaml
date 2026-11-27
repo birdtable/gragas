@@ -1,0 +1,186 @@
+format: 3
+part: web
+concern: accessibility
+rules:
+  - id: web.accessibility.1
+    statement: "The accessibility engine finds nothing new on any page state, in light and dark, at 1440 and 390 px, against a shrink-only known list, and an incomplete result is a finding; every story also passes it as an error in both themes."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The engine runs through the shared kit on every page state and every story. Violations are compared with a known-list file that can only shrink: an entry removed after a fix cannot be re-added. The engine's package licence is file-level copyleft, and using it unmodified is allowed."
+      pros:
+        - "The donor's story gate found 523 of 1,241 stories (42 percent) failing. In our sites it found 3 rules on one page; one site's ratchet holds 8 written-in violations and another site's result is a null on a shell, not a zero."
+  - id: web.accessibility.2
+    statement: Built HTML is valid and names every control.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The HTML validator's recommended set runs over the built output (template stacks) or over the rendered DOM (client-rendered stacks); the check lists every control without a name. Applied to built `dist` HTML; plant `<input>` with no label."
+      pros:
+        - "The validator caught 11 of 32 planted faults, none uniquely."
+  - id: web.accessibility.3
+    statement: Headings form an outline with no skipped level.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - Neither the HTML validator nor the template lint caught a skipped level in the trial.
+  - id: web.accessibility.4
+    statement: "Status is never carried by colour alone: the status part requires a text label."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A required label prop makes omission a type error; status classes and status colour tokens are banned on elements outside the part; the kit asserts every status-marked element has non-empty text. The terminal form of the rule is the strip test of the terminal-look part. Banned classes: `status-*`, `.is-ok`, `.is-bad`; plant `<span class=\"status-bad\"></span>`; check `checkStatus`."
+      pros:
+        - No tool caught the planted colour-only status in the trial (the one miss of 32).
+  - id: web.accessibility.5
+    statement: Under reduced motion nothing non-essential moves.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "With reduced motion emulated, the page must hold no running animation except elements marked essential; transitions longer than 0.01 s on computed styles are listed. This is our rule and not a conformance floor, because the matching WCAG criterion is level AAA. Check `checkReducedMotion`: `page.emulateMedia` with `reducedMotion: \"reduce\"`, `document.getAnimations()`, marker `data-essential`, plant `animation: spin`."
+      pros:
+        - "No fault in our record; held on the operator's ruling that every rule binds from adoption."
+    sources:
+      - ref: wcag-22
+        where: "2.3.3 (AAA)"
+        backs: rule
+  - id: web.accessibility.6
+    statement: "Text grows without loss: no clipping when spacing is raised, and zoom is not disabled."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The kit injects the WCAG 1.4.12 override (line height 1.5, letter spacing 0.12em, word spacing 0.16em, paragraph spacing 2em) and asserts no text is clipped (an element with hidden overflow whose text is taller than its box); it zooms to 200 percent through a 640 CSS px viewport; axe `meta-viewport` flags disabled zoom. Check `checkTextSpacing`; override values `line-height: 1.5`, `letter-spacing`, `word-spacing`; clip test `overflow: hidden` with `scrollHeight > clientHeight`; zoom 200%."
+      pros:
+        - "v1 gave no reason beyond its evidence grade, Evidence B."
+    sources:
+      - ref: wcag-22
+        where: "1.4.12 text spacing"
+        backs: rule
+      - ref: wcag-22
+        where: "1.4.4 resize text"
+        backs: rule
+  - id: web.accessibility.7
+    statement: "Meaning has a named reader: alt text, reading order and headings are checked, and a screen-reader pass is recorded each release."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A release record `a11y-pass.json` holds the named person, date, version and tools used, valid against a schema. The tag refuses without it. The pass itself (what the alt text means, the order, a screen-reader walk) is a person's."
+      pros:
+        - "A vendor skill raised its pass rate from 12 to 86 percent where \"pass\" meant automated checks only; no report of ours has run a screen reader."
+  - id: web.accessibility.8
+    statement: "Templates carry no image without alt text, role mismatch, click without a key, positive tabindex, empty link, untitled iframe or autofocus."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Template stack: the plugin's strict jsx-a11y set (it cannot see inside a component). Component stack: the same rules on JSX, held by react.lint.3. The built-output checks (valid HTML, the accessibility engine) cover what a template rule cannot. The lint covers key-less click handlers on `.astro` templates and, through the React rule, on `.tsx`."
+      pros:
+        - "Eight of 32 planted faults were caught in 0.35 s; all six template plants fired in both stacks."
+    relations:
+      relates:
+        - react.lint.3
+  - id: web.accessibility.9
+    statement: "Names have a floor: no file name as alt text, no \"click here\", error text tied to its field, no nested interactive element, and visible labels."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Through the accessibility tree every control has a non-empty name that is not a file name or \"click here\"; axe `label`, `button-name`, `link-name` and `nested-interactive`; error text is tied to its field with `aria-describedby`. An icon-only control keeps an accessible name. Check `checkNames` via `page.accessibility.snapshot` or `ariaSnapshot`; plant `alt=\"IMG_0043.png\"` (file-name alt)."
+      pros:
+        - "The check ran on 96 twins and 32 plants; its false-positive rate on real code is unknown. Above the floor it is judgement."
+  - id: web.accessibility.10
+    statement: "A change that does not move focus is announced, and an actionable or error notice never auto-dismisses."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "After such a change a live region (`role=status`, `role=alert` or `aria-live`) must contain new text within a stated time. The notice part's timer prop is typed to forbid auto-dismiss on actionable and error variants. A `setTimeout` hiding a node in feature code is advice. Check `checkSilentUpdate`; live regions `role=status|alert`; `no-restricted-syntax` on timers hiding nodes is advice."
+      pros:
+        - Held on the every-rule-binds ruling.
+  - id: web.accessibility.11
+    statement: "An overlay keeps the dialog contract: focus goes in, stays in and comes back, Escape closes, and the overlay is modal to assistive technology."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Template stack: a native `<dialog>`, and a lint banning `role=\"dialog\"` on a div. Component stack: the primitive library's dialog, with its lint in react.components.2. Both primitive libraries tried render a div dialog, which is why the native-element rule belongs to the template stack only. Plant `<div role=\"dialog\">`; `role=\"dialog\"` ban via `no-restricted-syntax`; check `checkDialog`."
+      pros:
+        - "One site's legend popover takes no focus and the kit's \"focus did not return\" line there is a false positive."
+    relations:
+      relates:
+        - react.components.2
+  - id: web.accessibility.12
+    statement: Anything with a click handler can take focus and has a key.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The kit finds every element with a click handler and checks it is focusable and activates on Enter and Space; the static net is the template lint's click-events-have-key-events and no-static-element-interactions rules. Check `checkClickKeyboard` finds handlers with `getEventListeners`."
+      pros:
+        - Run on WebKit too.
+  - id: web.accessibility.13
+    statement: "Every control is reachable and operable by keyboard in reading order with no trap at any stop, with one focus ring token on focus-visible that is never hidden behind a sticky bar."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The kit tabs through the page and asserts every control is reached in document order, no trap, and the focused element is not covered by a sticky bar (the element at its centre is itself). The style rules (no bare `outline: none`) are in the tokens concern. Whether the order makes sense is review. Style net: `declaration-property-value-disallowed-list` for `outline: none|0`, ring token on `:focus-visible`; check `checkKeyboard` with `elementFromPoint`; axe `focus-order-semantics` is best-practice only."
+      pros:
+        - "The kit had two defects the trial found: a false failure on a page with no controls, and a trap on the first stop that passed; the extension fixes both."
+  - id: web.accessibility.14
+    statement: Contrast also holds in every reachable state.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The engine runs after each forced state of the six-states rule; the token contrast test is the earlier net."
+      pros:
+        - A test on the ready state passed (0 failures) while the error state failed (1).
+  - id: web.accessibility.15
+    statement: Control borders and state graphics reach 3 to 1.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The kit computes the border or fill colour of each control and the focus ring against the ground at 3 to 1 (colour maths shared with the token contrast test); the text contrast rule covers text only. Engine rule `color-contrast` covers text only; check `checkControlContrast`."
+      pros:
+        - "One site's case C5; held on the every-rule-binds ruling."
+    sources:
+      - ref: wcag-22
+        where: "1.4.11 non-text contrast"
+        backs: rule
+  - id: web.accessibility.16
+    statement: "The declared accessibility stack catches every plant of the shared corpus, and a rule with no catcher is listed as an instruction."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A matrix runs 32 plants with fixed twins; a plant caught by no tool is listed as an instruction and the list can only fall. It runs once per kit change. Matrix script `matrix.mjs`."
+      pros:
+        - "The corpus is the author's own, so the shape of the check is the finding."
+  - id: web.accessibility.17
+    statement: APCA lightness contrast is printed beside the ratio and never gated.
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The APCA package is `apca-w3`."
+      pros:
+        - "WCAG 3's algorithm is undecided; a dark muted role measured 5.80 to 1 and Lc 41.8."
+  - id: web.accessibility.18
+    statement: "A Lighthouse run is a report and never a gate on score; only its byte assertion is a floor."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: It runs in the release tier and its JSON is saved with the tag.
+      pros:
+        - "One image with no alt text scored 0.84, so a score gate would pass a real fault."

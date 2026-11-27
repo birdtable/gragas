@@ -1,0 +1,10 @@
+$ gragas history
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+gragas history
+history.jsonl is not there, so the rulebook has no history
+yet
+
+  done       0 entries listed
+--- stderr

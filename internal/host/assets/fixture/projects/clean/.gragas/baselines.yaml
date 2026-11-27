@@ -1,0 +1,9 @@
+baselines:
+  - id: b-wrap
+    rule: go.errors.1
+    tool: golangci-lint
+    count: 4
+    owner: alex
+    zero_by: "2027-03-01"
+    created: {who: alex, when: "2026-11-05T10:00:00Z"}
+    last_counted: {who: alex, when: "2026-11-05T10:00:00Z"}

@@ -1,0 +1,119 @@
+{
+  "$comment": "The crash list (store.recovery.2, A37): one row for each family of the tree that writes, which names in covers every command of the family that carries the writes annotation. A row is a workload, a scripted test, or outside. A workload is a command line the crash child (cmd/gragas-crash run) runs as cmd/gragas wires it, over a seeded root, killed at seeded boundaries: at least points of them on every full journeys run and every boundary in task crash. internal/journeys/crash_commands_test.go holds each to before-or-after, with no run left open, and its end states to a golden. A scripted row names the crash test that covers the command. An outside row is a command that writes outside the journalled write path, with the reason and the issue that moves it onto it. internal/cli/root holds the list to the code both ways: TestEveryWritingCommandIsOnTheCrashList each family, and TestEveryWritingCommandIsNamedOnTheCrashList each command that carries the writes annotation, so a writing command no row names fails. gragas-dev gate holds this file to gate/schema/crash.schema.json.",
+  "crash": [
+    {
+      "command": "init",
+      "covers": ["init"],
+      "seed": "empty",
+      "args": ["init", "--kind", "rulebook", "--name", "demo", "--owner", "team-a", "--apply"],
+      "points": 6
+    },
+    {
+      "command": "migrate",
+      "covers": ["migrate"],
+      "seed": "v2",
+      "args": ["migrate", "--name", "demo", "--owner", "team-a", "--apply"],
+      "points": 6
+    },
+    {
+      "command": "rule",
+      "covers": ["rule confirm", "rule edit", "rule exclude", "rule include", "rule new", "rule promote", "rule renumber", "rule replace", "rule restore", "rule retire"],
+      "seed": "history",
+      "args": ["rule", "new", "--concern", "go.errors", "--statement", "Return errors, do not panic.", "--strength", "must", "--own", "--decision-title", "Errors are returned", "--decision-text", "Panics hide failures from the caller.", "--apply"],
+      "points": 6
+    },
+    {
+      "command": "term",
+      "covers": ["term edit", "term new", "term retire"],
+      "seed": "history",
+      "args": ["term", "new", "--slug", "header", "--term-definition", "The name a request carries.", "--literal", "X-Request-Id", "--apply"],
+      "points": 6
+    },
+    {
+      "command": "source",
+      "covers": ["source edit", "source new"],
+      "seed": "history",
+      "args": ["source", "new", "--source-slug", "house-rule", "--source-kind", "own-decision", "--title", "What the owners decided", "--locator", "house-rule", "--apply"],
+      "points": 6
+    },
+    {
+      "command": "decision",
+      "covers": ["decision new", "decision supersede"],
+      "seed": "history",
+      "args": ["decision", "new", "--decision-slug", "small", "--title", "Small", "--text", "Keep it small.", "--rejected", "big: slow", "--apply"],
+      "points": 6
+    },
+    {
+      "command": "journal",
+      "covers": ["journal recover"],
+      "scripted": "TestACrashInsideTheRollBackIsRolledBackAgain",
+      "why": "journal recover is the roll-back every writing command runs first: the scripted crash kills a recovery inside its roll-back and recovers it again"
+    },
+    {
+      "command": "gen",
+      "covers": ["gen"],
+      "outside": "writes through the old legacy writer and run recorder: each file whole, the set not journalled",
+      "exit": "birdtable/gragas#1420"
+    },
+    {
+      "command": "contract",
+      "covers": ["contract fixture"],
+      "outside": "contract fixture --apply writes the fixture's documents under the folder lock with no journal record",
+      "exit": "birdtable/gragas#1420"
+    },
+    {
+      "command": "cache",
+      "covers": ["cache clear"],
+      "outside": "cache clear sweeps the journal's closed runs under the lock, outside a run of its own",
+      "exit": "birdtable/gragas#1420"
+    },
+    {
+      "command": "plugin",
+      "covers": ["plugin add", "plugin approve", "plugin record", "plugin upgrade"],
+      "outside": "plugin approve records the approval through port.Trust, a record of this machine kept outside every root and replaced whole under its own lock, with no journal record; plugin add writes through the journalled path but reads its source folder from the host, so no workload seeds it yet and it rides this row until the row has a workload; plugin upgrade is plugin add's write with the replaced version's files removed after the lock, through the same path and reading its source folder from the host the same way, and rides this row with it; plugin record writes through the journalled path too, but its steps run the tool and journal their starts under a run of their own (<run>-steps) before the change's intent, so a crash between them leaves starts of an unbegun run, which the row's workload is to prove",
+      "exit": "birdtable/gragas#2211"
+    },
+    {
+      "command": "undo",
+      "covers": ["undo"],
+      "seed": "undo",
+      "args": ["undo", "--entry", "1", "--apply"],
+      "points": 6
+    },
+    {
+      "command": "import",
+      "covers": ["import"],
+      "seed": "import",
+      "args": ["import", "guide", "--into-part", "go", "--into-concern", "style", "--guide-slug", "handler-guide", "--guide-title", "Handler guide", "--guide-url", "https://example.org/handlers", "--guide-tag", "v1.2.0", "--apply"],
+      "points": 6
+    },
+    {
+      "command": "bind",
+      "covers": ["bind"],
+      "seed": "bind",
+      "args": ["bind", "go.errors.2", "--tool", "golangci-lint", "--target", "source", "--key", "errorlint", "--value", "true", "--severity", "error", "--rung", "1", "--run-point", "commit", "--apply"],
+      "points": 6
+    },
+    {
+      "command": "rebind",
+      "covers": ["rebind"],
+      "seed": "bound",
+      "args": ["rebind", "go.errors.2", "--tool", "golangci-lint", "--target", "source", "--key", "errorlint", "--to-key", "wrapcheck", "--decision", "wrap", "--apply"],
+      "points": 6
+    },
+    {
+      "command": "unbind",
+      "covers": ["unbind"],
+      "seed": "bound",
+      "args": ["unbind", "go.errors.2", "--tool", "golangci-lint", "--target", "source", "--key", "errorlint", "--apply"],
+      "points": 6
+    },
+    {
+      "command": "preset",
+      "covers": ["preset"],
+      "seed": "unwritten",
+      "args": ["preset", "--apply"],
+      "points": 6
+    }
+  ]
+}

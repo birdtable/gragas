@@ -1,0 +1,44 @@
+$ gragas plugin approve lint-a@1.0.0
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+gragas plugin approve lint-a@1.0.0
+  plugin       lint-a@1.0.0
+  digest      
+  <lint-a@1.0.0>
+  tool         lint-a >=10.13.0 <11.0.0
+  grants      
+  sha256:a800c50cf9819f8cca410aea310f4a7a80602b2e3ad949ce932582c57832d4dd
+  preset       lint-a.config.js
+  resolve from node_modules
+  install      npm install --save-dev lint-a (printed, never run)
+
+grants since the last approval
+  first approval of lint-a: every grant shown
+
+grant lint-a
+  found         script /bin/lint-a in node_modules/lint-a/package.json, run by
+  node
+  versions      >=10.13.0 <11.0.0
+  version asked --version
+  command line  the script first
+
+grant lint-a-native
+  found         pinned places and .tools/bin/lint-a
+  versions      >=2.0.0 <3.0.0
+  version asked version
+  command line  the plugin hands it the whole command line
+
+grant lint-a-helper
+  found         pinned places alone
+  versions      >=1.4.0
+  version asked --version
+  command line  the plugin hands it the whole command line
+This was a dry run and nothing was changed. Add --apply to make these changes.
+
+  done       nothing was recorded yet: read what the approval covers, and
+  approve the digest shown
+    gragas plugin approve lint-a@1.0.0 --digest
+<lint-a@1.0.0> --apply
+--- stderr

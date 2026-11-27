@@ -1,0 +1,11 @@
+kind: Security
+body: >-
+  **Each refusal of the names file says its own fix, and the hashed list is read as the names file
+  is.** A names file over 1 MiB has been refused since the owned read came in, where it was
+  read before; its refusal now says so and says to keep the file to 1 MiB or less. A folder, a pipe or
+  a link at the names file's path, a file another account owns or can write, and one on a disk whose
+  owners are not judged each get their own why and fix, still with no part of the path. gragas check
+  now says when the names file holds no name, as gragas validate does, instead of passing in silence.
+  gragas-dev's names scan reads GRAGAS_NAMES_HASHES' list through the same owned read, so a list
+  another account can write, a link or a folder there is refused without its path.
+time: 2026-11-22T12:00:00.00000+01:00

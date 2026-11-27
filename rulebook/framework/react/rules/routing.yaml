@@ -1,0 +1,215 @@
+format: 3
+part: react
+concern: routing
+rules:
+  - id: react.routing.1
+    statement: "The generated route tree is committed, carries a no-check banner, is never edited by hand, is excluded from lint, format, import-graph and size tools, and a regenerate-and-diff check fails the gate when it is stale."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The gate runs the router's generator and then a diff of the generated file; any difference fails. The generated file starts with a banner, checked by a header grep, and sits on the ignore list of the linter, the formatter, the unused-code tool and the size tools. A generator that yields no routes fails: the number of routes in the tree must be above zero and equal the number of route files."
+      pros:
+        - "A hand edit to generated code is lost at the next generation, and a stale tree routes to pages that no longer exist. The banner and a build with no inline script were tried on one router plugin version; the check has never run on a real React tree."
+    sources:
+      - ref: tanstack-router-docs
+        where: file-based routing and the generator
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+  - id: react.routing.2
+    statement: "Links and navigation use typed destinations and params: a wrong path, a missing param or an unknown search key fails the type check, and a bare string or template-literal destination is banned."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The router's type registration is what makes a wrong path fail the compiler. A lint bans a string literal as a link destination and a navigate call without the typed form. A link to another module's route goes through the typed route reference, so it is not an import of that module. An id that looks like a number (leading zeros) round-trips through a link and the URL as the same string; a unit test holds it."
+      pros:
+        - A typo in a path compiles in an untyped router and fails only when someone follows the link. In a trial the typed router rejected five of five wrong usages and a second router package rejected none.
+    sources:
+      - ref: tanstack-router-docs
+        where: type safety
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+  - id: react.routing.3
+    statement: "Every route declares a schema for its search parameters, and they are validated by the router's search validator where they enter."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The schema is declared in the route file and covers every key the route reads; an unknown key is dropped or refused, never read as a raw string. A parameter library that wraps the browser's search string may be used only through the router's adapter until the project has decided its end state."
+      pros:
+        - "The URL is input from outside; an unvalidated search value reaches a query as the wrong type. This is the React router form of the rule that a page's place is carried in the URL."
+    relations:
+      relates:
+        - web.states.13
+    sources:
+      - ref: tanstack-router-docs
+        where: search params
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.routing.4
+    statement: "The router is built by one factory where all router settings are set once, and the root route is safe to render on the server: no browser global at module scope."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "Pending thresholds, preload, stale time and the default error and not-found views are set in the factory file, and a call that creates a router anywhere else fails. Gated loaders do not depend on a component being mounted. Module scope in the root route and everything it imports touches no `window` or `document`."
+      pros:
+        - "Settings spread over route files drift apart, and a browser global at module scope breaks any non-browser render of the tree, which includes tests and static builds."
+    sources:
+      - ref: tanstack-router-docs
+        where: router options
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.routing.5
+    statement: "A route loader delegates to the query client and the router keeps no second cache; an asynchronous cache restore finishes before the router mounts, and a cache entry a loader creates carries the same flags as one a hook creates."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "A raw `fetch` in a route file is banned: the loader calls the query client's ensure call (`queryClient.ensureQueryData`). A loader-created entry carries the flags a hook-created one does. A test checks that the mount happens after the persisted cache has been restored. The flags that must match are the freshness and gating settings that the hook form sets, so a loader entry is not read as stale or ungated by the component."
+      pros:
+        - "Two caches show two answers for one resource, and a restore that finishes after mount flashes empty or stale data and can revive a gated read."
+    sources:
+      - ref: tanstack-router-docs
+        where: loaders with the query client
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.routing.6
+    statement: "Every route has an error view and a not-found view, set once as router defaults, and scroll position is restored per history entry."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The factory sets the default error and not-found components (`defaultErrorComponent`, `defaultNotFoundComponent`); a lint over the route table checks that every route inherits or sets one. Three journeys hold it: a loader that throws shows the error view, an unknown URL shows the not-found view, and going Back restores the scroll position of that history entry (`scrollRestoration: true`)."
+      pros:
+        - A route with no error view renders a blank page when its loader fails.
+    sources:
+      - ref: tanstack-router-docs
+        where: error handling and scroll restoration
+        backs: rule
+  - id: react.routing.7
+    statement: "A deep link survives sign-in, so the destination is kept and restored after authentication."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "No sign-in exists, so a deep link has nothing to survive."
+    reasoning:
+      definition: "A journey opens a deep link signed out, signs in and must land on that destination, through the router's redirect with the stored destination. The blocker form is in react.routing.8. A sign-in that always lands on the home page fails."
+      pros:
+        - From a research report. No project has a sign-in yet to measure.
+    relations:
+      relates:
+        - react.routing.8
+    sources:
+      - ref: tanstack-router-docs
+        where: authenticated routes
+        backs: rule
+  - id: react.routing.8
+    statement: "A page with unsaved input blocks navigation through the router's blocker, not only tab close."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The blocker is the router's (`useBlocker`), so in-app navigation asks before it discards input; the browser's before-unload prompt covers only closing the tab. A test types into a form, navigates by the router and asserts the block."
+      pros:
+        - A browser prompt alone lets a link click lose a long form silently.
+    relations:
+      relates:
+        - web.forms.5
+    sources:
+      - ref: tanstack-router-docs
+        where: navigation blocking
+        backs: rule
+  - id: react.routing.9
+    statement: "On a route change focus moves to the page heading or the main landmark and the document title changes, and the journey asserts both."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "After each route change the active element is the page heading or `main`, and the title is the route's own title. The router's head management (`<Scripts>` and head tags) is tested, not assumed."
+      pros:
+        - "A single-page route change does not move focus or announce a new page; a screen-reader user hears nothing. The words document title had no other holder in the catalogue."
+    sources:
+      - ref: wcag-22
+        where: success criteria 2.4.2 and 2.4.3
+        backs: rule
+  - id: react.routing.10
+    statement: "Full-stack router features (server functions, server rendering) are not used unless a decision approves them; the default is a plain client-side router."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "A heavier rendering mode is a pilot: it needs a recorded decision and its own pack of checks before the first use. The static form of the same rule for the other framework is that a static site uses no on-demand rendering."
+      pros:
+        - "A rendering mode that is not yet needed adds a server, an adapter and a failure surface nobody has measured."
+    sources:
+      - ref: decision-27
+        backs: rule
+  - id: react.routing.11
+    statement: "A route file holds route configuration plus one page import from the owning module's public entry, from its own route group only, and `main.tsx` only wires."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The router form of web.structure.3 (entry files only wire): route files and `main.tsx` are entry files. A route file declares its route with the route helper and imports exactly one page from the owning module's public entry, from its own route group; it holds no client call, no query hook and no markup. A function declaration over the `thin-route` line limit kept in rule data fails."
+      pros:
+        - "Logic in an entry or a route file escapes the module's tests and boundaries; both entries complied when counted."
+    relations:
+      relates:
+        - web.structure.3
+    sources:
+      - ref: decision-65-react
+        backs: rule

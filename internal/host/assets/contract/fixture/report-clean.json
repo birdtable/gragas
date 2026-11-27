@@ -1,0 +1,275 @@
+{
+  "baselines": [
+    {
+      "age_days": 5,
+      "count": 4,
+      "owner": "alex",
+      "rule": "go.errors.1",
+      "slug": "b-wrap",
+      "tool": "golangci-lint",
+      "zero_by": "2027-03-01"
+    }
+  ],
+  "contract": "1.3",
+  "drift": [],
+  "last_change": {
+    "kind": "upgrade",
+    "when": "2026-11-05T09:00:00Z"
+  },
+  "lock_digest": "sha256:8322bf1862348faafa9613551a71636513ef1cbde1b95df58b255ce7f43c3597",
+  "mismatches": [],
+  "pin": {
+    "rulebook": "fixture-base",
+    "version": "1.2.0"
+  },
+  "release": {
+    "assets": [
+      {
+        "digest": "sha256:63d6286460cdb0a9b76f0795153c8dcb8933f709a4ca577f8f8be2af2a135491",
+        "path": "presets/stylelint/base.json"
+      }
+    ],
+    "bump": "minor",
+    "checker_code": [
+      {
+        "digest": "sha256:60c93c1ff6c2418b948cae5b127341e5d8e1738b6feeda31431f89bf230dbb62",
+        "name": "wrapcheck-plugin",
+        "publisher": "alex"
+      }
+    ],
+    "contract": "1.3",
+    "date": "2026-11-07",
+    "format": 3,
+    "health": {
+      "numbers": [
+        {
+          "name": "rules-held",
+          "value": 0.8462
+        },
+        {
+          "name": "entries-explained",
+          "value": 1
+        },
+        {
+          "name": "proof-pass-rate",
+          "value": 0.75
+        },
+        {
+          "name": "completeness",
+          "value": 0.2727
+        },
+        {
+          "name": "review-currency",
+          "value": 1
+        },
+        {
+          "name": "attention-size",
+          "value": 11
+        },
+        {
+          "name": "days-to-active-median",
+          "value": 1
+        }
+      ],
+      "resolved": false
+    },
+    "release_note": "Adds a rule about checking an error before its value and a rule about labelling form fields.",
+    "tested_set": {
+      "adapters": [
+        {
+          "adapter": "golangci-lint",
+          "version": "1.0.0"
+        }
+      ],
+      "kits": [
+        {
+          "kit": "fixture-kit",
+          "version": "0.2.0"
+        }
+      ],
+      "minimum_engine": "0.1.0",
+      "plugins": [
+        {
+          "plugin": "wrapcheck-plugin",
+          "version": "1.4.0"
+        }
+      ],
+      "tools": [
+        {
+          "tool": "golangci-lint",
+          "version": "2.1.0"
+        },
+        {
+          "tool": "stylelint",
+          "version": "16.0.0"
+        }
+      ]
+    },
+    "version": "1.2.0"
+  },
+  "renderings": [],
+  "run_time": "2026-11-10T09:00:00Z",
+  "sections": [
+    {
+      "manifest": "sha256:4e943109217fd9ebee0779b2ab709a3921805edf53faddfdde76ae6442610db6",
+      "name": "go",
+      "per_rule": [
+        {
+          "bindings": [
+            "golangci-lint/errorlint"
+          ],
+          "marks": [
+            "unproven"
+          ],
+          "observation": "held",
+          "rule": "base.errors.1",
+          "standing": "planned"
+        },
+        {
+          "bindings": [
+            "golangci-lint/nilerr"
+          ],
+          "marks": [
+            "trial",
+            "unproven"
+          ],
+          "observation": "held",
+          "rule": "base.errors.2",
+          "standing": "planned"
+        },
+        {
+          "bindings": [
+            "golangci-lint/revive.var-naming"
+          ],
+          "marks": [
+            "unproven"
+          ],
+          "observation": "held",
+          "rule": "base.naming.1",
+          "standing": "advisory"
+        },
+        {
+          "observation": "not observed",
+          "rule": "base.naming.2",
+          "standing": "retired"
+        },
+        {
+          "marks": [
+            "unproven"
+          ],
+          "observation": "not observed",
+          "rule": "base.targets.1",
+          "standing": "planned"
+        },
+        {
+          "marks": [
+            "unproven"
+          ],
+          "observation": "not observed",
+          "rule": "base.targets.2",
+          "standing": "planned"
+        },
+        {
+          "bindings": [
+            "golangci-lint/wrapcheck",
+            "golangci-lint/errorlint"
+          ],
+          "marks": [
+            "blocked"
+          ],
+          "observation": "held",
+          "provenance": {
+            "decision": "wrap-errors",
+            "layer": "go",
+            "switch": null
+          },
+          "rule": "go.errors.1",
+          "standing": "enforced"
+        },
+        {
+          "observation": "not observed",
+          "rule": "go.errors.2",
+          "standing": "proposed"
+        },
+        {
+          "marks": [
+            "trial",
+            "unproven"
+          ],
+          "observation": "not observed",
+          "rule": "go.errors.3",
+          "standing": "planned"
+        },
+        {
+          "bindings": [
+            "review/layout-reviewed"
+          ],
+          "observation": "held",
+          "rule": "go.layout.1",
+          "standing": "reviewed"
+        },
+        {
+          "marks": [
+            "blocked",
+            "unproven"
+          ],
+          "observation": "not observed",
+          "rule": "go.layout.2",
+          "standing": "planned"
+        },
+        {
+          "marks": [
+            "unproven"
+          ],
+          "observation": "not observed",
+          "rule": "go.layout.3",
+          "standing": "planned"
+        },
+        {
+          "bindings": [
+            "stylelint/field-label"
+          ],
+          "observation": "held",
+          "rule": "web.forms.1",
+          "standing": "enforced"
+        },
+        {
+          "observation": "not observed",
+          "rule": "web.forms.2",
+          "standing": "planned"
+        },
+        {
+          "observation": "not observed",
+          "rule": "web.forms.3",
+          "standing": "planned"
+        }
+      ]
+    }
+  ],
+  "trust": {
+    "digests_matched": true,
+    "release_state": "current",
+    "signature": "verified"
+  },
+  "versions": {
+    "contract": "1.3",
+    "engine": "0.1.0",
+    "format": 3
+  },
+  "waivers": [
+    {
+      "age_days": 5,
+      "expires": "2027-06-30",
+      "kind": "path",
+      "owner_present": true,
+      "rule": "go.errors.1",
+      "slug": "w-legacy-a"
+    }
+  ],
+  "wiring": [
+    {
+      "line": ".claude/settings.json hooks gragas check",
+      "present": true
+    }
+  ]
+}

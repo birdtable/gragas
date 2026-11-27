@@ -1,0 +1,72 @@
+$ gragas migrate --name demo --owner team-a --apply
+--- before
+2e7cb38229f7877e569cc05dd9c8fb71b30954ad2c9978328d69f5d377f81505 base/arch/guide.md
+9691aa2a9d620930220a4a350320c9d4a9f73b6a8b34e148b9aaa125e55320e8 base/arch/rules/layers.yaml
+c2069ce833824f306bbf2fe54163b4c57a8a9fe6353b7ef58e6ad5c0849b77e5 ids.lock
+d5a4d57193e2ed95d1fc50336bd42bc71bb43c9ae1e29758cc26b118dd3ae5b4 parts.yaml
+ce5ee0a33300766a5035b5509a9feaeea640671e429d6a6548cc631295138c7e products.yaml
+4a2a252f1c1959ca99c5441c2b521c94c2cb9e0d20616cb121efb9d1d93b3840 sources.yaml
+--- after
+2e7cb38229f7877e569cc05dd9c8fb71b30954ad2c9978328d69f5d377f81505 base/arch/guide.md
+ac1bea4102421142ccc14fcf03fab50cc99dd7d8ea4ada5194d41cf590797140 base/arch/rules/layers.yaml
+bb4409979a463b85b4fd8e55579b7601fcb403b9977f507d2cea6db771f5c1b9 history.jsonl
+c2069ce833824f306bbf2fe54163b4c57a8a9fe6353b7ef58e6ad5c0849b77e5 ids.lock
+693fbcd7b86612c739c500943305a93f2734d2109c7bf0732f85e0f944cfd964 parked.yaml
+d5a4d57193e2ed95d1fc50336bd42bc71bb43c9ae1e29758cc26b118dd3ae5b4 parts.yaml
+ce5ee0a33300766a5035b5509a9feaeea640671e429d6a6548cc631295138c7e products.yaml
+90e4a46e3dc3f6d6d2267fd47a69a8cafa79c65855ede4d15a8d97fb6034b8f3 rulebook.yaml
+320a72117a6416061419a827456cda8bbbd9dfc72e009fd07947766859b369ce sources.yaml
+324c4e6bca4af6f036790c686d1e9c9e5e1a4f5c8297e0852042acee0ffdf5a2 structure.yaml
+--- boundaries
+before-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+after-record
+after-record
+after-record

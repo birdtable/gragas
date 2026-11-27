@@ -1,0 +1,11 @@
+$ gragas journal list
+--- 80 columns
+--- screen at the end
+
+
+gragas journal list
+Run  State  Command             Files  Plan
+r1   done   gragas gen --apply  1      ba92826f120b
+
+  done       1 run listed, folder ROOT
+--- exit 0

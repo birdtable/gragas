@@ -1,0 +1,22 @@
+package {{.Family}}_test
+
+import (
+{{- if .NewPackage}}
+	"os"
+{{- end}}
+	"testing"
+
+	"github.com/birdtable/gragas/internal/cli/cmd/{{.Family}}"
+{{- if .NewPackage}}
+	configtest "github.com/birdtable/gragas/internal/config/testing"
+{{- end}}
+)
+{{if .NewPackage}}
+// TestMain starts from the shared test setup.
+func TestMain(m *testing.M) { os.Exit(configtest.Main(m)) }
+{{end}}
+func Test{{.Pascal}}Transcript(t *testing.T) {
+	t.Parallel()
+	_ = {{.Family}}.New
+	t.Fatal("{{.Name}}: write its golden transcript test")
+}

@@ -1,0 +1,35 @@
+$ gragas init --kind rulebook --name demo --owner team-a --apply
+--- before
+--- after
+5ccc5fb495e474b44df0b329844fcbd57614e31d37a21bd7716c8134e3975a34 history.jsonl
+90e4a46e3dc3f6d6d2267fd47a69a8cafa79c65855ede4d15a8d97fb6034b8f3 rulebook.yaml
+bc873a2328bb727c92ec889864373140cf7e40e91d1d7ee3d2f3946298e26cf7 structure.yaml
+--- boundaries
+before-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+after-record
+after-record
+after-record

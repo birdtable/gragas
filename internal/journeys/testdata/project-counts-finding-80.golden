@@ -1,0 +1,17 @@
+$ gragas check --fail-on counts
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Findings
+kind    about   what is wrong, and the fix
+counts  a.go:3  go.errors.5 (gragas directive): is a new nolint directive (1
+                against 0 at the merge base): //nolint:errcheck Fix: take the
+                new line out, or take out an old one of its kind
+
+Not checked
+  no rule of the pinned parts binds a tool, so no tool config was judged
+  task: a member's timeout holds only from go-task 3.53.1; this check cannot see
+  the go-task version
+
+  findings   1 finding, 0 exempt, 2 not checked
+--- stderr

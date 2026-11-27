@@ -1,0 +1,59 @@
+format: 3
+part: docs
+concern: glossary
+rules:
+  - id: docs.glossary.1
+    statement: "Each program owns a glossary of its terms, held to its code by a check, and a product term is defined once and linked wherever it appears."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The glossary lists each term with its definition, its aliases (prior names and outside words it translates) and the names that were retired, with what was retired when. Every schema, event or public name the program publishes is a term; every term names one of those or a retired name; every retired name in the lint configuration is in the glossary. Every page and help text links the first use of a term on it to its glossary entry, and the same thing carries the same name everywhere. A map of which program owns which concept sits beside the glossaries. An editor that shows a term's definition on hover is an aid for people only; agents read the glossary file."
+      pros:
+        - "Fault evidence in our own repos: word faults 7, 3 and 2 in three repos, and the old organisation name found 181 times in one repo by a spell tool. Names that drift between pages and services make a reader and an agent guess which thing is meant."
+    relations:
+      relates:
+        - docs.glossary.2
+    sources:
+      - ref: p-03-data
+        where: on shared vocabulary
+        backs: rule
+  - id: docs.glossary.2
+    statement: "A retired word fails where it is typed, in code, comments and docs, and the failure names the right word."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The retired-words list maps each retired word to its right word, and the failure message carries that right word. It covers identifiers, comments, strings and markdown, and a word retired in every sense fails in docs and comments as well as code. A retired identifier is not the same as a retired word: a name kept as a code name (a wire value or a compound the registry still requires) stays allowed. The list lives in one shared place and is synced into each repo, and each repo's own linter holds the names it retired so a retired name fails in the service that retired it. A write-time hook runs the scan on the edited file."
+      pros:
+        - "A retired name that keeps appearing spreads back into new code. A spell tool found 181 hits of the old organisation name in one repo alone, and only one repo had a gate (five retired words)."
+    sources:
+      - ref: p-03-data
+        where: on shared vocabulary
+        backs: rule
+  - id: docs.glossary.3
+    statement: "Each word set that two programs share has one definition, and a machine-readable code is kept apart from its sentence in a closed, documented set."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "For exit codes the check is the one in the code part: a documented table compared with the constants. Other shared word sets live in one data file consumed by every language through the generator, with a schema that separates the machine code from the sentence a person reads."
+      pros:
+        - "Two programs that each spell out a code or status word drift apart, and a code that is also a sentence cannot be changed without breaking readers."
+    sources:
+      - ref: decision-13
+        backs: rule
+      - ref: decision-19
+        backs: rule
+  - id: docs.glossary.4
+    statement: "Printed text, the README and the how-to guides carry no code identifier, no word from a listed set of internal jargon, and no internal doc path, register, issue, rule or decision id, which belong in the register, the design notes and commits."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Printed text is every string the program shows a person: help, hints, errors, prompts and status rows. A code identifier is a package, type or function name as it appears in the code. The jargon list is one data file per repo, next to the glossary. An id is any pattern the citation resolver knows (rule, decision, ticket, register row) and any path into the docs or design folders. Design notes, the register, agent files and commits may use all of these. A word a person needs that is also an identifier is defined in the glossary and spelled the way a person says it."
+      pros:
+        - "A person reading help or a guide cannot follow an internal name or id anywhere, so it is noise that also leaks how the code is built; the id belongs where the people who can follow it read."
+    sources:
+      - ref: decision-65-docs
+        backs: rule

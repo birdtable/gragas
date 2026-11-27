@@ -1,0 +1,11 @@
+name: upgrade
+order: 440
+context: B
+ends: plan
+summary: "Move a pin to a newer release, or a rulebook's own parent, imports and upstream"
+examples:
+  - {line: "gragas upgrade", does: "show the plan"}
+  - {line: "gragas upgrade --apply", does: "carry it out"}
+writes: [".gragas/pin.yaml", ".gragas/lock.yaml"]
+exits: ["done", "declined", "refused"]
+json: plan

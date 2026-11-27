@@ -1,0 +1,9 @@
+$ gragas journal recover --apply
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  roll back  run r3 (gragas gen --apply)
+
+  done       1 run rolled back
+--- stderr

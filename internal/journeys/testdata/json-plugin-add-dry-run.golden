@@ -1,0 +1,17 @@
+$ gragas plugin add <bundles>/lint-a/1.0.0 --json
+--- exit 6
+--- stdout
+{
+  "schema": 2,
+  "command": "plugin add",
+  "apply": false,
+  "ended": "declined",
+  "msg": "nothing was changed",
+  "next": "gragas plugin add <bundles>/lint-a/1.0.0 --json --apply",
+  "changes": [
+    "would make plugins/lint-a/1.0.0/plugin.wasm",
+    "would make plugins/lint-a/1.0.0/plugin.yaml",
+    "would make plugins/lock.yaml"
+  ]
+}
+--- stderr

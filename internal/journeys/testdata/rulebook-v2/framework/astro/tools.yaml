@@ -1,0 +1,37 @@
+part: astro
+tools:
+  - key: astro
+    name: "framework: Astro"
+    role: >-
+      A static site generator whose pages are templates with optional client islands; one router by file
+      layout, content collections, a built-in type check and a generated script policy.
+    binding: ts
+    ships: the Astro config preset (static output, script policy) and the template lint
+    state: chosen
+    why: >-
+      A content site needs no client router and no server: Astro builds files and its own file routing is its
+      one router (the React kind uses TanStack Router).
+    open:
+      - Islands stay banned until a pack covers them; the version is fixed at adoption.
+  - key: astro-check
+    name: "type checker for templates: astro check"
+    role: >-
+      Type-checks `.astro` templates and their script blocks, with the strictest flags, where `tsc` alone
+      cannot read the template syntax.
+    binding: ts
+    ships: the gate command and the strict flag set
+    state: chosen
+    why: >-
+      Trialled in the Astro pack; it has no changed-only mode and needs none, because a global check is never
+      affected-only.
+    open:
+      - The type-coverage rule that names it is in the TypeScript part.
+  - key: astro-eslint-parser-and-stylelint-with-postcss-html
+    name: "template lint: astro-eslint-parser and Stylelint with postcss-html"
+    role: Lets ESLint and Stylelint read `.astro` templates and `<style>` blocks.
+    binding: ts
+    ships: the lint preset overrides for `.astro` files
+    state: chosen
+    why: >-
+      The inline-script selector fired once written for the right node kind, and Stylelint linted the style
+      block.

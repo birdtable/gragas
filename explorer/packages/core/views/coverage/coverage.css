@@ -1,0 +1,65 @@
+[data-view="coverage"] {
+  display: grid;
+  gap: var(--gr-space-4);
+}
+
+.gr-coverage-question {
+  margin: 0;
+  color: var(--gr-text-muted);
+}
+
+.gr-coverage-switch,
+.gr-coverage-ratios,
+.gr-coverage-list {
+  display: grid;
+  gap: var(--gr-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gr-coverage-switch {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.gr-coverage-switch [aria-current="true"] {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.gr-coverage-ratios {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+
+.gr-coverage-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--gr-space-3);
+}
+
+.gr-coverage-meter {
+  inline-size: 100%;
+  block-size: 0.75rem;
+  accent-color: var(--gr-standing-slate);
+}
+
+.gr-coverage-meter[data-standing="enforced"] {
+  accent-color: var(--gr-standing-violet);
+}
+.gr-coverage-meter[data-standing="reviewed"] {
+  accent-color: var(--gr-standing-green);
+}
+.gr-coverage-meter[data-standing="planned"] {
+  accent-color: var(--gr-standing-blue);
+}
+.gr-coverage-meter[data-standing="advisory"] {
+  accent-color: var(--gr-standing-amber);
+}
+.gr-coverage-meter[data-standing="proposed"] {
+  accent-color: var(--gr-standing-grey);
+}
+
+[data-view="coverage"] p {
+  margin: 0;
+}

@@ -1,0 +1,5 @@
+[
+  {"name": "an unknown field", "patch": [{"op":"add","path":"/0/note","value":"x"}], "problem": "Additional properties are not allowed ('note' was unexpected)"},
+  {"name": "a missing contract", "patch": [{"op":"remove","path":"/0/contract"}], "problem": "'contract' is a required property"},
+  {"name": "a wrong enum", "patch": [{"op":"replace","path":"/0/releases/0/entries/0/change","value":"tweaked"}], "problem": "is not one of"}
+]

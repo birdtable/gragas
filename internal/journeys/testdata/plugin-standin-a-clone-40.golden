@@ -1,0 +1,9 @@
+$ gragas plugin record author/standin/1.0.0 --op entries --apply
+--- exit 5
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    the plugin is not approved:
+  sha256:<digest>
+    gragas plugin approve standin@1.0.0
+--- stderr

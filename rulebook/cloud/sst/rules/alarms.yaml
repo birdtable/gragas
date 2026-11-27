@@ -1,0 +1,16 @@
+format: 3
+part: sst
+concern: alarms
+rules:
+  - id: sst.alarms.1
+    statement: "One shared component gives every service the same alarms on errors, throttles and latency."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, a daemon serves one health document and is bounded and supervised."
+      pros:
+        - Alarms written per service are missing where the failure is.

@@ -1,0 +1,9 @@
+[
+  {
+    "anchor": "wrapping-errors",
+    "rules": [
+      {"id": "go.errors.1", "statement": "Wrap an error with context before returning it.", "strength": "must", "status": "active", "origin": "authored", "sources": [{"ref": "a-guide", "backs": "rule"}], "review_by": "2027-04-01"},
+      {"id": "go.errors.2", "statement": "Name the error a function returns for a missing item.", "strength": "should", "status": "trial", "origin": "authored"}
+    ]
+  }
+]

@@ -1,0 +1,18 @@
+format: 3
+exclusions:
+  - overlay: fixture-base
+    rule: std.errors.2
+    number: 1
+    decision: house-call
+    who: alex
+    when: "2026-10-21T09:00:00Z"
+  - overlay: fixture-base
+    rule: std.errors.3
+    number: 1
+    decision: house-call
+    who: alex
+    when: "2026-10-22T09:00:00Z"
+    lifted:
+      decision: wrap-errors-again
+      who: alex
+      when: "2026-11-02T09:00:00Z"

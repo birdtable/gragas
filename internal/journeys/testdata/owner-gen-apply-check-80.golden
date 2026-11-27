@@ -1,0 +1,8 @@
+$ gragas gen --apply --check
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  usage      --apply and --check do not go together
+    gragas gen --check
+--- stderr
+--- exit 2

@@ -1,0 +1,22 @@
+$ gragas plugin list
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+plugin        tool    approved  note
+lint-a@1.0.0  lint-a  yes
+lint-a@1.1.0  lint-a  no
+lint-b@1.0.0          no        the plugin's digest is not the manifest's: lint-b 1.0.0 reads as
+                                sha256:0c781efa13b0c034ff643e1dcc2ef87b3c202d58b04bc2f412ccc1393
+                                000bb73, and its lock holds
+                                sha256:7ccc7fb9a62d8a74829f43b187e5b19830110ca677140b1321e261539
+                                9982aff
+lint-c@1.0.0          no        the plugin's digest is not the manifest's: lint-c 1.0.0 reads as
+                                sha256:d955d5c40130a4a212fb6cf4f7aa9d53531db8e735ff2ecbb5da2008f
+                                8fed52e, and its lock holds
+                                sha256:f48faaae14d761cabbd80a5f932dc7097c74808c526733c0bce5f8424
+                                d12aeac
+1 column not shown: digest
+
+  done       4 plugins, 1 approved
+--- stderr

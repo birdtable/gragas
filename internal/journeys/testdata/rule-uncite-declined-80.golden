@@ -1,0 +1,17 @@
+$ gragas rule edit go.errors.1 --uncite go-faq
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+What changes
+  edit go.errors.1. Standing: active before, active after
+  sources of go.errors.1 loses go-faq, which backs the rule
+  no rule cites go-faq now; it stays in the sources of the book
+
+What is written where
+  language/go/rules/errors.yaml: edits rule go.errors.1
+  history.jsonl: appends one entry (edit)
+This was a dry run and nothing was changed. Add --apply to make these changes.
+
+  declined   nothing was changed
+    gragas rule edit go.errors.1 --uncite go-faq --apply
+--- stderr

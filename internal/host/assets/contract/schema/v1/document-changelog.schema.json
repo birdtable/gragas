@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "document-changelog.schema.json",
+  "title": "The changelog across releases (document)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "rulebook",
+    "releases"
+  ],
+  "properties": {
+    "contract": {
+      "$ref": "common.schema.json#/$defs/contract",
+      "x-introduced": "1.0",
+      "x-decides": "which contract version's schema reads the document, and whether it is read or ends not ready on a newer major"
+    },
+    "rulebook": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0"
+    },
+    "releases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "date",
+          "entries"
+        ],
+        "properties": {
+          "version": {
+            "$ref": "common.schema.json#/$defs/semver",
+            "x-introduced": "1.0"
+          },
+          "date": {
+            "$ref": "common.schema.json#/$defs/date",
+            "x-introduced": "1.0"
+          },
+          "bump": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/bump"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the release's bump kind, the same enum as release.bump; null when the engine has none for it",
+            "x-introduced": "1.1",
+            "default": null
+          },
+          "release_note": {
+            "$ref": "common.schema.json#/$defs/textOrEmpty",
+            "description": "one note on the release (S75), display only",
+            "x-introduced": "1.0",
+            "default": ""
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "entity-changelog-entry.schema.json"
+            },
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0"
+    }
+  }
+}

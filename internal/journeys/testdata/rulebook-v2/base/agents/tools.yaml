@@ -1,0 +1,264 @@
+part: agents
+tools:
+  - key: agnix
+    name: agnix
+    role: >-
+      Validates agent instruction files for links, structure and missing paths across several agent tools.
+    version: 0.61.0
+    licence: Apache-2.0
+    binding: any
+    ships: a strict run in the shared recipe
+    state: chosen
+    why: >-
+      Run on 5 Nov, it reported a backticked missing file as a warning and exited 1 under strict mode.
+    open:
+      - >-
+        It did not flag a missing npm script, a missing make target or a CLAUDE.md that is not the import
+        line, so a small companion check covers those.
+      - It claims 758 rules; no byte-size ratchet was found in it.
+  - key: required-headings-rule-markdownlint-md043
+    name: required-headings rule (markdownlint MD043)
+    role: >-
+      A markdownlint-cli2 rule that fails an instruction file whose headings differ from the required list,
+      case-sensitive; one hook line holds a size budget and a link checker holds its links.
+    binding: any
+    state: candidate
+    why: The reference organisation's way to keep its instruction files to one template.
+    open:
+      - >-
+        Not run here; the size budget it paired with is replaced by the byte-count ratchet.
+  - key: claude-code-doctor-prompt-audit
+    name: Claude Code doctor prompt audit
+    role: >-
+      The prompt-audit that audits CLAUDE.md, AGENTS.md, rules and skills for outdated, dangling or
+      contradictory lines and references to missing files or commands.
+    binding: any
+    state: candidate
+    why: >-
+      A built-in audit that covers the contradiction half of the instruction-file rules.
+    open:
+      - Not run; its findings are advisory.
+  - key: agents-md-and-claude-md-template-per-repository
+    name: AGENTS.md and CLAUDE.md template per repository
+    role: >-
+      The map file an agent reads first in each repository, written from one template, with CLAUDE.md only
+      importing AGENTS.md.
+    binding: any
+    ships: the shared template
+    state: chosen
+    why: One template keeps every repository's map the same shape.
+  - key: path-scoped-agent-rule-files
+    name: path-scoped agent rule files
+    role: >-
+      Rule files with a paths header that load only when the agent reads or edits a matching file, as nested
+      AGENTS.md or the Claude-only rule form.
+    binding: any
+    state: chosen
+    why: Rules load only when the paths they govern are touched.
+    open:
+      - >-
+        Nested AGENTS.md is read by several agent tools; the paths-header form only by Claude.
+  - key: short-path-scoped-instruction-files
+    name: short, path-scoped instruction files
+    role: >-
+      Category of file an agent reads before work, AGENTS.md, CLAUDE.md and path-scoped rules, kept short.
+    binding: any
+    state: chosen
+    why: The pick is the three files above with the ratchet and the resolve check.
+  - key: packaged-procedures-skills
+    name: packaged procedures (skills)
+    role: >-
+      Step-by-step procedures an agent runs on request, such as add-route, add-migration or does-it-exist
+      lookups, shipped as skills that load on use.
+    binding: any
+    state: candidate
+    why: The instruction file points at a skill and does not repeat it.
+    open:
+      - >-
+        Skills of our own are still to be written; the reference organisation's skills are its own tooling.
+  - key: skills-and-work-templates
+    name: skills and work templates
+    role: >-
+      Category of step-by-step shipped procedures plus templates that fix the shape of an issue, card or pull
+      request.
+    binding: any
+    state: candidate
+    why: >-
+      Tickets and changes have a fixed shape and common changes have a run-it procedure.
+    open:
+      - No row of ours covers procedures for common changes beyond adding a page.
+  - key: pull-request-template-with-the-gate-checklist
+    name: pull request template with the gate checklist
+    role: >-
+      A pull request template whose lines mirror the gates, such as spec regenerated, glossary term added,
+      decision linked, what was reused.
+    binding: any
+    state: candidate
+    why: A fixed shape for a change makes the purpose and proof easy to check.
+  - key: language-server-plugin-for-agents
+    name: language server plugin for agents
+    role: >-
+      The typescript-lsp plugin gives the agent type errors after each edit and finds references by type, with
+      gopls for Go and a language server or tsgo for TypeScript.
+    binding: any
+    ships: a preflight row per language
+    state: chosen
+    why: >-
+      gopls found 28 of 28 callers of a function where grep found the same plus 4 fixture strings.
+    open:
+      - The Go plugin was not run in the first trial.
+  - key: exported-symbol-index
+    name: exported-symbol index
+    role: >-
+      An index of every exported symbol of the shared packages, a kit listing per tag so an agent can ask what
+      exists.
+    binding: any
+    state: candidate
+    why: >-
+      Would index every exported symbol across the repositories; for Go a go doc short listing per tag diffed
+      against the code.
+    open:
+      - Only proposed; search-symbols was never built.
+  - key: public-export-index-generator
+    name: public-export index generator
+    role: >-
+      Generates a searchable shared-package export index of every public export of the shared packages
+      (api-extractor, TypeDoc, or go doc short).
+    binding: any
+    state: candidate
+    why: Keeps the listing current with the code.
+    open:
+      - Proposed, not built.
+  - key: catalogue-of-what-exists-and-who-owns-it
+    name: catalogue of what exists and who owns it
+    role: >-
+      A queryable list of APIs, shared packages and their exports, with one owner per concern.
+    binding: any
+    state: candidate
+    why: An agent that can ask what exists reinvents less.
+    open:
+      - >-
+        For UI, the parts catalogue as data; for Go, the generated listing per tag and the concern table.
+  - key: cross-repository-search-before-writing
+    name: cross-repository search before writing
+    role: >-
+      How an agent finds what it cannot see from its own repository: local clones first, then the repository
+      host's search, then a text search over the vendored standards.
+    binding: any
+    state: chosen
+    why: Reinvention comes from a limited view of the repository.
+  - key: read-only-repository-host-code-search-server
+    name: read-only repository-host code search server
+    role: >-
+      The repository host's own tool server (github-mcp-server) whose search tool searches every repository of
+      the organisation on the default branch.
+    binding: any
+    state: candidate
+    why: Covers what local clones do not, read-only.
+    open:
+      - >-
+        Needs a network and an account, so it is a fallback only and breaks the offline rule for knowledge
+        tools.
+  - key: hosted-library-docs-service
+    name: hosted library-docs service
+    role: >-
+      A tool server that serves current, version-specific documentation of third-party libraries to an agent.
+    binding: any
+    state: banned
+    why: >-
+      A knowledge tool runs with no network and no account; a library that ships agent instructions is read
+      from the repository instead.
+  - key: write-time-hook-refusing-a-retired-identifier
+    name: write-time hook refusing a retired identifier
+    role: >-
+      A hook, run as a gragas command (no shell), in the pre-tool slot on write and edit that greps the content being written for
+      retired identifiers and exits 2 naming the right word.
+    binding: any
+    ships: the hook in the agent plugin, run at the write-time tier within 2 seconds
+    state: chosen
+    why: Our own glue, named as such; no tool exists for this.
+  - key: versioned-agent-plugin-delivered-by-managed-settings
+    name: versioned agent plugin delivered by managed settings
+    role: >-
+      One versioned plugin that gives every agent the hooks, deny rules, reviewer subagents, skills and a
+      read-only code search tool, delivered so it cannot be switched off.
+    binding: any
+    state: chosen
+    why: The managed layer is the one no user, project or command-line value overrides.
+    open:
+      - Not yet deployed.
+  - key: hooks-and-deny-rules-that-refuse-a-bypass
+    name: hooks and deny rules that refuse a bypass
+    role: >-
+      Category of commands run on an agent's write, commit or push, and rules that forbid bypass commands,
+      written as deny rules and not as hooks.
+    binding: any
+    state: chosen
+    why: The deny rule is the pick; a hook is a filter and a feedback channel.
+    open:
+      - Edit(...) deny form, not Write(...).
+  - key: srt-write-sandbox
+    name: srt write sandbox
+    role: >-
+      Runs the agent under a write sandbox of the system with denyWrite on the protected paths, so a write by
+      any process in the session, including sed -i, is refused. It is verified on the one system the work
+      runs on; no other system's sandbox is claimed.
+    version: 0.0.81
+    binding: any
+    state: candidate
+    why: >-
+      Run on macOS, it refused echo and sed -i writes under a denied path and allowed a write to an allowed
+      path.
+    open:
+      - >-
+        One wrapper decides whether agents run under it; other runtimes were not checked.
+  - key: commitlint
+    name: commitlint
+    role: Checks the change text for an empty body and for a Verdict trailer.
+    version: 21.2.4
+    binding: any
+    state: chosen
+    why: >-
+      It covers the form of the purpose and proof rule; the tree binding is our land step.
+    open:
+      - Commitlint cannot see the tree.
+  - key: reviewer-subagent-and-prompt-hook
+    name: reviewer subagent and prompt hook
+    role: >-
+      Agents and hooks that review a diff for one concern and return a pass or fail verdict, read-only, with a
+      plant for the lens.
+    binding: any
+    state: chosen
+    why: The pick for judgement rules no check can hold, held by agents.review.1 to .3.
+    open:
+      - Scored with the agent vendor's plugin eval in the reference; not run here.
+  - key: reviewer-agent-per-concern-llm-judge
+    name: reviewer agent per concern (LLM judge)
+    role: >-
+      Category: an agent that judges a diff for one concern and returns a verdict stored for the land check.
+    binding: any
+    state: chosen
+    why: Held as a lens with a stored verdict and its own plant.
+  - key: promptfoo
+    name: promptfoo
+    role: >-
+      An eval harness (claude-agent-sdk provider) that runs an agent on a task in a real repository with its
+      instruction file and skills loaded, then asserts what it did; could host the lens plant and the guidance
+      replay.
+    binding: any
+    state: candidate
+    why: Not chosen; closed tickets are replayed instead.
+    open:
+      - >-
+        Found by web search only for the lens plant; its release dates conflict between sources and it was not
+        run.
+  - key: guidance-evals
+    name: guidance evals
+    role: >-
+      Category: tests that give an agent a task and check it followed the guidance, by replay of closed
+      tickets with and without the change.
+    binding: any
+    state: candidate
+    why: Replay on closed tickets is the form chosen.
+    open:
+      - No replay harness has run.

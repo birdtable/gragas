@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-history-entry.schema.json",
+  "title": "History entry (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "number",
+    "kind",
+    "entity",
+    "after",
+    "who",
+    "when",
+    "plan"
+  ],
+  "properties": {
+    "number": {
+      "type": "integer",
+      "minimum": 1,
+      "x-introduced": "1.0"
+    },
+    "kind": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0"
+    },
+    "entity": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "before": {
+      "type": "object",
+      "x-introduced": "1.0",
+      "default": {}
+    },
+    "after": {
+      "type": "object",
+      "x-introduced": "1.0"
+    },
+    "who": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "when": {
+      "$ref": "common.schema.json#/$defs/timestamp",
+      "x-introduced": "1.0"
+    },
+    "plan": {
+      "$ref": "common.schema.json#/$defs/digest",
+      "x-introduced": "1.0"
+    },
+    "command": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/text"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "decision": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/slug"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "status": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/status"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "the status this step moved a rule to; it equals after.status where the step records one, and is absent or null on a step that moves no rule's status. after stays an untyped record, the entity's own, so this field is the one a reader can name",
+      "x-introduced": "1.3",
+      "default": null
+    }
+  }
+}

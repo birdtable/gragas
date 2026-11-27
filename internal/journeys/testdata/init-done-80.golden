@@ -1,0 +1,13 @@
+$ gragas init --kind rulebook --name demo --owner team-a --apply
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+Add these to the rulebook:
+  pre-commit hook   gragas guard staged || exit 2
+  agent settings    gragas guard edit || exit 2
+  pre-merge-commit  gragas guard staged --merge-hook || exit 2
+  the gate runs     gragas guard staged
+  git ignore        .gragas/state.yaml
+
+  done       3 files written, run <id>
+--- stderr

@@ -1,0 +1,29 @@
+format: 3
+part: daemon
+concern: backups
+rules:
+  - id: daemon.backups.1
+    statement: "Data a program manages that cannot be fetched again has a scheduled backup through a tool behind an interface (copy, list, restore, check), a record of the last good copy, and a check that restores a sample and compares it."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+        - service
+    exemptions:
+      - kinds:
+          - rebuildable-stores
+        reason: Data that can be fetched again needs no backup.
+    reasoning:
+      definition: "The program lists which of its data can be fetched again (an image, a package, a cache) and which cannot; the second list is backed up. The interface has one adapter per backup tool, and a tool added later is one adapter. The record names the copy, its time and its check result, and status reports its age. The check restores a sample into a fresh folder (cli.commands.28) and compares it byte for byte; a failed check is a bad event. The schedule rides a run the manager already makes where it can (daemon.lifecycle.5)."
+      pros:
+        - "A backup nobody has restored is a hope, not a backup; the record of the last good copy is what tells a person how much they would lose today."
+    relations:
+      relates:
+        - cli.commands.28
+        - daemon.lifecycle.5
+        - store.recovery.1
+    sources:
+      - ref: decision-65-daemon
+        backs: rule

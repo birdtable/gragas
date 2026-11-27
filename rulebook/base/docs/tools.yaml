@@ -1,0 +1,191 @@
+part: docs
+tools:
+  - key: typos
+    name: typos
+    role: >-
+      Finds retired words and misspellings in identifiers, comments and docs, with a retired-words file that
+      names the right word in the failure.
+    version: 1.52.0
+    licence: Apache-2.0
+    binding: any
+    ships: >-
+      a retired-words file under extend-words, run at the write-time hook and at the cheap tier
+    state: chosen
+    why: >-
+      Run on a plant, it reported a retired word in a comment, an identifier and a markdown file as "should
+      be" the right word, and exit status 2 on findings.
+    lost:
+      - name: cspell flagWords
+        why: >-
+          Kept as the fallback; it splits camelCase and sees single words only, so identifiers belong to a
+          separate scan.
+    open:
+      - >-
+        A retired word that is also a normal word needs a context rule that this tool cannot give: list it as
+        exact-case only.
+  - key: cspell
+    name: cspell
+    role: >-
+      Spell check over source, docs, comments and strings against a project dictionary, with flagWords as the
+      retired-word fallback.
+    version: 10.4.0
+    licence: MIT
+    binding: any
+    ships: the shared spelling base and a repository word list
+    state: chosen
+    why: >-
+      Trialled; the first run on an untuned repository gave 1,457 and 1,909 unknown words and 181 hits of a
+      retired name.
+    open:
+      - Untuned first run is noise; tune the dictionary once.
+  - key: vale
+    name: Vale
+    role: >-
+      Prose style checks (em dash, semicolon, American spellings, sentence-case headings) over markdown, HTML
+      and Astro files.
+    version: 3.26.0
+    licence: MIT
+    binding: any
+    ships: a house style of small YAML rules (presets/vale)
+    state: chosen
+    why: >-
+      The em dash, an American spelling and a title-case heading fired in markdown; the em dash and spelling
+      in HTML and Astro. The filler-word list and the not-X-but-Y form fire as existence rules (docs.voice.2).
+    open:
+      - The semicolon rule did not fire in Astro files.
+      - >-
+        Pinned in tools.yaml with one digest row per platform it ships, which is data and not a rule; no gate runs the preset's test yet.
+    note: >-
+      Chosen again for docs.voice.2. typos stays the one spelling tool (docs.spelling.2).
+  - key: markdownlint-cli2
+    name: markdownlint-cli2
+    role: Checks markdown structure from one shipped configuration.
+    version: 0.24.0
+    licence: MIT
+    binding: any
+    ships: the shared markdown lint config (line length off)
+    state: chosen
+    why: >-
+      Planted once; the default rules gave 62,000 findings, so the shipped configuration is the work.
+    open:
+      - Not yet a gate.
+  - key: lychee
+    name: lychee
+    role: >-
+      Checks relative links and anchors offline with fragments included, and external links online at land.
+    version: 0.24.2
+    licence: Apache-2.0
+    binding: any
+    ships: a pinned version and a configuration with a link cache for land
+    state: replaced
+    why: >-
+      Run on a plant, it reported a missing file, a missing heading in another file and a missing own anchor,
+      and passed good links; without fragments the anchor breaks are not seen.
+    open:
+      - The release tag is from 1 May 2026 and a nightly tag exists.
+    note: >-
+      Replaced: each repo keeps its own offline link test.
+  - key: front-matter-schema-validator-ajv
+    name: front-matter schema validator (ajv)
+    role: >-
+      Validates each doc's front matter against one JSON Schema, with the date-only change check.
+    binding: any
+    ships: one shared docs check
+    state: chosen
+    why: A small validator shared by the Go and UI repositories.
+    lost:
+      - name: remark-lint-frontmatter-schema
+        why: Last published in 2023, so it was rejected.
+    open:
+      - Not yet built.
+  - key: remark-lint-frontmatter-schema
+    name: remark-lint-frontmatter-schema
+    role: A plugin that checks each doc's front matter against one JSON Schema.
+    version: 3.15.4
+    binding: any
+    state: replaced
+    why: Last published in 2023; replaced by a shared ajv validator.
+  - key: biome-gritql-plugin-for-retired-identifiers
+    name: Biome GritQL plugin for retired identifiers
+    role: A Biome plugin that matches retired identifiers and emits the right word.
+    binding: ts
+    state: replaced
+    why: >-
+      ESLint is the rule engine, and a second engine for one rule class was not wanted; Go has no Biome.
+    open:
+      - >-
+        The reference organisation's repository ships one such plugin for a similar rule.
+  - key: docs-integrity-check
+    name: docs integrity check
+    role: >-
+      One shared docs check, run for Go and UI repositories, that confirms docs and agent files are short,
+      current and point at things that exist.
+    binding: any
+    ships: companion docs command (links, front matter, decisions, citations)
+    state: candidate
+    why: Category of check; its parts are the chosen tools above.
+    open:
+      - To be built.
+  - key: shared-spelling-base
+    name: shared spelling base
+    role: >-
+      The exported spelling configuration, English with compound words allowed, ignore paths and a few project
+      words, that each repository imports and adds its own words to.
+    binding: any
+    ships: the exported base and its import check
+    state: chosen
+    why: One base keeps every repository's list consistent.
+  - key: shared-markdown-lint-config
+    name: shared markdown lint config
+    role: >-
+      The exported markdown configuration, all defaults on with four rules off and duplicate headings checked
+      among siblings only.
+    binding: any
+    ships: the exported configuration
+    state: chosen
+    why: One configuration keeps structure checked the same way everywhere.
+  - key: glossary-file-per-program-contextive-format
+    name: glossary file per program (Contextive format)
+    role: >-
+      One glossary file per program, holding terms with definitions, aliases (prior names and outside words it
+      translates) and meta (registry code, what was retired when).
+    binding: any
+    ships: the glossary schema and the check that holds it to the code
+    state: chosen
+    why: >-
+      A program's glossary lists its names and retired words in one readable file, and agents read it before
+      naming something.
+  - key: contextive-editor-extension
+    name: Contextive editor extension
+    role: >-
+      Shows a term's definition and aliases on hover and in completion from the repository's glossary file.
+    version: 1.17.8
+    licence: MIT
+    binding: any
+    state: candidate
+    why: An editor aid for people; agents read the glossary file instead.
+  - key: fenced-go-block-extractor
+    name: fenced Go block extractor
+    role: >-
+      Extracts fenced Go blocks from docs into a scratch package so go vet can compile them.
+    binding: go
+    state: candidate
+    why: >-
+      An extract-only tool (released Jan 2024, pushed Feb 2026) or a 60-line goldmark script do the same job.
+    open:
+      - Tool route unsure; the script route is the fallback.
+  - key: docusaurus-plugin-llms
+    name: docusaurus-plugin-llms
+    role: Builds llms.txt and llms-full.txt from a docs portal at build time.
+    binding: any
+    state: banned
+    why: No docs site is run, and Docusaurus is on the UI ban list.
+  - key: docusaurus-broken-link-and-sidebar-settings
+    name: Docusaurus broken-link and sidebar settings
+    role: >-
+      Settings that fail the portal build on broken links, show last update time and generate the sidebar from
+      folders and front matter.
+    binding: any
+    state: banned
+    why: >-
+      No docs site is run and Docusaurus is banned in UI projects; each repo's own offline link test checks links instead.

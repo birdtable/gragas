@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "decisions.schema.json",
+  "title": "decisions.yaml: what was decided and why (format v3)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "decisions"],
+  "properties": {
+    "format": {"$ref": "common.schema.json#/$defs/format"},
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "title", "text", "who", "date"],
+        "properties": {
+          "slug": {"$ref": "common.schema.json#/$defs/slug"},
+          "title": {"$ref": "common.schema.json#/$defs/text"},
+          "text": {"$ref": "common.schema.json#/$defs/text"},
+          "rejected": {"type": "array", "minItems": 1, "items": {"$ref": "common.schema.json#/$defs/text"}},
+          "cites": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+              "sources": {"$ref": "common.schema.json#/$defs/slugs"},
+              "rules": {"$ref": "common.schema.json#/$defs/ids"},
+              "bindings": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "common.schema.json#/$defs/text"}, "description": "a binding as <rule id> <tool> <key>"}
+            }
+          },
+          "who": {"$ref": "common.schema.json#/$defs/text"},
+          "date": {"$ref": "common.schema.json#/$defs/date"},
+          "supersedes": {"$ref": "common.schema.json#/$defs/slug"},
+          "superseded_by": {"$ref": "common.schema.json#/$defs/slug"}
+        }
+      }
+    }
+  }
+}

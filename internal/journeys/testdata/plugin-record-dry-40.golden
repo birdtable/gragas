@@ -1,0 +1,26 @@
+$ gragas plugin record author/standin/1.0.0 --op findings --fixture src/a.txt
+--- exit 6
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Record standin@1.0.0
+  round 0, step 0 runs standin --list
+  the tool is 1.4.2: its version was
+  asked, and nothing else was run
+
+what is written where
+  make
+  testdata/recordings/1.4.2/0-0.stdout
+  make
+  testdata/cases/1-findings/request.json
+  make
+  testdata/cases/1-findings/response.json
+This was a dry run and nothing was
+changed. Add --apply to make these
+changes.
+
+  declined   nothing was changed
+    gragas plugin record
+author/standin/1.0.0 --fixture src/a.txt
+--op findings --apply
+--- stderr

@@ -1,0 +1,5 @@
+[
+  {"name": "an unknown field", "patch": [{"op":"add","path":"/0/plan/extra","value":1}], "problem": "Additional properties are not allowed ('extra' was unexpected)"},
+  {"name": "a missing question", "patch": [{"op":"remove","path":"/0/plan/question"}], "problem": "'question' is a required property"},
+  {"name": "a wrong enum", "patch": [{"op":"replace","path":"/0/plan/rekeyed/0/state","value":"lost"}], "problem": "is not one of"}
+]

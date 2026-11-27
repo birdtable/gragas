@@ -1,0 +1,219 @@
+{
+  "schema": 1,
+  "contract": "1.3",
+  "command": "validate",
+  "word": "findings",
+  "dir": "",
+  "rules": 1,
+  "held": 0,
+  "total": 200,
+  "shown": 50,
+  "findings": [
+    {
+      "entity": "language/go/rules/c1.yaml:8",
+      "msg": "schema at rules/0/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c1.yaml:13",
+      "msg": "schema at rules/1/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c1.yaml:18",
+      "msg": "schema at rules/2/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c1.yaml:23",
+      "msg": "schema at rules/3/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c1.yaml:28",
+      "msg": "schema at rules/4/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c1.yaml:33",
+      "msg": "schema at rules/5/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c1.yaml:38",
+      "msg": "schema at rules/6/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c1.yaml:43",
+      "msg": "schema at rules/7/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c1.yaml:48",
+      "msg": "schema at rules/8/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c1.yaml:53",
+      "msg": "schema at rules/9/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c2.yaml:8",
+      "msg": "schema at rules/0/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c2.yaml:13",
+      "msg": "schema at rules/1/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c2.yaml:18",
+      "msg": "schema at rules/2/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c2.yaml:23",
+      "msg": "schema at rules/3/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c2.yaml:28",
+      "msg": "schema at rules/4/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c2.yaml:33",
+      "msg": "schema at rules/5/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c2.yaml:38",
+      "msg": "schema at rules/6/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c2.yaml:43",
+      "msg": "schema at rules/7/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c2.yaml:48",
+      "msg": "schema at rules/8/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c2.yaml:53",
+      "msg": "schema at rules/9/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c3.yaml:8",
+      "msg": "schema at rules/0/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c3.yaml:13",
+      "msg": "schema at rules/1/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c3.yaml:18",
+      "msg": "schema at rules/2/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c3.yaml:23",
+      "msg": "schema at rules/3/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c3.yaml:28",
+      "msg": "schema at rules/4/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c3.yaml:33",
+      "msg": "schema at rules/5/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c3.yaml:38",
+      "msg": "schema at rules/6/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c3.yaml:43",
+      "msg": "schema at rules/7/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c3.yaml:48",
+      "msg": "schema at rules/8/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c3.yaml:53",
+      "msg": "schema at rules/9/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c4.yaml:8",
+      "msg": "schema at rules/0/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c4.yaml:13",
+      "msg": "schema at rules/1/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c4.yaml:18",
+      "msg": "schema at rules/2/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c4.yaml:23",
+      "msg": "schema at rules/3/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c4.yaml:28",
+      "msg": "schema at rules/4/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c4.yaml:33",
+      "msg": "schema at rules/5/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c4.yaml:38",
+      "msg": "schema at rules/6/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c4.yaml:43",
+      "msg": "schema at rules/7/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c4.yaml:48",
+      "msg": "schema at rules/8/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c4.yaml:53",
+      "msg": "schema at rules/9/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c5.yaml:8",
+      "msg": "schema at rules/0/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c5.yaml:13",
+      "msg": "schema at rules/1/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c5.yaml:18",
+      "msg": "schema at rules/2/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c5.yaml:23",
+      "msg": "schema at rules/3/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c5.yaml:28",
+      "msg": "schema at rules/4/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c5.yaml:33",
+      "msg": "schema at rules/5/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c5.yaml:38",
+      "msg": "schema at rules/6/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c5.yaml:43",
+      "msg": "schema at rules/7/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c5.yaml:48",
+      "msg": "schema at rules/8/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    },
+    {
+      "entity": "language/go/rules/c5.yaml:53",
+      "msg": "schema at rules/9/status: 'nonsense' is not one of ['proposed', 'trial', 'active', 'retired']"
+    }
+  ],
+  "notices": [
+    {
+      "entity": "names check",
+      "msg": "the names check did not run: no names list was given; set the names-file key or GRAGAS_NAMES_FILE"
+    }
+  ]
+}

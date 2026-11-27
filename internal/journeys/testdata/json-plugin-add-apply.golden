@@ -1,0 +1,17 @@
+$ gragas plugin add <bundles>/lint-a/1.0.0 --apply --json
+--- exit 0
+--- stdout
+{
+  "schema": 2,
+  "command": "plugin add",
+  "apply": true,
+  "ended": "done",
+  "msg": "3 files written, run <run>",
+  "run": "<run>",
+  "changes": [
+    "wrote plugins/lint-a/1.0.0/plugin.wasm",
+    "wrote plugins/lint-a/1.0.0/plugin.yaml",
+    "wrote plugins/lock.yaml"
+  ]
+}
+--- stderr

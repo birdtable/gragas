@@ -1,0 +1,6 @@
+# The fixture's preset: what the layer test turns on.
+linters:
+  enable:
+    - layercheck
+settings:
+  wrapcheck: {}

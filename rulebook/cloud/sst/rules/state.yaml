@@ -1,0 +1,16 @@
+format: 3
+part: sst
+concern: state
+rules:
+  - id: sst.state.1
+    statement: "Imported identity, IAM and DNS resources carry retain-on-delete, so removing the stack does not remove them."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The infrastructure rule set also requires grants only through managed policies and a pinned role name for every function (the Lambda part holds those two) as one set of rules over the infrastructure code. In Go, a binary never rewrites shared state and removal must not take user data."
+      pros:
+        - "A resource the stack only imported belongs to others; deleting the stack must not delete it."

@@ -1,0 +1,628 @@
+part: web
+concern: parts
+order: 3
+title: Design parts and components
+summary: >-
+  The design system is the only source of interface parts; pages compose catalogued parts, never hand-built
+  twins, and every new part ships with a catalogue entry.
+rules:
+  - id: web.parts.1
+    slug: platform-first
+    since: 0.1.0
+    rule: >-
+      The platform comes first: the native element, native event source, `Intl` and CSS; ARIA only fills gaps,
+      and a primitive library that a pack names fills the rest.
+    detail: >-
+      A banned-package list covers packages that reimplement the platform: date libraries, polyfills for
+      `Intl`, wrappers around the native event source, icon fonts, and UI kits that wrap native elements. It
+      is read from the same package table as the supply-chain rule. ARIA is not used where a native element
+      exists: a prefer-tag-over-role rule and the HTML validator's prefer-native-element and no-redundant-role
+      rules. Plant forms: adding `moment` or `dayjs` to the dependencies; `<div role="button">`. The ban list
+      is `companion deps`, covering wrappers of `EventSource`; template form
+      `astro/jsx-a11y/prefer-tag-over-role`. A primitive library that a pack names is the gap-filler.
+    level: package
+    why: >-
+      The principle is supported by practice (evidence B); a reimplemented platform feature carries its own
+      accessibility and locale faults.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. the banned-package list in the dependency check of our CLI, plus
+          `jsx-a11y/prefer-tag-over-role` (in the template form for Astro) and html-validate
+          `prefer-native-element` and `no-redundant-role`. Plant: adding a date library to the dependencies
+          fails; `<div role="button">` fails. Control: a native `<button>` passes
+    open:
+      - >-
+        Half holds: the package and the role on the wrong element are rules; whether a gap really needs ARIA
+        is review.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: B for the principle
+  - id: web.parts.2
+    slug: no-hand-built-twin
+    since: 0.1.0
+    rule: >-
+      Feature code holds no hand-built twin of a catalogued part: no raw button, input, select, textarea,
+      table, dialog or spinner class where a catalogued part exists; the count is kept per part and only
+      shrinks.
+    detail: >-
+      One element ban per catalogued part, generated from the parts catalogue and applied to feature folders
+      only, so the part's own folder is exempt; it works on components and on templates. The input count is
+      the number of catalogued parts; zero is a valid state and returns "not applicable: 0 inputs" with the
+      count, never a pass. A rule added before the catalogue exists needs its plant in the same change. A
+      conversion from a string-built element is counted too. Selector form:
+      `JSXOpeningElement[name.name="button"]`, working on `.tsx` and on `.astro` templates. The utility
+      spinner class `animate-spin` is also a raw-element twin.
+    level: file
+    why: >-
+      Measured: 3 twins in one site, 1 of 144 faults in another, 2 in a third; 19 buttons and 10 tables built
+      from strings in one site, and 103 buttons from strings in 43 files in another.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          `no-restricted-syntax` with one selector per catalogued part (for example the JSX opening element
+          named button, table, dialog, select), generated from the parts catalogue and scoped by `files` to
+          feature folders, with a shrink-only baseline per part. Plant: a raw `<button>` in a feature file
+          fails; the same element inside the button part passes; with an empty catalogue the check prints "not
+          applicable: 0 inputs". Control: a feature that uses the catalogued part passes
+    relates:
+      - id: react.components.3
+        how: see
+    open:
+      - >-
+        The scan cannot fail until the catalogue exists. The gate is the element ban outside the part; the
+        shape scan is advice.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: F4 in three sites (3, 1 of 144,
+        2)
+    note: >-
+      Kept whole in the web part at the cross-part move: the merge had marked the React raw-markup set of the
+      ban as belonging in react, but the JSX selector form works on `.tsx` and on `.astro` templates alike, so
+      no part of the ban is React only. The React raw-HTML funnel is react.components.3.
+  - id: web.parts.3
+    slug: page-patterns-checked
+    since: 0.1.0
+    rule: >-
+      Every screen guideline gets a lint rule, a test, or a stated reason that it stays text.
+    detail: >-
+      Examples to turn into checks: no card as a page root, record cells use the record field, list pages use
+      the table component. A rule that no tool can catch is marked an instruction with its reason.
+    level: process
+    why: >-
+      A guideline that no check holds is read once and then drifts; marking it as an instruction states
+      honestly that it is not held.
+    kind: rule
+    strength: Review
+    status: proposed
+    review_question: >-
+      Which screen guidelines have neither a check nor a stated reason for staying text?
+    open:
+      - >-
+        The split noted this as a gap in the reference: the guidelines were not yet turned into checks.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.parts.4
+    slug: page-does-not-wrap-itself
+    since: 0.1.0
+    rule: >-
+      A page never wraps itself in a surface the shell already provides: the header sits on the canvas, a list
+      table is its own card and record sections are section cards.
+    level: file
+    why: >-
+      A page that adds its own container around itself doubles borders and padding the shell already gives.
+    kind: rule
+    strength: Review
+    status: proposed
+    review_question: Does this page wrap itself in a card or panel the shell already provides?
+    open:
+      - >-
+        No row bans a page wrapping itself, so it is a gap; the page-patterns rule proposes the lint ("no card
+        as a page root"). The design rubric's note that a page does not wrap itself in what the shell gives
+        states the same.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.parts.5
+    slug: one-page-archetype
+    since: 0.1.0
+    rule: >-
+      A page uses the archetype: the page shell and header, lists through the list screen and table, and
+      records like the existing record pages.
+    level: file
+    why: >-
+      New screens built from a generator or golden page keep one folder shape and one look.
+    kind: rule
+    strength: Review
+    status: proposed
+    review_question: >-
+      Does this page use the shell, the header, and the list or record archetype, or does it invent its own?
+    open:
+      - Held by the golden page and review; no lint states 'uses the archetype'.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.parts.6
+    slug: own-part-for-own-shape
+    since: 0.1.0
+    rule: >-
+      A shape the general part cannot express has its own catalogued part; for example a round icon-only
+      button uses the icon button part.
+    level: file
+    why: >-
+      Bending the general part with extra props closes the catalogue's promise of few, closed props.
+    kind: rule
+    strength: Review
+    status: proposed
+    review_question: >-
+      Is a general part stretched here to draw a shape that has, or needs, its own part?
+    open:
+      - >-
+        Related to the closed-props rule and to the icon-only accessible name rule; no check yet.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.parts.7
+    slug: closed-part-props
+    since: 0.1.0
+    rule: >-
+      Shared parts take few, typed and closed props in one naming; a control uses one value and change
+      contract, extra search terms go in a keywords prop, and explanations sit outside the control.
+    level: file
+    why: >-
+      A control with two value contracts forces every caller to learn which one it has.
+    kind: rule
+    strength: Review
+    status: proposed
+    review_question: >-
+      Do this part's props match the catalogue entry, and does the control follow the one value and change
+      contract?
+    open:
+      - >-
+        No check yet; the catalogue lists each part's props, which would let a type test hold the naming.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.parts.8
+    slug: value-has-its-part
+    since: 0.1.0
+    rule: >-
+      Each kind of value is shown through its one part: identifiers in a monospace value, copyable values in a
+      copyable value, secrets in a secret input, status in a status badge, permissions in a permission label,
+      and the responsive dialog or table for phone versus desktop.
+    detail: >-
+      The permission label renders from a message map keyed by the permission registry id, and server text
+      goes through the server-text part, so no literal sentence is shown.
+    level: file
+    why: Ids, secrets and statuses shown as plain text lose copy, masking and meaning.
+    kind: rule
+    strength: Review
+    status: proposed
+    review_question: >-
+      Is any id, copyable value, secret, status or permission on this page shown as plain text?
+    open:
+      - >-
+        No check yet; the raw-element scan covers only the element, not the kind of value.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.parts.9
+    slug: one-toast-system
+    since: 0.1.0
+    rule: >-
+      There is one notification system, a notify wrapper over the design system's toaster that takes a message
+      result and not a literal; an actionable notice never auto-dismisses; the old toast library is gone.
+    detail: The old toast library was `react-toastify`.
+    level: package
+    why: >-
+      Two toast systems stack and style differently; a literal sentence escapes the message catalogue.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          `no-restricted-imports` on any other toast library, and the no-hardcoded-text rule on the notify
+          wrapper's arguments. Plant: importing a second toast library fails; calling notify with a string
+          literal fails. Control: notify called with a message result passes
+    open:
+      - >-
+        The shadcn toast copy was replaced by the design system's own notice part (decision 30); the
+        no-auto-dismiss clause is checked by review.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.parts.10
+    slug: icon-registry
+    since: 0.1.0
+    rule: >-
+      Icons are named by meaning from one registry, and the set changes in one file; direct imports of an icon
+      package live only in the registry.
+    detail: >-
+      A name like an action or object resolves through the design system's registry, which ships built-in
+      entries; a project config extends or overrides them. No inline `<svg>` outside the registry folder, and
+      no import of an icon package anywhere but the one icon module. Selector
+      `JSXElement[openingElement.name.name="svg"]`; `@tabler/icons-react` only inside the icon module;
+      `lucide-react` anywhere else fails.
+    level: file
+    why: >-
+      One site has 99 icon names; another has 3 inline shapes and 6 glyphs; the icon package is 15 minor
+      releases behind.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          `no-restricted-syntax` on the svg element outside the icon registry folder (components and
+          templates) and `no-restricted-imports` on every icon package except in the one icon module; for
+          templates the generated sprite is compared by the generate-with-check loop. Plant: an inline `<svg>`
+          in a page file fails; importing a second icon package anywhere fails. Control: an icon named through
+          the registry passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C: 99 names in one site; 3 inline
+        shapes and 6 glyphs in another
+  - id: web.parts.11
+    slug: parts-catalogue-as-data
+    since: 0.1.0
+    rule: >-
+      A parts catalogue exists as data an agent can query (part, states, props, file, stack, accessibility
+      state), every part and prop used resolves against it, a new part adds its row, and an agent looks a
+      part's real interface up in it and never assumes.
+    detail: >-
+      Where a doc generator reads the stack (react-docgen for components) the catalogue is generated and a
+      check fails on drift; where none does (templates) it is hand-written and checked against each part
+      file's exported props. The type checker rejects an unknown prop on a typed component. A new gating
+      primitive adds a catalogue row and tests. Without the catalogue, the checks that depend on it (twin
+      scan, examples, kit render test) are vacuous. Command `companion catalogue` with `--check` failing on
+      drift; template stack checked with `@astrojs/compiler` or the TypeScript API, and `astro check` rejects
+      an unknown prop. Agents query the catalogue (the story tool's `docs-show` query) and never assume a
+      part's props. A new gating primitive adds a row to the `authz-gates` catalogue and tests. Template-stack
+      catalogue entries are hand-written for `.astro` part files.
+    level: program
+    why: >-
+      An audit found 22 parts declared and never drawn, and 39 drawn and never declared. Agents invent props
+      when no queryable interface exists.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the catalogue check of our CLI: the catalogue data file against the part files,
+          generated from props with react-docgen where it applies; for templates checked against each part
+          file's exported Props; `tsc` and the template checker reject an unknown prop. Plant: a part file
+          with no catalogue entry fails; a catalogue entry whose file is gone fails; a prop used that the part
+          does not declare fails the type check; a new gating primitive with no row fails. Control: a part
+          with its entry and declared props passes
+    open:
+      - >-
+        Nothing in the repo is a catalogue today; every dependent row is vacuous until it exists. The file
+        format is open. The doc manifest of the story tool is a preview and unproven on the template stack.
+      - >-
+        The agent-lookup half (query before writing) is an instruction held by the session; no hook proves the
+        look-up.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: the audit above
+  - id: web.parts.12
+    slug: example-per-state
+    since: 0.1.0
+    rule: >-
+      Every shared part has a living example in each of its states, and a new canonical part ships with an
+      example and a catalogue row.
+    detail: >-
+      For every part in the catalogue and every state it declares, a story or gallery entry must exist and
+      render; the story tool's runner (or the Vitest addon) runs each story and checks it for accessibility;
+      the template stack's gallery is a route that lists each part and state, rendered by the land-tier
+      browser run. Existence is compared against the catalogue. Zero shared parts is a valid state, reported
+      as "not applicable: 0 inputs". React stack runner: `@storybook/test-runner`; check command `companion
+      parts --examples`.
+    level: package
+    why: >-
+      The donor's story gate found 523 of 1,241 stories failing axe, which shows the net catches things, not
+      that it prevents them.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the examples check of our CLI compares the catalogue with the stories; a story
+          runner renders each story and runs the accessibility engine. Plant: adding a part to the catalogue
+          with no story fails; adding the story passes. Control: a part with a story for every declared state
+          passes
+    open:
+      - No story framework exists for the template stack, so its gallery is ours.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D: the comparison is about 30 lines;
+        the story tool itself is configuration
+  - id: web.parts.13
+    slug: extract-at-three
+    since: 0.1.0
+    rule: >-
+      Extract a part once the same part is hand-built in three or more files of a site; across sites, only at
+      a second live consumer on the same framework and after its fault has recurred.
+    detail: >-
+      A report from a clone scan (a clone detector plus a JSX subtree-shape count per site) prints a shape
+      with three or more copies as a candidate; the third copy blocks until it is moved or listed as
+      independent. The extraction itself is judged. The exact-clone half is already enforced elsewhere. Seed:
+      the copy census script `step-copies.py`; the clone detector is `jscpd`.
+    level: program
+    why: >-
+      Copies exist inside one site today and not across sites; thresholds are the donor's own.
+    kind: rule
+    strength: Answered
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. a report from the second-copy scan (a clone detector plus a subtree-shape count
+          per site, seeded by the copy census); a shape with three or more copies in one site prints as a
+          candidate. Plant: a fixture with the same 8-line JSX block in three files prints as a candidate.
+          Control: a block in two files is not a candidate
+    open:
+      - >-
+        The source verdict is a best practice. A failing gate on shape count would fire on correct code (shape
+        counts misread real code); it would change if an exception list is agreed as the way to silence a
+        candidate.
+      - The copy census exists as a measure and is unproven as a gate.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: not across sites today, yes
+        inside one site; report only
+  - id: web.parts.14
+    slug: kit-self-contained
+    since: 0.1.0
+    rule: >-
+      The shared kit renders with no provider and carries its own words as plain data: a strings object with
+      English defaults, which the host may override in part.
+    detail: >-
+      The kit holds no i18n library and no host config. A test renders every exported part from the catalogue
+      with no provider and no wrapper and asserts it does not throw and its words come from the part's own
+      defaults. Vacuous on the template stack while parts have no provider. The component-stack form, a render
+      test with no provider, is react.testing.3. Part of the kit's own words are screen-reader-only text
+      (`sr-only`), placeholders and default prop strings.
+    level: package
+    why: >-
+      The donor's design system added a provider and an English defaults object for this at its 0.13.0
+      release.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test in the shared kit renders every exported part from the catalogue with no provider (render to
+          a string for templates; the component render is react.testing.3). Plant: a part that needs host
+          config or a host i18n library to render fails the render. Control: a part that works bare passes
+    relates:
+      - id: react.testing.3
+        how: see
+    open:
+      - >-
+        No fault in our record; built because every rule binds from adoption (decision 19). If the operator
+        would rather not build for evidence D, this becomes a best practice.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.parts.15
+    slug: kit-dependencies
+    since: 0.1.0
+    rule: >-
+      The shared parts package depends on no app-level library beyond its declared peers and holds no program
+      domain.
+    detail: >-
+      The kit keeps no data-fetching dependency except the form peer, and no i18n library; the kit imports no
+      program package and holds mechanism only.
+    level: package
+    why: >-
+      A kit that imports app libraries cannot be reused on a second site without that site adopting the first
+      one's stack.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          the dependency check of our CLI on the kit's manifest (peers only) and `no-restricted-imports` of
+          program packages in the kit. Plant: adding a data-fetching library to the kit's dependencies fails.
+          Control: only declared peers pass
+    open:
+      - >-
+        The form peer is TanStack Form (decision on TanStack always); the reference named a different peer and
+        a different data library.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.parts.16
+    slug: one-ui-kit
+    since: 0.1.0
+    rule: >-
+      Every UI part comes from the design system's single entry; no second UI kit is imported, in code or in
+      the manifest.
+    detail: >-
+      A second kit (a component library, a headless primitive set, a command-menu or drawer package) fails in
+      imports and in the package manifest. A design-system source copied into the shared package counts as the
+      package (decision 30), on the primitive library chosen in decision 8. Plant: a named import of `Button`
+      from `"@mui/material"` fails; the check reads `package.json` too. The reference also banned `@radix-ui/*`,
+      `cmdk` and `vaul` as second kits.
+    level: file
+    why: Two kits mean two focus models, two token systems and two sets of faults.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          `no-restricted-imports` plus the manifest ban list in the dependency check. Plant: importing a
+          button from a second component library fails. Control: the shared part passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.parts.17
+    slug: design-named-parts
+    since: 0.1.0
+    rule: >-
+      The design's named parts exist as `data-` attributes in the shipped page, match the design's numbers,
+      and are what visual tests measure.
+    detail: >-
+      Plant attribute: `data-part="card"`. The numbers come from the design file, or from the committed parts
+      file where no machine-readable design exists; a page with visual tests and neither file fails.
+    level: file
+    why: >-
+      A card five pixels off its design is invisible to a unit test, and a visual test needs named parts to
+      measure instead of a picture to compare (web.testing.5).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-web
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a browser test per page reads the design file's named parts and numbers and asserts each part exists
+          in the shipped page with the expected widths and sizes. Plant: removing a part's `data-part`
+          attribute fails; a card 5 px off its design size fails. Control: a page matching its design file
+          passes
+    promoted:
+      "on": "2026-11-05"
+      trial: >-
+        decision 65 (D-T80) made numbers on named parts the judge of rendered UI, so this rule binds.
+    relates:
+      - id: web.testing.5
+        how: see
+    open:
+      - >-
+        No repository has a machine-readable design file yet; until one exists the parts and their numbers are
+        a committed parts file beside the page, read by the same test.
+  - id: web.parts.18
+    slug: typed-templates
+    since: 0.1.0
+    rule: >-
+      Template and prop type errors are caught by a gate on every stack in use, and a stack with no typed
+      check declares the gap in its parameters file.
+    detail: >-
+      Template stacks: `.astro` and `.tsx`; the tagged-template stack (`lit-html`) has no typed check
+      (`lit-analyzer`).
+    level: package
+    why: >-
+      The weak link of the static path: a wrong prop type in a template reaches the page unseen.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: astro-check
+        tier: "1"
+        note: >-
+          v1 class compiler. the template stack's own checker (astro check) and `tsc --noEmit` for components;
+          a tagged-template stack has no typed template check, so its gap is declared and listed. Plant: a
+          string passed to a numeric prop fails in a template and in a component. Control: a correctly typed
+          prop passes
+    open:
+      - Not planted in a repository today.
+      - >-
+        No typed template check exists for the tagged-template stack (its analyser was last released in
+        January 2024).
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C: the stack report calls this the
+        weak link of the static path
+  - id: web.parts.19
+    slug: behaviour-test-by-role
+    since: 0.1.0
+    rule: >-
+      One behaviour test written with role and test-id locators only passes unchanged on any stack.
+    detail: >-
+      One browser journey per behaviour; raw selectors fail the lint (`no-raw-locators`,
+      `prefer-native-locators`) and the same spec runs against each stack's build in the admission pilot and
+      must pass unchanged. The same spec runs in the `pack-admission` pilot. Plant: `page.locator(".card >
+      div")`.
+    level: file
+    why: >-
+      Eight of eight spike builds passed the journey, showing the locator contract is the DOM contract between
+      stacks.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "3"
+        note: >-
+          `eslint-plugin-playwright` `no-raw-locators` and `prefer-native-locators` as errors; the same spec
+          run against each build. Plant: a spec using `page.locator(".card > div")` fails the lint. Control: a
+          `getByRole` spec passes on both builds
+    open:
+      - >-
+        'On any stack' is shown only by running the spec against both builds in the pilot.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: web.parts.20
+    slug: component-folder-shape
+    since: 0.1.0
+    rule: "A component folder has the closed shape: module, stylesheet, stories and test."
+    detail: >-
+      New folders only until the old ones move. The check declares zero component folders a valid state and
+      returns "not applicable: 0 inputs" with the count. An alternative that checks names only:
+      `@ls-lint/ls-lint`.
+    level: package
+    why: >-
+      The four text rules for the shape run against nothing, since no component folder exists at its pin;
+      unproven on real folders.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          `eslint-plugin-project-structure` `folder-structure` with a required-children rule per framework
+          spelling (an alternative that checks only names does not check that a sibling must exist). Plant: a
+          component folder missing its test file fails; a complete folder passes. Control: a complete folder
+          passes
+    open:
+      - >-
+        The required-children behaviour was not run (only the option's existence was verified); fall back to
+        the text rules.
+      - The folder shape names both test-file spellings until one site's files migrate.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D: new folders only until old ones
+        are moved
+  - id: web.parts.21
+    slug: charts-from-design-system
+    since: 0.1.0
+    rule: Charts come from the design system; the app has no direct chart dependency.
+    level: package
+    why: A heavy capability is owned once, so the app does not carry a second copy.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          the supply-chain ban list and `no-restricted-imports` on chart libraries outside the design system.
+          Plant: importing a chart library in an app file fails. Control: the same chart through the design
+          system's chart part passes
+    open:
+      - >-
+        The reference held the chart library as an optional peer of the design system; a shared part needs two
+        consumers.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

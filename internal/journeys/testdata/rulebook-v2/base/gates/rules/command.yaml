@@ -1,0 +1,1214 @@
+part: gates
+concern: command
+order: 1
+title: One gate command and its tiers
+summary: >-
+  Every check runs through one shared gate command. Each rule has one home tier with a written budget, a
+  planner picks what a tier runs from declared scope rules and fails closed to a full run, and gate scripts
+  are written so that a failure can never be swallowed.
+rules:
+  - id: gates.command.1
+    slug: one-gate-command
+    since: 0.1.0
+    rule: >-
+      Every gate run goes through one shared gate command that runs every check at each tier, from the hooks
+      and from the land job.
+    detail: >-
+      The same command serves every tier (on write, commit, stop, push, land, full or after release), chosen
+      by a flag, and it is the same in every repo: one gate script, shared, with no second entry point that
+      runs checks. A Go repo's single `check` target and a TypeScript repo's single gate script are both this
+      command. The hook's list is a declared subset of the land job's list: the land job calls the push tier
+      and then the full tier, and the full tier holds what the push leaves out (the tests, the vulnerability
+      scan, the conformance check), so every member of either runs before main.
+    level: program
+    why: >-
+      Separate entry points drift: a check is added to one and not the other. A hook that runs a fast subset
+      of its own reports green for what the land job would refuse, so the subset is declared in the land
+      job's list, and the land job runs every member of it and of the full tier on the merged tree before
+      main: nothing the land job would refuse reaches main.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-4
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 7
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The gate command's own test walks the rule registry and fails when a registered
+          check is not reachable from the command at its home tier, or when a hook or land job calls anything
+          but the command. Plant: A check registered with a home tier but missing from the command fails; a
+          hook that runs a private list of checks fails. Control: Every hook and the land job calling only the
+          one command passes.
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          One shared `check` make target from a shared Makefile fragment that the hooks also call. Plant: A
+          check target defined in the Makefile but not reachable from `check` fails. Control: All check
+          targets reachable from `check` passes.
+    relates:
+      - id: gates.command.4
+        how: see
+    open:
+      - >-
+        Today one TypeScript repo's pre-push hook runs only the fast gate subset, so the one-command rule is
+        not yet true there.
+    note: >-
+      Same rule as the shared gate script, the one gate command per tier and the gate orchestration kind (see
+      tools). The scope-planning half of the TypeScript source is gates.command.4.
+  - id: gates.command.2
+    slug: runs-without-helper-tool
+    since: 0.1.0
+    rule: >-
+      A repo enforces its rules with no helper tool installed: the gate and the hook run in a clean clone with
+      that tool absent from PATH.
+    detail: >-
+      The gate and the hooks use only standard tools and the repo's Taskfile tier (the push tier for the hook).
+      The check
+      runs the gate in a clean clone with PATH stripped of our own helper CLIs, for example with a minimal
+      environment. A repo does not depend on a command that a fresh checkout lacks.
+    level: program
+    why: >-
+      A gate that needs a helper nobody installed is skipped silently on a fresh machine or in a clean clone.
+      Five of seven Go repos have a tracked pre-push hook, two have none (V-88).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-4
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "3"
+        note: >-
+          Run the gate in a clean clone with a minimal PATH (`env -i PATH=<minimal> make check`), using the
+          shared hook and Makefile fragment; a recipe in the shared fragment using standard tools only. Plant:
+          A Makefile line that calls the helper CLI fails the clean-clone run. Control: The shared fragment
+          alone passes.
+  - id: gates.command.3
+    slug: home-tier-and-budget
+    since: 0.1.0
+    rule: >-
+      Every rule names one home tier and its time budget in the rule data; a check that cannot meet its tier's
+      budget moves to a later tier, never to a timer.
+    detail: >-
+      The tiers are on write, before commit or at the agent's stop, before push, at land, and after release.
+      The rule data carries a tier column and a budget per rule, validated by schema (the tier column is
+      schema-checked), and the gate runner reads the tier from the data to decide when a check runs. A test
+      checks that each tier's measured wall time is inside its budget from the gate summary. A rule with no
+      tier fails the schema.
+    level: program
+    why: >-
+      Tiers written as prose tables drift from what runs. A check that is too slow for its tier and is run "at
+      most every so often" by a timer is not a gate any more.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-39
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. Rule-table schema with required `tier` and `budget` fields; the gate runner
+          reads the tier from the table; a test fails when a tier's measured wall time in the gate summary
+          exceeds its budget. Plant: A rule row without a tier fails the schema; a check slowed past its
+          tier's budget fails the budget test. Control: A row with tier and budget, and a check inside budget,
+          passes.
+    open:
+      - >-
+        Tiers exist today as tables in design notes, not as data; a staged-file hook run was timed at 1.9 s
+        (trial) and is the only tier timing seen.
+      - "v1 evidence, not yet a source: own measure; D (operator source)"
+    note: >-
+      Merges the tier-per-rule rule from the Go side and from the web side (each rule names its tier and its
+      budget); also the "each rule has one home tier" half of the shared gate command.
+  - id: gates.command.4
+    slug: plan-from-scope-rules
+    since: 0.1.0
+    rule: >-
+      Where a repo turns test selection on, what a tier runs is chosen by a planner from declared scope rules
+      for that tier, from what changed; a full uncached run always satisfies the gate, and a repo whose full
+      gate fits its push budget runs the full gate.
+    detail: >-
+      Selection is optional. The default is the whole gate on every push, with tests uncached (a cached pass
+      is a claim about a run that did not happen). A repo turns selection on only when its full gate does not
+      fit the push budget of gates.hooks.4. Then the scope rules are one declared file per repo (path classes
+      mapped to checks and tests), a selector picks the packages, domains or journeys from the changed paths
+      and the dependency graph, the runner reads tier and budget, and the plan is built by the selector from
+      the path-class table. The tiers, scopes and targets are a written table. Whatever selection is on, a
+      full uncached run is always accepted as passing the gate.
+    level: program
+    why: >-
+      Three target repos run the whole gate on every push, and a selector is a second program that can be
+      wrong. Where the full gate does not fit, a hand-picked subset lets an author choose what proves their
+      own change, so the subset comes from declared rules.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-18
+        backs: rule
+      - ref: decision-27
+        backs: rule
+      - ref: decision-65-gates
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The gate planner reads the declared scope-rule file when selection is on; the plan
+          lists each selected check with the reason the selector chose it; with selection off the gate runs
+          every member uncached. Plant: A changed path in a mapped class that selects nothing for its tier
+          fails the planner test; a gate run with cached test results fails. Control: Each mapped class
+          selects its declared checks; a full uncached run passes.
+    relates:
+      - id: gates.hooks.4
+        how: see
+      - id: gates.command.1
+        how: see
+    note: >-
+      Split out of the TypeScript source that also holds the one gate command (gates.command.1).
+  - id: gates.command.5
+    slug: planner-fails-closed
+    since: 0.1.0
+    rule: >-
+      The planner fails closed to a full run on a global-class path, an unplaced path, a dirty tree, an
+      unresolvable range or a failed graph build, and says why.
+    detail: >-
+      A change that cannot be placed runs every check and journey. Global-class paths include package
+      manifests and lockfiles, compiler and lint and build and test configuration, shared style files,
+      generated type declarations, infrastructure and environment files, the test kernel, API specs, generated
+      code, the domain map and the gate scripts themselves, and also `go.mod`, `go.sum` and build files for
+      Go. Also full: an unknown path, a file with no owner or two owners, an unresolvable range, a dirty tree
+      at the land tiers, a failed graph build. An empty or missing input fails. A change to the selector
+      selects everything. Message catalogues that have their own validator are not global-class, and the
+      planner does not widen to the full suite for them.
+    level: program
+    why: >-
+      A selector that guesses on a path it cannot place proves a subset and calls it green; a lead once
+      reported 14 chosen tests green where the package would have failed 4.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-18
+        backs: rule
+      - ref: decision-27
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 4
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. Planner test: each of the listed fail-closed cases (global path, unknown path,
+          unowned or doubly owned file, bad range, dirty tree, failed graph build) yields the full scope with
+          a reason. Plant: A planted unknown path yields a full run; a planted change to the selector yields a
+          full run. Control: A mapped, owned path in a clean tree yields only its declared scope.
+  - id: gates.command.6
+    slug: global-checks-run-whole
+    since: 0.1.0
+    rule: >-
+      Checks that are global by nature run whole at every selected tier, whatever the plan selects.
+    detail: >-
+      Types, lint, structure, size, module hygiene, vulnerability scan, regeneration and import rules are
+      whole-program checks and are never affected-only unless that is proven sound under caching. The list of
+      always-full checks is written in one place and runs in full at the push, land and full tiers.
+    level: program
+    why: >-
+      An affected-only run of a whole-program check misses breakage that arrives through a file the change did
+      not touch.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. Planner test: for each check on the always-full list, every non-trivial plan
+          includes it at the push, land and full tiers. Plant: A plan that narrows a listed always-full check
+          to affected files fails. Control: The same plan with the check run whole passes.
+    open:
+      - >-
+        The Go side has no rule that says whole-program checks never run affected-only; it is only implied
+        (module hygiene, vulnerability, regeneration and import rules).
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A (own bugs)"
+  - id: gates.command.7
+    slug: tier-budgets
+    since: 0.1.0
+    rule: >-
+      Tiers have written time budgets, recorded in one place; they are targets that the runner prints wall
+      time against.
+    detail: >-
+      Budgets: on write about 2 s, commit 10 s, stop 60 s, pre-push 3 min, land 5 min for a selected run and
+      10 min for a whole run, after release 15 min. The selected and whole budgets of every tier are written
+      in one place. They are targets and are only reported, never enforced as timers (the one enforced bound
+      is gates.command.8).
+    level: process
+    why: >-
+      Without written budgets nobody notices a tier creeping; at one reference team the budgets were missed
+      three to six times in the field. The first merge put 2 s on pre-commit, which belongs to on-write.
+    kind: measure
+    strength: Answered
+    status: active
+    sources:
+      - ref: decision-39
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "4"
+        note: >-
+          v1 class shared-code. The runner prints wall time per tier against the written budget; a tier over
+          budget asks for a recorded answer (move the check later, or record why). Plant: A check slowed past
+          its tier's budget is printed over budget. Control: A check within budget is printed within budget.
+    review_question: >-
+      Which tier ran over its written budget this week, and what was decided about the slowest check in it?
+    relates:
+      - id: gates.command.8
+        how: see
+    open:
+      - >-
+        Budgets are targets and a guess; the number for each tier is data, not a measured limit.
+      - >-
+        v1 evidence, not yet a source: D (a reference team missed its budgets 3 to 6 times)
+    note: >-
+      The row mixed a budget list (watched numbers, strength Answered) with the 20 minute red line (a workflow
+      timeout, a rule); the red line is gates.command.8.
+  - id: gates.command.8
+    slug: release-red-line
+    since: 0.1.0
+    rule: >-
+      The release workflow's test jobs carry a stated timeout, and a run that reaches it is cancelled.
+    detail: >-
+      Each test and build job in the release workflow on the tag sets a `timeout-minutes` value; 20 minutes is
+      the default red line (decision 39), and a job that needs more states its number and reason in the
+      workflow. A job without a timeout fails the workflow check. There is no after-release gate job and no
+      hosted job on push; the slow members of gates.hooks.4 run here, before publish.
+    level: release
+    why: >-
+      A release gate that can run without bound is an outage that nobody sees until it ends.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-39
+        backs: rule
+      - ref: decision-65-gates
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "4"
+        note: >-
+          A test that reads the release workflow and requires `timeout-minutes` on every job. Plant: A release
+          job with no timeout fails the workflow test; a job with a 25 minute sleep and a 20 minute timeout is
+          cancelled. Control: A job that finishes in 10 minutes passes.
+    relates:
+      - id: gates.hooks.4
+        how: see
+  - id: gates.command.9
+    slug: cost-measured-before-tier
+    since: 0.1.0
+    rule: >-
+      A gate's cost is measured on a real workload, with an input count above zero, before the check is placed
+      in a tier.
+    detail: >-
+      The rule table requires a measured block for each check (the workload, the input count, seconds and
+      load) before a check may be assigned a tier. A measurement with 0 inputs does not count.
+    level: process
+    why: >-
+      Prices measured on an empty source mislead: the first cost figures for UI gates had no UI source at all
+      (V-25).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. Rule-table schema requires a `measured` block with workload, input count above
+          0, seconds and load. Plant: A rule row whose measured input count is 0 fails the schema. Control: A
+          row with a measured block on a non-empty workload passes.
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C (own measure)
+  - id: gates.command.10
+    slug: on-write-check
+    since: 0.1.0
+    rule: >-
+      An agent-time check finishes within 2 seconds on the edited file or runs at the agent's stop; the
+      finding appears where the author is.
+    detail: >-
+      After each edit the changed file is formatted and linted by a warm, untyped, time-capped step: a
+      long-lived lint server (one per worktree, started by the setup step and restarted when its status check
+      fails) plus the formatter, with a hook timeout of about 15 s. If the server is unavailable it falls back
+      to the untyped lint config rather than skipping, and it never runs the type checker. For Go, gofmt and
+      goimports on one file take 0.02 s and need no server, so the 2 second check is the home. The hook
+      wrapper times each check and fails the registry test when one exceeds 2 s on one file.
+    level: file
+    why: >-
+      A finding shown after the author has moved on costs a round trip; a slow edit-time check is turned off.
+      One sample each under load: gofmt on one file 0.02 s, go vet on one package 1.76 s, golangci-lint 1.38
+      s.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "0"
+        note: >-
+          The hook script wraps each on-write check in a timer and exits non-zero over 2 s on one file; the
+          check registry test fails on an on-write check with no timer. Plant: A check that sleeps 3 seconds
+          fails the timer. Control: gofmt on one file passes.
+      - binding: ts
+        class: preset-config
+        tier: "0"
+        note: >-
+          Post-edit hook running the pinned warm lint server with `--fix` and the formatter on the edited
+          file, falling back to the untyped hook lint config; no type check; 15 s hook timeout. Plant: A file
+          with a fixable lint error is fixed on write; with the server stopped the untyped fallback still
+          runs. Control: A clean file is left unchanged.
+    open:
+      - No agent-time hook is committed in any Go repo today.
+      - The 2 second figure rests on single samples under load.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: gates.command.11
+    slug: stop-tier-blocks-on-red
+    since: 0.1.0
+    rule: >-
+      The stop tier runs the fast checks, blocks on red naming the failing step, and never claims green for
+      what it skipped.
+    detail: >-
+      The agent-stop hook runs the stop tier. A skip is named in the verdict and printed, and the cheap tier
+      runs on stop. The skipped list is the one gates.plants.8 requires.
+    level: program
+    why: >-
+      A stop hook that reports green for a skipped step teaches the agent to stop early.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "0"
+        note: >-
+          v1 class our-cli. The stop-tier hook exits non-zero on a red step, naming the step, and prints the
+          skipped steps. Plant: A stop run with one failing step blocks and names it; a run that skips a step
+          prints it. Control: A fully green stop run passes and lists nothing skipped.
+    relates:
+      - id: gates.plants.8
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: gates.command.12
+    slug: gate-script-order
+    since: 0.1.0
+    rule: >-
+      The template gate script arms the hooks first, then runs every member and accumulates the results, never
+      stopping at the first red, and prints the cheapest failure first in its summary.
+    detail: >-
+      One gate script is the template for every repo. It arms the hooks, then runs every member: the
+      structural check of the managed root files, the supply-chain config check, lint, the type check, the
+      tests and the scans. Each member's findings print under its name. A summary line counts green, findings
+      and could not run per member, ordered so the cheapest, most informative failure is shown first. The exit
+      is 1 if any member found something, 2 if any could not run and none found, 0 otherwise. A member's
+      failure never hides another member's result.
+    level: program
+    why: >-
+      One script per repo drifts. A gate that stops at the first red shows one failure per push, so a change
+      with three faults takes three pushes; accumulating shows all of them at once, and the summary still puts
+      the cheap failure in front.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-gates
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          The shared package's proof test generates a repo from the template, plants a failure in two members
+          and asserts both are reported, the summary order and the exit code. Plant: A template that stops
+          after the first failing member fails the test. Control: The shipped template passes.
+  - id: gates.command.13
+    slug: no-pipe-into-short-circuit
+    since: 0.1.0
+    rule: >-
+      A gate script that sets `pipefail` does not pipe into `grep -q`, `head` or `read`; capture the output
+      first, or count.
+    detail: >-
+      With pipefail, a producer that dies of SIGPIPE when the reader exits early flips the pipeline status.
+      Gate pipelines carry `pipefail` (the shared `check-gate-commands` check: workflow run steps declare a
+      shell with it, or set it), and a pipeline whose consumer is `grep -q`, `head` or `read` is a finding.
+      Shellcheck does not catch this. The structural rule is a `gatescan` rule.
+    level: file
+    why: >-
+      Latent: no shell file sets pipefail yet (0 of 36), 73 sites pipe into grep -q or head in shell files and
+      6 in Makefiles, so the first repo to add pipefail would flip statuses. The planted gate_bad.sh printed
+      ok with the forbidden word present and shellcheck exited 0.
+    kind: rule
+    strength: Hard
+    status: retired
+    note: >-
+      Retired with gragas#1654. A gate member is a program command, not a shell script, and a hook body is one
+      exec of the runner (gates.hooks.9), so no gate pipes shell output into grep, head or read.
+    sources:
+      - ref: go-review-r-02-donor-section-gap
+        where: section 3.3
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          v1 class our-cli. A structural shell-parser rule (ast-grep on shell) flags a pipeline under pipefail
+          whose consumer is `grep -q`, `head` or `read`; a workflow check requires `pipefail` on gate run
+          steps. Plant: A gate_bad.sh that prints ok with the forbidden word present is flagged; a run step
+          without pipefail fails. Control: Capture-then-grep passes.
+    open:
+      - >-
+        The best-practice review rated this only a possible rule, since no script sets pipefail today; it
+        binds when a gate script adopts pipefail. The tier shown is the tier of the check once built.
+  - id: gates.command.14
+    slug: tiers-not-chained-with-and
+    since: 0.1.0
+    rule: Gate tiers are not chained with `&&`; each tier runs and reports on its own.
+    detail: >-
+      Chaining tiers with `&&` lets an early failure hide the later tiers' results and lets a skipped tier
+      read as green.
+    level: file
+    why: >-
+      A chained script reports only the first red, and a short-circuited tier never prints that it was
+      skipped.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. A structural scan of gate scripts and Makefiles for tier steps joined by `&&`.
+          Plant: A script that runs two tiers joined by `&&` is flagged. Control: Tiers run as separate steps
+          pass.
+    open:
+      - >-
+        Source states this in the same sentence as the pipe rule and gives no measured case for the `&&` half.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+  - id: gates.command.15
+    slug: one-phony-each
+    since: 0.1.0
+    rule: >-
+      A Taskfile declares each task once, beside itself, and a generator registers its generate and check
+      tasks in the tier lists from its own block; no shared line names every task.
+    detail: >-
+      A single line that lists every task is rewritten by every change that adds one, and the two tasks that
+      run every generator are edited by every change that adds a generator. Each task carries its own
+      declaration, and each generator adds its tasks to the tier lists (push, land, release) from its own
+      block. A test over the Taskfile fails a task that is declared twice or listed in no tier, and a
+      generator with a generate task and no check task.
+    level: file
+    why: >-
+      Own measure: in three days a build file changed in 24 commits, and 18 of them rewrote the phony line or
+      the two generator recipes.
+    kind: rule
+    strength: Hard
+    status: proposed
+    sources:
+      - ref: bazel-build-files
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        fix: never
+        note: >-
+          a test over the Taskfile lists its tasks, the tiers that name them and the registered generate and
+          check tasks. Plant: a task declared twice fails; a generator with no check task fails. Control: each
+          task declared once beside itself passes
+    relates:
+      - id: arch.structure.9
+        how: see
+    open:
+      - >-
+        Proposed until both halves are checked. The phony half landed with its test in PR 472 (gragas#470
+        item 1); the per-generator registration is step 5 of gragas#477. It has no tool key to bind to.
+  - id: gates.command.16
+    slug: gate-runs-on-every-supported-platform
+    since: 0.1.0
+    rule: >-
+      A program that declares supported platforms runs its tests on each of them, not only builds for them,
+      on our own machines; the hosted machines run only at a release; a test that needs one platform says so
+      through the platform table, never through a runtime check in the test.
+    detail: >-
+      The platforms a program supports are data on the program. Every test runs on our own machines, one leg
+      for each platform, and the hosted machines run only at a release. A leg that has run on a platform is
+      the proof for that platform only. A native run on a system the Mac cannot reach is owed to the next
+      lent window: the change that needs it is queued, and the lent machine posts a comment whose first line
+      is the system, the commit and pass or fail. A test that needs one platform is listed
+      against it in the platform table, so the other legs do not run it; a test that asks the operating system
+      at run time whether to skip itself is a finding. supply.release.7 holds the compile at push for every
+      shipped platform and tests.isolation.11 holds that a verdict names the machine it ran on; this rule holds
+      that the gate itself runs on each one.
+    level: program
+    why: >-
+      A build that compiles for a platform proves nothing of what runs there; the fleet's own gate ran on one
+      platform while the program declared two.
+    kind: rule
+    strength: Lens
+    status: retired
+    note: >-
+      Retired with gragas#1654, superseded by the one-system vision: where a product holds no code of
+      one operating system (the os-code check finds no tagged file, the host layer and the exemptions included)
+      its gate runs vet, lint and dead-code for each system of the project's list, by GOOS, on the one machine
+      (code.deadcode.1, supply.release.7); what differs by system is the platform libraries' own
+      proof. A native run owed to a lent window stays a loan by label, not a leg of
+      every program's gate; a member's own needs are gates.command.30.
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    checks: []
+    review_question: >-
+      Which platforms does this program declare, and has the gate run on each of them, not only built for them?
+    relates:
+      - id: supply.release.7
+        how: see
+      - id: tests.isolation.11
+        how: see
+    open:
+      - >-
+        Planned check: a test over the platform table and the gate's legs that lists each declared platform with no
+        leg, and each test that reads the operating system to skip itself. Plant: a declared platform with
+        no leg fails. Control: every declared platform has its leg passes. No tool key to bind to: it is the
+        work of gragas#409 to gragas#411. The rule was adopted (C8), so it is active and read in review
+        until a check binds it; a member's own platform claim is gates.command.30.
+  - id: gates.command.17
+    slug: tiers-by-moment
+    since: 0.1.0
+    rule: >-
+      The gate has tiers by moment: commit runs the check-only members in seconds, push runs the whole gate
+      within its budget, review asks whether an independent reader accepts it in one round or two, landing
+      proves the candidate once, release adds only what proves a release, and on demand holds the deep runs,
+      which block nothing.
+    detail: >-
+      Six moments, each with one question and one budget. Commit holds only members that read and never
+      rewrite (gates.hooks.3). Push holds every member a pushed tree must pass, and its budget is a measured
+      number (tests.measures.9, tests.measures.2, tests.measures.10). Review is the one moment with no
+      members: its budget is rounds, one and two at most, and its rules are agents.review.1 to .7. Landing
+      proves the merged candidate once (gates.land.12, gates.land.16), and a pass bound to a tree is not run
+      again for the same tree (tests.selection.7). Release is push plus the members that prove only a release:
+      the crash-injection run and the reproducible-build dry run, with the cross-platform compile already at
+      push. On demand holds the long fuzz run and the heavy race run (tests.generated.6, tests.runners.6); an
+      on-demand run is asked for and reports, and no tier waits for it (gates.command.26). On demand is not a
+      tier a member moves to: it holds only the runs listed for it, and adding one is the owner's ruling. A
+      member names its tier in data (gates.command.3), and a member that cannot meet the budget of its own
+      moves only to a later blocking tier (push to release), never to a timer, never to on demand and never
+      out of the gate. There is no moment below push: the builder's hand-in is the whole push tier
+      (gates.command.31). Each moment has an owner, and a stack adds members to these moments and never a
+      moment of its own.
+    level: program
+    why: >-
+      The release tier took 27 minutes 47 seconds, most of it fuzz and heavy race runs that found two bugs in 260
+      commits; cut back to the push tier plus crash injection and the dry run it is about 1 to 1.5 minutes.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Which moment does this member belong to, and is it cheaper at an earlier tier or does it prove only a
+      release?
+    relates:
+      - id: gates.command.3
+        how: see
+      - id: gates.hooks.4
+        how: see
+      - id: gates.land.12
+        how: see
+    open:
+      - >-
+        Planned check: the member table's tier column holds only members of the tiers above, and the on-demand
+        set is exactly the on-demand runs (the long fuzz run and the heavy race run), so no other member sits there. The members change in gate/members.yaml, a protected path, and is the work of
+        gragas#638's follow-up tickets.
+      - >-
+        Planned check: the commit moment of gragas#698 is held by tests, which no check row names until a preset
+        tool key runs them. TestTheRepositorysTiersRunTheirRegisteredMembers holds the commit tier to format,
+        generated-files, secrets-staged and supply-shape; TestThePushStillRunsWhatTheCommitLeavesOut
+        holds the push tier to every commit member again, and the commit's prelude to leaving out only the fetch;
+        TestTheStagedScanRefusesASecretTheCommitAdds and TestTheSupplyHoldsItsShape hold each commit member to
+        its plant and its control. The protected-staged member went with the landing check (gragas#912).
+  - id: gates.command.18
+    slug: members-run-at-the-same-time
+    since: 0.1.0
+    rule: >-
+      The members of a tier run at the same time by default; a member waits only for the member it declares it
+      needs, and that order is kept and shown, never hidden.
+    detail: >-
+      A member that reads what another writes declares `after` that member in the member table, and the runner
+      keeps the edge when it runs the members in a pool. The report names each member, how long it ran and, for a
+      member held back, the member it waited for. The pool never stops or cancels the other members at a red, so
+      a tier still runs everything and lists every failure (gates.command.12, never stops at the first red).
+      Results are collected and printed as the serial runner prints them (cheapest first, failures cheapest
+      first), and the stamp and the budget are unchanged. A member that passes only because another one ran first, with no `after` declared, is a
+      finding the first time a run orders them the other way.
+    level: program
+    why: >-
+      The pre-push tier ran fourteen members one after another and kept 1.7 of 15 CPUs busy; a hidden ordering
+      (one test needing a file another member writes) is what a parallel runner would break first.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this member read something another member writes, and does it declare that member?
+    relates:
+      - id: gates.command.12
+        how: see
+      - id: tests.runners.4
+        how: see
+    open:
+      - >-
+        Planned check: a plant that orders two members the wrong way and sees the one without its `after` fail.
+        The runner and the member table change in gate code and gate/members.yaml, protected paths, and are the
+        work of gragas#638's follow-up tickets.
+  - id: gates.command.19
+    slug: tools-installed-when-a-pin-changes
+    since: 0.1.0
+    rule: >-
+      Tools are installed only when a pin changes, and checked once per run: the check is the guard and the
+      install is the fix.
+    detail: >-
+      A run checks every tool against its pin first, and installs only when that check fails or when a pin file
+      (the tool list, the lock files, the explorer lock) changed since the last green check, which a sum beside
+      the tools folder records. The gate keeps its own check so it stays self-sufficient, and the build file's
+      check target does not run a second one before it. The one check left is the whole pin check: every
+      program's sha256 against the tool list, the refusal of a name the list does not pin, and the
+      network-block proof with its version read-back, where the system gives a block; where it gives none
+      (sandbox.ErrNoBlock) the check is refused by name and never passes unblocked. The sum decides only whether to install, never whether to
+      check; it is unsealed, so it is a cache and not a verdict. A tool off its pin fails the check and nothing
+      else runs.
+    level: program
+    why: >-
+      Every push installed the tools again and checked all eleven twice, 5 to 13 seconds of a tier whose budget
+      is a minute, and the second check changed nothing.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this run install tools whose pins did not change, or check them more than once?
+    open:
+      - >-
+        Planned check: the run prints the number of tool checks and installs, and a run with an unchanged pin
+        file reports no install. The build file and the tool command change in gragas#638's follow-up tickets.
+  - id: gates.command.20
+    slug: gate-reports-how-busy-it-kept-the-machine
+    since: 0.1.0
+    rule: >-
+      The gate reports how many CPUs it kept busy on average beside its wall time, and a tier that keeps a small
+      share of them busy is a finding.
+    detail: >-
+      The report states the busy share and the CPU count it was judged against. A tier whose members could run
+      together but whose busy share stays low is a finding that names the serial member or package that holds
+      the rest back. The share is read with the host's load beside it (tests.measures.1), because a busy host
+      lowers the share a run can take, and the finding is judged on a quiet run (tests.measures.9).
+    level: program
+    why: >-
+      The gate's own report said it kept 1.7 of 15 CPUs busy while the tier broke its budget; the number was
+      printed and nothing acted on it.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      How many CPUs did this tier keep busy, and what holds the rest idle?
+    relates:
+      - id: tests.measures.1
+        how: see
+      - id: tests.measures.9
+        how: see
+    open:
+      - >-
+        Planned check: a tier report with a busy share under a stated floor fails on a quiet host. The share is
+        printed today and no floor is set; the floor comes from the measured result of gragas#638's follow-up
+        tickets.
+  - id: gates.command.21
+    slug: fresh-clone-parity
+    since: 0.1.0
+    rule: >-
+      After the documented setup, every member passes on a fresh clone, with no file an earlier run left behind
+      and no ordering between members that is not declared.
+    detail: >-
+      The proof is a run of the tier in a clone made from the remote, after the setup the README names and
+      nothing else. A member that needs an ignored file says which member writes it (gates.command.18). A
+      member that needs a module graph, a tool or a platform step that only the setup of an earlier run primed is
+      a finding. The release dry run is the usual place it shows.
+    level: program
+    why: >-
+      A second machine hit two reds on its first run: the release dry run failed until a cross-platform module
+      graph was primed, and a docs test failed until an ignored file a different member writes existed.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Would every member of this tier pass in a clone made from the remote after only the documented setup?
+    relates:
+      - id: gates.command.2
+        how: see
+      - id: gates.command.16
+        how: see
+    open:
+      - >-
+        Planned check: the hourly release run on a clone from the remote, which is the fresh-clone proof for
+        every member at once. The run and its schedule belong to the fleet, not to the rule data.
+  - id: gates.command.22
+    slug: lint-allows-parallel-runners
+    since: 0.1.0
+    rule: >-
+      A lint step never fails or waits because another lint runs on the same host: it runs with
+      `--allow-parallel-runners` on the one shared cache.
+    detail: >-
+      golangci-lint refuses to start while another copy runs as the same user, and the gate runs it with
+      `--allow-parallel-runners`, which takes no lock, so two copies on one host both run. The cache is the same
+      folder as before: the tool's cache code is safe for several processes on one machine to share, and it
+      will not corrupt the cache, so no cache per run is needed and none is made. `--allow-serial-runners` is not
+      used: it waits on a host-wide lock with no deadline, so every repository on the host queues behind one lint,
+      and the wait counts against the tier's budget as a red that says nothing of the code. The rule does not rely
+      on a job queue that runs one gate at a time, because a queue that allows several runs does not prevent the
+      clash, and a second repository on the same host is outside any queue. It lands with the parallel members
+      (gates.command.18), which make the clash likelier, and never after them.
+    level: program
+    why: >-
+      Runs of three repositories failed with "parallel golangci-lint is running", a red that said nothing of the
+      code; the shared cache is safe for it, so no run needs to wait.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: golangci-lint-cache-source
+        where: Open, doc comment
+        says: >-
+          It is safe for multiple processes on a single machine to use the same cache directory in a local file
+          system simultaneously. They will coordinate using operating system file locks and may duplicate effort but
+          will not corrupt the cache.
+        backs: rule
+      - ref: golangci-lint-cli
+        where: Flags, run
+        says: >-
+          --allow-parallel-runners: Allow multiple parallel golangci-lint instances running. If false (default) -
+          golangci-lint acquires file lock on start.
+        backs: rule
+      - ref: birdtable-study-issue-641
+        where: item 1
+        says: >-
+          It lands with P1, not after.
+        backs: rule
+    review_question: >-
+      If two copies of this lint step start together on one host, do both run, on the one shared cache?
+    relates:
+      - id: gates.command.18
+        how: see
+      - id: gates.command.12
+        how: see
+    open:
+      - >-
+        Held in gragas by internal/lintrunners_test.go: no tracked Go or Makefile source names the serial flag,
+        and a Makefile lint line carries the parallel one; a plant of each goes red.
+      - >-
+        Planned check: a plant that starts two lint copies together and sees both pass, with the control of a lint
+        run with neither flag failing the second. The lint member lives in gate/members.yaml, a protected path,
+        and is the work of the runner tickets.
+  - id: gates.command.23
+    slug: one-members-file-one-runner
+    since: 0.1.0
+    rule: >-
+      A repo's own Taskfile lists every check as a member of one of three tasks named pre-commit, pre-push and
+      release, each member a line of `cmds:` with its own `timeout:`, and `gragas check` verifies that
+      contract; a repo differs from another only in which commands fill each tier, and any other difference
+      is a recorded exemption with an expiry.
+    detail: >-
+      There is no shared runner and no members file: each repo runs go-task from its own Taskfile, pinned in
+      a tool modfile, and `gragas check` reads the Taskfile and holds it to this shape. A member is a `cmd:`
+      with a `timeout:`; the `timeout:` is read on the member, because go-task ignores one on the task and
+      ignores any key it does not know, so a misspelt `timout:` passes in silence and the check must refuse
+      it itself. A member that times out is killed and the run is red (go-task exit 208), but a child it
+      started in the background can outlive it, so a member starts none. `cmds:` run in order and the run
+      stops at the first red member; a member that may be red without stopping the run says so with
+      `ignore_error: true`, and that line is read as an exemption with its reason. `deps:` run in parallel,
+      and a tier uses them only for members that do not share a folder, a file or a port. A tier is
+      verdict-true only when nothing in its environment changes the verdict, and the tier pins or clears
+      what can: `TASK_DRY` (runs nothing and exits 0); `GOFLAGS` when it holds any flag that selects or skips
+      tests or changes what is built (`-run`, `-skip`, `-count`, `-mod`, `-tags`: `-run=TestPass`
+      turned a red tier green, and so did `-run=NoSuchTest`), which the tier clears or sets itself; and
+      `TASK_CORE_UTILS`, which can switch a member from the real utilities to Go's bundled ones (a GNU
+      flag can stop working), so the tier sets it and a member does
+      not depend on a GNU flag. `TASK_CONCURRENCY` only serialises `deps:` and changes no colour. A repo
+      with nothing to run says so in its Taskfile, so an empty tier and a missing tier are not the same
+      thing. gates.command.1 holds that one command runs every check; this rule holds that the list the
+      command reads has one shape everywhere. Evidence: the spike in gragas#926, Linux (comment
+      6883855603) and Windows (comment 6883909209); the macOS half is owed.
+    level: program
+    why: >-
+      Six projects of one fleet ran six gate shapes, and 39 repositories of another ran 39: most stopped at the
+      first red, two kept a stamp keyed to a 24-hour age, and 36 of 38 checked nothing at commit.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gragas-907-ticket
+        where: the table row gates.command.23
+        backs: rule
+      - ref: gragas-926-linux-spike
+        where: the answers to the test section
+        backs: rule
+      - ref: gragas-926-windows-spike
+        where: the answers to the test section and the gotchas
+        backs: rule
+    review_question: >-
+      Is every check of this project a member of the pre-commit, pre-push or release task of its own
+      Taskfile, with a timeout on the member, and does `gragas check` hold the Taskfile to that?
+    relates:
+      - id: gates.command.1
+        how: see
+      - id: gates.shared.8
+        how: see
+      - id: gates.exemptions.4
+        how: see
+    open:
+      - >-
+        Planned check: `gragas check` reads the Taskfile for the three tier names, each member's `cmds:` and
+        `timeout:`, and a key it does not know. Plant: a check run outside the tiers, a member with no
+        timeout and a misspelt key each fail. Control: a Taskfile whose members all carry a timeout passes.
+        No tool key is bound yet; the check is the work of gragas-new-3 (gragas#929).
+  - id: gates.command.24
+    slug: browsers-and-images-are-tools
+    since: 0.1.0
+    rule: >-
+      A browser, a container image and a tool that is not a module are tools: pinned by version or digest,
+      installed per project when the pin changes, and a gate never prunes a cache it shares with another
+      project.
+    detail: >-
+      gates.command.19 holds that a tool is installed when its pin changes and checked once per run. This rule
+      says what counts as a tool. A browser the tests drive is pinned and installed by the project; a
+      container image is pinned by digest and pulled before the lock, never inside a start call; a tool that
+      is not a module of the project's language is pinned by checksum (supply.provenance.7). A cache shared
+      between projects on one host is never pruned by one project's gate, because the next project's run pays
+      the install again.
+    level: program
+    why: >-
+      One project's gate pruned browsers from the shared cache on every run, and another reinstalled its
+      packages every push for 6 to 8 seconds; in a third fleet installs of 106 to 180 seconds sat in no budget
+      and a stale install after a lockfile change gave 170 false lint errors.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Which browsers, images and non-module tools does this gate use, where is each pinned, and does any step
+      prune a shared cache?
+    relates:
+      - id: gates.command.19
+        how: see
+      - id: supply.provenance.7
+        how: see
+    open:
+      - >-
+        Planned check: the tool pins file lists each browser and image with its version or digest, and a scan of
+        the gate scripts for a prune or clean of a shared cache path. No tool key is bound yet.
+  - id: gates.command.25
+    slug: tool-settings-from-the-pool-in-every-tier
+    since: 0.1.0
+    rule: >-
+      A lint or test tool gets its worker count and its cache in every tier, derived from the pool's capacity,
+      and a tool's settings never depend on which slot or host the run lands in.
+    detail: >-
+      The worker count comes from the capacity the job tool sets on the child process (gates.command.27,
+      tests.runners.2), and the cache folder is the same in every tier, so a warm run is warm whether it runs
+      at push, at land or at release. Two checks on one host never refuse each other (gates.command.22). A
+      setting that differs by slot kind gives the same tool two speeds and a budget that cannot be set.
+    level: program
+    why: >-
+      One lint command took 394 seconds cold in one slot kind, about 128 seconds in the other, and 8.8 seconds
+      warm with four threads; the same command, three speeds, and a push that was 65 percent that one member.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this tool's worker count come from the pool, is its cache the same in every tier, and would it run
+      the same in another slot?
+    relates:
+      - id: gates.command.22
+        how: see
+      - id: tests.runners.2
+        how: see
+    open:
+      - >-
+        Planned check: the members file names the worker variable and the cache path for each lint and test
+        member, and a literal worker count in a gate command fails. No tool key is bound yet.
+  - id: gates.command.26
+    slug: off-cycle-runs-are-named-and-watched
+    since: 0.1.0
+    rule: >-
+      A run off the cycle, scheduled or on demand, exists only if someone watches it: it is named in the
+      members file, its result is logged where the hub reads it, and a red opens an issue the same day.
+    detail: >-
+      The on-demand tier holds the deep runs (gates.command.17): the long fuzz run, the heavy race run, a
+      cross-browser run, a tier that needs cloud credentials. Each is a row of the members file with the tier
+      on demand, so the list is one list. A run is asked for by the owner or asked of the owner, and the hub's
+      daily race run on the main branch is one such run. A run that nobody reads is not a check, and a red
+      that waits for the next run to be noticed is a red main that nobody knows about. tests.runners.7 holds
+      the race case; this rule holds every run off the cycle.
+    level: process
+    why: >-
+      One project's daily race run stopped silently and its main branch failed the race detector with nobody
+      knowing; another fleet ran integration, characterisation and mutation checks by hand with no request
+      path, no log and no issue on red.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Is this run a row of the members file, where does its result go, and who opens the issue when it is red?
+    relates:
+      - id: gates.command.17
+        how: see
+      - id: tests.runners.7
+        how: see
+      - id: tests.generated.6
+        how: see
+    open:
+      - >-
+        Planned check: every on-demand member has a log location and the log holds a run within its stated
+        period. Plant: an on-demand member with no log location fails. Control: one with a log and a recent
+        run passes. No tool key is bound yet.
+  - id: gates.command.27
+    slug: pool-capacity-and-weights
+    since: 0.1.0
+    rule: >-
+      The pool's capacity is the host's cores divided by its slots, set on the child process by the job tool
+      and never written into a recipe; a member's weight is a promise and a cap, and a member heavier than the
+      capacity runs when the pool is empty.
+    detail: >-
+      tests.runners.2 holds the worker count of a test or browser runner. This rule holds the pool that runs
+      the members (gates.command.18). A member declares its weight, the pool admits members while their
+      weights sum to the capacity, and a member that uses more than its weight is a finding. Nothing in a
+      recipe or a script hard-codes the number: the job tool knows how many slots the host runs and sets the
+      capacity once.
+    level: program
+    why: >-
+      One web project went red with every test passing when uncapped test workers ran beside other gates:
+      worker timeouts rose 1, 6, 12 over three runs; capped, 9,428 of 9,428 passed. Three slots on 15 cores
+      gave a load of 26 with no gain in total work.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Where does this pool read its capacity, does each member declare a weight, and is any number
+      hard-coded in a recipe?
+    relates:
+      - id: gates.command.18
+        how: see
+      - id: tests.runners.2
+        how: see
+    open:
+      - >-
+        Planned check: the runner refuses a members file with a member and no weight, and a scan of the recipes
+        for a literal parallelism number. No tool key is bound yet; the shared runner is the work of
+        gragas#642.
+  - id: gates.command.28
+    slug: a-check-never-writes-the-tree-it-reads
+    since: 0.1.0
+    rule: >-
+      A check never writes the tree it reads: a generator check works in a copy and compares, a formatter
+      checks and never rewrites, and where a member must write, every member that reads its output declares
+      that it runs after it.
+    detail: >-
+      Members run at the same time (gates.command.18), so a member that rewrites a file under another member
+      is a race. The generated-files check regenerates into a temporary folder and diffs. The format check
+      lists the files that differ and exits non-zero. A member that writes an artefact others read, such as a
+      build, is named in the readers' after edge, and that ordering is shown in the report. A hook that
+      formats and restages is the opposite of a check.
+    level: program
+    why: >-
+      One project's generate check rewrote the live tree, so the tests beside it failed 6 of 6 in a parallel
+      trial; two commit hooks of another fleet ran the formatter in write mode and restaged.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this member write anything under the tree, and if it must, does every member that reads the result
+      declare it runs after?
+    relates:
+      - id: gates.command.18
+        how: see
+      - id: gates.hooks.3
+        how: see
+      - id: gates.own-rules.3
+        how: see
+    open:
+      - >-
+        Planned check: the runner runs each check-only member on a read-only copy of the tree and fails one
+        that writes. Plant: a format member in write mode fails. Control: the same member in check mode
+        passes. No tool key is bound yet.
+  - id: gates.command.29
+    slug: heavy-runs-take-a-slot
+    since: 0.1.0
+    rule: >-
+      On a shared host a heavy run takes a slot and a light command runs bare; the slots admit heavy runs by
+      class, landings ahead of re-gates and experiments, and one heavy job in flight per agent.
+    detail: >-
+      A heavy run is a tier, a test suite, a build or anything that uses the pool's capacity. A light command
+      is a type check of one file, a push, a lint of one file, a listing. Holding a slot for a light command
+      makes the agents behind it wait for nothing. The job tool holds the slot classes; this rule says only
+      that there are classes, that a landing comes first, and that an agent has one heavy job at a time.
+    level: process
+    why: >-
+      In one fleet a type check, a lint prune, a git push and one unit-test file held heavy slots; experiments
+      held 360 slot-minutes in two days; and agents waited at least 2,846 minutes for heavy slots over two days.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Is this command heavy or light, does it take a slot only if heavy, and is a landing ahead of it in the
+      queue?
+    relates:
+      - id: gates.command.27
+        how: see
+      - id: gates.measures.7
+        how: see
+    open:
+      - >-
+        Planned check: the job tool's log lists each slot hold with its class and the command, and a light
+        command in a heavy slot is a finding. No tool key is bound yet.
+  - id: gates.command.30
+    slug: a-member-says-where-it-can-run
+    since: 0.1.0
+    rule: >-
+      Every member declares what it needs (the network, a browser, a service) and not the system it runs on;
+      one whose need this host lacks is reported as skipped with the cause by the tier check, is listed every
+      run and never passes quietly, and a skip is red at land and at release unless a dated exemption names
+      the machine the gate cannot reach.
+    detail: >-
+      A member declares what it needs, the network included, in its entry of the repo's Taskfile; it names
+      no operating system. A member whose need this host lacks, such as the network on a host that has none,
+      is not run, and the tier check reports it as skipped with the reason, every time (go-task's own
+      `platforms:` filter skips a member in silence, so the report is the check's, never go-task's). At push a skip is allowed,
+      because the builder's machine may lack a browser or a runtime. At land and at release a skip is red,
+      because those moments prove the whole project, unless a dated exemption names the machine that would
+      run it; the one exemption today names Windows. No Job Object and no network-block prefix is part of
+      the rule: how a host runs a member is the host's own affair. A
+      vulnerability check that needs the network reports not checked when offline, never a pass.
+      tests.admission.5 holds the test side; this rule holds the member.
+    level: program
+    why: >-
+      Browser gates inside a no-network sandbox failed 49 of 49 blocks with a network error nobody read as
+      cannot run here; four projects had a member that needs a host the gate may not have.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gragas-907-ticket
+        where: the table row gates.command.30, one dated exemption names Windows
+        backs: rule
+    review_question: >-
+      Does this member declare its platform and network need, how does the tier check report it on a host that
+      cannot run it, and is that skip red at land?
+    relates:
+      - id: tests.admission.5
+        how: see
+      - id: gates.plants.8
+        how: see
+      - id: gates.command.16
+        how: see
+    open:
+      - >-
+        Planned check: `gragas check` refuses a member that declares no platform or network need, reports a
+        member that cannot run here as skipped, and the land and release tiers fail on a skip with no
+        exemption. Plant: a skipped member at release with no exemption fails.
+        Control: one with a dated exemption passes with the skip listed. No tool key is bound yet.
+  - id: gates.command.31
+    slug: each-moment-has-an-owner
+    since: 0.1.0
+    rule: >-
+      Each moment of the cycle has an owner: the builder runs commit and push on their own machine, the hub
+      lands and releases, an on-demand run is asked for, and nobody runs a later moment's tier as their
+      hand-in.
+    detail: >-
+      The builder's hand-in is the push tier, run by the pre-push hook on the builder's machine. The hub runs
+      the landing proof on the merged candidate and the release tier on a fresh clone of the tag. A builder who
+      runs the release tier, or a full post-land run, before every push runs a moment that is not theirs and
+      pays its cost per change. The six moments and what each holds are gates.command.17.
+    level: process
+    why: >-
+      One fleet ran 198 bare full gates in one day as its hand-in, 25.3 slot-hours, because its agent rules
+      still named the full tier; the one push-sized run that day took 0.9 minutes against a full median of 8.7.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    review_question: >-
+      Which moment is this run, who owns that moment, and is the builder running a later moment's tier as a
+      hand-in?
+    relates:
+      - id: gates.command.17
+        how: see
+      - id: gates.hooks.1
+        how: see
+    open:
+      - >-
+        Planned check: the agent instructions name the push tier as the hand-in and no later tier, checked as
+        a resolving command (agents.instructions.2). No tool key is bound yet.

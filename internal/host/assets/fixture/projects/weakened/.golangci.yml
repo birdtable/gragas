@@ -1,0 +1,10 @@
+version: "2"
+linters:
+  enable:
+    - wrapcheck
+    - gocritic
+  disable:
+    - errorlint
+  settings:
+    wrapcheck:
+      ignoreSigs: [".Errorf(", ".New("]

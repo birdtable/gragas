@@ -1,0 +1,9 @@
+$ gragas plugin approve lint-a
+--- exit 5
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    more than one version: the lock holds lint-a@1.0.0, lint-a@1.1.0;
+  say which
+    gragas plugin list
+--- stderr

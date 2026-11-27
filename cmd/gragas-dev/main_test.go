@@ -1,0 +1,404 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+
+	testenv "github.com/birdtable/go-testkit"
+
+	configtest "github.com/birdtable/gragas/internal/config/testing"
+)
+
+// TestMain is the blocked child first, as internal/blockedchild_test.go holds
+// of a package that imports go-proc's sandbox: the block starts this test
+// binary as that child, so it sets the block and execs the member, and runs
+// no test.
+//
+// The tests start it under three names of their own (standin_test.go): as task, the
+// stand-in task, and as hookrun, gragas-dev itself; the tools-check tests start it as node.
+func TestMain(m *testing.M) {
+	if code, ok := blockedChild(); ok {
+		os.Exit(code)
+	}
+	if code, ok := standInChild(); ok {
+		os.Exit(code)
+	}
+	os.Exit(configtest.NoLeaks(configtest.Main(m)))
+}
+
+// repoFiles are what the layers command reads and writes, from the module
+// root, which is two folders up from here, and every decision: the why of an
+// also row of layers.yaml names one, and a row added with a decision of its
+// own must not turn the control red (gragas#920).
+func repoFiles(t *testing.T) []string {
+	t.Helper()
+	decisions, err := filepath.Glob(filepath.Join("..", "..", "docs", "reasons", "*.md"))
+	if err != nil || len(decisions) == 0 {
+		t.Fatalf("the decisions: %v, %v", decisions, err)
+	}
+	files := []string{"layers.yaml", "docs/layers.md", "docs/explorer-boundaries.json", ".golangci.yml", "presets/golangci-lint/.golangci.yml", "lint/project.yml", "gate/shared.yaml", "gate/schema/shared.schema.json", "AGENTS.md", "docs/shared.md"}
+	for _, d := range decisions {
+		files = append(files, "docs/reasons/"+filepath.Base(d))
+	}
+	return files
+}
+
+// copyRepo is the repository's layer files, the shared registry with its
+// schema and AGENTS.md, and an empty file in each of its packages, in a
+// folder of the test's own.
+func copyRepo(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	for _, f := range repoFiles(t) {
+		data, err := os.ReadFile(filepath.Join("..", "..", f))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, f)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, f), data, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// the tree's packages, one empty file each: a pattern of the table is
+	// written as a rule for each package below it
+	pkgs, err := goPackages(os.DirFS(filepath.Join("..", "..")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range pkgs {
+		if err := os.MkdirAll(filepath.Join(dir, p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, p, "stub.go"), []byte("package stub\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return dir
+}
+
+func do(
+	args ...string) (code int, stdout, stderr string) {
+	var out, errb bytes.Buffer
+	code = run(context.Background(), args, &out, &errb)
+	return code, out.String(), errb.String()
+}
+
+func read(t *testing.T, dir, f string) string {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(dir, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
+}
+
+// TestTheRepositorysLayerFilesAreCurrent: the gate itself, through the new
+// program: this repository's docs/layers.md and lint block are what
+// layers.yaml renders. Risk: task generated-files passing on a program that checks
+// nothing.
+func TestTheRepositorysLayerFilesAreCurrent(t *testing.T) {
+	t.Parallel()
+	code, out, errs := do("layers", "--check", "-C", filepath.Join("..", ".."))
+	if code != exitDone || !strings.Contains(out, "current") {
+		t.Fatalf("exit %d\n%s%s", code, out, errs)
+	}
+	// The count the gate runner reads (#695): each rendered file compared.
+	if _, n := counted(t, out, "files"); n < 2 {
+		t.Errorf("a count of %d files compared\n%s", n, out)
+	}
+}
+
+// TestACheckFailsOnAStaleFileAndWritesNothing: a planted stale doc, a
+// planted stale lint block each fail --check, name the file, and leave both
+// files as they were; the clean control passes (gates.plants.1).
+func TestACheckFailsOnAStaleFileAndWritesNothing(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name, file, from, to string
+	}{
+		{"a stale doc", "docs/layers.md", "# ", "# stale "},
+		{"a stale lint block", ".golangci.yml", "desc: ", "desc: stale "},
+		{"a stale ESLint boundary", "docs/explorer-boundaries.json", `"default": "disallow"`, `"default": "allow"`},
+		{"a stale instruction block", "AGENTS.md", "The rows, one line", "The rows, stale line"},
+		{"a stale shared page", "docs/shared.md", "- lock: use", "- stale lock: use"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := copyRepo(t)
+			if code, out, errs := do("layers", "--check", "-C", dir); code != exitDone {
+				t.Fatalf("the clean control exit %d\n%s%s", code, out, errs)
+			}
+			was := read(t, dir, tc.file)
+			// The plant goes after the begin marker, so it is inside the block.
+			at := max(strings.Index(was, "# >>> generated by"), 0)
+			broken := was[:at] + strings.Replace(was[at:], tc.from, tc.to, 1)
+			if broken == was {
+				t.Fatalf("the plant changed nothing in %s", tc.file)
+			}
+			if err := os.WriteFile(filepath.Join(dir, tc.file), []byte(broken), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			code, out, errs := do("layers", "--check", "-C", dir)
+			if code != exitFailed || !strings.Contains(out, "stale "+tc.file) || !strings.Contains(errs, "task gen") {
+				t.Fatalf("exit %d, want %d naming %s\n%s%s", code, exitFailed, tc.file, out, errs)
+			}
+			if read(t, dir, tc.file) != broken {
+				t.Error("--check wrote the file")
+			}
+		})
+	}
+}
+
+// TestRenderWritesTheStaleFilesOnceAndIsSafeTwice: a stale doc is rewritten
+// whole, a second run has nothing to do. Risk: a render that rewrites
+// current files or leaves a temp file behind.
+func TestRenderWritesTheStaleFilesOnceAndIsSafeTwice(t *testing.T) {
+	t.Parallel()
+	dir := copyRepo(t)
+	want := read(t, dir, "docs/layers.md")
+	if err := os.WriteFile(filepath.Join(dir, "docs/layers.md"), []byte("by hand\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	code, out, errs := do("layers", "-C", dir)
+	if code != exitDone || !strings.Contains(out, "wrote docs/layers.md") || strings.Contains(out, "wrote .golangci.yml") {
+		t.Fatalf("exit %d\n%s%s", code, out, errs)
+	}
+	if got := read(t, dir, "docs/layers.md"); got != want {
+		t.Error("the render did not write the doc the table makes")
+	}
+	code, out, _ = do("layers", "-C", dir)
+	if code != exitDone || strings.Contains(out, "wrote") {
+		t.Errorf("the second render: exit %d\n%s", code, out)
+	}
+	entries, err := os.ReadDir(filepath.Join(dir, "docs"))
+	if err != nil || len(entries) != 4 {
+		t.Errorf("docs/ holds %v after the render, want layers.md, shared.md, explorer-boundaries.json and decisions/ (%v)", entries, err)
+	}
+}
+
+// TestRefusals: what is not understood or cannot be read fails with the
+// right code and writes nothing.
+func TestRefusals(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	broken := t.TempDir()
+	for _, f := range []string{"layers.yaml", ".golangci.yml"} {
+		if err := os.WriteFile(filepath.Join(broken, f), []byte("not: a table\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	nolint := copyRepo(t)
+	if err := os.Remove(filepath.Join(nolint, "presets/golangci-lint/.golangci.yml")); err != nil {
+		t.Fatal(err)
+	}
+	escape := t.TempDir()
+	table, err := os.ReadFile(filepath.Join("..", "..", "layers.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	table = bytes.Replace(table, []byte("doc: docs/layers.md"), []byte("doc: ../outside.md"), 1)
+	if err := os.WriteFile(filepath.Join(escape, "layers.yaml"), table, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	escapeEslint := t.TempDir()
+	other := bytes.Replace(table, []byte("doc: ../outside.md"), []byte("doc: docs/layers.md"), 1)
+	other = bytes.Replace(other, []byte("eslint: docs/explorer-boundaries.json"), []byte("eslint: /outside.json"), 1)
+	if err := os.WriteFile(filepath.Join(escapeEslint, "layers.yaml"), other, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name string
+		args []string
+		code int
+	}{
+		{"no command", nil, exitUsage},
+		{"an unknown command", []string{"gen"}, exitUsage},
+		{"an unknown flag", []string{"layers", "--apply"}, exitUsage},
+		{"an argument nobody takes", []string{"layers", "extra"}, exitUsage},
+		{"no lint base", []string{"layers", "-C", nolint}, exitFailed},
+		{"no layers.yaml", []string{"layers", "--check", "-C", dir}, exitFailed},
+		{"a table that is not one", []string{"layers", "--check", "-C", broken}, exitFailed},
+		{"a rendered path that leaves the repository", []string{"layers", "-C", escape}, exitFailed},
+		{"an ESLint file that leaves the repository", []string{"layers", "-C", escapeEslint}, exitFailed},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			code, out, errs := do(tc.args...)
+			if code != tc.code || errs == "" {
+				t.Errorf("exit %d, stderr %q; want exit %d with a message\n%s", code, errs, tc.code, out)
+			}
+		})
+	}
+	if _, err := os.Stat(filepath.Join(escape, "..", "outside.md")); err == nil {
+		t.Error("a path outside the repository was written")
+	}
+}
+
+// TestAPathThroughALinkOutOfTheRepositoryIsRefusedAndNothingIsWritten: a head
+// whose layers.yaml names a rendered file through a folder link that leads
+// out is refused, and the folder outside stays empty. Risk: the base's
+// generator following a head's links when a script runs it over the head's
+// tree.
+func TestAPathThroughALinkOutOfTheRepositoryIsRefusedAndNothingIsWritten(t *testing.T) {
+	t.Parallel()
+	testenv.Links(t)
+	for _, key := range []string{"doc: docs/layers.md", "lint: .golangci.yml", "eslint: docs/explorer-boundaries.json"} {
+		t.Run(strings.Split(key, ":")[0], func(t *testing.T) {
+			dir := copyRepo(t)
+			outside := t.TempDir()
+			testenv.Link(t, outside, filepath.Join(dir, "out"))
+			table := read(t, dir, "layers.yaml")
+			planted := strings.Replace(table, key, strings.Split(key, ":")[0]+": out/planted.txt", 1)
+			if planted == table {
+				t.Fatalf("the plant %q is not in the table", key)
+			}
+			if err := os.WriteFile(filepath.Join(dir, "layers.yaml"), []byte(planted), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			code, out, errs := do("layers", "-C", dir)
+			if code != exitFailed || errs == "" {
+				t.Errorf("exit %d, want %d with a message\n%s%s", code, exitFailed, out, errs)
+			}
+			entries, err := os.ReadDir(outside)
+			if err != nil || len(entries) != 0 {
+				t.Errorf("the folder outside holds %d entries (%v)", len(entries), err)
+			}
+		})
+	}
+}
+
+// TestTheLintBaseAndProjectPathsMustBeInsideTheRepository: a lint-base or a
+// lint-project spelled to leave the repository is refused by name.
+func TestTheLintBaseAndProjectPathsMustBeInsideTheRepository(t *testing.T) {
+	t.Parallel()
+	for _, key := range []string{"lint-base: presets/golangci-lint/.golangci.yml", "lint-project: lint/project.yml"} {
+		dir := copyRepo(t)
+		table := read(t, dir, "layers.yaml")
+		planted := strings.Replace(table, key, strings.Split(key, ":")[0]+": ../x", 1)
+		if planted == table {
+			t.Fatalf("the plant %q is not in the table", key)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "layers.yaml"), []byte(planted), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		code, _, errs := do("layers", "--check", "-C", dir)
+		if code != exitFailed || !strings.Contains(errs, "is not a path inside the repository") {
+			t.Errorf("%s: exit %d, stderr %q", key, code, errs)
+		}
+	}
+}
+
+// TestTheSharedRegistryIsHeldToTheRepositorysSchema: the registry is read
+// through gate/schema/shared.schema.json of the repository it is in, so a
+// schema that asks for more fails the check, naming the file; a registry
+// whose owner the table lacks, and an AGENTS.md with no block, fail too.
+// Risk: a registry read with no schema, or rendered over a missing block.
+func TestTheSharedRegistryIsHeldToTheRepositorysSchema(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct{ name, file, from, to, says string }{
+		{"a schema that asks for more", "gate/schema/shared.schema.json", `"required": ["capability", "owner", `, `"required": ["planted", "capability", "owner", `, "planted"},
+		{"an owner the table lacks", "gate/shared.yaml", "owner: internal/host/fs", "owner: internal/host/gone", "owner internal/host/gone is not a package of layers.yaml"},
+		{"a later row that names no wait", "gate/shared.yaml", "    status: later\n    until: \"the old engine and migrate are deleted\"\n", "    status: later\n", "'until' is a required property"},
+		{"an until on a row that is not later", "gate/shared.yaml", "    status: later\n    until: \"the fourteen product sites that walk call host/fs Tree.List\"\n", "    status: local\n    until: \"the fourteen product sites that walk call host/fs Tree.List\"\n", "/until: false schema"},
+		{"an until that names an issue by its number", "gate/shared.yaml", "    until: \"the old engine and migrate are deleted\"\n", "    until: \"#1748\"\n", "until: '#1748' does not match '^[a-z][^#]*$'"},
+		{"a reprieve that ends on an issue number", "gate/shared.yaml", "      until: \"the test files' raw calls move onto go-files' write helper\"\n", "      until: \"go-files#374\"\n", "tests/until: 'go-files#374' does not match '^[a-z][^#]*$'"},
+		{"no instruction block", "AGENTS.md", "<!-- <<< generated by gragas gen -->", "", "no generated block"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := copyRepo(t)
+			was := read(t, dir, tc.file)
+			plant := strings.Replace(was, tc.from, tc.to, 1)
+			if plant == was {
+				t.Fatalf("the plant changed nothing in %s", tc.file)
+			}
+			if err := os.WriteFile(filepath.Join(dir, tc.file), []byte(plant), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			code, out, errs := do("layers", "--check", "-C", dir)
+			if code != exitFailed || !strings.Contains(errs, tc.says) {
+				t.Errorf("exit %d, want %d saying %q\n%s%s", code, exitFailed, tc.says, out, errs)
+			}
+		})
+	}
+}
+
+// TestTheDecisionKeysAreReadByLayersCheckToo: layers --check reads
+// gate/shared.yaml with ParseShared, so a removed list and a decision on a
+// row, an allow entry and a tests reprieve, which the gate's shrink check asks
+// for, must not be refused there (the gate's own
+// TestTheSharedRowsOnlyShrinkAgainstTheBase takes the same keys). Risk: a change that stands on a decision red in one
+// reader whichever way it is written.
+func TestTheDecisionKeysAreReadByLayersCheckToo(t *testing.T) {
+	t.Parallel()
+	dir := copyRepo(t)
+	was := read(t, dir, "gate/shared.yaml")
+	plant := was
+	for _, c := range []struct{ from, to string }{
+		{"      - {package: internal/journeys, why: ", "      - {decision: embedded-data-folders, package: internal/journeys, why: "},
+		{"      until: \"the test files' raw calls move onto go-files' write helper\"\n", "      until: \"the test files' raw calls move onto go-files' write helper\"\n      decision: embedded-data-folders\n"},
+		{"  - capability: digest\n", "  - capability: digest\n    decision: embedded-data-folders\n"},
+	} {
+		if !strings.Contains(plant, c.from) {
+			t.Fatalf("gate/shared.yaml holds no %q", c.from)
+		}
+		plant = strings.Replace(plant, c.from, c.to, 1)
+	}
+	plant += "removed:\n  - {capability: sort, decision: embedded-data-folders, why: \"folded into digest\"}\n"
+	if err := os.WriteFile(filepath.Join(dir, "gate/shared.yaml"), []byte(plant), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if code, out, errs := do("layers", "--check", "-C", dir); code != exitDone {
+		t.Errorf("exit %d, want %d\n%s%s", code, exitDone, out, errs)
+	}
+}
+
+func TestThePnpmEnvPutsTheToolsFolderFirstAndTurnsTheVersionSwitchOff(t *testing.T) {
+	t.Parallel()
+	got := pnpmEnv([]string{"A=1", "Path=oldlist", "npm_config_manage_package_manager_versions=true"}, "toolsbin", []string{"X=2"})
+	var path string
+	for _, kv := range got {
+		if v, ok := strings.CutPrefix(kv, "PATH="); ok {
+			path = v
+		}
+	}
+	// One separator, whatever the system writes, between the pinned folder and the list the environment had.
+	if !strings.HasPrefix(path, "toolsbin") || !strings.HasSuffix(path, "oldlist") || len(path) != len("toolsbin")+1+len("oldlist") {
+		t.Errorf("PATH = %q, want toolsbin first and oldlist after one separator", path)
+	}
+	want := []string{"A=1", "PATH=" + path, "npm_config_manage_package_manager_versions=false", "X=2"}
+	slices.Sort(got)
+	slices.Sort(want)
+	if !slices.Equal(got, want) {
+		t.Errorf("env = %v, want %v", got, want)
+	}
+	if got := pnpmEnv(nil, "toolsbin", nil); !slices.Contains(got, "PATH=toolsbin") {
+		t.Errorf("with no PATH the folder stands alone: %v", got)
+	}
+}
+
+func TestPnpmRefusesWhatItCannotRunAndNamesTheRemedy(t *testing.T) {
+	t.Parallel()
+	for name, args := range map[string][]string{
+		"no separator":     {"pnpm", "-C", "x", "install"},
+		"nothing after it": {"pnpm", "-C", "x", "--"},
+		"a word before it": {"pnpm", "install", "--", "run"},
+		"another program":  {"pnpm", "--program", "npm", "--", "run"},
+		"an env with no =": {"pnpm", "--env", "X", "--", "run"},
+		"an unknown flag":  {"pnpm", "--nope", "--", "run"},
+	} {
+		var out, errb bytes.Buffer
+		if code := run(t.Context(), args, &out, &errb); code != exitUsage {
+			t.Errorf("%s: exit %d, want usage; stderr %q", name, code, errb.String())
+		}
+	}
+	var out, errb bytes.Buffer
+	if code := run(t.Context(), []string{"pnpm", "--tools", t.TempDir(), "--", "run"}, &out, &errb); code != exitFailed || !strings.Contains(errb.String(), "run task tools") {
+		t.Errorf("a folder with no pnpm: exit %d, stderr %q", code, errb.String())
+	}
+}

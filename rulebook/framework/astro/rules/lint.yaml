@@ -1,0 +1,22 @@
+format: 3
+part: astro
+concern: lint
+rules:
+  - id: astro.lint.1
+    statement: "In an Astro project the inline-script attribute is used only where exempt, and style blocks are linted."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "(a) ESLint no-restricted-syntax on the `is:inline` attribute in `.astro` files, through the Astro parser, with a path exemption list. (b) Stylelint with the HTML parser lints `<style>` blocks in `.astro` files with the same rule set as other styles, so a colour literal there fails."
+      pros:
+        - "Neither hole had a row in the stack list (evidence D). Under the generated script policy an unhashed inline script fails loudly at run time, so the lint is a convenience as well as a net."
+    sources:
+      - ref: astro-docs
+        where: template directives
+        backs: rule
+      - ref: decision-65-astro
+        backs: rule

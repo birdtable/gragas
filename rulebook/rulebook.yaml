@@ -1,0 +1,20 @@
+format: 3
+name: gragas-rules
+version: 1.0.0
+kind: base
+licences:
+  rules: "Apache-2.0"
+  presets: "Apache-2.0"
+language: en
+owners:
+  - "rulebook-owner"
+  - "rulebook-maintainers"
+governance:
+  contribution: proposals
+  decision_required: true
+  trial_releases: 3
+  review_days: 90
+# The tools whose presets the owners write by hand: no plugin ranks or writes
+# them. golangci-lint is not one: its preset is generated and its plugin
+# serves it.
+hand_written_presets: [changie, goreleaser, gragas]

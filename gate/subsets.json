@@ -1,0 +1,62 @@
+{
+  "$comment": "The subset builds (arch.layers.13, gragas#341): each part that must stay separable, the build that proves it, and what that build must never link. The Go subset is held by internal/subset_test.go, which go list -deps reads, and the TypeScript subsets by explorer/test/subset-builds.test.ts, which builds each package with the compiler. A forbidden entry is a package (Go: an import path from the module; TypeScript: a package name, or @gragas/* for every sibling), and the output of a TypeScript build is also searched for each entry, and for each of its markers (text such as the module path of the here view, explorer-iframe-build-entry), as text. The pre-push and release tiers run both. A subset names the decision it stands on, and so does each package let past a check (allowed). gragas-dev gate holds this file to gate/schema/subsets.schema.json, each decision to a record docs/reasons lists by that exact name, and the list to the base's (a base with no list is a report line): it only shrinks, and a row that lets more in (another build, entry or package, a forbidden entry or a marker dropped, no_embeds turned off, a package allowed) stands on a decision record the base does not hold.",
+  "subsets": [
+    {
+      "name": "gragas-subset",
+      "build": "go",
+      "entry": "./cmd/gragas-subset",
+      "decision": "embedded-data-folders",
+      "why": "the engine without the explorer: the command tree with the Assets port answering unavailable, so no embedded file of the explorer is linked",
+      "forbidden": ["internal/host/assets"],
+      "no_embeds": true,
+      "allowed": [
+        {
+          "package": "internal/cli/planned",
+          "decision": "embedded-data-folders",
+          "why": "the commands decided and not built, kept as YAML files the package embeds: they are the command list, not the explorer's files"
+        },
+        {
+          "package": "internal/config",
+          "decision": "config-embeds-system-variables",
+          "why": "the settings help table's rows that name a system's variables are one data file the package embeds, so no Go file names a system: the engine's own table, not the explorer's files",
+          "files": ["vars_system.txt"]
+        }
+      ]
+    },
+    {
+      "name": "element",
+      "build": "ts",
+      "package": "element",
+      "decision": "explorer-iframe-build-entry",
+      "why": "the web component is built without the standalone package, so no here view and no shell travel with it",
+      "forbidden": ["@gragas/standalone"],
+      "markers": ["standalone/here"]
+    },
+    {
+      "name": "plugin-docs",
+      "build": "ts",
+      "package": "plugin-docs",
+      "decision": "explorer-iframe-build-entry",
+      "why": "the docs plugin wraps the element and is built without the standalone package",
+      "forbidden": ["@gragas/standalone"],
+      "markers": ["standalone/here"]
+    },
+    {
+      "name": "plugin-portal",
+      "build": "ts",
+      "package": "plugin-portal",
+      "decision": "explorer-iframe-build-entry",
+      "why": "the portal plugin wraps the element and is built without the standalone package",
+      "forbidden": ["@gragas/standalone"],
+      "markers": ["standalone/here"]
+    },
+    {
+      "name": "contract",
+      "build": "ts",
+      "package": "contract",
+      "decision": "types-only-model-leaf",
+      "why": "the contract is the leaf every other package imports: it builds and its tests run with every sibling unresolvable (ts.modules.5, arch.layers.7)",
+      "forbidden": ["@gragas/*"]
+    }
+  ]
+}

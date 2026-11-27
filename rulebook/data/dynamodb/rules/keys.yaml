@@ -1,0 +1,56 @@
+format: 3
+part: dynamodb
+concern: keys
+rules:
+  - id: dynamodb.keys.1
+    statement: "Storage keys are built only by the shared key builder; no code assembles a key string by hand."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Partition and sort keys, index keys and key prefixes come from functions in the store's key-building layer. A string that looks like a key (an entity prefix joined with an id) anywhere else fails."
+      pros:
+        - "Hand-built keys drift between writers and readers, and a typo returns nothing instead of failing."
+    sources:
+      - ref: debrie-dynamodb-book
+        where: data modelling chapters
+        backs: rule
+  - id: dynamodb.keys.2
+    statement: "Each table has a checked-in list of its access patterns, and every query function maps to a line on it."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Each line names the question and the key or index that answers it in one request. A query function in the key-building layer that matches no line fails; a line with no query function is reported."
+      pros:
+        - "A DynamoDB model is designed from its access patterns and cannot be made generic later: a new pattern needs a new index or a data migration. Without the list, the next pattern is found in production as a scan or a filter that reads the whole partition."
+    sources:
+      - ref: debrie-dynamodb-book
+        where: modelling chapter
+        backs: rule
+      - ref: aws-dynamodb-docs
+        where: design guidance
+        backs: rule
+      - ref: p-03-data
+        where: section 16
+        backs: rule
+  - id: dynamodb.keys.3
+    statement: "Each table's design note states the highest write rate one partition-key value will see and what happens beyond it, and a read that must see its own write goes to the base table, not a secondary index."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "Hot partitions throttle even when the table's total capacity is enough, and secondary indexes update asynchronously, serving only eventually consistent reads."
+    sources:
+      - ref: dynamodb-atc22
+        backs: rule
+      - ref: aws-dynamodb-docs
+        where: secondary indexes
+        backs: rule
+      - ref: debrie-dynamodb-book
+        where: limits chapter
+        backs: rule
+      - ref: p-03-data
+        where: section 17
+        backs: rule

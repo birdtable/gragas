@@ -1,0 +1,213 @@
+format: 3
+part: web
+concern: tokens
+rules:
+  - id: web.tokens.1
+    statement: "Every colour, font, shadow and size a design names comes from one token document, used by version, in which each token has a role, a meaning, a usage note and a value for every mode."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The document lives in a separate private tokens package in the house list format and generates the CSS and the Go constants; the Go terminal-look package consumes the generated Go. Token names follow the naming table. The check is `companion tokens check`. The alternatives `@terrazzo/cli` and `@terrazzo/plugin-lint` (and Style Dictionary) read only the interchange format."
+      pros:
+        - "Drift between copies of a palette is the failure this prevents; it is weak as a fault weight in our record (1 of 144 faults is token drift) and strong as the operator's aim."
+  - id: web.tokens.2
+    statement: "A site depends on the token source by version, the version in each lock equals the one in the project record, and a version bump is the only way to change the tokens a site uses."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The source carries generated output, a contrast test and a literal scan. The generated CSS and Go equal the tokens package output (generate-then-check). The contrast test and literal scan live in the tokens package and in the styling checks."
+      pros:
+        - "The drift between sites is measured and small on colour; the version pin keeps it that way."
+  - id: web.tokens.3
+    statement: "No colour literal appears outside the generated token file, in CSS, markup or script, in any colour notation."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Covers hex, named colours, `rgb`, `rgba`, `hsl`, `hsla`, `hwb`, `lab`, `lch`, `oklab`, `oklch`, `color` and `color-mix`, in stylesheets, embedded style blocks and script strings, class names included (no raw palette classes). Inline `style` is banned. Hex and token values live only in the token files and the per-brand token files. Current hits are fixed in the same change; there is no baseline. Stylelint 17 runs over `.css`, `<style>` blocks of `.astro` (through `postcss-html`) and CSS in `.tsx`, with `ignoreFiles` set to the generated token file only. The colour functions are `rgb rgba hsl hsla hwb lab lch oklab oklch color color-mix`. Script strings are caught by `no-restricted-syntax` on string literals that are a `#` and 3 to 8 of `[0-9a-f]`, nothing else; inline style by html-validate `no-inline-style` on templates, and on components by the React style-prop ban, react.components.4."
+      pros:
+        - "A regex that matched only hex and five functions reported zero literals and missed named colours and four more functions, so zero was zero of the shapes it looked for. Both sites were at zero; one palette file holds 42 distinct hex values inside token definitions, which the rule allows."
+    relations:
+      relates:
+        - react.components.4
+  - id: web.tokens.4
+    statement: "Spacing, font size and radius come from a scale, and a literal that repeats a scale step is refused; arbitrary layout-only values pass only from an allow-list."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Hand CSS: the value of `padding*`, `margin*`, `gap`, `font-size` and `border-radius` must be a token variable; `px` is banned where a rem scale applies. Utility classes: the theme drops the default scale, and numeric steps not in the token scale are banned (the framework accepts any number as a step, so `p-13` is valid without a ban). Layout-only arbitrary values (a grid template, a calc width, a max width) pass only from a data file of allowed values. Legacy type sizes and arbitrary pixel sizes fail. Brand values arbitrary in a class string are zero. Utility side: the theme drops the default scale with `--spacing-*: initial` and `better-tailwindcss/no-restricted-classes` bans numeric steps outside the token scale. The allowed value form is `var(--space-*|--text-*|--radius-*)`."
+      pros:
+        - "One site holds 1,172 spacing, 502 type-size and 241 radius literals as a baseline; none is traced to a fault on its own, so this is a rule held by the aim, not by a fault."
+  - id: web.tokens.5
+    statement: "Shadow is a token; the framework's default shadow classes and arbitrary shadow values fail."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "No default shadow utility classes (small, medium, large); use the elevation tokens. Banned classes: `shadow-sm`, `shadow-md`, `shadow-lg`."
+      pros:
+        - "A terminal has no shadows, but a web page that picks its own loses the one elevation scale."
+  - id: web.tokens.6
+    statement: "New code uses direction-neutral properties; old CSS is held by a baseline that only falls, and canvas screens are exempt."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - canvas
+        reason: "a canvas does not mirror, so physical coordinates are the correct model"
+    reasoning:
+      definition: "Hand CSS uses logical properties (`margin-inline-start`). Utility classes use start and end forms (`ms-`, `me-`, `ps-`, `pe-`, `start-`, `end-`, `text-start`, `rounded-s`), never `ml-`, `mr-`, `pl-`, `pr-`, `left-`, `right-`, `text-left`, `rounded-l`. Utility side: `better-tailwindcss/enforce-logical-properties` (it flagged `ml-4` and named `ms-4`, in `.tsx` and `.astro`) plus the `no-restricted-classes` regex for `left-`, `right-` and `text-left`."
+      pros:
+        - "No fault is traced and no right-to-left language is planned; kept as a rule because every rule applies from adoption. Counts depend on the instrument."
+  - id: web.tokens.7
+    statement: "`!important` and `outline: none` each need a stated reason, and an outline is never removed without a visible focus ring in its place."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The focus ring is a token applied on `:focus-visible` and never hidden. An allowed use carries a reason comment (`reportDescriptionlessDisables`). Debt is held by a count baseline. Stylelint writes `stylelint-suppressions.json`; `--prune` must run in the same change as a fix. The outline entry is `outline` mapped to `[\"none\",\"0\"]`; both rules also fired in `.astro` `<style>` blocks. The utility form of outline removal is `outline-none`."
+      pros:
+        - "The counts are 9 `!important` and 102 `outline: none` in one site; hiding the keyboard position leaves a keyboard user with no way to see where they are."
+  - id: web.tokens.8
+    statement: "Every text and status pair passes a contrast of 4.5 to 1, and 3 to 1 for large text and parts, on every ground it may sit on, in both modes, by a pure test computed from the tokens."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "WCAG AA in both themes for every foreground and background token pair. The test iterates the token document, so a new role is covered; it also computes APCA Lc and prints it beside the ratio. It runs on any change to the token source. The generator ships the test, and the terminal side generates its own contrast test from the same table."
+      pros:
+        - "Measured faults: a muted role at 4.29 and 4.49 on light, good 4.32, attention 4.24, white on the dark `bad` role 2.77; the Go test covers 4 of 9 colours. Colour contrast is 89.1 percent of axe WCAG failures in generated pages."
+    sources:
+      - ref: wcag-22
+        where: success criteria 1.4.3 and 1.4.11
+        backs: rule
+  - id: web.tokens.9
+    statement: "A text or status role says which grounds it may sit on, and the contrast check reads that list."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The schema makes the `on` field required for any role of kind text or status; a role whose `on` is wider than its checked grounds fails. The muted text role (`dim`) placed on the `web-page` ground is the case it catches."
+      pros:
+        - "A check with an `on` list would have found the muted role placed on the page ground."
+  - id: web.tokens.10
+    statement: "CSS and Go that carry a token are generated from the document and say so; nobody edits the output."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Outputs carry a \"generated, do not edit\" banner (header grep). The check regenerates both outputs in memory and compares with the committed files byte for byte. The loop is generate-then-check, run as `companion gen --check`."
+      pros:
+        - "A copy of the palette was edited once in one commit of 614; 15 values lived in five places."
+  - id: web.tokens.11
+    statement: "Light and dark come from the same token names, written once; an explicit choice beats the system setting and the choice is stored."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Every token name present in light is present in dark and the reverse. With no stored choice the page follows the system; a stored choice overrides it and survives a reload; the theme control is the only module touching the storage key. Browser journey details: `colorScheme: dark` with no stored choice; the theme control (`ThemeControl`) is the only module touching the `localStorage` key."
+      pros:
+        - "Storage is byte-equal in two sites, but only one has the stored choice; the other follows the system and has no control."
+  - id: web.tokens.12
+    statement: Fonts are self-hosted and the content security policy allows no external font host.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Two nets. The built output is scanned for font-face sources and link hrefs with a host other than self; and a journey fails any request whose origin is not the app's. `font-src 'self'` is asserted from the response header. Net one is `companion dist-scan`, which reads built `dist/` for `@font-face` `src:` urls and `<link>` hrefs naming another host."
+      pros:
+        - "One site had all 24 smoke pictures differ because of font loading; it ships 72 font files, 777.6 KB."
+  - id: web.tokens.13
+    statement: "Styles are scoped by a mechanism the project declares; the mechanism is a parameter, and hand-written CSS is scoped by a class prefix."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "One site had 4 class-collision cases; the utility framework makes scoping moot once a site migrates."
+  - id: web.tokens.14
+    statement: "A deliberate difference from the shared token source is recorded in a differences file with an owner, reason, date and way back, and goes to the owner as a proposal."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Each overridden token has one entry and each entry has an overridden token; an entry for a token no longer overridden fails. Whether the reason is good is review. Part of `companion tokens check`; the differences file is `token-differences.json`."
+      pros:
+        - One site has about 20 differences and its ruling to send its palette as proposals has no recipient.
+  - id: web.tokens.15
+    statement: "A project styles through tokens from the token document as CSS custom properties, with one declared scoping mechanism: CSS Modules, or one utility-class framework whose theme is generated from the token document and holds no colour, size or font of its own. A second mechanism or utility framework is banned, and a colour, size or font not from the tokens fails under either mechanism."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The mechanism is the project's declared parameter (web.tokens.13); tokens are the invariant. Under CSS Modules a stylesheet lint allows only token variables for colour, size and font, and a utility-class framework in the dependencies fails. Under a utility framework the rest of this detail applies. A mechanism added later states its own lint for the same invariant; the rule does not change. Class-variant and class-merge helpers (`cva`, `clsx`, `tailwind-merge`) are allowed. A colour, size or font that is not from the theme in a class string fails (`bg-[#fff]`, `p-[13px]`, `[color:red]`); the default palette is cleared. Layout-only arbitrary values pass from a lint-checked allow-list data file. Inline style is banned. The theme file is generated and compared (generate-then-check), and a stylesheet on it allows only token variables. A new brand token is added to the brand layer with a canary value. Class-string lint covers framework templates and embedded script strings. Migrating a site's old CSS is per-repository adoption work, not a foundation rule. Lint plugin: `eslint-plugin-better-tailwindcss` with `no-restricted-classes` (arbitrary-value regex `\\[.+\\]`), `no-unknown-classes` and `no-conflicting-classes`; the default palette is cleared with `--color-*: initial`. Inline style: html-validate `no-inline-style` (template stack); the component-stack ban is react.components.4. Works on `.tsx` and `.astro` class strings. A calc width such as `w-[calc(100%-var(--sidebar))]` passes only from the allow-list. Layout-only arbitrary values such as `grid-cols-[...]` also pass only from the allow-list. The theme file is checked with `companion gen --check` and the `@theme` block allows only `var(--token)` values; the dependency check is `companion deps` over `package.json`, with `cva`, `clsx` and `tailwind-merge` off the ban list."
+      pros:
+        - "No project used it at first; proposed to carry the earlier lint requirement and widened later to cover both frameworks. The targets style two ways over the same tokens, so the mechanism is a parameter and the tokens are what the rule holds."
+    relations:
+      relates:
+        - web.tokens.13
+        - react.components.4
+    sources:
+      - ref: decision-65-web
+        backs: rule
+      - ref: decision-9
+        backs: rule
+      - ref: decision-29
+        backs: rule
+  - id: web.tokens.16
+    statement: "Utility classes are known, non-conflicting, not duplicated and in one consistent order, with one format command."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - Unknown and conflicting classes fail silently in the browser.
+  - id: web.tokens.17
+    statement: "Every token read is defined, and every token defined is read."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The check collects every `var(--x)` read in CSS, templates and components and every utility class that resolves to a theme variable, and compares with the token source. An undefined read fails; an unread definition fails, with a rising-count baseline. The check is `companion tokens used`, reading `.astro` and `.tsx` as well as CSS."
+      pros:
+        - "One site has 6 unread tokens; another reads 14 defined only by a user stylesheet."
+  - id: web.tokens.18
+    statement: "A new token enters the source first, with a value in every mode."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A token missing a mode fails the schema (`required` light and dark), and the vendored token names are compared with the source. The schema line is `required: [light, dark]`."
+      pros:
+        - A token added in the page only is the start of drift.
+  - id: web.tokens.19
+    statement: The terminal and the web read the same colour roles from one generator.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A test parses both generated outputs (CSS custom properties and Go constants) and asserts the same role names with equal resolved values; the Go side consumes the generated file only."
+      pros:
+        - "Seven of seven spike builds imported the same CSS unchanged; the two sources disagree on whether the Go output is generated."
+  - id: web.tokens.20
+    statement: "A colour keeps one meaning across the app, taken from role tokens: relation roles use their own role tokens, destructive uses the destructive token, and green means health only."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Example of a role token: the requires relation (`--color-relation-requires`)."
+      pros:
+        - A colour that means two things in two places teaches the reader nothing.
+  - id: web.tokens.21
+    statement: "Browser targets are declared once and read by the bundler, the style lint and the script lint; a feature outside them fails."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "One targets file (a browser list or a Baseline year) is read by the bundler, the Stylelint baseline plugin, the ESLint CSS baseline rule and a script compatibility rule. The targets file is a `browserslist` file or a Baseline year, and the passing twin is a widely-available feature."
+      pros:
+        - "No target is stated anywhere in the foundation today; the two-engine test checks the outcome but states no target."

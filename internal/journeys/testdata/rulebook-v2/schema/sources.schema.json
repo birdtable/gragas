@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sources.schema.json",
+  "title": "The source registry: rulebook/sources.yaml (schema v2)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sources"],
+  "properties": {
+    "sources": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"},
+      "additionalProperties": {"$ref": "#/$defs/source"}
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "title", "locator"],
+      "properties": {
+        "kind": {
+          "enum": ["book", "standard", "paper", "vendor-doc", "article", "incident", "measure", "trial", "decision", "target", "external-rule"],
+          "description": "target: a product's documented target state (decision 64); external-rule: a rule of another rulebook that a rule here must hold as written or more"
+        },
+        "title": {"type": "string", "minLength": 2},
+        "locator": {
+          "type": "string",
+          "pattern": "^(isbn:97[89][0-9]{10}|doi:10\\.[0-9]{4,}/\\S+|url:https?://\\S+|rfc:[1-9][0-9]*|decision:[1-9][0-9]*|archive:\\S+|repo:[a-z0-9-]+/\\S+|rule:[a-z0-9-]+/\\S+)$",
+          "description": "isbn:, doi:, url:, rfc:, decision:n (a row of decisions.md), archive:<path> (a file of the archive, from its docs/foundation folder), repo:<repo>/<path> (a file of a product repository), rule:<rulebook>/<id> (a rule of another rulebook)"
+        },
+        "verified": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["on", "by"],
+          "properties": {
+            "on": {"$ref": "common.schema.json#/$defs/date"},
+            "by": {"type": "string", "minLength": 2, "description": "who or what opened it and found it"}
+          },
+          "description": "absent means unverified"
+        },
+        "note": {"type": "string"}
+      },
+      "allOf": [
+        {"if": {"properties": {"kind": {"const": "external-rule"}}}, "then": {"properties": {"locator": {"pattern": "^rule:"}}}},
+        {"if": {"properties": {"locator": {"pattern": "^rule:"}}}, "then": {"properties": {"kind": {"const": "external-rule"}}}},
+        {"if": {"properties": {"kind": {"const": "decision"}}}, "then": {"properties": {"locator": {"pattern": "^(decision:|archive:)"}}}}
+      ]
+    }
+  }
+}

@@ -1,0 +1,5 @@
+rule: arch.measures.1
+path: internal/cli/root/plan.go
+fingerprint: 43fa0d32ffbab4ce532bf7a2dc61ba11feadbec1adc71a6ccbf47f5f5637ec48
+answer: keep
+reason: "the root runs every plan command through the one form of internal/cli/run, which holds no cobra and draws only through the Host the root implements in plan.go; the form moved there unchanged so the command packages can end through it without importing the root; read again when the history, cache and journal command packages joined the root, and this edge is unchanged"

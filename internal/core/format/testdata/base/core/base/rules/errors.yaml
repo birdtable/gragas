@@ -1,0 +1,13 @@
+format: 3
+part: base
+concern: errors
+rules:
+  - id: base.errors.1
+    aliases: [base.errs.1]
+    statement: Hold to this rule of the fixture parent or import.
+    strength: must
+    status: active
+  - id: base.errors.2
+    statement: Hold to this rule of the fixture parent or import.
+    strength: must
+    status: active

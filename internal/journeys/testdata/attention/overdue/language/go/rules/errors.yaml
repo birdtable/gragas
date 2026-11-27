@@ -1,0 +1,18 @@
+format: 3
+part: go
+concern: errors
+rules:
+  - id: go.errors.1
+    statement: Wrap an error.
+    strength: must
+    status: active
+    origin: authored
+    owner: team-a
+    review_by: "2000-01-01"
+  - id: go.errors.2
+    statement: Return an error, never panic.
+    strength: should
+    status: active
+    origin: authored
+    owner: team-a
+    review_by: "2999-12-31"

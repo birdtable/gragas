@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "translations.schema.json",
+  "title": "translations/<language>/<name>.yaml: text in another language (format v3)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "translations"],
+  "properties": {
+    "format": {"$ref": "common.schema.json#/$defs/format"},
+    "translations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entity", "field", "language", "text", "hash"],
+        "properties": {
+          "entity": {"$ref": "common.schema.json#/$defs/text", "description": "the entity kind and its key, such as rule:store.schemas.2 or term:digest"},
+          "field": {"$ref": "common.schema.json#/$defs/text"},
+          "language": {"$ref": "common.schema.json#/$defs/language"},
+          "text": {"$ref": "common.schema.json#/$defs/text"},
+          "hash": {"$ref": "common.schema.json#/$defs/digest", "description": "the digest of the authoritative text this translated; stale when it differs, and staleness is derived, never a field"}
+        }
+      }
+    }
+  }
+}

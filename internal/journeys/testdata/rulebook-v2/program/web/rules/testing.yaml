@@ -1,0 +1,455 @@
+part: web
+concern: testing
+order: 11
+title: Testing the screen
+summary: >-
+  Stories, mocked networks, visual baselines and geometry checks: how a page is proved at its states and
+  widths.
+rules:
+  - id: web.testing.1
+    slug: journeys-in-both-themes
+    since: 0.1.0
+    rule: Journeys run in both light and dark themes.
+    detail: >-
+      The Playwright preset defines projects for each colour scheme; the parameters file lists the schemes; a
+      check fails when a journey is registered in only one scheme. Fixture `colorScheme: light` and `dark`.
+    level: program
+    why: Light-mode contrast was an operator find in one site.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "3"
+        note: >-
+          the shared Playwright preset's scheme projects and a config check against the parameters file.
+          Plant: removing dark from the parameters file fails the config check. Control: both schemes listed
+          passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: light-mode contrast was an
+        operator find
+    note: >-
+      The theme-name rule in the tokens concern covers the names; this one covers the journeys.
+  - id: web.testing.2
+    slug: two-engines
+    since: 0.1.0
+    rule: Behaviour checks run in two browser engines, Chromium and WebKit.
+    detail: >-
+      Playwright projects `chromium` and `webkit` in the shared config for the land tier; `no-skipped-test`
+      and `no-conditional-in-test` ban a hidden engine skip (a `test.skip` on the engine needs a reason
+      string); the project list is checked against the parameters file. Kit helpers take the engine, since
+      WebKit has no layout-shift entry. Skip form: `test.skip(browserName === "webkit")` needs a reason
+      string.
+    level: program
+    why: >-
+      Two WebKit faults recurred in one site (the iPhone pressed look is not WebKit-only, as first merged).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: eslint
+        tier: "3"
+        note: >-
+          Playwright projects for both engines, `eslint-plugin-playwright` `no-skipped-test` and
+          `no-conditional-in-test`, and the parameters file check. Plant: deleting the webkit project from the
+          config fails; a skip with no reason fails. Control: both engines configured passes
+    open:
+      - WebKit was not run in the trial (the cached build did not match the version).
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: two WebKit faults in one site
+  - id: web.testing.3
+    slug: baseline-one-platform
+    since: 0.1.0
+    rule: >-
+      A picture baseline is made and compared on one platform in a pinned container, and the file name carries
+      the platform.
+    detail: >-
+      The default snapshot path template includes platform and project name; a config grep fails if the
+      template is overridden to drop either. Baselines are written only inside the pinned container: the
+      update command refuses unless the image digest (an environment value) matches the pinned one, and the
+      land step runs without `--update-snapshots`. Laptop runs are previews. Template keys
+      `snapshotPathTemplate` with the `platform` and `projectName` tokens.
+    level: deploy
+    why: >-
+      24 smoke pictures differed on Linux for two causes; 2.9 to 22.8 percent of pixels differ between macOS
+      and Linux Chromium, and no threshold separates that from a real change.
+    kind: rule
+    strength: Hard
+    status: retired
+    note: >-
+      Retired with gragas#1654. A baseline is made on the one system the gate runs on, in its pinned container,
+      so no file name carries a platform and no template key holds one; web.testing.4 holds the rest.
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "3"
+        note: >-
+          a config grep on the snapshot path template and the update command's container digest check. Plant:
+          a snapshot named without a platform fails the grep; `--update-snapshots` outside the container
+          fails. Control: baselines written inside the pinned container pass
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: 24 smoke pictures
+  - id: web.testing.4
+    slug: deterministic-screenshots
+    since: 0.1.0
+    rule: >-
+      Screenshots use a fixed clock, no animation, no caret, scale 1, a fixed locale and zone, and fixed
+      fonts.
+    detail: >-
+      The shared preset sets animations disabled, caret hidden, css scale, fixed locale and timezone, an
+      installed fixed clock, reduced motion, and fonts served from the pinned container. A flake meter takes N
+      consecutive shots and requires 0 differing pixels; a config check fails when a spec overrides these
+      keys. Preset keys: `animations: "disabled"`, `caret: "hide"`, `scale: "css"`, `timezoneId`,
+      `page.clock.install` with a fixed `time`, `reducedMotion: "reduce"`; meter script `flake.mjs`.
+    level: program
+    why: >-
+      The meter showed 0 px over 29 shots, and a clock page differed on every shot until fixed.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "3"
+        note: >-
+          the shared Playwright preset, the flake meter, and a spec-override check. Plant: a spec that
+          re-enables animations fails the override check; a page showing the wall clock differs between shots
+          and fails the meter. Control: a page with a fixed clock shows 0 px difference
+    open:
+      - The screenshot assertion itself was not run in the trial.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C: 0 px over 29 shots
+  - id: web.testing.5
+    slug: numbers-decide-pictures-are-evidence
+    since: 0.1.0
+    rule: >-
+      Rendered UI is judged by numbers measured on named parts (web.parts.17); a picture or pixel diff is
+      attached as evidence and never decides a test, and no test asserts on a screenshot.
+    detail: >-
+      `no-restricted-syntax` in test files bans `toHaveScreenshot`, `toMatchSnapshot` on an image and any
+      visual-diff assertion; a screenshot is taken with `page.screenshot` and attached with `testInfo.attach`.
+      A config grep refuses a screenshot expectation block in `playwright.config`. The numbers are box sizes,
+      positions, colours read from computed style and contrast, each on a named part.
+    level: file
+    why: >-
+      A pixel threshold is either so tight it fails on a font update or so loose it passes a broken layout; a
+      number on a named part says what is wrong and where.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-web
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          `no-restricted-syntax` on screenshot and image-snapshot assertions in test files, and a config grep.
+          Plant: `await expect(page).toHaveScreenshot()` in a test fails. Control: a screenshot attached with
+          `testInfo.attach` beside a measured assertion passes
+    relates:
+      - id: web.parts.17
+        how: see
+  - id: web.testing.6
+    slug: parameters-file-not-glob
+    since: 0.1.0
+    rule: >-
+      The page list, widths, schemes and engines are declared in a parameters file, not globbed.
+    detail: >-
+      The Playwright config builds its project and test list from the parameters file; a check fails when the
+      test match uses a glob over spec files outside the parameters-driven list, and when the file lists a
+      page that is absent from the route table (count equality). Test match `*.spec` glob and `testMatch`
+      banned outside the list.
+    level: program
+    why: v1 gave no reason beyond its evidence grade, Evidence D.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the config loader of our CLI over the parameters file and the route table. Plant:
+          adding a page to the route table without a parameters entry fails; a globbed spec is refused.
+          Control: a page listed in both passes
+    open:
+      - The loader state is owned by the parameters-file rule of the enforcement runner.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.testing.7
+    slug: matrix-cell-per-combination
+    since: 0.1.0
+    rule: Every screen, size, theme and state named in a spec has a built cell in the run.
+    detail: >-
+      The matrix check computes the cross product of the spec's screens, sizes, themes and states; the run
+      record lists the built cells; a cell in the product with no result fails, and the product count equals
+      the cell count. Command `companion matrix`.
+    level: program
+    why: >-
+      One site's spec had cells that were never built (the screenshot ledger shows twelve missing).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the matrix check of our CLI over the spec and the run record. Plant: deleting one
+          screenshot cell fails; a spec with 24 cells and a run with 23 fails. Control: a run with every cell
+          passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: twelve missing cells in one
+        site's ledger
+  - id: web.testing.8
+    slug: page-story-per-state
+    since: 0.1.0
+    rule: >-
+      Every page has a sibling story file with Default, Loading, Empty, Error, NoPermission and a phone-width
+      story, plus the permission states Allowed, Denied, CheckingAccess and Degraded.
+    detail: >-
+      The example for each state is a story where the stack has a story tool, and a gallery entry where it has
+      none (no story framework exists for the template stack, so its gallery is ours). The story-tool form,
+      the sibling story file and its named stories, is react.testing.4.
+    level: file
+    why: A page with no example for a state has never been looked at in that state.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          There is no Allowed, Denied, CheckingAccess or Degraded state to write a story for.
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the examples check of our CLI compares each page file with its sibling example
+          (story or gallery entry) and the required state names. Plant: a page file with no sibling example,
+          or one missing Denied, fails. Control: a page with all ten named states passes
+    relates:
+      - id: react.testing.4
+        how: see
+    open:
+      - The story names are the reference's.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      Related to the shared-part example rule (parts concern) and the matrix rule (cells); this one covers
+      pages.
+  - id: web.testing.9
+    slug: pixel-comparison-is-an-instrument
+    since: 0.1.0
+    rule: >-
+      Pixel comparison is an instrument: a person looks at changed pixels before approving, a model may flag,
+      a shared UI baseline is approved in a pull request diff with no hosted service, and snapshot and picture
+      files change only when the work item sanctions it.
+    detail: >-
+      A golden is judged by who parses it: one read by a machine fails on any change, and one read by a person
+      is approved by a person. The land step lists changed snapshot files and counts tests whose snapshot
+      changed, failing on a rise above the ticket's declared scope. Gate files are protected paths. Assertion
+      `toHaveScreenshot`.
+    level: process
+    why: >-
+      A blanket update is the cheap cure for a human-read golden, and only the count catches it. The hosted
+      pixel service tried is archived, and the free tier of another is Chrome only.
+    kind: rule
+    strength: Record
+    status: active
+    sources:
+      - ref: decision-33
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class record. Playwright's screenshot assertion with pixelmatch, goldens approved in a pull
+          request diff, and a land check that counts changed snapshots against the ticket's scope and requires
+          a person's approval record. Plant: a ticket touching 1 page that changes 30 snapshots fails the
+          count check. Control: a change within its declared scope passes
+    review_question: Who parses this output, and who approved this golden update?
+    open:
+      - >-
+        Half holds mechanically: listing and counting changed goldens. The approval is a person (decision 33),
+        so the rule stays Record until promoted.
+      - 313 px differed on a planted colour in the trial.
+  - id: web.testing.10
+    slug: journey-fails-on-console-error
+    since: 0.1.0
+    rule: >-
+      A journey fails on any console error or unhandled rejection, with a shrink-only allow list.
+    detail: >-
+      Every spec imports its test function from the kit (`no-restricted-imports` bans the raw test runner in
+      spec files), and the kit's test registers listeners for page errors and console messages at error level;
+      any event fails the test unless it matches an entry in a shrink-only allow-list file. Raw runner
+      `@playwright/test` banned in specs; listeners `page.on("pageerror")` and `page.on("console")`.
+    level: program
+    why: >-
+      The kit asserts on the DOM, not on the page's errors; the word "console" never appeared in the catalogue
+      except for console apps.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the kit's auto-fixture listening for page errors and console errors, and
+          `no-restricted-imports` on the raw runner in specs. Plant: a page calling `console.error` in a
+          journey fails; the same message on the allow-list passes and the list can only shrink. Control: a
+          clean page passes
+    open:
+      - >-
+        Trialled on Chromium only; the allow-list and the ban on importing the raw runner in specs were not
+        run.
+      - No fault in our record; built because every rule binds from adoption.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.testing.11
+    slug: one-test-runner
+    since: 0.1.0
+    rule: >-
+      One test runner runs every example in one pass; every story renders and its interaction script passes,
+      and every affected story also passes the config proof.
+    detail: >-
+      The config proof is the canary brand and pseudo-locale rule. The platform's single runner is Vitest
+      (decision 10). The story tool's binding to that runner is react.testing.5.
+    level: program
+    why: Two runners split the evidence and double the maintenance.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "3"
+        note: >-
+          a config check that no second runner is configured (the story tool's runner binding is
+          react.testing.5). Plant: a second runner configured for stories fails the config check. Control: one
+          runner configured passes
+    relates:
+      - id: react.testing.5
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.testing.12
+    slug: network-mocked-at-the-network
+    since: 0.1.0
+    rule: >-
+      Network is faked at the network with handlers generated from the contract, not by mocking modules; no
+      hand-written handlers and no per-feature fake harnesses.
+    level: package
+    why: >-
+      A module mock agrees with the code that the same agent wrote and proves nothing about the contract.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          `no-restricted-syntax` on module-mock calls of the data layer in tests and a folder rule allowing
+          handlers only from generated output. Plant: a test mocking the client module fails; a hand-written
+          handler fails. Control: a test using the generated handlers passes
+    open:
+      - >-
+        The mock library named in the source is React stack neutral but one chosen product; the pick belongs
+        to the stack choice.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.testing.13
+    slug: geometry-check-on-reach
+    since: 0.1.0
+    rule: >-
+      A layout or geometry change runs the geometry check, which is not part of the normal test run.
+    detail: >-
+      Browser journeys are picked by a reach map from source paths; an unplaced path picks all.
+    level: process
+    why: >-
+      A heavy check that runs only when the change can reach it keeps the normal run fast.
+    kind: rule
+    strength: Review
+    status: proposed
+    review_question: Did this layout or geometry change run the geometry check?
+    open:
+      - >-
+        Held by the reach map of the affected-gates rules (owned elsewhere); no check in this part.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.testing.14
+    slug: canary-brand-and-pseudo-locale
+    since: 0.1.0
+    rule: >-
+      Every affected story renders under a canary brand and a pseudo-locale and must change in both; a story
+      with no brand or text surface takes an exemption that names a reason, a ticket and an expiry.
+    detail: >-
+      This runs on the affected stories at land, never on the whole story set in the full tier. Shared words
+      and tokens are proved by re-rendering under a different brand and an inflated pseudo-language.
+    level: process
+    why: Without it, a word or colour that ignores the config still passes every test.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - facets:
+          - story-without-text-surface
+        reason: >-
+          nothing in it can change under a canary brand or pseudo-locale; the exemption names a reason, a
+          ticket and an expiry
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a land-tier run of the affected stories under the canary brand and the pseudo-locale, comparing each
+          story's output with its normal render. Plant: a story whose output does not change under the canary
+          brand fails. Control: a story that changes in both passes
+    open:
+      - No row of ours asked for it before; it is the config proof of the reference.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      Related to the long-text rule in the layout concern (long text at the narrowest width), which tests the
+      same words by fixture.
+  - id: web.testing.15
+    slug: component-tests-in-a-real-browser
+    since: 0.1.0
+    rule: >-
+      Component tests run in a real browser engine, and a DOM shim (jsdom, happy-dom or a later one) is not a
+      dependency.
+    detail: >-
+      The test runner's browser mode (for example Vitest browser mode with Playwright) runs component and
+      renderer tests in Chromium or another real engine. The dependency check refuses a package whose purpose
+      is to imitate the DOM in Node; a new shim is one more name in the ban list.
+    level: package
+    why: >-
+      A shim passes layout, focus, events and styles that a browser would fail, so a green test says little
+      about the page people see.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: decision-65-web
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "2"
+        note: >-
+          the dependency check of our CLI banning jsdom and happy-dom, and a config check that the component
+          test project runs in browser mode. Plant: adding happy-dom to the dev dependencies fails, and a test
+          config with environment jsdom fails. Control: a browser-mode test project passes

@@ -1,0 +1,8 @@
+# The only names a fixture, a document or an example may use for a person, a
+# host or an account (tests.doubles.7; A45). A scan fails any other name-shaped
+# value. The list is protected by being reviewed with the change that adds to it.
+alex  # the one person every fixture names
+example.com  # the one domain
+example.org  # the second domain, for a library or a mirror
+box  # the one host
+192.0.2.1  # the documentation address (RFC 5737)

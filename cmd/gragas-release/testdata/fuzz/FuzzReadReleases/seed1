@@ -1,0 +1,2 @@
+go test fuzz v1
+string("[{\"id\":1,\"tag_name\":\"v1.2.3\",\"draft\":false,\"assets\":[]},{\"id\":42,\"tag_name\":\"v1.2.3\",\"draft\":true,\"assets\":[{\"name\":\"checksums.txt\",\"digest\":\"sha256:00\"}]}]\n[{\"id\":2,\"tag_name\":\"v1.2.2\",\"draft\":true,\"assets\":null}]\n")

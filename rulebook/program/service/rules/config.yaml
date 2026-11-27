@@ -1,0 +1,39 @@
+format: 3
+part: service
+concern: config
+rules:
+  - id: service.config.1
+    statement: "The environment is read only in the config module, with a short exempt path list that only a reviewed rule change may extend."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, os.Getenv is banned outside the config package, which reads with os.LookupEnv; the terminal variables sit in the shared UI package."
+      pros:
+        - "Environment reads scattered through code mean no one can list what a service needs to run, and a missing variable fails at first use."
+  - id: service.config.2
+    statement: "The environment is parsed once, by a schema in the config module, and the rest of the code reads the typed result."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, every config key and variable has a reader, a default and a doc row, read in one package."
+      pros:
+        - "Parsing at each use repeats the defaults and coercions, and a bad value fails late."
+  - id: service.config.3
+    statement: The infrastructure environment map of a service validates under the same schema the service parses at start.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - "A variable named in the infrastructure but not in the schema (or the reverse) is found by a failed deploy or a failed start, not by a check."

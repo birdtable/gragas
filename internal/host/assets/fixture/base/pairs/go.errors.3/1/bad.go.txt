@@ -1,0 +1,6 @@
+package b
+
+func G() int {
+	v, _ := h()
+	return v
+}

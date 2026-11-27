@@ -1,0 +1,61 @@
+format: 3
+part: react
+concern: client-state
+rules:
+  - id: react.client-state.1
+    statement: "Client state that changes lives in one store; context is only for passing values down."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "One store library, no second one and no bespoke store class. The package ban lists the other client stores (redux, jotai, valtio, recoil, mobx, nanostores, zustand), and the external-store hook is restricted outside the store file. Whether a context holds changing state is a judgement that no tool makes."
+      pros:
+        - "Two stores for client state drift apart, and state in context re-renders every consumer. Half of the rule holds by package ban; the context half is a model lens."
+    sources:
+      - ref: react-docs
+        where: scaling up with reducer and context
+        backs: rule
+      - ref: decision-44
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.client-state.2
+    statement: "A React program uses one form library, TanStack Form, with every other form library banned, and sets field errors only in the one server-error mapping module."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "`no-restricted-imports` and a manifest ban on the other form libraries: `formik`, `final-form`, `conform`, and `react-hook-form` with `@hookform/resolvers` (the replaced pick). `@tanstack/react-form` is the chosen one (before the TanStack-always ruling it was the banned one). `.setError(` calls outside the mapping module are banned, so a server 400 problem response reaches form and field errors only through the one helper of web.forms.3. Schema validation follows web.forms.4; in the form library's current major, output that differs from input is parsed in the submit handler."
+      pros:
+        - "With no form in either site the check is vacuous until the detector sees one. Two form libraries, or field errors set by hand in pages, give two patterns for fields, validation and server errors."
+    relations:
+      relates:
+        - web.forms.3
+        - web.forms.4
+    sources:
+      - ref: decision-65-react
+        backs: rule
+  - id: react.client-state.3
+    statement: "A derived value is computed during render, never stored in state and synced by an effect."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The lint `no-derived-state` from `eslint-plugin-react-you-might-not-need-an-effect` (1.1.0) fails an effect that sets state from other state or props. This is the React form of web.states.15 (a derived value is computed, not stored and synced)."
+      pros:
+        - Stored derived state drifts from the value it was derived from.
+    relations:
+      relates:
+        - web.states.15
+    sources:
+      - ref: decision-65-react
+        backs: rule

@@ -1,0 +1,1 @@
+{"Enabled": [{"name": "errcheck"}, {"name": "govet"}, {"name": "ineffassign"}], "Disabled": [{"name": "gosec"}, {"name": "unused"}]}

@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-binding.schema.json",
+  "title": "Binding of a rule to a tool key (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "rule",
+    "tool",
+    "key",
+    "target_type",
+    "severity",
+    "rung",
+    "run_point"
+  ],
+  "properties": {
+    "rule": {
+      "$ref": "common.schema.json#/$defs/id",
+      "x-introduced": "1.0",
+      "x-decides": "what an overlay's or an importer's binding is held to, S70"
+    },
+    "tool": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0",
+      "x-decides": "what an overlay's or an importer's binding is held to, S70"
+    },
+    "key": {
+      "$ref": "common.schema.json#/$defs/text",
+      "description": "the tool's key the binding sets; at rung 6 the review question the reviewer must answer (S51)",
+      "x-meaning": "at rung 6, the review question the reviewer must answer (S51); at rungs 0 to 5, the key of the tool entry",
+      "x-introduced": "1.0",
+      "x-decides": "what an overlay's or an importer's binding is held to, S70"
+    },
+    "target_type": {
+      "$ref": "common.schema.json#/$defs/targetType",
+      "x-introduced": "1.0",
+      "x-decides": "what an overlay's or an importer's binding is held to, S70"
+    },
+    "value": {
+      "anyOf": [
+        {},
+        {
+          "type": "null"
+        }
+      ],
+      "description": "the value the binding gives the key; at rung 6 text that says when the review question applies (S51)",
+      "x-meaning": "at rung 6, when the review question applies (S51); at rungs 0 to 5, the value of the tool entry",
+      "x-introduced": "1.0",
+      "default": null,
+      "x-decides": "what an overlay's or an importer's binding is held to, S70"
+    },
+    "options": {
+      "type": "object",
+      "x-introduced": "1.0",
+      "default": {},
+      "x-decides": "what an overlay's or an importer's binding is held to, S70"
+    },
+    "severity": {
+      "$ref": "common.schema.json#/$defs/severity",
+      "x-introduced": "1.0",
+      "x-decides": "what an overlay's or an importer's binding is held to, S70"
+    },
+    "rung": {
+      "$ref": "common.schema.json#/$defs/rung",
+      "x-introduced": "1.0",
+      "x-decides": "what an overlay's or an importer's binding is held to, S70"
+    },
+    "run_point": {
+      "$ref": "common.schema.json#/$defs/runPoint",
+      "x-introduced": "1.0",
+      "x-decides": "what an overlay's or an importer's binding is held to, S70"
+    },
+    "remedy": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "pair": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "pair_path": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "proof": {
+      "anyOf": [
+        {
+          "$ref": "entity-proof-result.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "tightens": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "checker": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/slug"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "the name of the rulebook's checker-code declaration the binding's entry comes from; null for a tool's own entry",
+      "x-introduced": "1.0",
+      "default": null
+    }
+  }
+}

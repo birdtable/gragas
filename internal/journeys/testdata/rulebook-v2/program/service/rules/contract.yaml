@@ -1,0 +1,786 @@
+part: service
+concern: contract
+order: 2
+title: API contract
+summary: >-
+  The contract is generated from the route schemas, diffed against the merge base and changed by the declared
+  reader mode, linted with one shared ruleset in one declared casing, and written so that clients can be
+  generated and retries are safe. This concern holds naming, errors in the contract, idempotency,
+  compatibility between services and what a response promises.
+rules:
+  - id: service.contract.1
+    slug: contract-regenerated-and-diffed
+    since: 0.1.0
+    rule: >-
+      The API contract is regenerated from code and diffed in the gate against the committed copy and against
+      the contract at the merge base with the main branch, so editing or deleting the committed file does not
+      pass a break.
+    detail: >-
+      The contract document is never hand-edited: the gate regenerates it from the route schemas and fails on
+      any difference from the committed file; the file is written with LF line ends and compared byte for
+      byte, so a checkout that changes line ends is a difference too. The same gate regenerates the contract at the merge base and
+      applies the compatibility check of service.contract.2 between the two, so a change that edits the code
+      and the committed file together is still compared with what main had. A missing committed file fails. In
+      Go, the command tree and public surface are generated to a file and compared the same way.
+    level: release
+    why: >-
+      A contract written by hand drifts from the code it describes, and a generated client built from it then
+      lies. A gate that the same change can edit is not a gate; the merge base is the copy the change cannot
+      touch.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: decision-65-service
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          gate step that regenerates the contract from the route schemas and fails on a diff with the
+          committed file. Plant: a route added without regenerating the contract fails. Control: a
+          regenerated, committed contract passes
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          gate step that regenerates the contract at the merge base with main and compares it with this
+          change's contract under the program's compatibility mode. Plant: a change that removes a field and
+          edits the committed file to match fails; a deleted committed file fails. Control: an additive change
+          with a regenerated file passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          generated command tree and public surface file compared with the committed copy and with the merge
+          base. Plant: a command added without regenerating the file fails. Control: a regenerated file passes
+    relates:
+      - id: service.contract.2
+        how: see
+  - id: service.contract.2
+    slug: compatibility-follows-readers
+    since: 0.1.0
+    rule: >-
+      A program declares whether its readers are owned or independent, and its contract changes by that mode.
+      With owned readers a break is allowed only when it raises the one contract number in the same change and
+      every known reader changes with it, nothing is kept for an old reader, and a missing field is an error,
+      never defaulted. With independent readers no change breaks the last released contract, a removal or
+      change of meaning is deprecated for one minor release before removal, and below 1.0 such a change is at
+      least a minor release with an entry that says what to rename.
+    detail: >-
+      The mode is one declared value per program, with no default: a program with no declaration fails the
+      gate. Owned readers are readers the same owner deploys in step (its own CLI, page or sibling program);
+      independent readers are any the owner cannot change (a published library, a public API). With owned
+      readers the contract carries one integer raised in the change that removes a path or field, retypes a
+      field or changes a permission; an addition does not raise it; the gate fails when the shape loses or
+      changes anything and the number did not move. There is no deprecation window, no field marked going and
+      no old-and-new fallback. With independent readers the gate compares the contract with the last release
+      and fails on a change that breaks a caller (a removed field, a new required parameter, a changed type)
+      unless the item was marked deprecated in a release at least one minor earlier. In Go, a removed flag or
+      field or a changed exit code fails and an undeclared API break refuses the release.
+    level: release
+    why: >-
+      A silent break reaches callers that were never told. Owners of every reader found that a compatibility
+      layer is where their bugs lived; a publisher to readers it will never see must give them notice. One
+      rule with a declared mode stays true for both and keeps the check mechanical.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+        - daemon
+        - cli
+    sources:
+      - ref: decision-65-service
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          gate step that reads the declared reader mode (none fails), then with owned readers fails a shape
+          that loses or changes anything unless the contract number rose in the same change, and with
+          independent readers fails a removal not deprecated in an earlier minor release. Plant: owned
+          readers, a removed field with the number unchanged, fails; independent readers, a removed field
+          never deprecated, fails; a program with no declared mode fails. Control: owned readers, a removed
+          field with the number raised, passes; an additive change passes in either mode
+      - binding: any
+        class: preset-config
+        tool: oasdiff
+        tier: "2"
+        note: >-
+          oasdiff run against the last release of the contract (independent readers) or the merge base (owned
+          readers), its breaking-change list fed to the mode step above. Plant: removing a response field is
+          reported as a break. Control: adding an optional field passes
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          apidiff or gorelease refusing an undeclared break at the tag, plus the command tree diff. Plant:
+          removing an exported field without a declared break fails. Control: an additive change passes
+    relates:
+      - id: cli.output.4
+        how: see
+    open:
+      - Both diff tools are chosen but not yet run on a planted break.
+      - cli.output.4 is rewritten under the same card for the CLI's own surface.
+  - id: service.contract.3
+    slug: contract-lint
+    since: 0.1.0
+    rule: >-
+      The contract is linted for path casing, operation identifiers, security on every operation, declared
+      error responses and paging.
+    detail: >-
+      The shared lint ruleset also holds two house rules: each operation identifier is camelCase so generated
+      client names stay stable, and every 4xx and 5xx response declares a body schema. Operation names in the
+      contract follow one table. The ruleset applies to a daemon that publishes an HTTP description; a
+      command-line program contract is its command tree.
+    level: file
+    why: >-
+      Names and error shapes that vary across operations make generated clients unstable and error handling
+      per call.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: p-03-data
+        where: section 16
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tool: spectral
+        tier: "1"
+        note: >-
+          Spectral over the generated contract with the shared ruleset and the two house rules. Plant: an
+          operation with a snake_case identifier or an error response with no body schema fails. Control: a
+          conforming operation passes
+  - id: service.contract.4
+    slug: lint-no-warnings
+    since: 0.1.0
+    rule: >-
+      The contract lint set extends the recommended rules, every recommended rule that defaults below error is
+      promoted to error, and a test regenerates that list so a tool upgrade that adds a warning turns the
+      suite red.
+    level: file
+    why: >-
+      A rule left at warn is read by nobody; a new warning arriving with an upgrade must not slip in unseen.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test reading the resolved ruleset from the installed lint packages and comparing the list of
+          non-error recommended rules with the committed list. Plant: upgrading the lint package so a new
+          warning appears fails the test. Control: an upgrade that adds no warning passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      Held with the same ruleset as contract-lint; this is the upgrade guard on it. In Go, the resolved set is
+      read and compared after a tool upgrade.
+  - id: service.contract.5
+    slug: validate-once-at-boundary
+    since: 0.1.0
+    rule: >-
+      A request is validated once at the boundary against the route contract, and the handler receives only
+      typed, validated input.
+    detail: >-
+      One validator checks every request, and the response, against the route contract. In Go, input is parsed
+      once at the edge, unknown keys are refused, outside paths are confined and exit codes are tested; daemon
+      JSON output is held by a golden and a schema test.
+    level: function
+    why: >-
+      Validation repeated or skipped inside handlers leaves paths that accept what the contract says they must
+      not.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing a handler that re-parses the raw body or reads an unvalidated request field.
+          Plant: a handler reading the raw body fails. Control: a handler using the validated input passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a golden and a schema test on daemon JSON, with strict decoding at the edge. Plant: an unknown key
+          accepted at the edge fails. Control: a refused unknown key passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.contract.6
+    slug: no-undeclared-status
+    since: 0.1.0
+    rule: No operation returns a status code its contract does not declare.
+    level: function
+    why: >-
+      A caller written from the contract cannot handle an outcome it was never told about.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          the response validator failing any status code absent from the operation contract, exercised by the
+          contract conformance test. Plant: a handler that returns a 418 not in its contract fails. Control: a
+          declared status passes
+  - id: service.contract.7
+    slug: mutations-carry-precondition-and-key
+    since: 0.1.0
+    rule: >-
+      Every mutating request carries a version precondition (the revision it was based on) and an idempotency
+      key.
+    detail: >-
+      A write based on stale state is refused as a conflict. The key lets a retry be told from a new request.
+      In Go, a write command is safe to run twice, but there is no stale-write precondition on shared state
+      yet.
+    level: function
+    why: >-
+      Without a precondition a late retry overwrites newer state; without a key a retry doubles the effect.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          contract lint failing a mutating operation without a revision precondition and an idempotency key
+          parameter. Plant: a POST with neither fails the lint. Control: a mutation declaring both passes
+    open:
+      - >-
+        In Go the precondition on shared state and the stored-outcome replay for daemon requests are gaps with
+        no row yet.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.contract.8
+    slug: replay-and-conflict
+    since: 0.1.0
+    rule: >-
+      A repeated idempotency key replays the stored outcome; the same key with a different request conflicts
+      (409). One shared helper proves it by calling every writing operation and every event consumer twice.
+    detail: >-
+      The helper walks the operationId of every operation with a write method, taking the route list from the
+      contract and the consumer list from the subscription definitions, never from the author. It runs each
+      operation and consumer twice against the real store with the same input and asserts the state equals one
+      run, counting calls to test doubles at unmanaged edges (mail, a marketplace, a publish). The same key
+      with a changed body must return the conflict. The cost decides the tier: tier 2 if the container fixture
+      is fast enough, otherwise tier 4; it has not been timed.
+    level: program
+    why: >-
+      The middleware that implements idempotency can be satisfied by a package nobody applied. In the
+      reference estate both toolkits had the middleware and one service did not use it. Exactly-once delivery
+      does not exist, only at-least-once with idempotent handling.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: p-03-data
+        where: section 20
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 7
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          v1 class shared-code. shared helper walking write operations and subscribed handlers, calling each
+          twice and comparing store state, with key-reuse conflict assertions. Plant: a handler that appends a
+          row or sends a call on every invocation fails the twice test; a key reused with a changed body
+          returning success fails. Control: a handler that is idempotent passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          shared Go test helper calling every contract route twice and hashing the state folder; a retried
+          write with the same key replays the stored outcome. Plant: a handler that appends a log line on each
+          call fails; a key reused with a changed body must return conflict. Control: an idempotent handler
+          passes
+    open:
+      - >-
+        In Go there is no stored-outcome replay for daemon requests yet: the rule is held for a repeat run
+        that changes nothing or says so.
+      - Whether the twice test runs in tier 2 or tier 4 is not timed.
+      - >-
+        Built because every rule binds from adoption; if the operator would rather not build for evidence D
+        this part becomes a best practice.
+  - id: service.contract.9
+    slug: get-changes-nothing
+    since: 0.1.0
+    rule: No GET request changes state.
+    detail: >-
+      The shared twice-helper also calls every GET and checks the state is unchanged; a GET handler that
+      appends a log line, writes a row or sends a call fails.
+    level: function
+    why: >-
+      Caches, prefetchers and retries call GET freely; a GET with effects turns each of them into a write.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          v1 class shared-code. the shared twice-helper hashing state before and after every GET route from
+          the contract. Plant: a GET handler that appends a row on each call fails. Control: a read-only GET
+          passes
+  - id: service.contract.10
+    slug: one-declared-casing
+    since: 0.1.0
+    rule: >-
+      A program declares one casing for its JSON fields, query parameters and machine values, with no implied
+      default, and a lint on the generated contract holds every name to it; parameters are typed and defaulted
+      in the contract, GET carries no body, an absent field is omitted, times are RFC 3339 and durations are
+      the strings a person types.
+    detail: >-
+      The casing is one declared value per program (for example lowerCamelCase or lower_snake_case), read by
+      the lint; a program with no declaration fails, and the rulebook names no default. Machine values are
+      enum members, error codes (service.errors.2), status values (store.schemas.3), event fields
+      (service.events.4) and permission parts (service.authz.1). A field the platform has no such thing as is
+      omitted; null is used only for a value that could not be read, with its reason. A casing added later is
+      one more value the lint accepts; the rule does not change.
+    level: file
+    why: >-
+      What a reader needs is consistency within one program's contract; an estate-wide casing would break
+      working contracts for no reader's benefit, and an implied default lets a program skip the decision.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+        - daemon
+        - cli
+    sources:
+      - ref: decision-65-service
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tool: spectral
+        tier: "1"
+        note: >-
+          Spectral rules in the shared ruleset reading the program's declared casing: field, query parameter
+          and enum value casing, schema type and default present, no requestBody on get, date-time format on
+          time fields; a missing declaration fails the lint. Plant: a name in a second casing, a GET with a
+          request body, or a program with no declared casing fails. Control: a typed parameter in the declared
+          casing with a default passes
+    relates:
+      - id: service.errors.2
+        how: see
+      - id: store.schemas.3
+        how: see
+      - id: service.events.4
+        how: see
+      - id: service.authz.1
+        how: see
+    note: In Go, settings resolve in one order with defaults and a flag has one meaning.
+  - id: service.contract.11
+    slug: one-contract-per-exposure-tier
+    since: 0.1.0
+    rule: There is one contract document per exposure tier, each with its own access mode.
+    detail: >-
+      The internal document sets one internal access mode on every operation and the public document sets
+      none, so a route cannot sit in the wrong tier by accident. In Go there is one command tree file per
+      program and each daemon reach is stated.
+    level: file
+    why: One document for both tiers makes the access mode a per-route guess.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a contract test asserting every operation of the internal document carries the internal access mode
+          and every operation of the public document none. Plant: an internal operation in the public document
+          fails. Control: a correctly placed operation passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.contract.12
+    slug: operation-summary
+    since: 0.1.0
+    rule: Every operation has a one-sentence summary.
+    level: file
+    why: >-
+      The summary is what generated documentation and client method comments show; none means the operation is
+      described by its path alone.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: any
+        class: preset-config
+        tool: spectral
+        tier: "1"
+        note: >-
+          Spectral rule operation-summary in the shared ruleset. Plant: an operation with no summary fails.
+          Control: an operation with a one-sentence summary passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          revive exported rule and a help-line test requiring a doc comment on every exported name and a true
+          help line on every command. Plant: an exported name without a comment fails. Control: a commented
+          name passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.contract.13
+    slug: no-retired-words-in-public-names
+    since: 0.1.0
+    rule: >-
+      Public names (routes, operation identifiers, property keys) avoid the words the product has retired.
+    detail: >-
+      The check reads the retired-word list and runs over the contract paths, operation identifiers and
+      property keys. In Go, flag, command and JSON field names are held to the same list.
+    level: word
+    why: >-
+      A retired word in a public name outlives every rename in docs and code, because callers cannot change
+      it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: any
+        class: preset-config
+        tool: spectral
+        tier: "1"
+        note: >-
+          a Spectral pattern rule with a notMatch override over paths, operationIds and property keys, taking
+          the repository retired-word list. Plant: a path containing a retired word fails. Control: a path
+          with the current word passes
+      - binding: go
+        class: preset-rule
+        tier: "1"
+        note: >-
+          the identifier scan over flag, command and JSON tag names against the retired-word list. Plant: a
+          JSON tag with a retired word fails. Control: a current tag passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.contract.14
+    slug: consumer-imports-producer-type
+    since: 0.1.0
+    rule: >-
+      A consumer imports the producer type of an API or event, or translates it at its own edge; it never
+      copies another service names or enums.
+    detail: >-
+      A copied enum drifts silently when the producer adds a value. In Go, one domain reaches another only
+      through an interface the caller declares, so names are translated at that edge.
+    level: type
+    why: >-
+      A copy of another service names looks like a type but is a second source of truth.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "2"
+        note: >-
+          import-boundary rule plus a type-equality test between the consumer edge type and the generated
+          producer type. Plant: a locally declared enum duplicating a producer enum fails the equality test.
+          Control: an import of the producer type passes
+      - binding: go
+        class: preset-rule
+        tier: "1"
+        note: >-
+          a layer table rule allowing a cross-domain call only through a caller-declared interface. Plant: a
+          package importing another domain concrete type fails. Control: the interface at the edge passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      Events are held by the event-payload rule; this is the general form for API types too.
+  - id: service.contract.15
+    slug: consumer-pins-provider-examples
+    since: 0.1.0
+    rule: >-
+      A consumer of another of your programs pins the provider's published examples at a named commit, runs
+      its real parsers over every one, checks its pin against the provider's main branch before a release, and
+      an empty example set on a live consumer fails.
+    detail: >-
+      The provider publishes one example answer per path or event, generated from its own tests. The consumer
+      copies them at a commit it names, and its tests run the same parser the program runs on each example, so
+      a field the consumer reads that is renamed, removed or retyped fails in the consumer's own build. Before
+      a release the consumer compares its pin with the provider's main and fails when they differ without a
+      new pin. The provider can then retire what no one reads, and a change in what someone does read, which a
+      plain diff reports as harmless, is caught. A field list alone is weaker than parsing the examples and
+      does not satisfy the rule.
+    level: release
+    why: >-
+      A generated client depends on the whole response schema, so the provider cannot tell which fields anyone
+      reads and with no window before cutover can retire nothing. Consumer-driven contracts let the provider
+      learn what its consumers use; the article limits the idea to one enterprise or a closed community, which
+      is the case here. Such a test runs on the other party rhythm of change and should raise a task more
+      often than it breaks a build.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+        - daemon
+        - cli
+        - web-app
+    sources:
+      - ref: robinson-consumer-driven-contracts
+        backs: rule
+      - ref: bellemare-bedm
+        where: ch. 3 (explicit schemas and compatibility types)
+        backs: rule
+      - ref: p-07-testing
+        where: section 4.11
+        backs: rule
+      - ref: decision-65-service
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. a consumer test that runs the real parsers over every pinned example, and a
+          release step that compares the pin with the provider's main. Plant: a provider example with a
+          renamed field the consumer parses fails; a pin behind the provider's main at release fails; a live
+          consumer with no examples fails. Control: a provider adding a field passes
+    open:
+      - Where the check runs is unsettled.
+      - >-
+        Holds more strongly with agents: both sides are written in separate repositories and an agent cannot
+        see another repository expectations unless a file puts them in view (inference).
+      - "v1 reference, not yet a source: Fowler, consumer-driven contract testing note"
+    note: >-
+      Extends no-breaking-change (provider side, answers did anything change) and the generated-client rule.
+  - id: service.contract.16
+    slug: goal-already-holds-is-success
+    since: 0.1.0
+    rule: >-
+      Delete, cancel, close, release and ensure-style commands return success when the goal state already
+      holds, and the operation description says so; a stale revision stays a conflict and a thing that never
+      existed stays not found.
+    detail: >-
+      The line drawn: define away operation semantics, never input errors. The form is callee-only, stated on
+      the operation and not decided at the caller, so it cannot become a swallow in the caller. A measure goes
+      beside it: a count of handlers that catch a duplicate or a not-found and continue; that count signals
+      swallowing dressed as ensure.
+    level: function
+    why: >-
+      Without the rule each handler decides whether already-done is an error, and agents decide differently.
+      Argued from the technique of defining errors out of existence, which works where no caller needs the
+      information and fails on untrusted input; no case from the reference estate.
+    kind: rule
+    strength: Review
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: ousterhout-aposd
+        where: defining errors out of existence
+        backs: rule
+    review_question: >-
+      Does any caller need to know the goal state was already reached, and is the rule stated on the
+      operation?
+    open:
+      - >-
+        No plant: a seeded handler that swallows a real not-found as success must be flagged by the reviewer.
+    note: >-
+      Extends the replay and not-found-versus-conflict rules: those say how to tell conflict from missing, not
+      that an already-done command is a success.
+  - id: service.contract.17
+    slug: eventual-effects-stated
+    since: 0.1.0
+    rule: >-
+      Where a command effects in another service complete after the response, the operation description says
+      so and says how a caller learns it is done: an event, a status resource, or never needed.
+    level: function
+    why: >-
+      A caller reads a 200 as done; a command that writes the database first and the event second is
+      read-after-write for its own service only, so another service may still act on stale state. Argued from
+      the treatment of requests within an event-driven flow.
+    kind: instruction
+    strength: Review
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: bellemare-bedm
+        where: ch. 13 (handling requests within an event-driven workflow)
+        backs: rule
+    review_question: >-
+      Which effects of this command complete after the response, and where does the description say how a
+      caller sees completion?
+    open:
+      - >-
+        No plant: a seeded command that writes an outbox row and describes itself as complete must be flagged.
+    note: >-
+      Applies to command operations whose handlers write the outbox. Nearest: the command-route shape rule
+      fixes the route form, not what a 2xx promises.
+  - id: service.contract.18
+    slug: provider-names-no-consumer
+    since: 0.1.0
+    rule: >-
+      A provider names no consumer in its shipped code, examples or config and never reads a consumer's code
+      or tests, and a repository test holds the list of reader names out.
+    detail: >-
+      A consumer is named only as a reader in the provider's docs. The provider keeps a list of the names of
+      its known readers (programs, pages, tools) in its test data, and a whole-word test over shipped code,
+      examples and config refuses any of them. A reader added later is one more name in the list.
+    level: file
+    why: >-
+      A provider that names its consumer has made the consumer part of its contract, and every reader after
+      the first inherits a shape made for someone else. Rules already stop a consumer naming its provider
+      loosely; nothing stopped the reverse.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+        - daemon
+        - cli
+    sources:
+      - ref: decision-65-service
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          a repository test with the reader-name list, run whole-word over shipped code, examples and config.
+          Plant: a config comment that names the page that reads the API fails. Control: shipped files that
+          name no reader pass
+  - id: service.contract.19
+    slug: answers-carry-meaning-not-presentation
+    since: 0.1.0
+    rule: >-
+      An answer and a config carry meaning only (a name, number, sentence, state or permission), never layout
+      or styling, no field is named for where a reader draws it, and a whole-word test over every field name
+      refuses place words.
+    detail: >-
+      Presentation is an icon, a colour, a tile, a card order or a heading. The place-word list starts with
+      short, tile, card, heading, tab and bar, and it also refuses the word kinds that name drawn text by
+      suffix (figure_text, phrase, text) in the program's declared casing. The list lives in one file and
+      grows by entry; a field named after a place on a page is renamed before merge.
+    level: file
+    why: >-
+      A field named tile is a contract with one page's layout, and the page will change; meaning-only answers
+      are what let a second reader (a CLI, an agent) use the same answer.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+        - daemon
+        - cli
+    sources:
+      - ref: decision-65-service
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          a whole-word test over every JSON field name in the generated contract and every config key, against
+          the place-word list. Plant: a field named card_title fails. Control: a field named title passes
+    open:
+      - >-
+        v1 evidence, not yet a source: target: two design records of one program (no presentation in answers
+        or config, no icon, colour, tile, card order or heading; a field named after a place on a page is
+        renamed before merge; a whole-word test over json tags, with B2's suffix kinds)
+  - id: service.contract.20
+    slug: units-in-keys-sentences-with-inputs
+    since: 0.1.0
+    rule: >-
+      A numeric field names its unit in its key; where a reader would format it the answer also carries the
+      formatted text from the one formatter; and a sentence in an answer travels with the numbers it was built
+      from, with a test that fails when the two disagree.
+    detail: >-
+      The unit is a suffix in the program's declared casing (for example memory_mb, cpu_pct, uptime_s,
+      power_watts), and a bare numeric key with no unit fails unless it is a count or an id. The formatted
+      text sits beside the raw number (memory_mb and memory). The server computes order, totals, peaks and
+      their times, sentences and downsampling; a number a reader still has to work out is a defect in the
+      answer (web.structure.4 holds the page side).
+    level: function
+    why: >-
+      A unit in the field name is the cheapest way never to ship a number in the wrong unit, and a sentence
+      tested against its inputs stays honest after a formula changes.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+        - daemon
+    sources:
+      - ref: decision-65-service
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a lint over the generated contract refusing a numeric field with no unit suffix outside the count
+          and id list, and a test per sentence field that parses the numbers out of the sentence and compares
+          them with the fields beside it. Plant: a numeric field named memory with no unit fails, and a
+          sentence that says 3 beside a field of 4 fails. Control: memory_mb with memory beside it, and a
+          sentence that matches its fields, pass
+    relates:
+      - id: web.structure.4
+        how: see

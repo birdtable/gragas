@@ -1,0 +1,75 @@
+format: 3
+part: web
+concern: layout
+rules:
+  - id: web.layout.1
+    statement: "There is no horizontal page scroll at 390 px or 320 px, in every state and both themes; nothing passes its box, and a wide table scrolls in its own named, focusable box that says how many rows it holds."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "390 px is the operator's width and 320 px is the WCAG reflow width. The shared check, run at both widths in both colour schemes and every forced state, asserts `scrollWidth <= clientWidth` on the document and that no element's rectangle passes its container. A wide table sits in a focusable named scroll box with a row count (axe `scrollable-region-focusable` plus a label check). The same check is the test helper for \"no horizontal overflow at 390\"."
+      pros:
+        - "The heaviest layout fault: 27 of 144. One site's phone table ran 352 px past the edge."
+  - id: web.layout.2
+    statement: "Text that may be long is tested at length, at the narrowest width, in every state."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The overflow check runs with a long-text fixture: a generator producing 300-character words and unbroken strings for each text field of the catalogue, in every state at 320 and 390 px, and asserts no element overflows its box or the viewport."
+      pros:
+        - One site had an overflow check and no state held a long question.
+  - id: web.layout.3
+    statement: "No box moves after first paint by more than 8 px, and cumulative layout shift is 0.1 or less."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The check sums the browser's layout-shift entries to 0.1 or less, and also diffs the bounding box of every landmark between first paint and settle, failing above 8 px. A report from a performance audit is kept as a report only. Observer: `PerformanceObserver`."
+      pros:
+        - "Named 14 Oct and still failing on a PC 4 Nov. The layout-shift observer failed a 200 px late insert and did not fail an 80 px one (about 0.09), which is why the 8 px box check exists."
+  - id: web.layout.4
+    statement: "Breakpoints are three named token values, and layout is never keyed on a pointer media feature."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Media queries on width use only the token breakpoints as literals generated from the token source (a CSS variable cannot be used inside a media query); `pointer`, `hover` and `any-pointer` features are banned, and utility-class arbitrary breakpoint variants and pointer-coarse variants are banned. Utility bans: `min-[…]`, `max-[…]` variants and `pointer-coarse:` via `no-restricted-classes`; width features include `max-width`."
+      pros:
+        - "One site uses 6 distinct widths and another 4 by one count (8 and 6 by another instrument); the direction is the same, and no fault is traced to the difference."
+  - id: web.layout.5
+    statement: "Every pointer target is at least 24 by 24 CSS px, and 44 by 44 on touch."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Axe `target-size` (24 px, WCAG 2.5.8, tag `wcag22aa`) runs on every page state, plus the kit's target check on a touch project (`hasTouch: true`) measures each interactive element's box at 44 by 44. The sizes are tokens: a minimum target and a touch target. The engine is `axe-core` 4.14."
+      pros:
+        - "Tap targets are most of the 10 accessibility cases of 144; a select under 44 px in WebKit recurred."
+    sources:
+      - ref: wcag-22
+        where: success criterion 2.5.8
+        backs: rule
+  - id: web.layout.6
+    statement: A pointer or touch press does not move or scale the thing pressed.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "For each interactive element the check reads its bounding box, presses it (mouse down; or a held tap on a touch project), reads the box again with the active style applied, and fails on any size or position change. A colour-only active state passes. The check scrolls the element into view first, otherwise the press never reaches it and the plant passes for the wrong reason. Check `checkPressStable`: `mouse.down()` or `touchscreen.tap`, `:active`; plant `transform: scale(.98)`."
+      pros:
+        - "One case in our record; the source criterion said no check exists, and a mechanical one was built."
+  - id: web.layout.7
+    statement: "Viewport height survives browser chrome: `dvh`, never `100vh` or the full-screen height class, and the safe-area insets are honoured."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Stylelint bans `100vh` in height, min-height and max-height; the utility-class lint bans the screen-height class and arbitrary `vh` heights (the dynamic form stays). A grep of fixed-position rules without `env(safe-area-inset-*)` is review. Regexes: `/100vh/` on height properties; classes `^(min-|max-)?h-screen$` and `h-\\[.*vh\\]` via `no-restricted-classes`."
+      pros:
+        - One site has 0 uses of either unit and another 11.
+    sources:
+      - ref: apple-hig
+        where: viewport height rule
+        backs: rule

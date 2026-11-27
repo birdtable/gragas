@@ -1,0 +1,11 @@
+name: sarif
+order: 370
+context: P
+ends: report
+summary: "Write the findings of a run as SARIF"
+examples:
+  - {line: "gragas sarif", does: "write the merged document"}
+  - {line: "gragas sarif --apply", does: "write it to a file"}
+writes: ["the SARIF file"]
+exits: ["done"]
+json: sarif

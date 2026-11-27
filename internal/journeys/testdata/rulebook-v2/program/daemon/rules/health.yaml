@@ -1,0 +1,116 @@
+part: daemon
+concern: health
+order: 3
+title: Health and readiness
+summary: >-
+  A daemon serves one health document of the same shape everywhere and tells its service manager when it can
+  serve: liveness never calls a dependency, readiness does, and a failing health document alerts a person.
+rules:
+  - id: daemon.health.1
+    slug: one-health-document
+    since: 0.1.0
+    rule: >-
+      A daemon serves one health document (ready flag, program version, commit, start time) of the same shape
+      from one shared handler; liveness never calls a dependency and readiness does.
+    detail: >-
+      A deployed program alerts a person on failing health. Staged rollout is not required. The version fields
+      repeat the CLI's --version (cli.exit.3).
+    level: program
+    why: Practice and own measure; the shared handler is what makes the shape the same.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          start test fetching the health document from the shared handler; a handler made to fail must go red;
+          liveness stays green when a dependency breaks, written as a Go test in the kit or the store test
+          helper. Plant: a liveness handler that checks the dependency fails. Control: a handler with the
+          shared shape passes
+    relates:
+      - id: cli.exit.3
+        how: see
+  - id: daemon.health.2
+    slug: readiness-signal
+    since: 0.1.0
+    rule: >-
+      A daemon signals readiness by its service manager's own mechanism, only after it can serve; a daemon
+      that can hang also sends the watchdog ping while it runs, or its notes say why not; and a test proves
+      the signal follows the listen.
+    detail: >-
+      Under systemd a resident daemon is Type=notify and sends READY=1 after it listens; a socket-activated
+      daemon (daemon.lifecycle.5) takes its listener from the manager, which holds the socket before the
+      daemon starts, and still sends READY=1 once it can answer the request that woke it. Under launchd, which
+      gives no readiness call, the daemon writes a version file in its run folder once it listens, and the
+      install check reads that file and asks the socket for an answer. A daemon that leaves on idle stops
+      sending the watchdog ping only as it exits. A manager added later names its mechanism in the test table;
+      the rule does not change.
+    level: program
+    why: >-
+      Practice (systemd man page). Without a signal the manager or the install check treats a daemon that has
+      not yet listened as up, and starts dependants or keeps a broken upgrade.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          start test with one row per manager: under a fake notify socket READY=1 arrives after the listener
+          is up and not before; under launchd the version file appears after the socket answers and not
+          before. Plant: READY sent before listen fails, and a version file written before listen fails.
+          Control: the signal after listen passes
+    relates:
+      - id: daemon.lifecycle.5
+        how: see
+    note: >-
+      Rewritten with daemon.lifecycle.5 (idle by default) as the R-15 amendment to D-T53 asks.
+  - id: daemon.health.3
+    slug: observation-side-effect-free
+    since: 0.1.0
+    rule: >-
+      An observation of another machine or device changes nothing on it: the kinds of probe are a closed list
+      in one function, a test refuses a planted new kind, and a probe that disturbs its target is dropped.
+    detail: >-
+      A probe that wakes a disk, wakes a sleeping machine, opens a session (an SSH or TCP connection to a
+      service port) or asks a power state that spins a device up is a disturbance. The closed list is the only
+      place a probe kind is added, and adding one is a reviewed change with its reason written beside it.
+    level: program
+    why: >-
+      A monitor that wakes what it watches is lying about idle and breaks idle by default (daemon.lifecycle.5)
+      silently.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test over the probe package asserting that every network or device call goes through the one probe
+          function and that its kinds equal the closed list. Plant: a planted TCP connect probe outside the
+          list fails. Control: the listed probes pass
+    relates:
+      - id: daemon.lifecycle.5
+        how: see

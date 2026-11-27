@@ -1,0 +1,13 @@
+format: 3
+name: example
+version: 1.0.0
+kind: base
+licences:
+  rules: CC-BY-4.0
+language: en
+owners: [team-a]
+governance:
+  contribution: open
+  decision_required: true
+  trial_releases: 3
+  review_days: 30

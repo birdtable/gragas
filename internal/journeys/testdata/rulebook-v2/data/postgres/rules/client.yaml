@@ -1,0 +1,258 @@
+part: postgres
+concern: client
+order: 1
+title: Client, connections and transactions
+summary: >-
+  How code reaches Postgres. Entry code never imports the database client; one shared package opens the
+  connection, owns the pool, the certificate bundle and the integer parser; the number of connections the
+  services can open is computed and checked under the cluster limit; and transactions open only through one
+  helper that retries serialisation failures and states what each transaction protects.
+rules:
+  - id: postgres.client.1
+    slug: entry-code-never-imports-the-client
+    since: 0.1.0
+    rule: >-
+      Entry code never imports the database client or the query builder; only the store layer does.
+    level: file
+    why: >-
+      When handlers import the client, connection handling, error mapping and typed queries are re-implemented
+      in each one.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint no-restricted-imports on the Postgres client and query builder packages outside the store
+          layer. Plant: a handler importing the database client fails. Control: the store layer importing it
+          passes
+    relates:
+      - id: store.seams.1
+        how: see
+    open:
+      - >-
+        The source row gives no tier or plant; both are proposed here to match the store rule.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      This is the Postgres binding of the general store rule store.seams.1; entry code never imports a storage
+      client.
+  - id: postgres.client.2
+    slug: one-package-owns-the-connection
+    since: 0.1.0
+    rule: >-
+      One shared package opens the Postgres connection (pool, IAM token) and maps its errors; no new
+      connection pool is created outside it, and one certificate bundle and one 64-bit integer parser are
+      shared.
+    level: package
+    why: >-
+      A second pool constructor adds connections the budget does not count, and a second integer parser reads
+      a 64-bit column differently from the first.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint no-restricted-imports and no-restricted-syntax on pool construction and type-parser
+          registration outside the shared package. Plant: a new Pool constructed in a service fails. Control:
+          the shared package constructing it passes
+    open:
+      - >-
+        The source row gives no plant; the plant is proposed. A web page opens no database, so the rule does
+        not reach the web.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: postgres.client.3
+    slug: connection-budget-computed
+    since: 0.1.0
+    rule: >-
+      The maximum number of database connections the services can open at once is computed from the
+      concurrency the infrastructure allows, checked to be under the cluster limit, and the session timeouts
+      are read back.
+    detail: >-
+      The budget is function concurrency times pool size, summed over services that share a cluster, written
+      as data. The connection config sets a statement timeout and an idle-in-transaction timeout, and a test
+      reads them back with SHOW on a fresh pooled connection. A measure sits beside it: connection count and
+      the age of the oldest open transaction, read by hand at each release. Whether a managed pooler is used
+      was not checked.
+    level: deploy
+    why: >-
+      The first big surprise of a growing service is the remaining-connection-slots failure; a runtime that
+      scales to many instances makes the sum large and spiky. Agents raise a pool size to cure a timeout and
+      move the queue (inference).
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: magda-just-use-postgres
+        where: appendix A section A.3 use connection pooling
+        backs: rule
+      - ref: postgres-docs
+        where: connections
+        backs: rule
+      - ref: p-03-data
+        where: section 10
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "3"
+        note: >-
+          a script multiplies each function's concurrency setting, read from infrastructure, by the toolkit's
+          pool maximum and fails above the cluster limit. Plant: a function whose concurrency times pool size
+          exceeds the limit fails. Control: a budget under the limit passes
+      - binding: ts
+        class: test-kit
+        tier: G
+        note: >-
+          a toolkit test runs SHOW statement_timeout and SHOW idle_in_transaction_session_timeout on a fresh
+          pooled connection. Plant: a pool built with no timeouts fails the read-back. Control: a pool with
+          both timeouts passes
+    open:
+      - >-
+        Inference on the function runtime; whether a managed pooler is in use was not checked.
+      - >-
+        The measure (connection count, oldest open transaction) is read by hand and has no limit.
+  - id: postgres.client.4
+    slug: transactions-through-one-helper
+    since: 0.1.0
+    rule: >-
+      Transactions are opened only through the one shared transaction helper, which retries the serialisation
+      and deadlock codes a bounded number of times and surfaces a typed failure after that.
+    detail: >-
+      The codes are 40001 and 40P01. A transaction makes no call outside the database. For a program in Go the
+      same is one helper that retries serialisation failures, found by a scan for a transaction opened outside
+      it.
+    level: function
+    why: >-
+      A stronger isolation level obliges the application to retry, and a helper without the retry loses the
+      write or fails the user. A forced serialisation failure on a real container is the only ordinary test
+      that sees it.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: jepsen-postgresql-12-3
+        backs: rule
+      - ref: postgres-docs
+        where: transaction isolation
+        backs: rule
+      - ref: p-03-data
+        where: section 7
+        backs: rule
+      - ref: decision-37
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tool: eslint
+        tier: G
+        note: >-
+          a toolkit test forces a serialisation failure on a real container and expects a retry and then a
+          typed error; a raw transaction call outside the helper fails ESLint no-restricted-syntax. Plant: a
+          helper without the retry fails the forced-failure test; a transaction opened outside the helper
+          fails. Control: the helper with a bounded retry passes
+      - binding: go
+        class: preset-rule
+        tier: "1"
+        note: >-
+          a scan (analyser) for a transaction opened outside the one helper, and a helper retry test for error
+          40001. Plant: a transaction begun outside the helper fires; a helper that does not retry 40001 fails
+          its test. Control: the helper passes
+    open:
+      - >-
+        No Go repository uses Postgres today, so no check can be planted yet; the pack binds a repository when
+        it adopts Postgres (decision 37).
+      - >-
+        v1 evidence, not yet a source: practice; an incident of Postgres 12.3 admitting a write-skew cycle at
+        the serialisable level
+  - id: postgres.client.5
+    slug: transaction-states-invariant-and-level
+    since: 0.1.0
+    rule: >-
+      A transaction that reads a set and writes on its strength states, as arguments to the helper, which
+      invariant it protects and the isolation level it runs at, and the anomaly the level prevents.
+    detail: >-
+      The default level, Read Committed, is right for a single-row read-modify-write and wrong for reading a
+      set and then inserting on the strength of it. The review asks: which invariant does this transaction
+      protect, which anomaly would it suffer at this level, and what does the code do on a serialisation
+      failure.
+    level: function
+    why: >-
+      An agent copies the default level and cannot see the race, since no ordinary test produces it. The
+      choice of level is made against a named anomaly, and the engine version matters (postgres.engine.1).
+    kind: rule
+    strength: Lens
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: magda-just-use-postgres
+        where: ch. 2 section 2.4.3 multiversion concurrency control
+        backs: rule
+      - ref: p-03-data
+        where: section 7
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: G
+        note: >-
+          a write-skew pair (two concurrent transactions each reading a sum and then inserting) run at the
+          helper's chosen level must end with the invariant held or a retried failure. Plant: a write-skew
+          pair run at the default level breaks the invariant and fails. Control: the same pair at the chosen
+          level holds or retries
+    review_question: >-
+      Which invariant does this transaction protect, which anomaly would it suffer at this level, and what
+      does the code do on a serialisation failure?
+    relates:
+      - id: postgres.engine.1
+        how: see
+      - id: postgres.client.4
+        how: see
+    open:
+      - Which release shipped the fix for the Postgres 12.3 finding was not checked.
+    note: >-
+      Separate from postgres.client.4, which is the plumbing; this is the choice, held by review.
+  - id: postgres.client.6
+    slug: revision-in-the-body-compare-and-set
+    since: 0.1.0
+    rule: >-
+      Optimistic concurrency uses a revision in the request body and one compare-and-set helper; a stale write
+      is a conflict, distinct from not found, and never an entity tag or a precondition status.
+    level: function
+    why: >-
+      A stale update that overwrites silently loses a write, and a conflict read as not found hides the race.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: any
+        class: test-kit
+        tier: G
+        note: >-
+          a toolkit test with two writers, one stale, and a missing row, expecting a conflict for the stale
+          write and not found for the missing one. Plant: an update without the revision in its condition lets
+          the stale write through and fails. Control: the compare-and-set helper passes
+    relates:
+      - id: store.consistency.3
+        how: see
+    open:
+      - The source row names no plant; this one is proposed.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: This is the Postgres and request-body binding of store.consistency.3.

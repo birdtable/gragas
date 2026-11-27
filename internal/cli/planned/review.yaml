@@ -1,0 +1,12 @@
+name: review
+order: 490
+context: P
+ends: listing
+optin: true
+summary: "Write the review file for a change"
+examples:
+  - {line: "gragas review", does: "list the file it wrote"}
+  - {line: "gragas review --opt-in", does: "show the plan to turn the file on"}
+writes: ["the review file"]
+exits: ["done", "declined"]
+json: review

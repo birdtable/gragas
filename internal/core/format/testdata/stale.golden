@@ -1,0 +1,1 @@
+translations/fr/errors.yaml:3: the translation of rule:go.errors.1 statement into fr is stale: the en text changed after it was translated (fix: translate the new text and record its hash)

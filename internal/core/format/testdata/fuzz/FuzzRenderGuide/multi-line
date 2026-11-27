@@ -1,0 +1,5 @@
+go test fuzz v1
+string("```gragas\nanchor: a\nrules:\n  - id: a.b.1\n    t: |\n      x\n      y\n    u: 1\n```\n")
+string("t")
+string("x\ny\n")
+string("q")

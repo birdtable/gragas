@@ -1,0 +1,102 @@
+[
+  {
+    "contract": "1.3",
+    "versions": {
+      "contract": "1.3",
+      "format": 3,
+      "engine": "0.4.0"
+    },
+    "pin": {
+      "rulebook": "house",
+      "version": "1.2.0"
+    },
+    "release": {
+      "version": "1.2.0",
+      "bump": "minor",
+      "date": "2026-11-01",
+      "format": 3,
+      "contract": "1.3"
+    },
+    "run_time": "2026-11-08T10:00:00Z",
+    "lock_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sections": [
+      {
+        "manifest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "name": "service",
+        "per_rule": [
+          {
+            "rule": "go.errors.1",
+            "standing": "enforced",
+            "marks": [
+              "tighter"
+            ],
+            "observation": "held",
+            "provenance": {
+              "layer": "language",
+              "decision": "no-wrap",
+              "switch": "on"
+            },
+            "bindings": [
+              "golangci-lint/wrapcheck"
+            ]
+          }
+        ]
+      }
+    ],
+    "waivers": [
+      {
+        "slug": "old-code",
+        "rule": "go.errors.1",
+        "kind": "path",
+        "age_days": 12,
+        "expires": "2027-01-01",
+        "owner_present": true
+      }
+    ],
+    "baselines": [
+      {
+        "slug": "wrap-debt",
+        "rule": "go.errors.1",
+        "tool": "golangci-lint",
+        "count": 40,
+        "owner": "alex",
+        "zero_by": "2027-06-01",
+        "age_days": 30
+      }
+    ],
+    "drift": [
+      {
+        "entry": "golangci-lint/wrapcheck",
+        "kind": "weaker"
+      }
+    ],
+    "mismatches": [
+      {
+        "what": "tool",
+        "found": "2.14.0",
+        "expected": "2.15.0"
+      }
+    ],
+    "renderings": [
+      {
+        "path": "AGENTS.md",
+        "state": "stale"
+      }
+    ],
+    "wiring": [
+      {
+        "line": "make check",
+        "present": true
+      }
+    ],
+    "trust": {
+      "signature": "verified",
+      "digests_matched": true,
+      "release_state": "current"
+    },
+    "last_change": {
+      "kind": "upgrade",
+      "when": "2026-11-01T10:00:00Z"
+    }
+  }
+]

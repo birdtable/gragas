@@ -1,0 +1,121 @@
+format: 3
+part: go
+concern: concurrency
+rules:
+  - id: go.concurrency.1
+    statement: "context.Background and context.TODO are used only at the edge, in main and tests, and their count elsewhere only falls."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: contextcheck and noctx cover the missing-propagation class beside the ban on the root contexts.
+      pros:
+        - "Own measure: uses outside main today: 70, 64, 47, 38, 14 and 6 across six repos. A root context deep in the code cannot be cancelled."
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: golangci-lint
+        target: source
+        key: contextcheck
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: go.concurrency.2
+    statement: Every goroutine has an owner that waits for it and stops it.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A bare go statement outside an allow list of owner helpers (a run group, an error group, a wait-group go) is a finding on a shrink-only list; vet's wait-group check and the revive data-race and wait-group rules are on. A package with a go statement has a leak check in its tests (go.concurrency.6). Whether the owner stops it on cancel stays review."
+      pros:
+        - "Own bugs: 5 of 60 sampled concurrency bugs. Bare go statements in non-test code today: 10, 13, 2, 33, 6 and 3, 67 sites to put on the shrink-only list; no error group anywhere."
+    relations:
+      relates:
+        - go.concurrency.6
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: revive
+        severity: error
+        rung: 0
+        run_point: push
+      - tool: golangci-lint
+        target: source
+        key: govet
+        severity: error
+        rung: 0
+        run_point: push
+  - id: go.concurrency.3
+    statement: "Locks are released on every path, and each piece of shared state has one writer and one owner."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A lock is held briefly and what it guards is written beside it. The flow-aware linter reports a mutex locked and not unlocked on some path; a brief critical section with an explicit unlock passes. One writer and one owner per piece of state, and the comment naming what a lock guards, stay review."
+      pros:
+        - "Own bugs: 5 of 60 concurrency bugs, half of the row. 0 real hits today in six repos, so adoption is free."
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+  - id: go.concurrency.4
+    statement: "An interrupt (Ctrl-C), and SIGTERM where the system sends one, stop the program cleanly through signal.NotifyContext."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no main to stop.
+    reasoning:
+      definition: "The program ends on os.Interrupt, and on syscall.SIGTERM where the system sends one, through signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM); Go maps Windows' Ctrl+C, Ctrl+Break, close and logoff onto those two. A matrix test starts the built binary or daemon (testenv.Binary.Start), interrupts it (Running.Interrupt) and asserts exit within 5 seconds with the done or interrupted code and that a temp file or socket it owns is removed. The old signal notify call is banned in favour of NotifyContext outside the one serve helper."
+      pros:
+        - "Own measure: used in 5 of 6 repos. A daemon that ignores the interrupt is killed by the service manager and loses its state."
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+  - id: go.concurrency.5
+    statement: State is cleared when its cause ends.
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "Own bugs: 5 of 60 sampled bugs were state that outlived its cause. Cause and end are semantic: no tool knows a state has a cause."
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+  - id: go.concurrency.6
+    statement: "A package that starts a goroutine is tested with the race detector and a leak check; the race run is in the release gate and runs locally after any change that starts or changes a goroutine; and it may sit outside the pre-push gate only when it is over that gate's measured budget."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The race run is a make target (make race) in the shared Makefile fragment. It runs in the release workflow, on a tag or by manual dispatch, and never on a push or a pull request. When a change adds or edits a go statement, the pre-push hook runs the race target for the touched packages. While the whole race run fits the pre-push budget it stays in make check. A recipe lists the packages with a go statement and greps for the leak check in their tests. Which leak check is open: the leak library's test-main verifier or the runtime's goroutine-leak profile."
+      pros:
+        - "Practice. No repo uses the leak library; only one runs the race detector by default. The profile found one planted leak in verification. No push CI: the gate runs locally, and a check too slow for the hook moves to the release workflow, not to a hosted job."
+    sources:
+      - ref: decision-65-go
+        backs: rule
+  - id: go.concurrency.7
+    statement: "Code is sequential by default: a goroutine is added only where a measured gain is cited at the go statement, an adapter adds no goroutine, poll or timer, and a slow read is cached on demand with a stated hold and bound."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The citation is a comment on the line above the go statement naming the measurement (what, how much, where it is recorded). An adapter is a plain call: a go statement, time.Ticker, time.NewTimer, time.AfterFunc or a loop around time.Sleep in a host or adapter package is a finding. A cached read states how long it holds and how many entries it keeps, and nothing reads while nobody asks."
+      pros:
+        - "Concurrency is the largest source of bugs that show only years in, and a measured reason at the call is the cheapest guard. Keeping adapters free of polls is what keeps a program idle when nobody asks."
+    relations:
+      relates:
+        - go.concurrency.2
+    sources:
+      - ref: decision-65-go
+        backs: rule

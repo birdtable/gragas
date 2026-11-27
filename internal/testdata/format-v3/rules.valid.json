@@ -1,0 +1,55 @@
+[
+  {
+    "format": 3,
+    "part": "go",
+    "concern": "errors",
+    "rules": [
+      {
+        "id": "go.errors.1",
+        "aliases": ["go.error.4"],
+        "statement": "Wrap an error with context before returning it.",
+        "strength": "must",
+        "status": "active",
+        "scope": {"parts": ["go"], "paths": ["internal/**"], "kinds": ["service", "library"]},
+        "exemptions": [
+          {"paths": ["internal/testdata/**"], "reason": "fixtures hold planted errors"},
+          {"kinds": ["library"], "reason": "a library returns the error it was given"}
+        ],
+        "reasoning": {
+          "definition": "An error that crosses a package says where it came from.",
+          "pros": ["the log line names the call"],
+          "cons": ["longer messages"],
+          "decision": "keep-the-names-out"
+        },
+        "pairs": [{"number": 1, "target": "source"}, {"number": 2, "target": "config"}],
+        "owner": "alex",
+        "review_by": "2027-04-01",
+        "relations": {"relates": ["go.errors.2"], "conflicts": ["go.errors.3"], "depends": ["go.errors.2"], "covers": ["go.errors.3"]},
+        "origin": "authored",
+        "sources": [
+          {"ref": "a-guide", "where": "chapter 2", "says": "Add context where the error crosses a boundary.", "backs": "rule"},
+          {"ref": "a-study", "backs": "threshold"},
+          {"ref": "vendor-docs", "where": "the linter page", "backs": "check"}
+        ],
+        "bindings": [
+          {"tool": "golangci-lint", "target": "source", "key": "errorlint", "value": true, "options": {"errorf": true}, "severity": "error", "rung": 0, "run_point": "edit", "remedy": "golangci-lint run --fix", "pair": 1, "pair_path": "pkg/errors.go", "tightens": "go.errors.3", "checker": "errwrap-plugin"},
+          {"tool": "tool-b", "target": "config", "key": "entry", "value": "x", "severity": "warning", "rung": 1, "run_point": "commit"},
+          {"tool": "tool-b", "target": "migration", "key": "entry", "value": 3, "severity": "info", "rung": 2, "run_point": "push"},
+          {"tool": "tool-b", "target": "container", "key": "entry", "value": ["a", "b"], "severity": "error", "rung": 3, "run_point": "land"},
+          {"tool": "tool-b", "target": "workflow", "key": "entry", "value": {"a": 1}, "severity": "warning", "rung": 4, "run_point": "review"},
+          {"tool": "tool-b", "target": "iac", "key": "entry", "severity": "info", "rung": 5, "run_point": "release"},
+          {"tool": "reviewer", "target": "api-spec", "key": "Does the error say where it came from?", "value": "when the function returns an error", "severity": "error", "rung": 6, "run_point": "deploy"},
+          {"tool": "tool-b", "target": "prose", "key": "entry", "severity": "warning", "rung": 0, "run_point": "edit"},
+          {"tool": "tool-b", "target": "commit", "key": "entry", "severity": "info", "rung": 1, "run_point": "commit"},
+          {"tool": "tool-b", "target": "telemetry-registry", "key": "entry", "severity": "error", "rung": 2, "run_point": "push"},
+          {"tool": "tool-b", "target": "dependency", "key": "entry", "severity": "warning", "rung": 3, "run_point": "land"},
+          {"tool": "tool-b", "target": "package", "key": "entry", "severity": "info", "rung": 4, "run_point": "review"}
+        ]
+      },
+      {"id": "go.errors.2", "statement": "Name the error a function returns for a missing item.", "strength": "should", "status": "trial", "origin": "imported", "sources": [{"ref": "a-guide", "backs": "rule"}]},
+      {"id": "go.errors.3", "statement": "Return an error instead of panicking on bad input.", "strength": "may", "status": "proposed", "origin": "migrated", "zero_by": "2027-01-01"},
+      {"id": "go.errors.4", "statement": "Log an error once.", "strength": "must", "status": "retired", "origin": "authored", "replaced_by": "go.errors.1"}
+    ]
+  },
+  {"format": 3, "part": "go", "concern": "errors", "rules": []}
+]

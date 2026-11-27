@@ -1,0 +1,529 @@
+part: cli
+concern: output
+order: 2
+title: Machine output and the command contract
+summary: >-
+  What a script, an agent or a person reads from a command line program: one JSON document on stdout with a
+  contract version field the program names once, one object per line for a stream, one shared result type,
+  result types declared once in the API package, the human answer on stdout with a path on every applied line,
+  the same answer from the CLI and the API, unknown with a reason for anything not read, numbers no finer than
+  their source, golden snapshots of help and JSON, a command tree compared with the last tag under the
+  program's declared reader mode, and the shared flags registered once.
+rules:
+  - id: cli.output.1
+    slug: json-one-document
+    since: 0.1.0
+    rule: >-
+      --json prints exactly one JSON document on stdout, naming its contract version in one top-level field
+      whose name and form the program states once, and everything else goes to stderr; a command that follows
+      a stream prints one JSON object per line, each with the version field.
+    detail: >-
+      The program states once, in rule data, the field name and the form (an integer such as 3, or a string
+      such as launcher/3); a removal or a type change raises it and an addition does not. For every leaf
+      command (the list comes from the command tree, never typed) the matrix runs with --json against a
+      fixture, reads stdout fully, decodes it, asserts one document, end of input after it, the version field
+      in the stated form, and empty stdout when the command fails to start; stderr may hold anything. A
+      command annotated as following (logs -f) is read line by line instead: each line is one object with the
+      version field.
+    level: program
+    why: >-
+      Own measure: --json exists on 11, 10, 10 and 5 leaves across four CLIs. What a reader needs is one field
+      it can find and compare; whether it holds 3 or launcher/3 is a program's choice stated once. Marginal
+      assertion on the matrix helper, whose cost is carried by the colour rule (cli.environment.1).
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    unless:
+      - kinds:
+          - library
+        reason: It has no commands.
+      - kinds:
+          - daemon
+        facets:
+          - no-json
+        reason: A daemon with no --json flag has no machine mode to hold.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          matrix test over every leaf command from the command-tree walk, decoding stdout with a streaming
+          JSON decoder, the version field and form read from rule data; a line-by-line decode for following
+          commands. Plant: a command that prints a progress line to stdout before the JSON fails the
+          one-document assertion; a document with no version field fails; a following command that prints a
+          pretty-printed object across lines fails. Control: the same command with the line sent to stderr
+          passes
+    relates:
+      - id: cli.environment.1
+        how: see
+      - id: cli.commands.1
+        how: see
+    open:
+      - The leaf list comes from the cobra tree walk (see cli.commands.1).
+  - id: cli.output.2
+    slug: format-decided-once
+    since: 0.1.0
+    rule: >-
+      The output format is decided once: --json and any later machine format is a flag the shared root reads,
+      a command returns a value the root renders, a command file holds no encoder call, and JSON result types
+      are declared once in the API package with their tags and printed by the CLI unchanged, with no tagged
+      struct in the command layer.
+    detail: >-
+      The API package (core/api in the layout of go.layout.1) owns every result type with JSON tags; the CLI's
+      --json and the HTTP answer print the same type. A struct with json tags in a cli/* package is a finding.
+      TypeScript holds the same seam: result types live in the API module and a verb module declares none.
+    level: file
+    why: >-
+      Own measure; a command that encodes its own JSON drifts from the schema version rule, and result types
+      in the API package are what make the CLI's --json and the HTTP answer one type.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    unless:
+      - kinds:
+          - library
+        facets:
+          - go
+        reason: It has no commands.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: forbidigo
+        tier: "1"
+        fix: never
+        note: >-
+          golangci-lint forbidigo with type analysis (analyze-types: true) on the JSON encoder and marshal
+          calls in the command path, with path exclusions for the shared root and a one-file-per-entry
+          shrink-only allow list; an ast-grep rule for a struct field with a json tag in a command-layer
+          package. Plant: json.NewEncoder(os.Stdout) in a command file fails, and a struct with json tags in
+          cli/own fails. Control: the same code in the allowed root file, and the tagged type in core/api,
+          pass
+    relates:
+      - id: go.layout.1
+        how: see
+  - id: cli.output.3
+    slug: golden-help-and-json
+    since: 0.1.0
+    rule: >-
+      Each command's --help and --json output has a hand-read, protected golden snapshot kept beside that
+      command, so the shape of the JSON cannot change unnoticed; the root help, which only lists commands, is
+      a generated document held by gen --check; and the gate cannot rewrite goldens.
+    detail: >-
+      Goldens are compared with a script-test tool (its update flag only in a manual command). A repo-check
+      fails a change that edits a golden and no source unless the commit carries the marker, and the update
+      flag is refused whenever the gate variable is set (make check, the pre-push hook, a release workflow).
+      Goldens are on the protected-path list, by pattern, so a verdict covers one command's files
+      (gates.protection.3). The root help is derived text: its oracle is the per-command goldens and the
+      generator that renders it, and a journey compares the built binary's root help with the generated
+      document. A wrong summary in one command shows in that document's diff, which gen --check forces into
+      the change that made it.
+    level: program
+    why: Practice; no help snapshot exists in any repo today.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    unless:
+      - kinds:
+          - library
+        reason: It has no commands.
+    sources:
+      - ref: helm-golden-output
+        says: >-
+          Output is recorded as one golden file per command, in one folder beside the command tests, and
+          none lists the whole tool.
+        backs: rule
+      - ref: gh-help-test
+        says: >-
+          The help of every command is checked by a test that walks the command tree, not by a snapshot of
+          the root.
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          golden files for --help and --json in a script-test tool, with the update flag refused when the gate
+          variable is set Goldens use testscript from rogpeppe/go-internal (BSD-3-Clause, v1.16.0, released 1
+          July 2026) with cmp against the golden and the update flag only in a manual command. Plant: change a
+          --json field name in code and not in the golden; the compare fails. Control: both changed with the
+          update command passes
+    relates:
+      - id: cli.output.1
+        how: see
+      - id: cli.look.8
+        how: see
+    open:
+      - >-
+        The JSON shape check itself is cli.output.1. The per-component terminal goldens are cli.look.8.
+      - >-
+        Loosened on 8 Nov 2026 (A69): the root help is no longer a hand-read golden but a generated document
+        under gen --check, because it only lists commands and a hand-read golden of it makes every command
+        change edit one protected file and buy one verdict. Each command's own help and JSON keep a hand-read,
+        protected golden. The rule is checked when the root help document and the per-command goldens exist
+        in gragas (the migration is gragas#444).
+  - id: cli.output.4
+    slug: command-tree-compared-with-the-tag
+    since: 0.1.0
+    rule: >-
+      The command tree (commands, flags with type and default, positional words, exit codes, --json field
+      names) is written to a committed file and compared with the file at the last tag under the program's
+      declared reader mode: with owned readers a removed flag, field or changed exit code fails only when the
+      contract number was not raised in the same change; with independent readers it fails unless the last tag
+      already marked it deprecated a minor release earlier; and an addition always passes.
+    detail: >-
+      A program declares its readers once in rule data: owned (every reader ships with it, such as its own
+      page and agents) or independent (a published library, a public API). With owned readers a break raises
+      the contract number in the same change, every reader changes with it, and nothing is kept for an old
+      reader. With independent readers a removal or change of meaning is first marked deprecated for one minor
+      release. Once the command registry exists (cli.commands.20) the committed file is the output of help
+      --json, not a second artefact. A daemon's published route contract is checked the same way:
+      breaking-change diff of the OpenAPI file against the tag under the same declaration, and its error and
+      shape claims against real answers; fuzz is added per route once the walk exists. The file is
+      commands.json; the --json fields it records are the top-level fields of the golden output.
+    level: release
+    why: >-
+      Practice. The target programs disagree because they answer for different readers: a program that owns
+      every reader found that a compatibility layer is where its bugs lived, and a program that ships to
+      readers it never sees must not break them. One rule with a declared reader mode keeps the check
+      mechanical. Decision 13 moves every exit code at one program's next minor; a tag diff is how that move
+      is seen to be intended.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: oasdiff
+        tier: "4"
+        note: >-
+          v1 class our-cli. companion commands-json walks the command tree and writes the file; the release
+          check reads the reader-mode declaration and diffs the file with the file at the last tag; for a
+          daemon, oasdiff breaking on the OpenAPI file against the tag plus a contract fuzzer against the
+          in-process daemon. Plant: with owned readers, removing a flag without raising the contract number
+          fails; with independent readers, removing a flag not marked deprecated at the last tag fails; adding
+          a flag passes in both. Control: an unchanged tree passes, and with owned readers a removal with the
+          number raised passes
+    relates:
+      - id: cli.commands.20
+        how: see
+      - id: service.contract.2
+        how: see
+      - id: service.evolution.2
+        how: see
+    open:
+      - >-
+        A search found no ready-made checker for command-line flag compatibility (an Azure CLI one is internal
+        and not reusable).
+      - >-
+        The two daemon tools' versions were read from the GitHub API on 5 Nov and not run.
+      - >-
+        A route-by-route walk and answers-versus-contract test for a daemon is proposed; plant: a route
+        answering a field the contract does not name must fail.
+      - >-
+        The same reader-mode declaration drives service.contract.2 and service.evolution.2 and 3.
+  - id: cli.output.5
+    slug: shared-flags-once
+    since: 0.1.0
+    rule: >-
+      The shared flags --plain, --json, --accessible and --no-color, and --explain once lessons bind
+      (cli.commands.18), are registered once, by the shared module, and no program defines its own.
+    level: program
+    why: Own measure; one program defines its own colour flag today.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          root-command test listing the registered flags and asserting each appears once, registered by the
+          module's registration function (RegisterFlags); forbidigo on flag definitions of those names,
+          --explain included, outside the module (such as .Bool("no-color"). Plant: a program that defines its
+          own --no-color or --explain fails, and one with none of the four fails the presence assertion.
+          Control: all four registered once by the module passes
+    relates:
+      - id: cli.commands.18
+        how: see
+    open:
+      - >-
+        What --explain does is cli.commands.18, planned until the shared lesson generator exists.
+  - id: cli.output.6
+    slug: shared-result-type
+    since: 0.1.0
+    rule: >-
+      A command with no document of its own prints one shared result type under --json: the ending word, the
+      changes made or planned, the next line, and an error with its kind.
+    detail: >-
+      The type lives in the API package and every writing command without its own document returns it; a dry
+      run fills the planned changes and an applied run the made ones.
+    level: type
+    why: >-
+      The shared result type gives every write the same ending, changes, next line and error for an agent to
+      read.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    unless:
+      - kinds:
+          - library
+        reason: It has no commands.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          matrix test decoding the --json of every command without a declared document type into the shared
+          result type with unknown fields refused. Plant: a writing command printing its own ad hoc JSON shape
+          fails the strict decode. Control: a command returning the shared result passes
+  - id: cli.output.7
+    slug: human-output-shape
+    since: 0.1.0
+    rule: >-
+      Without --json the human answer goes to stdout and diagnostics to stderr, every applied or no-op line
+      names the path it concerns, and a read command's human answer is the content itself, not a count of it.
+    detail: >-
+      The render module tags each line as answer or diagnostic and routes it; a matrix test splits the streams
+      and asserts the answer is on stdout. An applied or no-op line has a path field in its constructor. A
+      read command's golden holds the content of a fixture, and a line such as "3 items" with no items fails.
+    level: program
+    why: >-
+      Stream discipline is what makes a pipe work in any language, a path on every applied line makes a
+      transcript a record, and content rather than a count is the difference between an answer and a boast.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    unless:
+      - kinds:
+          - library
+        reason: It has no commands.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          matrix test splitting stdout and stderr per command, an applied-line constructor with a required
+          path, and read-command goldens over a fixture. Plant: a command that writes its answer to stderr
+          fails; an applied line with no path does not build; a read that prints only a count fails its
+          golden. Control: the answer on stdout with each applied line naming its path passes
+  - id: cli.output.8
+    slug: cli-and-api-parity
+    since: 0.1.0
+    rule: >-
+      Every command calls one core operation and reads no store or config file itself; every operation with a
+      route has a command or a named reason; where a command and a route show the same view their answers are
+      one type from one function; and a test walking the route index fails on a route with neither.
+    detail: >-
+      What is left to do is computed once and handed out by both surfaces. The exceptions are a list in data
+      with a reason each. A command package that imports a store or the config loader is a finding.
+    level: program
+    why: >-
+      Parity is what makes a page, an agent and a person see the same facts, and the walk over the route index
+      keeps it true when a route is added years later. Two target programs wrote the same test.
+    kind: rule
+    strength: Hard
+    status: later
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It has no commands or routes.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          shared parity test walking the route index against the command registry with a named-exception list,
+          a same-type assertion per mirrored pair, and an import rule keeping stores and the config loader out
+          of command packages. Plant: a route added with no command and no named reason fails; a command whose
+          --json type differs from its route's fails. Control: every route mirrored or excepted with a reason
+          passes
+    open:
+      - >-
+        Binds once the shared parity test is built in gragas (R-15 sequencing); until then planned.
+  - id: cli.output.9
+    slug: unknown-is-not-zero
+    since: 0.1.0
+    rule: >-
+      A state or value the program could not establish is answered as unknown or null with a reason beside it,
+      in text, in --json and in every API answer, never as 0, false, a dash, off, healthy or a default, and it
+      never folds into ok; a field the platform has no such thing as is left out; an answer lists each source
+      it could not read with why and never fills it from an earlier reading; a kept answer carries the time it
+      was read; and a value known only while the program watched is omitted after a restart.
+    detail: >-
+      Good news is claimed only for what was checked; an item not checked is listed as not checked. A summary
+      that is ok when one of its inputs is unknown is a finding. A test per answer plants an unreadable source
+      and asserts the null, the reason, the absence of a carried-forward value and a summary that is not ok.
+    level: program
+    why: >-
+      This is the property that decides whether a status tool can be believed at 3 a.m. One rule across every
+      surface is cheaper than three and keeps a page from showing fine over an API that said unknown.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It answers no status of its own.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          answer test per status command and route with a fake source that fails to read, asserting null with
+          a reason, no earlier value, a read time on a cached answer, and a summary that is not ok. Plant: an
+          unreadable limit reported as 0 fails; a summary that says healthy while one source is unknown fails;
+          a restart that shows the last watched value fails. Control: an unknown with a reason and a not-ok
+          summary passes
+  - id: cli.output.10
+    slug: numbers-no-finer-than-their-source
+    since: 0.1.0
+    rule: >-
+      A number is shown no finer than its source resolves, an estimate is marked as one, and what a model
+      cannot explain is its own row, never spread over the measured ones.
+    detail: >-
+      Each measured quantity declares its source resolution (whole watts, milliseconds); the formatter rounds
+      to it. An estimate is printed with a mark (≈) and flagged in JSON. The remainder of a breakdown is a
+      row of its own.
+    level: function
+    why: >-
+      A number with two decimals from a whole-watt meter is a lie with a straight face, and a remainder spread
+      over the rest makes every row wrong.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It shows no measurements.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a formatter that takes the declared resolution and an estimate flag, plus a golden of each breakdown
+          with a planted unexplained remainder. Plant: a whole-watt reading printed as 12.40 W fails; a
+          breakdown that folds the remainder into its rows fails. Control: 12 W, ≈3 W for an estimate and an
+          other row pass
+    relates:
+      - id: docs.voice.3
+        how: see
+    open:
+      - The dated-measurement half for docs is docs.voice.3.
+  - id: cli.output.11
+    slug: golden-lives-with-its-command
+    since: 0.1.0
+    rule: >-
+      A golden records one command's output and lives with that command; no hand-kept golden lists every
+      command, and a listing of all commands is generated output.
+    detail: >-
+      A command's help and --json goldens sit in a folder owned by that command (testdata beside its code, and
+      one folder per command for the built binary's journeys). A golden that prints the root help, the menu or
+      the command table of the whole program is not hand-kept: it is a document a generator writes and
+      gen --check holds, so no command change edits a file another command's change also edits. A test walks
+      the golden folders and fails on a golden that names more than one command's own output.
+    level: program
+    why: >-
+      Own measure: in one program every new command edited four cross-cutting goldens that each list every
+      command, and each edit of a protected golden bought one reviewer verdict. A per-command golden is
+      reviewed once, with its command. The fleet's run log of 8 Nov 2026 records the cost: each landing sent
+      the waiting candidates through a rebase and a full gate run, and a verdict written on an earlier base
+      was rebuilt.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - cli
+    unless:
+      - kinds:
+          - library
+        reason: It has no commands.
+    sources:
+      - ref: helm-golden-output
+        says: >-
+          One golden per command under one folder; the root has no snapshot of its own.
+        backs: rule
+      - ref: gh-help-test
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        fix: never
+        note: >-
+          a test over the golden folders: every golden sits under the folder of the one command it records,
+          and no golden file outside the generated set holds the names of all commands. Plant: a golden that
+          lists every command, kept by hand, fails. Control: the same text as a generated document held by
+          gen --check passes
+    relates:
+      - id: cli.output.3
+        how: see
+      - id: arch.structure.9
+        how: see
+    open:
+      - >-
+        Proposed until the golden-folder test exists in gragas. It is built in step 7 of gragas#444 (the root
+        help as a generated document, per-command journey goldens); it has no tool key to bind to until then.

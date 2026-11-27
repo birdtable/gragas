@@ -1,0 +1,3 @@
+parts: [base, go]
+kinds: [service]
+name: api

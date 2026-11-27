@@ -1,0 +1,465 @@
+format: 3
+part: arch
+concern: ports
+rules:
+  - id: arch.ports.1
+    statement: "Core code knows nothing it does not own: every connection in or out of a program goes through an interface the core declares and an adapter implements, and the core imports only pure packages."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - library
+        reason: a shared package that wraps one thing is itself the adapter and declares that
+    reasoning:
+      definition: "This is ports and adapters. A connection is a provider, a runtime, the operating system, a store, the network, a child process or a terminal. The core directly imports only the standard library's pure packages, the shared packages that rule data names as pure, and its own core: no OS-specific file, no process-spawning package (os/exec) and no network package (net, matched exactly, so net/url and net/netip stay pure). Only an adapter imports those. Our own domains count the same way (an anti-corruption layer): one domain reaches another only through an interface the caller declares, so any domain of ours can be replaced by an open-source tool or a vendor. In the web stack a provider, data client, engine-specific browser API, analytics, payment or sign-in reaches a screen or feature only through a module we own that the provider's adapter implements, a feature imports no provider package, and a service of ours counts as a provider. A module imports a generated client only for a service its declaration lists; generated types are free. Raw third-party clients are reached only through one shared wrapper. A program need not ship for every OS or provider today, but its shape must leave adding one to an adapter. The rule holds with a single implementation, because the edge is the reason for the interface. A fake adapter is how the core is tested at unmanaged edges, and a managed store runs on the real engine. A shared package that wraps one thing is itself the adapter and declares that."
+      pros:
+        - "Code that names a vendor or an OS in the core makes every later provider or platform a change across the program. In one repo a Mac port took 151 files, 19 of them in the command layer; in another a second runtime touches 15 files in 3 packages before the index."
+    sources:
+      - ref: cockburn-hexagonal
+        backs: rule
+      - ref: p-03-data
+        where: section 24
+        backs: rule
+      - ref: p-01-core-programming
+        where: section 18
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 9
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: arch.ports.2
+    statement: "A provider's name and its vocabulary do not appear in the core or command layer, a command reaches a provider only through the port and imports no adapter, and the programs and products a tool manages are named nowhere in its shipped source."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The command layer may import the port package and not the adapter folders. Outside a provider's adapter no identifier, string or JSON field name from the provider's own vocabulary (its name, its plan, quota or account terms) appears in the core or command layer; the check reads tokens, not just imports, and is proved with a planted name. Separately, a program that manages other software names none of it in shipped source: code, comments and help text. A word-list test reads every non-test source file and fails on a listed word; its exception map holds a path and a reason per entry and only shrinks. Tests and fixtures may name the managed software. The word list is data, so a new provider or managed product extends the list and not the rule."
+      pros:
+        - "One repo has 13 command files importing the runtime adapter directly and 150 lines in 12 packages that name it. A name ban that counts only imports misses the provider's field names and plan words, which tie the core to one provider as firmly as an import, and a product named in a comment or help line is a product the next reader assumes is supported."
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 9
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 23
+        backs: rule
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.ports.3
+    statement: "The number of files in each package that import a vendor SDK directly is reported, as the price of leaving that vendor."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A report only: counts come from the module's import lists and nothing fails. A commit that adds a provider is read with arch.measures.2."
+      pros:
+        - "The count is the cost of replacing a vendor, shown before the replacement is wanted."
+    relations:
+      relates:
+        - arch.measures.2
+  - id: arch.ports.4
+    statement: "The core compiles for every operating system in the supported list, shipped or not, and holds no platform path literal and no OS tool name, with no exception list; a new use fails and the fix is a port."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Shipping is a release decision; shape is not. The list is linux, darwin and windows. An adapter path is outside the set. Compiling is not enough, because a path literal compiles everywhere: no non-test file in the core holds a string starting with a system root (/sys, /proc, /run, /opt, /etc), a home-relative system folder, or the name of an OS tool (a service manager, a log reader, a package manager). The path and tool lists are data, so a new platform adds its roots and tools to the list. There is no exception list for this rule: gates.exemptions does not apply, and the fix for a finding is a port. Paths reach the core from the platform's defaults through config. No platform path or syscall sits in the core, and no OS tool name or path outside the OS adapter. go build stops at a failed dependency and so can show a count that rises after a fix, so the check type-checks per OS, continues past failures and counts packages with their own errors, reading the package list from the dependency closure so an adapter reached through the core shows up. It proves compilation only, needs no limit and takes about two seconds."
+      pros:
+        - "Four core packages of one repo fail on windows (ten over the whole repo); go build showed three of them and hid one. Two other repos have a machine or file package that fails on other systems."
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.ports.5
+    statement: "The core does not learn the platform from a port: no platform field or name in a port, no core code reads a port's presence as a platform, a missing port is one stated absent value that only the capability layer tests, and a capability the machine lacks is answered by that layer as not on this machine."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "No Platform, GOOS or OS-name field or string in a port struct that core code branches on; a platform name may be carried for a health or doctor report only, never for a decision. A port the machine lacks has one absent value, stated on the port package (nil in the machine value, or a named absent type), never a stub that pretends to work. Only the capability layer tests for that value; a nil or absent test on a port field anywhere else in the core is a finding. The capability layer turns an absent port into one answer, not on this machine, that every client shows the same way. A port does not carry the shape of the platform: a method or parameter that means something only on one OS or provider is a finding. A second adapter written before the port is frozen is the cheapest test of its shape. A missing port is nil, not a lying stub, and the port package holds its adapters per OS. The review asks what the port does when no adapter is wired and whether that is stated on the port. In the web stack the owned module's methods are domain verbs carrying domain values, and a failure crosses it as a typed value, never as text to match."
+      pros:
+        - "One repo has 18 nil tests on port fields outside its port file; its Mac port took 151 files. Agents model the first platform they see."
+    sources:
+      - ref: p-08-splitting
+        where: section 20.2 item 3
+        backs: rule
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.ports.6
+    statement: "Every external module and every external program is reached from exactly one adapter package per binary, which declares its binary name, socket, paths, headers, variables and field names, and a test with a shrink-only allow list fails any other importer or caller."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "For each binary, one adapter package owns each external module (it alone imports it) and each external program (it alone runs it). Running a program means a name passed to the process-start or path-lookup call, resolved the way the compiler sees it: a literal, a constant, or a variable whose value comes from a constant or from the one adapter; a name from anywhere else counts as unresolved and fails. The adapter declares the program's binary name, socket path, HTTP paths, header names, environment variables and JSON field names, and they appear nowhere else. Names shared between two programs are declared once, in a package both import or in a contract file both check against; a header or path literal in two repos with no shared definition is a finding. The standard library's system-call extension module counts as the standard library. The allow list (module or program to its one package) only shrinks, so a new dependency is one new line and a planted second importer fails."
+      pros:
+        - "One repo has 41 Go files and 7 site files naming its sibling program outside the adapter, and one finds the sibling's version by searching its help text. A rule that counts only literals lets a program name pass through a variable."
+    sources:
+      - ref: r-04-seams
+        where: seam S-3
+        backs: rule
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.ports.7
+    statement: "A shape crossing a language or program boundary has one source and a consumer-driven contract: the consumer lists the fields it reads, and that list is checked against the provider."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - library
+        reason: a shared package nothing else reads has no contract to keep
+      - kinds:
+          - no-readers
+        reason: a program nothing else reads has no contract to keep
+    reasoning:
+      definition: "The list is checked against a golden or schema generated from the provider's types. A rename fails and an added provider field passes (a tolerant reader). When a generator lands, the generated type is the list and the check becomes that the generated file is current. The list is derived from the consumer type where possible. It runs when the provider lands, reading the consumer's list. An optional field counts as a miss unless an exception is recorded (66% of the trial list was optional). A list that shrinks without a reason fails, which also catches a shape widened to any. Routes through the consumer's general call path must be on the list, and an empty list on a live consumer fails. Where the consumer is in another language, a generated JSON Schema is the shared file."
+      pros:
+        - "193 of one repo's 195 tags and 38 of another's 46 are hand-typed again in TypeScript; names on one side only were 2 and 8. Against the provider the consumer reads 19 routes and 244 fields with 0 required misses and 9 optional ones, none a fault."
+    sources:
+      - ref: ford-bea
+        where: chapter 5 on contracts
+        backs: rule
+      - ref: ford-sathp
+        where: chapter 13 on stamp coupling
+        backs: rule
+      - ref: p-07-testing
+        where: section 4.11
+        backs: rule
+  - id: arch.ports.8
+    statement: "Domain modules inside one program import one another only through an interface the calling domain declares, with an independence contract listing the domains as data."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - web-app
+    reasoning:
+      definition: "A direct import from one listed domain to another fails, including through the other's public barrel; the allowed route is a file under the caller's ports folder. In the web stack, UI contributed across modules whose host would import upward or sideways goes through a typed slot (home tiles, search providers, shell status, navigation, cache roots, record sections); a direct import is allowed only downward along a declared edge; a dependency marked optional is reached only through slots; typed route links are not imports. Moving the shared piece into a neutral package is the known way round, so a package imported by two domains goes on the review list."
+      pros:
+        - "A public barrel is a door that the caller did not design and the callee can widen; making the calling side own the shape gives the stricter boundary. It costs more adapters and is weighed against the size of the domains."
+    sources:
+      - ref: cockburn-hexagonal
+        backs: rule
+      - ref: p-03-data
+        where: summary point 2
+        backs: rule
+  - id: arch.ports.9
+    statement: "Decision logic is a pure function from values to a decision; the shell reads through ports, calls it and applies the result; functions that take a port and also branch are reported."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: Report per module the functions that take a port and also branch. There is no limit.
+      pros:
+        - "A decision that needs no port shrinks the ports, makes tests need no doubles and stops each decision from growing a store dependency."
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapter on the hexagon
+        backs: rule
+      - ref: b-03-unit-testing
+        where: section 5
+        backs: rule
+  - id: arch.ports.10
+    statement: "A port the target architecture names is declared before its first adapter, in one interfaces-only port package that the core and every adapter import, one subject per port with a handful of methods, and growth is a new adapter on an existing port; an in-program seam over code the core may already use needs a stated reason."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - capability-role
+        reason: "tested for by type assertion, not injected"
+    reasoning:
+      definition: "Platform and edge ports are written up front from the target architecture, not discovered when a second implementation turns up, so moving from a simple adapter to a better one is never a refactor. They live together in one port package per program (slot interfaces may live in their slot package), so the whole platform contract reads in one place and one fake fills it; an interface for a platform or external edge declared beside its user is a finding. A port is a subject (machine, services, peers, storage), with a handful of methods, never one interface per function. The port package holds interfaces, the value types they carry and the absent value of arch.ports.5, and no logic. The limit on speculative seams stays for code inside the program: a wrapper around what the core may already use (a file read, the shared write helper) or a clock port needs a stated reason, and the second implementation or a design names it. Time is passed as a value or tested with the standard synthetic-time helper. A small optional capability a caller tests for by type assertion is not a seam."
+      pros:
+        - "Three target designs fix their platform ports up front and reject interfaces beside their users, because a port found late is a refactor across every caller. The old limit (an interface only once a second implementation exists) still catches the failure it was written for: one repo has 89 interfaces, 14 with no production implementer, and the true failures were wrappers over pure code."
+    relations:
+      relates:
+        - arch.ports.5
+        - arch.ports.1
+        - arch.ports.15
+    sources:
+      - ref: ousterhout-aposd
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 7.1
+        backs: rule
+      - ref: decision-65-arch
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: iface
+        severity: error
+        rung: 0
+        run_point: land
+  - id: arch.ports.11
+    statement: "No dependency-injection framework; wire by hand in the entry point."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The banned list is rule data (the common wiring and container modules), and a module allow file that refuses any module not allowed makes the list not need to be complete."
+      pros:
+        - "One wiring library is archived and no repo uses one; hand wiring in one place is what makes the composition readable."
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: depguard
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: arch.ports.12
+    statement: "The entry point is thin and its run function can be tested in process; package-level state exists only as a registry, the machine or the default paths, written once by the entry point before any read or goroutine, and any other mutable package variable is a finding."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - library
+        reason: has no main
+    reasoning:
+      definition: "A main function under 80 lines (the limit is data in the rule file with its reason, and is a guess) and a test of the run() function. Write-once state is allowed in three forms only: a plug-in registry, the machine value that holds the ports, and the default paths. Each is set by the entry point's files before any read and before any goroutine starts; a second write panics, and a read before the write panics. A test that swaps one restores it in a cleanup. Every other package-level variable that is not a constant, a sentinel error or a compiled pattern is a finding. A library has no main and sets nothing."
+      pros:
+        - "One repo has 26 init functions. Entry files today are 62, 54, 21, 15 and 15 lines; one outside program has a 934-line main and would fail on day one. Two target designs need a registry and a machine value set at start; allowing exactly those, write-once and loud on misuse, keeps the ban on hidden mutable state without forcing every port through every call."
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: gochecknoglobals
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: arch.ports.13
+    statement: "An app shell composes modules: one composition file is the only place that imports every module manifest, and the shell holds no module logic."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+        - cli
+        - daemon
+        - service
+    reasoning:
+      definition: "The shell holds the router, providers, auth screens and the composition file; its module list equals the graph file's list. It reaches a module only through that module's manifest, its pages (from the router folder only) or its public entry. In Go the program's main wires every package by hand in one place and imports no logic of its own."
+      pros:
+        - "One composition root is the only place that knows every module, so a module can be added or removed in one place."
+    relations:
+      relates:
+        - arch.ports.11
+        - arch.ports.12
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+  - id: arch.ports.14
+    statement: "In a program with more than one client, every write from every client goes through one executor and one write port, only that executor and the store adapters import the write handle, and every outcome a caller branches on comes back as a typed result."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - cli
+        - daemon
+        - web-app
+    reasoning:
+      definition: "Every write is a registered operation (a verb) that the one executor runs through the one write port; a command, a route, an agent tool and a page all call the executor and never open storage for writing. A failure the caller branches on is a typed result value with its exit or status; an exception or panic past the executor means a bug. The import table names the executor package and the store adapters as the only importers of the write handle, so a second writer fails the layer test. A program with one client meets the rule by having one write path."
+      pros:
+        - "Two writers that each open the store each grow their own checks, and the client that skipped one corrupts the data the other trusted. One executor is the one place a write is checked, logged and undone, whichever client asked."
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.ports.15
+    statement: "A new library enters only as an adapter on a port that exists, and a new port lands in the target architecture document before its code."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A capability the program does not have yet is a new port, written into the target architecture first with its intended adapter. A new library or tool for a capability the program has is a new adapter on the existing port, so swapping it never touches the core. The change that adds the port's code cites the target document's section; a port in code with no section there is a finding."
+      pros:
+        - "A library that enters without a port leaks its types into the core, and a port written straight into code has no design anyone agreed; both make the next swap a refactor."
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.ports.16
+    statement: "A plug-in registry is the one place an implementation meets the core, only the entry point's files call Register, a plug-in brings its commands and checks through its port and the command layer mounts them without importing it, and a name clash refuses at start."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Slot packages hold a registry each. Only files under the entry point (cmd/<name>) call Register in non-test code; a test file may register a stand-in. A plug-in contributes commands, checks and routes through its port, and the command layer reads them from the registry, never by importing the plug-in package. Two registrations under one name stop the program at start with both names. A registry is write-once state under arch.ports.12."
+      pros:
+        - "A plug-in the command layer imports cannot be removed without editing the command layer, and a name clash that one registration silently wins is a command that quietly changes meaning."
+    relations:
+      relates:
+        - arch.ports.12
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.ports.17
+    statement: "The port package declares which ports every platform must fill and which may be absent, and ships one in-memory fake that fills every port so the core's tests run on every operating system; a platform word in the fake is a port finding."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The required set is data on the port package; a platform adapter that leaves a required port absent fails at start and in its test. The fake fills every port, required and optional, and holds no word from any one platform (no tool name, path or OS name); such a word means the port carries the platform's shape. A port is extracted from the existing platform's callers first, and the next platform's adapter is written against the extracted port, not the other way round."
+      pros:
+        - "Without a fake the core's tests run only on the platform the developer has, and without a declared required set a new platform learns what it must fill from crashes."
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.ports.18
+    statement: "A consumer decides what to draw or run from the capability list the server publishes, never from a platform name, so a new platform edits one repository."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The server publishes which capabilities this machine has (from arch.ports.5's capability layer). A page, a CLI or an agent shows, hides or disables a feature by reading that list. A platform name may be shown to a person; a branch on it in consumer code is a finding."
+      pros:
+        - "A consumer that branches on a platform name has to be edited for every new platform, in every repository that reads the server."
+    relations:
+      relates:
+        - arch.ports.5
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.ports.19
+    statement: "Data from a less-trusted peer reaches a decision only through fields declared decidable on its type, each naming the one decision it drives, checked by a syntax-tree test over the deciding layer with a planted read."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Every field of a type that carries a less-trusted peer's report is documented either as may decide, naming the one decision it drives, or as display only. A condition in the deciding layer reads only may-decide fields; a display-only field in a condition, a switch or a map key fails. Decoding of such data is strict (an unknown type or field is refused, sizes are capped), which the service and daemon parts hold."
+      pros:
+        - "A peer that can set a field the core branches on can steer the core. Naming the decision per field makes every new field a choice, not a default."
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.ports.20
+    statement: "An adapter reads another program's machine format where it has one, and never parses text meant for a person."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Where a program offers structured output (JSON, a stable record format, an API), the adapter asks for it and decodes it. Parsing a program's human text (tables, help text, version banners) is allowed only where no machine format exists, with the reason in the adapter and a pinned sample in its test."
+      pros:
+        - "Human text changes between releases and locales without notice; a machine format is the part its authors promise to keep. One repo finds a sibling's version by searching its help text."
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+  - id: arch.ports.21
+    statement: "A program's entry point only wires: it builds the adapters, fills the ports and calls the core, and holds no logic, no type with behaviour and no direct operating-system work beyond what an adapter's constructor needs."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The entry point is a program's main package or entry file. Reading a flag, an environment variable, a path or the clock, spawning a process and opening a file are adapter work, so each is a port the entry point fills. A type with a method, a loop over domain data or a branch on domain data in an entry point is a finding. The size of the entry point and its run function being testable in process are arch.ports.12's; this rule holds what the entry point may contain."
+      pros:
+        - "The organisation's own gate grew operating-system calls in its entry point, and no check fired, because the ports rule held the core and said nothing of the file that wires it."
+    relations:
+      relates:
+        - arch.ports.12
+        - arch.ports.1
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+  - id: arch.ports.22
+    statement: "Build, test and gate tooling, scripts and hooks are programs: every rule that holds a program holds them, with ports, one adapter per outside program and no platform literal; a shell step is a thin call or a declared adapter."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A script, a make recipe, a hook and a workflow step that reach the operating system, another program or the network are connections of a program like any other. A shell step is either a thin call to a program the repository builds, or an adapter declared in rule data with the one program it wraps. A platform literal (an operating-system name, a path or a tool flag that exists on one platform) in a shell step outside a declared adapter is a finding."
+      pros:
+        - "The organisation's own gate grew shell with platform literals and no rule applied, because tooling was not counted as a program."
+    relations:
+      relates:
+        - arch.ports.1
+    sources:
+      - ref: arch-reasons-stated
+        backs: rule
+  - id: arch.ports.23
+    statement: "Code that touches an operating system lives only in the host layer, behind ports: no other package imports an operating-system package, reads runtime.GOOS or runtime.GOARCH, or carries an operating-system file name or build tag."
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "Retired for arch.ports.24, which has no host layer: a ruling moved what the layer held into the platform libraries. The text above is what the rule said while it was active."
+      pros:
+        - "Each block of the organisation's first programs was built on one operating system and failed on the others, because the operating system was named in every block."
+    relations:
+      relates:
+        - arch.ports.1
+        - arch.ports.22
+        - arch.ports.24
+    sources:
+      - ref: go-cmd-go
+        where: Build constraints
+        says: Naming a file dns_windows.go will cause it to be included only when building the package for Windows
+        backs: rule
+      - ref: cockburn-hexagonal
+        where: Ports and adapters
+        says: "As events arrive from the outside world at a port, a technology-specific adapter converts it into a usable procedure call or message and passes it to the application."
+        backs: rule
+    replaced_by: arch.ports.24
+  - id: arch.ports.24
+    statement: "A product names no operating system anywhere: no package imports an operating-system package, reads runtime.GOOS or runtime.GOARCH, or carries an operating-system file name or build tag, and the platform library that covers the need is the way."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A product has no host layer. What differs between systems is the platform libraries' knowledge, and a program reaches it through the library that covers the need, never through golang.org/x/sys, syscall, github.com/gofrs/flock or github.com/shirou/gopsutil, which stay inside those libraries. Three things mark a file of a product as a finding: an import of one of those packages, a read of runtime.GOOS or runtime.GOARCH, and a file whose name go build reads as one system's (_GOOS or _GOOS_GOARCH, before _test), or that ends in _unix or _other by convention, or that carries a //go:build line naming an operating system before its package clause; a Go file that cannot be read as far as that clause, or whose //go:build line go build refuses, is a finding too, never a pass. The register of libraries names the one package of a program that holds each need: its trust package (file-owner-and-mode), its peer package (peer-identity) and the one package of atomic-write, path-lock, app-folders, login-service and unix-socket-listen; machine-facts reaches the machine through the library the register names, in any package. A product's files that stand outside the rule today are rows of its exemptions file, one a file, each with its reason and expiry, and the rows only fall. A lint run reads the files of one system only, so the gate lints each system of its list by GOOS on the one machine it runs on."
+      pros:
+        - "Each block of the organisation's first programs was built on one operating system and failed on the others, because the operating system was named in every block. A layer inside each product only moved the naming to one more place to keep right; one library owns it once for every product."
+    relations:
+      relates:
+        - arch.ports.1
+        - arch.ports.22
+        - arch.ports.23
+    sources:
+      - ref: fleet-decisions-pd-134
+        says: "A product imports no x/sys or syscall at all, the host layer included; that knowledge belongs to the platform libraries."
+        backs: rule
+      - ref: gragas-1605-no-host-layer
+        where: "f300ad376, os-host row and the exemptions held by the test"
+        says: "gragas has no host layer: the os-host row spares no folder, and every file that names an operating system is held by a row of its exemptions file or its allowlist."
+        backs: rule
+      - ref: go-cmd-go
+        where: Build constraints
+        says: Naming a file dns_windows.go will cause it to be included only when building the package for Windows
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: depguard
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: gragas
+        target: source
+        key: os-files
+        severity: error
+        rung: 0
+        run_point: push

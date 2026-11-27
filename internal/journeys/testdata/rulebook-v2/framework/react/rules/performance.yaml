@@ -1,0 +1,86 @@
+part: react
+concern: performance
+order: 7
+title: Render cost and splitting
+summary: >-
+  How a React program keeps its work small: a render budget for live lists counted in commits and rendered
+  rows, and route-level code splitting with no development tooling in the production bundle. The byte budgets
+  themselves are the web part's.
+rules:
+  - id: react.performance.1
+    slug: render-budget-under-churn
+    since: 0.1.0
+    rule: >-
+      A budget exists for render cost under churn on any live list, counted in commits and rendered rows, not
+      milliseconds.
+    detail: >-
+      A test counts commits and rendered rows for one update to a live list and asserts the count against a
+      declared render budget. A rule-table list names each live list; a list with no matching render-budget
+      test fails the pairing scan. The counter is the React Profiler, in a Vitest test (browser or jsdom).
+    level: program
+    why: >-
+      Solid's keyed list passed behaviour and failed churn; a count is deterministic, unlike time.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - web-app
+    checks:
+      - binding: ts
+        class: test-kit
+        tool: vitest
+        tier: "3"
+        note: >-
+          a Vitest test with the React Profiler counts commits and rows for one update, plus the pairing scan.
+          Plant: removing memoisation so one update re-renders all 200 rows exceeds the budget. Control: a
+          keyed memoised list passes
+    relates:
+      - id: web.speed.6
+        how: see
+    open:
+      - >-
+        No React project exists. Half holds: counts are enforceable, but which lists are live is declared by
+        hand, so a new live list nobody declares escapes.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+    note: >-
+      Moved from web.speed.6, where the merge wrote it with the doubt that the profiler form is React
+      specific.
+  - id: react.performance.2
+    slug: route-splitting
+    since: 0.1.0
+    rule: >-
+      Route-level code splitting is on per area, and development tooling never ships in the production bundle.
+    detail: >-
+      The router's automatic splitting setting (`autoCodeSplitting` true) is read back from the Vite config,
+      and the entry chunk is held at the core budget of the web part's byte budget, so an unsplit app breaches
+      it; chunk count is a report. A test-only module, and the router and query devtools, are absent from the
+      non-test build.
+    level: deploy
+    why: No route budgets are asked for in the source; the core budget holds it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - web-app
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: size-limit-with-bundler-plugin
+        tier: "3"
+        note: >-
+          the router's code-splitting option read from the bundler config plus size-limit on the entry chunk
+          at the core budget. Plant: setting the splitting option false in a scratch app with 3 routes makes
+          the entry chunk exceed the core limit. Control: the split build passes
+    relates:
+      - id: web.speed.3
+        how: see
+    open:
+      - No project using a router exists yet; the state is design until the pilot.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D; no route budgets asked for
+    note: >-
+      Moved from web.speed.3, where the merge wrote it with the doubt that the option names are router
+      specific. The source binds it to the React stack only (the template stack has no client router), so the
+      whole rule moved.

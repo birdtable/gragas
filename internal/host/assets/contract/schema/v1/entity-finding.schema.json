@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-finding.schema.json",
+  "title": "Finding or notice (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "entity",
+    "message"
+  ],
+  "properties": {
+    "kind": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0"
+    },
+    "entity": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "location": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "message": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "fix": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "rule": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/id"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "refusal": {
+      "type": "boolean",
+      "x-introduced": "1.0",
+      "default": false
+    },
+    "notice": {
+      "type": "boolean",
+      "description": "a notice never changes the closing word",
+      "x-introduced": "1.0",
+      "default": false
+    }
+  }
+}

@@ -1,0 +1,12 @@
+kind: Security
+body: >-
+  **A fix line for a file's access list is one command in cmd and in PowerShell.** When gragas will not
+  trust a file whose path holds a semicolon, an ampersand or a pipe, the icacls line it prints puts the
+  path in double quotes, so pasted into PowerShell it no longer runs a second command. A fix of two
+  steps is two lines, never joined with `&&`, which Windows PowerShell 5.1 reads as an error. A
+  step go-console can quote for no shell, a path holding a per-cent or a newline, prints no line, and
+  gragas says what to do in its place, so no part of a path is ever pasted bare. A word holding a tab, or a
+  character the screen draws as nothing, now gets no line to paste in any shell, and the refusal names
+  the argument by its place in the command. An answered menu in the terminal now stays on screen after
+  it closes, so the choice you made is still in view: go-console v0.15.0 keeps a form's last frame.
+time: 2026-11-23T00:30:33.00000+01:00

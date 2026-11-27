@@ -1,0 +1,67 @@
+{
+  "schema": 2,
+  "contract": "1.3",
+  "command": "tools",
+  "word": "not ready",
+  "unserved": [
+    "eslint",
+    "golangci-lint",
+    "stylelint"
+  ],
+  "dir": "",
+  "rules": 2,
+  "entries": 4,
+  "unexplained": [],
+  "tools": [
+    {
+      "tool": "eslint",
+      "entries": [
+        {
+          "target": "source",
+          "key": "no-throw-literal",
+          "rules": [
+            "go.errors.1"
+          ]
+        }
+      ]
+    },
+    {
+      "tool": "golangci-lint",
+      "tested": "2.15.0",
+      "entries": [
+        {
+          "target": "source",
+          "key": "errorlint",
+          "rules": [
+            "go.errors.1",
+            "go.errors.2"
+          ]
+        },
+        {
+          "target": "source",
+          "key": "nilerr",
+          "rules": [
+            "go.errors.2"
+          ]
+        }
+      ]
+    },
+    {
+      "tool": "stylelint",
+      "entries": [
+        {
+          "target": "source",
+          "key": "color-no-invalid-hex",
+          "rules": [
+            "go.errors.2"
+          ]
+        }
+      ]
+    },
+    {
+      "tool": "tsc",
+      "tested": "6.0.3",
+      "entries": []
+    }
+  ]
+}

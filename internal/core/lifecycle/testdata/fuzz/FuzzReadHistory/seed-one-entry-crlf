@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"format\":3,\"number\":2,\"kind\":\"promote\",\"entity\":\"rule:a.b.1\",\"after\":{\"status\":\"active\"},\"who\":\"a\",\"when\":\"2026-01-01T00:00:00Z\",\"plan\":\"sha256:00\",\"previous\":\"sha256:11\"}\r\n")

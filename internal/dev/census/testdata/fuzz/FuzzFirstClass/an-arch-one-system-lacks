@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("[{\"GOOS\":\"a\",\"GOARCH\":\"x\",\"FirstClass\":true},{\"GOOS\":\"b\",\"GOARCH\":\"x\",\"FirstClass\":true},{\"GOOS\":\"b\",\"GOARCH\":\"y\",\"FirstClass\":true}]")

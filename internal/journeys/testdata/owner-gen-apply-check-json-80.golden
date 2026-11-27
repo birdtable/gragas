@@ -1,0 +1,17 @@
+$ gragas gen --apply --check --json
+--- stdout
+{
+  "schema": 2,
+  "command": "gen",
+  "apply": false,
+  "ended": "usage",
+  "msg": "--apply and --check do not go together",
+  "next": "gragas gen --check",
+  "error": {
+    "kind": "usage",
+    "msg": "--apply and --check do not go together",
+    "hint": "gragas gen --check"
+  }
+}
+--- stderr
+--- exit 2

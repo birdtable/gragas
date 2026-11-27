@@ -1,0 +1,5 @@
+#!/bin/sh
+# A clone's pre-commit hook, shaped as the repository's hooks/pre-commit: one
+# line that runs gragas-dev hook. TestAFreshCloneRunsItsHooks... writes it into
+# its clone with @RUN@ replaced by the path of the program it installed.
+exec '@RUN@' hook pre-commit

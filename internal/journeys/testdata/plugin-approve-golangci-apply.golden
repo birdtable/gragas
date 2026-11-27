@@ -1,0 +1,8 @@
+$ gragas plugin approve golangci-lint@1.0.1 --digest <pin> --apply
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  done       golangci-lint@1.0.1 is approved on this machine, as
+  <pin>
+--- stderr

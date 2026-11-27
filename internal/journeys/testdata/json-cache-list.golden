@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "keep": "30d",
+  "kinds": [
+    {
+      "kind": "journal",
+      "holds": "the copies of what a run replaced, and the closed runs they belong to",
+      "built": true,
+      "files": 0,
+      "size": 0,
+      "oldest": null,
+      "age": null,
+      "oldest_note": "nothing is kept",
+      "cleared_after": "30d"
+    },
+    {
+      "kind": "explain",
+      "holds": "the index that explain reads",
+      "built": false,
+      "files": 0,
+      "size": 0,
+      "oldest": null,
+      "age": null,
+      "oldest_note": "this build keeps none: it is filled by a later release",
+      "cleared_after": "30d"
+    },
+    {
+      "kind": "config",
+      "holds": "the settings and tools as last read",
+      "built": false,
+      "files": 0,
+      "size": 0,
+      "oldest": null,
+      "age": null,
+      "oldest_note": "this build keeps none: it is filled by a later release",
+      "cleared_after": "30d"
+    },
+    {
+      "kind": "releases",
+      "holds": "the rulebook releases fetched",
+      "built": false,
+      "files": 0,
+      "size": 0,
+      "oldest": null,
+      "age": null,
+      "oldest_note": "this build keeps none: it is filled by a later release",
+      "cleared_after": "30d"
+    },
+    {
+      "kind": "scratch",
+      "holds": "the folders a proof run prepares and removes, and any a stopped run left",
+      "built": true,
+      "files": 0,
+      "size": 0,
+      "oldest": null,
+      "age": null,
+      "oldest_note": "nothing is kept",
+      "cleared_after": "30d"
+    },
+    {
+      "kind": "tools",
+      "holds": "the caches a plugin's grant keeps by its cache_vars, one folder for each plugin, version, grant and project",
+      "built": true,
+      "files": 0,
+      "size": 0,
+      "oldest": null,
+      "age": null,
+      "oldest_note": "nothing is kept",
+      "cleared_after": "30d"
+    }
+  ]
+}

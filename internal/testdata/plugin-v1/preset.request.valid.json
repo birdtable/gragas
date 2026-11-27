@@ -1,0 +1,38 @@
+[
+  {
+    "tool_version": "10.13.0",
+    "mark": "// gragas: written from the bindings",
+    "inputs": [
+      {
+        "path": "base.yml",
+        "data": {
+          "text": "x: 1\n"
+        }
+      }
+    ],
+    "entries": [
+      {
+        "key": "a",
+        "target": "source",
+        "severity": "error",
+        "options": [
+          "always"
+        ],
+        "trial": false,
+        "rules": [
+          "go.errors.1"
+        ]
+      },
+      {
+        "key": "b",
+        "target": "source",
+        "value": 300,
+        "trial": true,
+        "rules": [
+          "go.errors.2",
+          "go.errors.3"
+        ]
+      }
+    ]
+  }
+]

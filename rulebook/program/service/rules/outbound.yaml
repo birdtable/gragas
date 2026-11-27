@@ -1,0 +1,136 @@
+format: 3
+part: service
+concern: outbound
+rules:
+  - id: service.outbound.1
+    statement: "A new service integration enters only through the provider published contract and a generated client, with no hand-written client and no permission string copied from local code."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "One change adds the contract sync, the generated client, the owning domain services list, the regenerated permission registry and the generated test handlers. Every service client is generated from a published contract, or is listed as missing with a ticket; each operation of a permissioned contract carries its permission. In Go, a provider paths, headers and fields live in one adapter and a shape that crosses a language boundary has one source."
+      pros:
+        - "A hand-written client is a second reading of the callee contract, and it goes stale without anything failing."
+  - id: service.outbound.2
+    statement: "Every outbound call has a timeout, and the timeout is non-optional on the shared client."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, every HTTP client has a timeout or a context and the shared surface is listed; clients carry timeouts."
+      pros:
+        - "A call without a timeout holds a worker for as long as the callee stays silent, and the failure spreads upstream."
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+  - id: service.outbound.3
+    statement: Request signing lives in one client package.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, identifiers are made in one function and the primitives are banned outside the owner."
+      pros:
+        - "Signing code in many places is verified in none; one owner can be proved once."
+  - id: service.outbound.4
+    statement: "No callee host or gateway identifier appears as a literal in source (`src`); it comes from configuration or a derived name."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - "A literal host pins a stage and cannot be moved; it also hides which services a program depends on."
+  - id: service.outbound.5
+    statement: The shared client forwards the trace id and the caller token on every call.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, a run id joins a command-line call to the daemon it spoke to."
+      pros:
+        - "Without the trace id a request cannot be followed across services; without the caller token the callee cannot authorise the original user."
+  - id: service.outbound.6
+    statement: "The shared client throws on an unresolvable callee, a signing failure and a non-2xx response; it never returns a default."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, errors are returned and never swallowed."
+      pros:
+        - "A client that turns a failure into an empty result passes the fault downstream, where it looks like missing data."
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+  - id: service.outbound.7
+    statement: "Retry lives in the one shared client constructor: idempotent calls only, at one layer, with exponential backoff and jitter, a bounded number of attempts and a retry budget (retries as a fraction of requests). A hand-rolled retry loop is not allowed."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The behaviour test runs the client against a handler that always fails and asserts the attempts stay under the budget; it checks behaviour as well as form because the known way round a loop ban is recursion or a timer. The attempt count (three) and the budget (about 10 percent of requests) are examples from the SRE book, not numbers measured on these services. A measure goes beside it: the retry ratio. In the reference stack the layers that can each retry are the cloud SDK, the shared client, the queue redelivery and the function async retry; whether all four are active on a given path was not checked."
+      pros:
+        - "Three retries at each of five layers multiplies to a 243-fold load on the bottom layer. Retry traffic can keep a system overloaded after its cause is gone (metastable failure). Reasoning from incident analysis, not a measurement of the reference estate."
+    sources:
+      - ref: builders-library-timeouts-retries
+        where: "timeouts, retries and backoff with jitter"
+        backs: rule
+      - ref: google-sre-book
+        where: "handling overload; client retry budget"
+        backs: rule
+      - ref: bronson-metastable-failures
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 15
+        backs: rule
+  - id: service.outbound.8
+    statement: "An outbound call host comes from configuration; where a feature stores a customer-supplied address (a callback, an image URL), the code resolves it and checks it against an allowlist before it fetches."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - "A server that fetches an address an attacker chose reaches things the attacker cannot (server-side request forgery). Argued; whether any service takes an address from a request was not traced."
+    sources:
+      - ref: mcdonald-grokking-web-app-security
+        where: ch. 14 (server-side request forgery)
+        backs: rule
+  - id: service.outbound.9
+    statement: "A consumer whose work includes a call to an outside API is rate-limited: it has a concurrency ceiling set below that API published limit, and a replay or redrive of its queue is throttled by the same ceiling."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "A consumer marked as calling an outside API must set a maximum concurrency, and the value must come from a named constant with the third party limit beside it."
+      pros:
+        - "A replay or backlog runs at the speed of the consumers, so an outside API can be hit at many times its normal rate after a redrive. Argued; no case from the reference estate."
+    sources:
+      - ref: bellemare-bedm
+        where: ch. 13 (third-party API replay surge) and ch. 7
+        backs: rule

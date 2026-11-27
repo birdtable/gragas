@@ -1,0 +1,82 @@
+format: 3
+part: cli
+concern: process
+rules:
+  - id: cli.process.1
+    statement: "Every outward effect goes through a wrapper that records it; each external program and each verb it may run is named in one adapter's closed table; the check resolves a program name through constants and assignments and treats a name from any other source as a finding; and a test fails a program or verb run outside the table."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It starts no programs of its own.
+    reasoning:
+      definition: "Runs a program means a name passed to exec.Command or exec.CommandContext (or the equivalent in another language), resolved as the compiler does: a variable counts only when its value comes from a constant or from the one adapter's table. The table lists, per program, its absolute path or lookup rule and its allowed verbs; it may only shrink in the core. forbidigo on exec.Command and exec.CommandContext, and on os.StartProcess and syscall.ForkExec, outside the runner and a test (the import of os/exec is not banned: exec.LookPath starts nothing, returns exec.ErrDot for a hit in the current folder and reads PATHEXT on Windows, so a lookup is std's own and needs no wrapper), and the security analyser's rule for a variable command (gosec G204). x/sys counts as the standard library. A package-import test on net/http. The runner package, proposed, has a context, a timeout, no shell and an output cap (cli.process.2). Counts on macOS, of the former import ban: os/exec appears in 90 production files across seven repositories, and the ban found 24, 20, 11 and 13 in four of them; the call ban spares a lookup."
+      pros:
+        - "An effect outside the wrapper is invisible to the record and to the journal that precedes effects (the outward-effect journal of the data part, store.consistency.4). One adapter per dependency is the whole value of ports: replacing a tool is one package, not a search. The resolving check and the closed table close the two ways a program name is smuggled past the import rule. Own measure."
+    relations:
+      relates:
+        - cli.process.2
+        - store.consistency.4
+        - store.consistency.5
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: cli.process.2
+    statement: "An adapter runs an external program by absolute path with a fixed argv, checks each caller value against a closed shape before it enters the argv, caps the program's output and sets a deadline; a port that starts work takes a checked name, never an argv."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It starts no programs of its own.
+    reasoning:
+      definition: "No shell, no PATH lookup at run time (the path is resolved once and checked; the child keeps only the variables proc.Needed names for the system), the option terminator before any caller value, a value that starts with a dash refused. The output cap and the deadline are named constants per program; output past the cap is a failure, not a truncation that looks like success. A port's method takes a typed name checked against config, and the adapter builds the argv."
+      pros:
+        - "Each of these is a known class of bug: PATH hijack, argv injection, a hung child, and a reply that grows without bound. Every program that runs another faces them, in any language."
+    relations:
+      relates:
+        - supply.scans.5
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.process.3
+    statement: "A child program used as a plug-in gets a bare environment (PATH and LANG only), no secret, a timeout, one versioned request object on stdin, and a size-capped versioned reply that is refused in an unknown version, with its message length-capped and stripped of control characters."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It runs no plug-ins.
+    reasoning:
+      definition: "The request and the reply each carry a version field; the parent refuses a reply in a version it does not know and a reply over the cap. Text from the reply that reaches a person goes through the sanitiser of cli.errors.4."
+      pros:
+        - "A plug-in is code the program did not write, running with the program's authority; a bare environment keeps secrets out of it, and a versioned, capped protocol keeps a new or hostile plug-in from being misread."
+    relations:
+      relates:
+        - cli.errors.4
+    sources:
+      - ref: decision-65-cli
+        backs: rule

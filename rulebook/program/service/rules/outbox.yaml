@@ -1,0 +1,116 @@
+format: 3
+part: service
+concern: outbox
+rules:
+  - id: service.outbox.1
+    statement: "Only one funnel module imports the event bus client; every service publishes through it."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, every outward effect goes through one wrapper that records it."
+      pros:
+        - "A bus client imported in many places gives many publish paths, each with its own failure handling and none that can be replayed."
+  - id: service.outbox.2
+    statement: "There is exactly one outbox implementation, in the shared toolkit."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, one shared implementation of write-ahead intent and atomic state replace, with no copies."
+      pros:
+        - "Each service writing its own outbox repeats the transaction, retry and replay logic and gets different gaps."
+  - id: service.outbox.3
+    statement: "The outbox is written only by the toolkit call that takes the open transaction, so the event and the change commit or roll back together."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - "An event written after the commit can be lost when the process dies between the two writes; an event written before it can announce a change that rolled back."
+  - id: service.outbox.4
+    statement: "The relay publishes an outbox row idempotently and supports replay, and in production it always creates the sweep that picks up rows the live path missed."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - "A relay that publishes twice on a retry, or cannot be told to publish again, turns every outage into manual work."
+  - id: service.outbox.5
+    statement: A failed outbox row is never deleted.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - A deleted failed row is an event that happened and can never be published or investigated.
+  - id: service.outbox.6
+    statement: "The outbox row is the event as the public contract defines it, not a copy of the internal row, and the toolkit call that writes it validates the event against its registered schema inside the transaction, so a bad event rolls the change back."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The relay check at publish time stays as a second line. For a store whose stream forwards item images, the outbox is an explicit item written in the same transaction and shaped as the contract, and the stream forwards only those items; a plain stream of item images publishes the internal shape."
+      pros:
+        - "Serialising after the write leaves a pile of unpublishable events that people must salvage and can reorder what was published; serialising before the write fails the business operation instead. That is the trade, and why it needs a decision and not a default. Exposing the internal model is an anti-pattern: consumers should see only public contracts."
+    sources:
+      - ref: bellemare-bedm
+        where: "ch. 4 (liberating data using outbox tables; isolating internal data models; ensuring schema compatibility)"
+        backs: rule
+      - ref: p-03-data
+        where: section 21
+        backs: rule
+  - id: service.outbox.7
+    statement: "The event bus name is derived from the stage, never declared by hand."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, every path and identifier of persistent state is made by one function from the program name."
+      pros:
+        - A hand-declared bus name drifts between stages and lets a stage publish onto another stage bus.
+  - id: service.outbox.8
+    statement: The derived bus exists before a service publishes to it.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, a daemon signals readiness before it serves and a missing dependency is not silent."
+      pros:
+        - Publishing to a bus that has not been created fails silently or at first use in production.
+  - id: service.outbox.9
+    statement: Per-entry failures of a batch publish are read and retried.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "A batch call can succeed as a whole and still report failed entries. In Go, every error is handled or returned and a multi-step change says rollback, resume or none."
+      pros:
+        - A batch publish that returns success while some entries failed loses those events with no error.

@@ -1,0 +1,11 @@
+waivers:
+  - id: w-legacy-a
+    rule: go.errors.1
+    path: legacy/**
+    reason: Legacy code is wrapped when it is next touched.
+    kind: legacy
+    owner: alex
+    expiry: "2027-06-30"
+    created: {who: alex, when: "2026-11-05T10:00:00Z"}
+    suppression: "//nolint:wrapcheck // w-legacy-a"
+    state: active

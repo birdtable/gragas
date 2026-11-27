@@ -1,0 +1,14 @@
+[
+  {
+    "format": 3,
+    "sources": [
+      {"slug": "rfc-8785", "kind": "standard", "title": "JSON Canonicalization Scheme", "locator": "rfc:8785", "attribution": "IETF", "verified": "2026-10-01"},
+      {"slug": "a-guide", "kind": "guide", "title": "A guide", "locator": "https://example.com/guide"},
+      {"slug": "a-study", "kind": "study", "title": "A study", "locator": "doi:10.0000/example"},
+      {"slug": "an-incident", "kind": "incident", "title": "An incident", "locator": "https://example.com/incident"},
+      {"slug": "a-record", "kind": "decision-record", "title": "A decision record", "locator": "https://example.org/record"},
+      {"slug": "vendor-docs", "kind": "vendor-document", "title": "Vendor documentation", "locator": "https://example.com/docs"},
+      {"slug": "ruled-by-alex", "kind": "own-decision", "title": "The owner's ruling", "locator": "keep-the-names-out"}
+    ]
+  }
+]

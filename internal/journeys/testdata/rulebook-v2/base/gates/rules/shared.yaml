@@ -1,0 +1,315 @@
+part: gates
+concern: shared
+order: 9
+title: Shared gates and toolchain
+summary: >-
+  Gates are generic and shared by version; a project adds only its own rules. Managed root files exist and are
+  byte-equal to the template, a repo's overlay holds a closed list of keys, each tool has one pinned version,
+  a new repo starts from the template, and a replaced check keeps a parity table.
+rules:
+  - id: gates.shared.1
+    slug: gates-shared-by-version
+    since: 0.1.0
+    rule: >-
+      Gates are generic and shared by version: one lint stack, with config rendered from one shared source
+      into each repo and checked byte for byte; a project adds only its own rules.
+    detail: >-
+      The gate files in each project equal the version-locked template output, and only parameters are
+      project-owned. For Go: golangci-lint has no `extends` or `include`, so the shared config (base plus
+      packs) is copied into each repo by a sync command and a check re-renders in memory and compares bytes,
+      listing every stale path. Sibling repos run the same shared gates and presets published once, with the
+      runtime floor aligned, and a parity check fails when a resolved config drifts from the preset version
+      (one Go version across the estate).
+    level: file
+    why: 5 distinct lint configs among 6 repos (V-25).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-4
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. A sync check command: gate files in each project equal the version-locked template
+          output. Plant: Edit a synced gate script or a rendered config by one byte; the sync check fails.
+          Control: A clean sync passes.
+    open:
+      - >-
+        golangci-lint issue 6621 on extends was closed 5 June 2026 with no maintainer comment; not re-checked.
+      - >-
+        Template for Go and for TypeScript are both planned; the tool is decided (decision 4) but not built.
+    note: >-
+      Merges the Go one-lint-stack row, the TypeScript one-shared-config row, the web shared-gates row and the
+      cross-repo parity row.
+  - id: gates.shared.2
+    slug: managed-root-files-exist
+    since: 0.1.0
+    rule: The required managed root files exist in each repo.
+    detail: >-
+      The structural check fails when a managed lint or hook file, or one of the one-line root config files,
+      is absent from the repo root.
+    level: file
+    why: A repo missing a root file silently falls back to tool defaults.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The structural check command fails when a managed root file is missing. Plant:
+          Delete a managed root file; the check fails. Control: All present passes.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: gates.shared.3
+    slug: managed-root-files-byte-equal
+    since: 0.1.0
+    rule: The managed root files are byte-equal to the template copy; an edited one fails.
+    detail: >-
+      The template writes a few one-line root files that only point at the shared config and are never edited.
+      A file that must stay a copy is checked byte for byte against its origin in the gate.
+    level: file
+    why: A root file that was edited can loosen the shared config.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The structural check compares each one-line root file with the template copy byte
+          for byte. Plant: Edit a root file by one byte; the check fails. Control: Unedited passes.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: gates.shared.4
+    slug: overlay-closed-keys
+    since: 0.1.0
+    rule: >-
+      A repo may set only a closed list of keys in its config overlay, nothing that loosens the shared base;
+      strictness flags are never switched off.
+    detail: >-
+      The compiler overlay may hold only include, exclude, paths and outDir. Every override is in one
+      parameters file read by a gate (validated with ajv-cli or check-jsonschema), "which package" decisions a
+      human makes are written there, and a person's config refuses unknown keys (schema with additional
+      properties false). Go lint config has no merge, so a repo may add only named fields in a separate local
+      file that the check reads by meaning. A loosened setting fails; the strictness flags (strict compiler
+      flags) stay on.
+    level: file
+    why: A repo that can add keys to its overlay can turn the base off.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          A parameters file validated by a JSON Schema with additionalProperties false; the check reads the
+          compiler overlay and rejects keys outside the closed list and any strictness flag set off. Plant: An
+          unknown key in the parameters file is refused; a strict flag turned off in the overlay fails.
+          Control: A valid overlay passes.
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. The shared check reads the repo's local lint fields by meaning and rejects
+          anything outside the named fields. Plant: A local file that disables a base linter fails. Control: A
+          local file with only the named fields passes.
+    relates:
+      - id: gates.measures.4
+        how: see
+    open:
+      - >-
+        Switch-test pairing (a test for each boolean switch's non-default value) is gates.measures.4.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+    note: >-
+      Merges the overlay key list, the one parameters file with unknown keys refused (the web row, split), and
+      the strictness-flag part of the small-rules bundle.
+  - id: gates.shared.5
+    slug: one-pinned-version
+    since: 0.1.0
+    rule: >-
+      Each shared package and tool has one pinned version, and a preflight checks it is present before the
+      gate runs.
+    detail: >-
+      One version file (`tools.txt` with name, version and sha256, read by `make preflight` and the
+      `companion preflight` command; a tools file for Go tools with a separate sum file, and a plain list of
+      name, version and checksum for the rest); the preflight exits non-zero on a missing or wrong-version
+      tool, running each `--version`. Consumers stay within the currency window, the toolchain follows the
+      lockfile, and one module version is used in every program. Verified 5 Nov: `go tool -modfile=tools.mod
+      deadcode ./...` works with a `tool` directive in a separate tools module.
+    level: program
+    why: >-
+      A secret scanner is at 8.27.2 in one repo and 8.28.0 in two others (V-68, in part); 5 lint configs among
+      6 repos (V-25). A box check found golangci-lint at 2.14.0 with 2.15.0 the latest release.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "1"
+        note: >-
+          A preflight command reading the version file and running each tool's `--version`; Go tools through
+          `go tool -modfile`. Plant: A tool absent or one patch version off fails the preflight. Control:
+          Pinned versions all present passes.
+    open:
+      - Currency window length is not stated in the source.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+  - id: gates.shared.6
+    slug: new-repo-starts-pinned
+    since: 0.1.0
+    rule: >-
+      A new repo starts with the pinned toolchain, hook install, lint, type-check and one gate command, and
+      the shared package as a dev dependency.
+    detail: >-
+      A new TypeScript repo starts with an engines range, a package-manager pin, hook install, lint,
+      type-check and gate scripts and the shared package as a dev dependency. A new Go repo starts with a Go
+      version, a tools file, the hook and one make target. One package manager, pinned. The template lays down
+      configs, scripts and gates.
+    level: program
+    why: A repo set up by hand begins with a different gate than the next one.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          The template's proof test (gates.plants.13) asserts the generated repo has each listed start item.
+          Plant: A template that omits the hook install fails the proof test. Control: The shipped template
+          passes.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: gates.shared.7
+    slug: migration-swept-by-deadline
+    since: 0.1.0
+    rule: A migration is swept within a deadline, then the old way is blocked.
+    detail: >-
+      The sync check compares each consumer's lock with the newest allowed shared version; a consumer older
+      than the migration deadline in the migration record fails its own gate. It applies to code migrations
+      and to contracts read by programs another owner deploys; it does not apply to a config key spelling, and
+      a program whose readers all change in the same release keeps no old way to sweep.
+    level: process
+    why: Three adoption issues were open since 27 October with no end date.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-gates
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. Sync check compares each consumer lock to the newest allowed shared version
+          against the migration record's deadline. Plant: A consumer one release behind past the deadline
+          fails. Control: A consumer on the newest version passes.
+  - id: gates.shared.8
+    slug: check-in-gate-or-deleted
+    since: 0.1.0
+    rule: >-
+      A check that exists is in the gate, or it is deleted, and the gate list is derived from the gate files
+      themselves, never typed into a second list.
+    detail: >-
+      Every make target named as a check is reachable from the `check` target. Where a repo keeps its gates as
+      files, each gate file declares its own metadata (name, rules held, budget, exit voice), and the gate
+      command builds its member list by reading those files; a list typed by hand in a Makefile, a config or a
+      doc is a second home that drifts and is a finding. A bespoke check script moves into the standard lint
+      or import-rule tool and is then deleted: import rules go to the dependency-boundary linter or a repo
+      test, one lint stack carries the rest, and a check that is not in the gate is deleted. Data validators
+      of configuration files are not domain scripts and stay.
+    level: program
+    why: >-
+      A drift check that is not in the gate fails 13 of 35 entries unseen (V-27). The scan is a `gatescan`
+      rule. A gate list typed apart from the gate files loses the gate that was added last.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ford-bea
+        where: chapter 7
+        backs: rule
+      - ref: decision-65-gates
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "3"
+        note: >-
+          A gate scan: every Makefile target named as a check is reachable from `check`; a recipe in the
+          shared Makefile fragment, standard tools only. Where gates are files, a test that the member list
+          the gate command runs equals the set of gate files. Plant: A check target not reachable from `check`
+          fails; a new gate file missing from a typed member list fails. Control: All targets reachable
+          passes; a list derived from the files passes.
+  - id: gates.shared.9
+    slug: parity-before-replacing
+    since: 0.1.0
+    rule: >-
+      A check replaced by a standard tool keeps a rule-by-rule parity table, and the replacement fires all the
+      old check's plants before the old check is removed.
+    detail: >-
+      The table maps each old rule to a lint rule, a spec, or "dropped" with a reason; the remaining hits are
+      then fixed or exempted with a ticket and an expiry. The replacement change runs the old plant corpus
+      against the new config in the same change (a parity run); a plant that stops firing fails the swap.
+      Deleting the awkward plant first is a gate weakening (gates.protection.1). Applies to home-made regex
+      style scripts and any home-made check.
+    level: process
+    why: A replacement silently narrows coverage, and only plants prove parity.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ford-bea
+        where: chapter 4 (fidelity fitness functions)
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. The replacement change runs the old tool's plant corpus against the new config
+          (`--parity old-plants-dir`). Plant: A replacement that misses one old plant fails the swap. Control:
+          A replacement that fires every old plant passes.
+    relates:
+      - id: gates.protection.1
+        how: see
+    note: >-
+      Merges the parity-table rows of both sides and the "check that exists is in the gate" replacement half.
+  - id: gates.shared.10
+    slug: one-format-command
+    since: 0.1.0
+    rule: Formatting is one command.
+    detail: >-
+      One formatter command checks formatting in each repo; for `.astro` files that the chosen formatter
+      cannot handle, `prettier-plugin-astro` is named in the one command, and a single wrapper command
+      (`companion fmt`) hides the choice.
+    level: word
+    why: Two formatters disagree, and each run undoes the other's output.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "0"
+        note: >-
+          `prettier --check` with its template plugin for the template files; a single fmt command wraps the
+          choice. Plant: A file with a double-quoted string in a single-quote project fails the check.
+          Control: A conforming file passes.
+    open:
+      - >-
+        Biome or Prettier on React is still unruled; Biome cannot format the template files.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"

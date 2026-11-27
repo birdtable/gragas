@@ -1,0 +1,223 @@
+# gragas's overrides of the shared base, lint/base.yml. Each key names a slot of
+# the base, and its text takes the place of what the base keeps there by
+# default; the text is written without its indent, and a slot not named here
+# keeps the base's. `task gen` joins the base, this file and layers.yaml into
+# .golangci.yml, which is never written by hand. The layer rows, the Clock
+# adapter's exclusion and the programs' exclusions are filled from layers.yaml,
+# and {{programs}} below is the programs' adapters from its programs: section.
+
+cli-flags: |
+  # gragas: the command tree is internal/cli, host/term/execute.go hands it to
+  # the kit (A70), and host/term/main.go hands a dev tool's one command to it.
+  files: ["$all", "!**/cmd/**", "!**/internal/cli/**", "!**/internal/host/term/execute.go", "!**/internal/host/term/main.go"]
+
+owner-exec: |
+  # gragas starts its programs, each from its one adapter (arch.ports.6, the
+  # generated block below): git from internal/host/git and an enforcer from the
+  # one run file of internal/host/tool. A test calls exec with std, as the base
+  # says. The files that are not tests and run others: go, and the built
+  # binary in the journeys (internal/journeys, internal/config/testing). The
+  # dev tools start go and git (cmd/gragas-dev); the release command starts go,
+  # git ls-tree of the clone it checks and the binary it
+  # unpacked, from its one file, cmd/gragas-release/toolchain.go. The docs
+  # checks (internal/repo/docs) run git ls-files to list the
+  # tracked files; the generator's copy of the tree lists them the same way,
+  # from cmd/gragas-new/check.go.
+  - path: ^internal/(journeys|config/testing)/
+    linters: [forbidigo]
+    text: "cli\\.process\\.1: a program starts through the runner"
+  - path: ^cmd/gragas-dev/
+    linters: [forbidigo]
+    text: "cli\\.process\\.1: a program starts through the runner"
+  - path: ^cmd/gragas-new/check\.go$
+    linters: [forbidigo]
+    text: "cli\\.process\\.1: a program starts through the runner"
+  - path: ^cmd/gragas-release/toolchain\.go$
+    linters: [forbidigo]
+    text: "cli\\.process\\.1: a program starts through the runner"
+
+owner-ui: |
+  # gragas: the shared UI package is go-console/ui, outside this repository,
+  # so no file here is exempt.
+  files: ["$all"]
+
+os-host: |
+  # gragas: no folder is spared, internal/host included: an operating-system
+  # package belongs to the platform libraries, and gragas imports none.
+  # gragas check's os-files reads the folders this row spares as the host
+  # layer, so gragas has none, and every file whose name or build line names
+  # a system is a finding.
+  files: ["$all"]
+
+lib-toml-read: |
+  # gragas: internal/host/toml is the one reader of TOML, the config checker's
+  # read of .gitleaks.toml, which the register's toml-read and toml-edit rows
+  # allow go-toml/v2 for (supply.intake.6).
+  files: ["$all", "!**/internal/host/toml/**"]
+
+lib-toml-edit: |
+  # gragas: the same one reader of TOML, as in lib-toml-read above.
+  files: ["$all", "!**/internal/host/toml/**"]
+
+layer-rows: |
+  # gragas: the rows below are rendered from layers.yaml, the layer table,
+  # by gragas gen (arch.layers.2, .9); gen --check fails when they differ.
+  # The two rows below are gragas's own: the shared
+  # console module owns the terminal, its look and the stop signal, so no
+  # file here names a Charm package or reads a signal itself.
+  no-charm:
+    files: ["$all"]
+    deny:
+      - pkg: charm.land
+        desc: "cli.look.1: gragas#917: the terminal and its look are go-console's; no gragas package imports a Charm package"
+      - pkg: github.com/charmbracelet
+        desc: "cli.look.1: gragas#917: the terminal and its look are go-console's; no gragas package imports a Charm package"
+  no-signal-in-cmd:
+    files: ["**/cmd/**"]
+    deny:
+      - pkg: os/signal
+        desc: "cli.process.1: gragas#917: the stop signal is ui.Execute's; a command under cmd/ reads none"
+
+forbid-extra: |
+  # Every runtime is made from plugin.RuntimeConfig, wazero's interpreter, and
+  # no compilation cache is set anywhere, internal/host/plugin and its tests
+  # included. NewRuntime and NewRuntimeConfig pick the compiler where it runs,
+  # which maps executable memory; a cache, in memory or in a folder, is the
+  # compiled code kept. No file is spared: RuntimeConfig calls none of these.
+  - pattern: ^wazero\.(NewRuntime|NewRuntimeConfig|NewRuntimeConfigCompiler|NewCompilationCache|NewCompilationCacheWithDir)$
+    pkg: ^github\.com/tetratelabs/wazero$
+    msg: "arch.ports.6: a runtime is made from plugin.RuntimeConfig, wazero's interpreter, with no compilation cache"
+  - pattern: \.WithCompilationCache$
+    pkg: ^github\.com/tetratelabs/wazero$
+    msg: "arch.ports.6: a runtime is made from plugin.RuntimeConfig, wazero's interpreter, with no compilation cache"
+  - pattern: ^time\.Now$
+    msg: "arch.ports.1: only the Clock adapter reads the clock; every other package, a test of the core included, asks the Clock port"
+  # A reader of the gate's, the repo checks' and the dev tool's files refuses a duplicate key, as
+  # ParseStrict does and ParseYAML does not; the exclusion below spares every other folder.
+  - pattern: ^ordered\.ParseYAML$
+    pkg: ^github\.com/birdtable/gragas/internal/ordered$
+    msg: "gates.readers.1: a gate or repo reader refuses a duplicate key; read with ordered.ParseStrict"
+
+overrides: |
+  # gragas: project overrides
+        # ParseYAML is banned in the gate registry, the repo checks and the dev tool only.
+        - path-except: ^(internal/dev/gate|internal/repo|cmd/gragas-dev)/
+          linters: [forbidigo]
+          text: "gates\\.readers\\.1:"
+        # The three files that still name syscall or x/sys, each until
+        # the OS audit row that replaces it lands;
+        # a fourth file is not spared, and the row's own file is deleted with
+        # its exclusion.
+        # remote_deadline_unix_test: rows 67 and 97, go-proc proc.Start, Stop and Usage.
+        - path: ^internal/host/git/remote_deadline_unix_test\.go$
+          linters: [depguard]
+          text: "arch\\.ports\\.24: no (syscall|golang\\.org/x/sys):"
+        # owned_unix_test: rows 165-168 and 601, go-files trust and go-proc's G8, G12, G16.
+        - path: ^internal/host/trust/owned_unix_test\.go$
+          linters: [depguard]
+          text: "arch\\.ports\\.24: no (syscall|golang\\.org/x/sys):"
+        # blocked_test: rows 25, 27 and 28, std ErrPermission and go-proc's G6, G13.
+        - path: ^internal/journeys/blocked_test\.go$
+          linters: [depguard]
+          text: "arch\\.ports\\.24: no (syscall|golang\\.org/x/sys):"
+        # The admin-group test gives a folder to a group with os.Chown, which
+        # go-files' trusttest has no helper for; the exclusion goes with the
+        # helper, and a second file is not spared.
+        - path: ^internal/host/trust/trust_test\.go$
+          linters: [forbidigo]
+          text: "arch\\.ports\\.24: the meaning of an account"
+        # go.layout.3: no replace lines, but seven: go.mod replaces go-files, go-run, go-testkit,
+        # go-socket, go-console and go-proc each at its pin. The text names the paths; internal/closure_test.go
+        # holds each target. Each leaves with its library's public tag.
+        - path: ^go\.mod$
+          linters: [gomoddirectives]
+          text: "replacement are not allowed: github\\.com/birdtable/(go-files|go-run|go-testkit|go-testkit/contain|go-socket|go-console|go-proc)$"
+        # cli.output.2: answer.go is the root command's renderer, the one place
+        # that writes a JSON document.
+        - path: ^internal/cli/root/answer\.go$
+          linters: [forbidigo]
+          text: "cli\\.output\\.2:"
+        # go.errors.3: ordered.JSON returns a string and its jsontext writes into
+        # a buffer fail only on a malformed token sequence, which its one switch
+        # cannot produce: a failure is a programmer error.
+        - path: ^internal/ordered/encode\.go$
+          linters: [forbidigo]
+          text: "go\\.errors\\.3:"
+        # cli.config.3, cli.errors.3: the test isolation reads and sets the
+        # environment and reports on stderr before any test runs.
+        - path: ^internal/(journeys|config/testing)/
+          linters: [forbidigo]
+          text: "cli\\.(config\\.3|errors\\.3):"
+        # cli.config.3, cli.errors.3, tests.isolation.6: host/git's stand-in
+        # for git is the test binary rerun as git, a child and no test: its answer is what it prints on its own stdout and
+        # stderr and the environment it was handed, and a hung git is one that
+        # sleeps until the run kills it.
+        - path: ^internal/host/git/standin_test\.go$
+          linters: [forbidigo]
+          text: "(cli\\.(config\\.3|errors\\.3)|tests\\.isolation\\.6):"
+        # cli.config.3: gragas-dev's stand-in for the clone's task is the test
+        # binary rerun as task, a child and no test:
+        # its answer is its exit code and the line it logs, which holds the
+        # pnpm settings the hook handed it in its environment. cli.errors.3:
+        # its stand-in node answers --version on its own stdout, as host/git's
+        # stand-in answers on its own. tests.isolation.6:
+        # a hung task is one that sleeps until the run kills its tree, as
+        # host/git's hung git does; os/signal, the other wait, is
+        # refused under cmd/ (cli.process.1).
+        - path: ^cmd/gragas-dev/standin_test\.go$
+          linters: [forbidigo]
+          text: "(cli\\.(config\\.3|errors\\.3)|tests\\.isolation\\.6):"
+        # cli.errors.3: the planted-fault suites of the port fakes run a suite
+        # as a nested test, whose own "--- FAIL" lines go to os.Stdout and were
+        # counted as failures of a passing package; that file
+        # holds os.Stdout to a file of its own for the nested run, and the
+        # mutex that serialises the swap, the one global of the tests there.
+        - path: ^internal/port/testing/contract_planted_test\.go$
+          linters: [forbidigo]
+          text: "cli\\.errors\\.3:"
+        - path: ^internal/port/testing/contract_planted_test\.go$
+          linters: [gochecknoglobals]
+          text: "quietMu is a global variable"
+        # arch.ports.12: the walk reads the admin group once per process, as
+        # go-files's AdminGroup asks; the lookup reads os/user
+        # at each call, and Walk is a function with no value to hold it.
+        - path: ^internal/host/trust/trust\.go$
+          linters: [gochecknoglobals]
+          text: "group is a global variable"
+        # supply.scans.3: gragas-dev, gragas-generate, gragas-new,
+        # gragas-release are the dev tools, never shipped (A30).
+        # Each reads and writes the tree its user points it at, walks that tree
+        # or a copy of it, and writes the files git tracks (0644, in 0755 folders, as
+        # git checks them out); gragas-dev also writes the tools and database under
+        # .tools, gragas-release the binary it unpacks to start, 0755, in a folder
+        # of its own. internal/dev/files takes these write ids over later.
+        - path: ^cmd/gragas-(dev|generate|new|release|sync)/
+          linters: [gosec]
+          text: "G(122|301|302|304|306|703):"
+        # code.duplication.1: the generated ToCanon and FromCanon of each contract
+        # type follow the type's shape, so two types of one shape have one code
+        # The one copy is the generator, internal/dev/generate/gocodec.go,
+        # which dupl still reads; a hand-written file of the package has no row.
+        # It is the measure's skip, cmd/gragas-dev/clones.go's generatedCopies, and
+        # cmd/gragas-dev's TestTheLintsDuplSkipIsTheMeasures holds it to that.
+        - path: ^internal/model/contract/[^/]+\.gen\.go$
+          linters: [dupl]
+        # code.duplication.1, go.cycle.2: the generated read of each plugin contract
+        # type follows the type's shape, one check to a member, so a type with
+        # many members is long and two of one shape have one code.
+        # The one copy is the generator, internal/dev/generate/pluginwire/emit.go,
+        # which every linter still reads.
+        - path: ^internal/model/plugin/[^/]+\.gen\.go$
+          linters: [dupl, gocognit, gocyclo]
+        # supply.scans.3: the file system adapter is the one package that opens a
+        # path: the core hands it paths that Tree confines to a root, or that the
+        # settings name outside every root, checked absolute and clean; the legacy
+        # writer makes the generated files' folders 0755, as git checks them out.
+        - path: ^internal/host/fs/[^/]+\.go$
+          linters: [gosec]
+          text: "G(301|304):"
+        # go.cycle.2, tests.runners.4: the packages whose tests still run one at a
+        # time, as gate/serial-packages.txt lists them; the list only shrinks, and
+        # TestTheSerialPackagesAreTheLintsExclusion holds the two together.
+        - path: ^(cmd/gragas-dev|cmd/gragas-new|cmd/gragas-release|internal|internal/core/link|internal/dev/gate|internal/dev/generate|internal/host/fs|internal/host/git|internal/host/term|internal/journeys|internal/ordered)/[^/]+_test\.go$
+          linters: [paralleltest, tparallel]

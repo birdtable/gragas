@@ -1,0 +1,26 @@
+format: 3
+layers:
+  - slug: language
+    name: Language
+    parts:
+      - slug: go
+        name: Go
+        owners: [team-b]
+        concerns:
+          - slug: errors
+            name: Errors
+      - slug: cli
+        name: Command line
+        owners: [team-b]
+        concerns:
+          - slug: flags
+            name: Flags
+  - slug: web
+    name: Web
+    parts:
+      - slug: web
+        name: Web
+        owners: [team-b]
+        concerns:
+          - slug: forms
+            name: Forms

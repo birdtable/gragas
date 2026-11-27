@@ -1,0 +1,11 @@
+$ gragas coverage
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+nothing is bound: 0 rules held, 0 entries explained. Bind a rule to a tool entry
+with `gragas bind`.
+
+  done       0 rules held, 0 entries explained
+    gragas bind
+--- stderr

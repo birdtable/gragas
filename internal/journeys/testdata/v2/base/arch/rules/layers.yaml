@@ -1,0 +1,29 @@
+part: arch
+concern: layers
+order: 1
+title: Layers
+rules:
+  - id: arch.layers.1
+    slug: no-cycles
+    since: 0.1.0
+    rule: Break every package cycle.
+    detail: A cycle is a finding.
+    why: A cycle hides a boundary.
+    strength: Hard
+    status: active
+    checks:
+      - tool: golangci-lint
+        key: depguard
+        binding: go
+        class: preset-rule
+        tier: "1"
+    sources:
+      - ref: one-book
+        where: chapter 2
+        backs: rule
+  - id: arch.layers.2
+    slug: read-the-record
+    since: 0.1.0
+    rule: Read the record.
+    strength: Record
+    status: proposed

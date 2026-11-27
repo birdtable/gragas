@@ -1,0 +1,9 @@
+$ gragas rule confirm go.errors.1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    the status of go.errors.1 is proposed, and only
+  an active rule is confirmed
+    only an active rule is confirmed: promote it with gragas
+rule promote go.errors.1
+--- stderr

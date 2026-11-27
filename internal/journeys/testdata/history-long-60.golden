@@ -1,0 +1,41 @@
+$ gragas history
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+gragas history
+No  Entity            Kind      When                  Who
+1   rule:go.errors.1  propose   2026-03-01T09:00:00Z  ada
+2   rule:go.errors.1  promote   2026-03-01T10:00:00Z  ada
+3   rule:go.wrap.1    propose   2026-03-03T11:00:00Z  grace
+4   rule:go.errors.1  promote   2026-03-04T09:00:00Z  ada
+5   rule:go.wrap.1    promote   2026-03-06T15:00:00Z  grace
+6   rule:go.errors.2  renumber  2026-03-08T10:00:00Z  ada
+7   rule:go.errors.2  confirm   2026-03-09T12:00:00Z  ada
+8   rule:go.wrap.1    promote   2026-03-10T09:00:00Z  grace
+8   rule:go.errors.2  edit      2026-03-10T14:00:00Z  ada
+9   rule:go.wrap.1    retire    2026-03-12T09:00:00Z  grace
+10  rule:go.errors.2  retire    2026-03-13T16:00:00Z  ada
+11  rule:go.errors.2  restore   2026-03-14T09:00:00Z  ada
+12  rule:go.wrap.2    confirm   2026-03-20T13:00:00Z  ada
+13  rule:go.errors.2  confirm   2026-03-20T14:00:00Z  grace
+14  rule:go.errors.2  confirm   2026-03-21T15:00:00Z  ada
+15  rule:go.wrap.2    confirm   2026-03-21T16:00:00Z  grace
+16  rule:go.errors.2  confirm   2026-03-22T09:00:00Z  ada
+17  rule:go.errors.2  confirm   2026-03-22T10:00:00Z  grace
+18  rule:go.wrap.2    confirm   2026-03-23T11:00:00Z  ada
+19  rule:go.errors.2  confirm   2026-03-23T12:00:00Z  grace
+20  rule:go.errors.2  confirm   2026-03-24T13:00:00Z  ada
+21  rule:go.wrap.2    confirm   2026-03-24T14:00:00Z  grace
+22  rule:go.errors.2  confirm   2026-03-25T15:00:00Z  ada
+23  rule:go.errors.2  confirm   2026-03-25T16:00:00Z  grace
+24  rule:go.wrap.2    confirm   2026-03-26T09:00:00Z  ada
+25  rule:go.errors.2  confirm   2026-03-26T10:00:00Z  grace
+26  rule:go.errors.2  confirm   2026-03-27T11:00:00Z  ada
+27  rule:go.wrap.2    confirm   2026-03-27T12:00:00Z  grace
+28  rule:go.errors.2  confirm   2026-03-28T13:00:00Z  ada
+29  rule:go.errors.2  confirm   2026-03-28T14:00:00Z  grace
+30  rule:go.wrap.2    confirm   2026-03-29T15:00:00Z  ada
+2 columns not shown: Decision, Plan
+
+  done       31 entries listed
+--- stderr

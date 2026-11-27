@@ -1,0 +1,96 @@
+part: web
+tools:
+  - key: tailwind
+    name: "utility-class framework: Tailwind"
+    role: >-
+      The one utility-class framework every web project styles with, wired to the generated tokens: its theme
+      is generated from the token document and holds no colour, size or font of its own.
+    binding: ts
+    ships: >-
+      the generated theme file, the utility-class lint preset and the banned-framework list
+    state: chosen
+    why: >-
+      One token source feeds one styling system, so the token checks and the class-string lint can prove the
+      whole page.
+    lost:
+      - name: >-
+          other utility-class frameworks (UnoCSS, Windi, Tachyons, Bootstrap, Bulma, Twind)
+        why: >-
+          banned by the operator ruling (decision 29); class-variant and class-merge helpers stay allowed
+      - name: hand-written CSS with a project prefix
+        why: >-
+          allowed only until a site migrates, since migrating a site's CSS is per-repository adoption work
+    note: >-
+      Checks around it: `companion deps` over `package.json` fails any other utility-class framework while
+      `cva`, `clsx` and `tailwind-merge` stay off the list; `companion gen --check` compares the generated
+      `@theme` file, and a stylesheet on it allows only `var(--token)` values.
+    open:
+      - >-
+        Tailwind in template (Astro) files needs its lint coverage checked and is not assumed to work.
+      - >-
+        The lint plugin did not read class strings in frontmatter arrays or script string literals.
+  - key: one-set-imported-only-by-the-design-system
+    name: "icon package: one set, imported only by the design system"
+    role: >-
+      One icon package that only the design system imports; pages and modules name icons by meaning through
+      the design system's registry.
+    binding: ts
+    ships: the icon registry and the import ban on every other icon package
+    state: chosen
+    why: One owner for the icon set means the set changes in one file.
+    lost:
+      - name: a second icon set
+        why: a second set is an operator decision, not a project's own choice
+    note: >-
+      The chosen package is `@tabler/icons-react` (the icon set of the reference), imported only by the design
+      system's registry.
+    open:
+      - The chosen package is 15 minor releases behind in one site's count.
+  - key: one-configured-for-no-unsafe-eval
+    name: "schema library: one, configured for no unsafe-eval"
+    role: >-
+      The one schema library used to validate payloads at the boundary, form input and environment, configured
+      so that it needs no unsafe-eval under the content security policy (its non-JIT mode).
+    binding: ts
+    ships: the library configuration and the import ban on any second schema library
+    state: chosen
+    why: >-
+      One decode and validation approach keeps the boundary rule provable, and the policy forbids eval.
+    open:
+      - >-
+        The reference chose zod 4 with its `jitless` setting; the boundary library is not settled in the stack
+        notes.
+  - key: tanstack-pacer
+    name: "debounce and throttle: TanStack Pacer"
+    role: >-
+      Debounce and throttle come from one owner library; no hand-rolled timeout debounce and no utility-belt
+      debounce.
+    binding: ts
+    ships: >-
+      the import ban on utility-belt debounce and a lint on hand-rolled timeout debounce
+    state: chosen
+    why: One owner for timing helpers; the TanStack-always ruling.
+    lost:
+      - name: hand-rolled setTimeout debounce
+        why: each copy differs in cancel and trailing behaviour
+      - name: lodash debounce
+        why: a utility belt for one function is the banned shape
+    open:
+      - Moved from fw-react by the split because the choice is not React specific.
+  - key: tanstack-hotkeys
+    name: "keyboard shortcuts: TanStack Hotkeys"
+    role: >-
+      Keyboard shortcuts use one shortcut library; no window keydown listener and no second shortcut package.
+    binding: ts
+    ships: >-
+      the import ban on a second shortcut package and a lint on window keydown listeners
+    state: chosen
+    why: >-
+      One owner for shortcuts, with every control still keyboard operable; the TanStack-always ruling.
+    lost:
+      - name: react-hotkeys-hook
+        why: a second shortcut package is banned
+      - name: window keydown listener
+        why: raw listeners bypass the shortcut registry
+    open:
+      - Moved from fw-react by the split because the choice is not React specific.

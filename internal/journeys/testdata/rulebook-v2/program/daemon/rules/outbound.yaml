@@ -1,0 +1,99 @@
+part: daemon
+concern: outbound
+order: 7
+title: Outbound calls
+summary: >-
+  A daemon that calls out keeps its credentials where they were sent: a client carrying a credential follows
+  no redirect, a request to an owner-configured address is signed and dialled at the address it checked, kept
+  records never hold a channel's address or token, and a shared public allowance is spent within a daily
+  budget.
+rules:
+  - id: daemon.outbound.1
+    slug: no-redirect-signed-dialled-checked
+    since: 0.1.0
+    rule: >-
+      A client carrying a credential follows no redirect and reports one as an error naming the callee; a
+      request to an owner-configured address puts its token in a header, never the address, signs the body
+      with a timestamp, resolves the name once and dials the address it checked, needs https outside loopback
+      and private networks, and sends nothing a read permission would not show.
+    detail: >-
+      The shared client sets a redirect policy that returns an error when the request carries a credential. A
+      webhook or similar call uses an Authorization header, an HMAC over the timestamp and the body, a stated
+      timeout (for example 10 seconds), and a dialer that connects to the resolved address it validated, so a
+      DNS answer cannot change between the check and the dial. Plain http is allowed only to loopback, private
+      or private-network addresses. The body is built from what the read permission for that subject would
+      return, never from internal state.
+    level: program
+    why: >-
+      Each closes a real leak: a key sent on to a redirect target, a token in an address that lands in a log,
+      a DNS rebind between check and dial, and a payload that tells a channel more than its reader may know.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+        - cli
+        - service
+    unless:
+      - facets:
+          - no-http
+        reason: A program that builds no HTTP client calls nothing out.
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          tests on the shared client constructor: a credentialed request to a stub that redirects must fail
+          naming the callee; a webhook to a stub asserts the header token, the signature over timestamp and
+          body, a single resolve and a dial to the checked address; an http address outside private ranges is
+          refused. Plant: a client that follows a redirect with an Authorization header fails, and a token in
+          the query string fails. Control: the shared client refusing the redirect and signing the body passes
+    relates:
+      - id: daemon.access.5
+        how: see
+      - id: service.outbound.2
+        how: see
+    note: >-
+      daemon.access.5 and service.outbound.2 hold timeouts; this rule adds where a credential may travel.
+  - id: daemon.outbound.2
+    slug: channel-secrets-out-of-records-daily-budget
+    since: 0.1.0
+    rule: >-
+      A record or answer about an outbound channel never holds its address or token, its failure text is the
+      program's own words, length-capped and cleaned, and a call to an outside service whose allowance is
+      shared has a daily budget in code and uses the cheapest request that answers.
+    detail: >-
+      A channel is shown by name and kind only. A failure from the far side is reduced to a short sentence of
+      the program's own with control characters stripped, and the raw text goes to the log without the address
+      or token. A shared allowance is one the caller does not own alone (an anonymous rate limit, a public
+      registry's quota); the budget is a constant per service and day, counted in the program's state, and a
+      call past it is skipped with a sentence. The cheapest request is the one that reads the least (a HEAD, a
+      digest, a conditional request).
+    level: program
+    why: >-
+      A channel address often is its credential, so any record that holds it leaks it. A shared public
+      allowance spent carelessly is taken from everyone who shares it.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+        - cli
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a canary test that configures a channel with a canary address and token, drives a failure and reads
+          every record, answer and log line for the canary; a test that the budget table has an entry for
+          every shared-allowance client and that the call past the budget is skipped. Plant: a channel status
+          answer carrying the webhook address fails, and a registry client with no daily budget fails.
+          Control: an answer naming the channel only, and a budgeted client, pass

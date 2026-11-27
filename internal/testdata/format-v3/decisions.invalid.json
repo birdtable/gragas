@@ -1,0 +1,5 @@
+[
+  {"name": "an unknown field", "patch": [{"op": "add", "path": "/0/decisions/0/status", "value": "open"}], "problem": "Additional properties are not allowed ('status' was unexpected)"},
+  {"name": "a missing required field", "patch": [{"op": "remove", "path": "/0/decisions/0/who"}], "problem": "'who' is a required property"},
+  {"name": "a wrong date", "patch": [{"op": "replace", "path": "/0/decisions/0/date", "value": "2 October"}], "problem": "does not match"}
+]

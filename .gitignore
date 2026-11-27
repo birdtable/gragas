@@ -1,0 +1,13 @@
+/gragas
+/dist/
+node_modules/
+.DS_Store
+/bin/
+/.tools/
+/times/
+/internal/host/assets/explorer-copy/*
+!/internal/host/assets/explorer-copy/.gitkeep
+
+# the stand-in the contract tests build
+/internal/host/tool/testdata/standin/standin
+/internal/host/tool/testdata/standin/standin.exe

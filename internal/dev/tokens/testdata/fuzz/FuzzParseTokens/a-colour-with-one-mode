@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"grounds\":{\"page\":{\"light\":\"#ffffff\",\"dark\":\"#000000\"}},\"text\":{\"ink\":{\"light\":\"#000000\"}}}")

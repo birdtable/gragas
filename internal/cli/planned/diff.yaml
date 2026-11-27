@@ -1,0 +1,10 @@
+name: diff
+order: 270
+context: B
+ends: listing
+summary: "List what changed between two releases"
+examples:
+  - {line: "gragas diff <from> <to>", does: "list the changes"}
+  - {line: "gragas diff <from> <to> --json", does: "as one JSON document"}
+exits: ["done"]
+json: diff

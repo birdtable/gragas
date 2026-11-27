@@ -1,0 +1,77 @@
+format: 3
+part: service
+concern: errors
+rules:
+  - id: service.errors.1
+    statement: No empty catch and no catch that returns a default.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, every error is handled or returned and nothing is swallowed."
+      pros:
+        - A swallowed error turns a failure into missing data that surfaces far from its cause.
+  - id: service.errors.2
+    statement: "An error code is a value from the program's own closed typed list, written in the casing the program declares (service.contract.10), and a code is never reused for a new meaning."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+    reasoning:
+      definition: "The rulebook names no default casing: the code list is linted against the program's one declared casing, and a program with no declaration fails. In Go, exit codes are one tested table and typed errors are a closed set."
+      pros:
+        - "A code that changes meaning breaks every caller that branches on it, and a code in a second casing is a second vocabulary for one reader to learn."
+    relations:
+      relates:
+        - service.contract.10
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.errors.3
+    statement: "An error message is a developer diagnostic and is never shown to users; users see a text chosen from the code."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - A raw message leaks internals and changes with every refactor.
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+  - id: service.errors.4
+    statement: "Each contract lists its error codes as one enum, referenced by every error response; an error is always a non-2xx status with the JSON error body, including errors raised before the handler runs or by a proxy in front of it; and a 2xx never carries an error."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+    reasoning:
+      definition: "Errors raised before the handler include a filtered request and a gateway 401 or 403; a proxy in front of the program is configured to answer with the same JSON body, never an empty 502 or an HTML page. A 200 with an error field, an error flag or an error sentence inside is a defect. In Go, the exit-code table and the command tree list every code and are compared."
+      pros:
+        - "A code the contract does not list cannot be handled by a generated client, and platform codes are the ones nobody remembers. A reader that has to look inside a 200 for an error is a reader that guesses, and one that guesses breaks."
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.errors.5
+    statement: "Every error carries a request id a user can quote, from the handler and from the gateway."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, every log line carries a run id and errors name the next step."
+      pros:
+        - A user reporting an error with no id leaves support to search by time and guess.

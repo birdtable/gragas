@@ -1,0 +1,10 @@
+layers:
+  - key: base
+    name: Base
+parts:
+  - short: arch
+    layer: base
+    name: Architecture
+    facets:
+      - no-identity
+    owner: operator

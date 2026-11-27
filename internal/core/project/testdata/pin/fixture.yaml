@@ -1,0 +1,6 @@
+rulebook: fixture-base
+version: 1.2.0
+source: https://example.com/fixture-base.git
+kinds: [service]
+parts: [base, go, web]
+key: SHA256:IO3hwopf6CEo8MIkiWWZ/yfXqJ/prEGFU6WEg0el+wA

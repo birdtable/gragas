@@ -1,0 +1,38 @@
+format: 3
+part: base
+concern: errors
+rules:
+  - id: base.errors.1
+    statement: Return an error with the step that failed in it.
+    strength: must
+    status: active
+    owner: alex
+    review_by: "2027-03-01"
+    origin: imported
+    sources:
+      - {ref: rfc-0001, where: section 2, says: A returned error names the step that failed., backs: rule}
+    bindings:
+      - tool: golangci-lint
+        target: config
+        key: errorlint
+        value: true
+        severity: error
+        rung: 0
+        run_point: edit
+  - id: base.errors.2
+    statement: Name the cause of an error and not only its symptom.
+    strength: should
+    status: trial
+    owner: alex
+    origin: authored
+    sources:
+      - {ref: outage-note, says: The outage message named no cause., backs: rule}
+    bindings:
+      - tool: golangci-lint
+        target: config
+        key: nilerr
+        value: true
+        severity: warning
+        rung: 1
+        run_point: commit
+        remedy: Return the error you were given.

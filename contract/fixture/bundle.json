@@ -1,0 +1,1679 @@
+{
+  "adapters_used": [
+    {
+      "adapter_version": "1.0.0",
+      "tool": "golangci-lint",
+      "waiver_syntax": "//nolint:<linter> // waiver <id>"
+    }
+  ],
+  "bindings": [
+    {
+      "key": "errorlint",
+      "proof": {
+        "adapter_version": "1.0.0",
+        "binding": "base.errors.1/golangci-lint/errorlint",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "2.1.0"
+      },
+      "rule": "base.errors.1",
+      "run_point": "edit",
+      "rung": 0,
+      "severity": "error",
+      "target_type": "config",
+      "tool": "golangci-lint",
+      "value": true
+    },
+    {
+      "key": "nilerr",
+      "proof": {
+        "adapter_version": "1.0.0",
+        "binding": "base.errors.2/golangci-lint/nilerr",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "2.1.0"
+      },
+      "remedy": "Return the error you were given.",
+      "rule": "base.errors.2",
+      "run_point": "commit",
+      "rung": 1,
+      "severity": "warning",
+      "target_type": "config",
+      "tool": "golangci-lint",
+      "value": true
+    },
+    {
+      "key": "revive.var-naming",
+      "proof": {
+        "adapter_version": "1.0.0",
+        "binding": "base.naming.1/golangci-lint/revive.var-naming",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "2.1.0"
+      },
+      "rule": "base.naming.1",
+      "run_point": "edit",
+      "rung": 1,
+      "severity": "info",
+      "target_type": "config",
+      "tool": "golangci-lint",
+      "value": [
+        {
+          "name": "var-naming"
+        }
+      ]
+    },
+    {
+      "key": "one-change",
+      "pair": 1,
+      "pair_path": "db/001.sql",
+      "proof": {
+        "binding": "base.targets.1/sqlfluff/one-change",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "none"
+      },
+      "rule": "base.targets.1",
+      "run_point": "commit",
+      "rung": 3,
+      "severity": "warning",
+      "target_type": "migration",
+      "tool": "sqlfluff",
+      "value": 1
+    },
+    {
+      "key": "pinned-actions",
+      "pair": 2,
+      "pair_path": ".ci/build.yml",
+      "proof": {
+        "binding": "base.targets.1/workflow-lint/pinned-actions",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "none"
+      },
+      "rule": "base.targets.1",
+      "run_point": "push",
+      "rung": 2,
+      "severity": "error",
+      "target_type": "workflow",
+      "tool": "workflow-lint",
+      "value": true
+    },
+    {
+      "key": "tagged",
+      "proof": {
+        "binding": "base.targets.2/iac-lint/tagged",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "none"
+      },
+      "rule": "base.targets.2",
+      "run_point": "release",
+      "rung": 4,
+      "severity": "info",
+      "target_type": "iac",
+      "tool": "iac-lint",
+      "value": [
+        "owner",
+        "team"
+      ]
+    },
+    {
+      "key": "documented",
+      "proof": {
+        "binding": "base.targets.2/spec-lint/documented",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "none"
+      },
+      "rule": "base.targets.2",
+      "run_point": "review",
+      "rung": 2,
+      "severity": "warning",
+      "target_type": "api-spec",
+      "tool": "spec-lint",
+      "value": true
+    },
+    {
+      "key": "subject-length",
+      "proof": {
+        "binding": "base.targets.2/message-lint/subject-length",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "none"
+      },
+      "rule": "base.targets.2",
+      "run_point": "commit",
+      "rung": 2,
+      "severity": "info",
+      "target_type": "commit",
+      "tool": "message-lint",
+      "value": 72
+    },
+    {
+      "key": "named",
+      "proof": {
+        "binding": "base.targets.2/registry-lint/named",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "none"
+      },
+      "rule": "base.targets.2",
+      "run_point": "land",
+      "rung": 5,
+      "severity": "info",
+      "target_type": "telemetry-registry",
+      "tool": "registry-lint",
+      "value": true
+    },
+    {
+      "key": "licence-listed",
+      "proof": {
+        "binding": "base.targets.2/package-lint/licence-listed",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "none"
+      },
+      "rule": "base.targets.2",
+      "run_point": "deploy",
+      "rung": 3,
+      "severity": "warning",
+      "target_type": "package",
+      "tool": "package-lint",
+      "value": true
+    },
+    {
+      "key": "wrapcheck",
+      "options": {
+        "ignorePackageGlobs": [
+          "example.com/*"
+        ],
+        "ignoreSigs": [
+          ".Errorf("
+        ]
+      },
+      "pair": 1,
+      "pair_path": "pkg/a.go",
+      "proof": {
+        "adapter_version": "1.0.0",
+        "binding": "go.errors.1/golangci-lint/wrapcheck",
+        "result": "pass",
+        "run_level": "pair",
+        "tool_version": "2.1.0"
+      },
+      "remedy": "Wrap the error with fmt.Errorf and %w.",
+      "rule": "go.errors.1",
+      "run_point": "push",
+      "rung": 1,
+      "severity": "error",
+      "target_type": "config",
+      "tightens": "std.errors.1",
+      "tool": "golangci-lint",
+      "value": true
+    },
+    {
+      "key": "errorlint",
+      "pair": 2,
+      "pair_path": ".golangci.yml",
+      "proof": {
+        "adapter_version": "1.0.0",
+        "binding": "go.errors.1/golangci-lint/errorlint",
+        "result": "pass",
+        "run_level": "pair",
+        "tool_version": "2.1.0"
+      },
+      "rule": "go.errors.1",
+      "run_point": "land",
+      "rung": 0,
+      "severity": "error",
+      "target_type": "config",
+      "tool": "golangci-lint",
+      "value": true
+    },
+    {
+      "checker": "wrapcheck-plugin",
+      "key": "staticcheck.SA4006",
+      "pair": 1,
+      "pair_path": "pkg/b.go",
+      "proof": {
+        "adapter_version": "1.0.0",
+        "binding": "go.errors.3/golangci-lint/staticcheck.SA4006",
+        "result": "fail",
+        "run_level": "pair",
+        "tool_version": "2.1.0"
+      },
+      "rule": "go.errors.3",
+      "run_point": "review",
+      "rung": 3,
+      "severity": "error",
+      "target_type": "source",
+      "tool": "golangci-lint",
+      "value": 3.5
+    },
+    {
+      "key": "layout-reviewed",
+      "pair": 1,
+      "pair_path": "README.md",
+      "proof": {
+        "binding": "go.layout.1/review/layout-reviewed",
+        "result": "reviewed",
+        "run_level": "pair",
+        "rung": 6,
+        "tool_version": "none"
+      },
+      "rule": "go.layout.1",
+      "run_point": "review",
+      "rung": 6,
+      "severity": "warning",
+      "target_type": "prose",
+      "tool": "review",
+      "value": "a person looks"
+    },
+    {
+      "key": "wrapcheck",
+      "proof": {
+        "adapter_version": "1.0.0",
+        "binding": "go.layout.2/golangci-lint/wrapcheck",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "2.1.0"
+      },
+      "rule": "go.layout.2",
+      "run_point": "push",
+      "rung": 2,
+      "severity": "error",
+      "target_type": "config",
+      "tool": "golangci-lint",
+      "value": false
+    },
+    {
+      "key": "depguard",
+      "proof": {
+        "adapter_version": "1.0.0",
+        "binding": "go.layout.2/golangci-lint/depguard",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "2.1.0"
+      },
+      "rule": "go.layout.2",
+      "run_point": "deploy",
+      "rung": 4,
+      "severity": "warning",
+      "target_type": "dependency",
+      "tool": "golangci-lint",
+      "value": {
+        "list-mode": "lax"
+      }
+    },
+    {
+      "key": "one-process",
+      "proof": {
+        "binding": "go.layout.3/container-lint/one-process",
+        "reason": "no pair",
+        "result": "not run",
+        "tool_version": "none"
+      },
+      "rule": "go.layout.3",
+      "run_point": "release",
+      "rung": 5,
+      "severity": "info",
+      "target_type": "container",
+      "tool": "container-lint"
+    },
+    {
+      "key": "field-label",
+      "pair": 1,
+      "pair_path": "src/form.html",
+      "proof": {
+        "binding": "web.forms.1/stylelint/field-label",
+        "result": "pass",
+        "run_level": "pair",
+        "tool_version": "16.0.0"
+      },
+      "rule": "web.forms.1",
+      "run_point": "commit",
+      "rung": 2,
+      "severity": "error",
+      "target_type": "source",
+      "tool": "stylelint",
+      "value": true
+    }
+  ],
+  "changelog": [
+    {
+      "bump": "major",
+      "change": "added",
+      "consumer_action": "Wrap every error a service returns with what was being done.",
+      "date": "2026-09-30",
+      "entity": "rule:go.errors.1",
+      "release": "1.0.0",
+      "remedy": "Wrap the error with fmt.Errorf and %w.",
+      "sentence": "A service wraps an error with what was being done."
+    },
+    {
+      "bump": "major",
+      "change": "added",
+      "date": "2026-09-30",
+      "entity": "rule:go.layout.1",
+      "release": "1.0.0",
+      "sentence": "The program lives under cmd and everything else under internal."
+    },
+    {
+      "bump": "minor",
+      "change": "changed",
+      "consumer_action": "Expect the wrapcheck setting at error severity from now on.",
+      "date": "2026-10-31",
+      "diff": "https://example.com/fixture-base/compare/1.0.0...1.1.0",
+      "entity": "rule:go.errors.1",
+      "release": "1.1.0",
+      "sentence": "The rule leaves trial and is in force."
+    },
+    {
+      "bump": "minor",
+      "change": "added",
+      "date": "2026-10-31",
+      "entity": "rule:base.naming.1",
+      "release": "1.1.0",
+      "sentence": "A thing is named for what it holds."
+    },
+    {
+      "bump": "minor",
+      "change": "replaced",
+      "consumer_action": "Read base.naming.1 where you read base.naming.2.",
+      "date": "2026-10-31",
+      "entity": "rule:base.naming.2",
+      "release": "1.1.0",
+      "sentence": "The rule is retired in favour of base.naming.1."
+    },
+    {
+      "bump": "minor",
+      "change": "added",
+      "date": "2026-11-07",
+      "entity": "rule:go.errors.3",
+      "release": "1.2.0",
+      "sentence": "An error is checked before the value it came with, on trial until 2027-06-01."
+    },
+    {
+      "bump": "minor",
+      "change": "added",
+      "date": "2026-11-07",
+      "entity": "rule:web.forms.1",
+      "release": "1.2.0",
+      "sentence": "An error shows beside the field it is about."
+    },
+    {
+      "bump": "minor",
+      "change": "changed",
+      "date": "2026-11-07",
+      "entity": "term:gate",
+      "release": "1.2.0",
+      "sentence": "The gate's literal is now make check."
+    }
+  ],
+  "checker_code": [
+    {
+      "by_reference": false,
+      "digest": "sha256:60c93c1ff6c2418b948cae5b127341e5d8e1738b6feeda31431f89bf230dbb62",
+      "licence": "Apache-2.0",
+      "name": "wrapcheck-plugin",
+      "publisher": "alex",
+      "reviewed_by": [
+        "alex"
+      ],
+      "tests_present": true,
+      "tool": "golangci-lint"
+    }
+  ],
+  "conflicts": [
+    {
+      "entity": "golangci-lint/wrapcheck",
+      "fix": "Split the entry, or record a decision that names the winner.",
+      "kind": "conflict",
+      "location": "bindings",
+      "message": "go.errors.1 sets wrapcheck to true and go.layout.2 sets it to false.",
+      "notice": false,
+      "refusal": false,
+      "rule": "go.errors.1"
+    }
+  ],
+  "contract": "1.3",
+  "coverage": {
+    "bindings_to_rules": [
+      "container-lint/one-process",
+      "golangci-lint/depguard",
+      "golangci-lint/errorlint",
+      "golangci-lint/nilerr",
+      "golangci-lint/revive.var-naming",
+      "golangci-lint/staticcheck.SA4006",
+      "golangci-lint/wrapcheck",
+      "iac-lint/tagged",
+      "message-lint/subject-length",
+      "package-lint/licence-listed",
+      "registry-lint/named",
+      "review/layout-reviewed",
+      "spec-lint/documented",
+      "sqlfluff/one-change",
+      "stylelint/field-label",
+      "workflow-lint/pinned-actions"
+    ],
+    "rules_to_bindings": [
+      "base.errors.1",
+      "base.errors.2",
+      "base.naming.1",
+      "base.targets.1",
+      "base.targets.2",
+      "go.errors.1",
+      "go.errors.3",
+      "go.layout.1",
+      "go.layout.2",
+      "go.layout.3",
+      "web.forms.1"
+    ]
+  },
+  "decisions": [
+    {
+      "cites": {
+        "bindings": [
+          "golangci-lint/wrapcheck"
+        ],
+        "rules": [
+          "go.errors.1"
+        ],
+        "sources": [
+          "effective-go",
+          "error-study"
+        ]
+      },
+      "date": "2026-09-02",
+      "rejected": [
+        "return errors bare",
+        "log and return"
+      ],
+      "slug": "wrap-errors",
+      "superseded_by": "wrap-errors-again",
+      "text": "Wrapping keeps the cause and adds the step that failed.",
+      "title": "Wrap every error",
+      "who": "alex"
+    },
+    {
+      "cites": {
+        "rules": [
+          "go.errors.1"
+        ]
+      },
+      "date": "2026-10-03",
+      "slug": "wrap-errors-again",
+      "supersedes": "wrap-errors",
+      "text": "The step is named in the message, not only the call.",
+      "title": "Wrap every error, with the step named",
+      "who": "alex"
+    },
+    {
+      "date": "2026-10-20",
+      "slug": "house-call",
+      "text": "Every form field has a label the reader can see.",
+      "title": "Forms are labelled",
+      "who": "alex"
+    }
+  ],
+  "exclusions": [
+    {
+      "decision": "house-call",
+      "number": 1,
+      "overlay": "fixture-base",
+      "rule": "std.errors.2",
+      "when": "2026-10-21T09:00:00Z",
+      "who": "alex"
+    },
+    {
+      "decision": "house-call",
+      "lifted": {
+        "decision": "wrap-errors-again",
+        "when": "2026-11-02T09:00:00Z",
+        "who": "alex"
+      },
+      "number": 1,
+      "overlay": "fixture-base",
+      "rule": "std.errors.3",
+      "when": "2026-10-22T09:00:00Z",
+      "who": "alex"
+    }
+  ],
+  "health": {
+    "numbers": [
+      {
+        "name": "rules-held",
+        "value": 0.8462
+      },
+      {
+        "name": "entries-explained",
+        "value": 1
+      },
+      {
+        "name": "proof-pass-rate",
+        "value": 0.75
+      },
+      {
+        "name": "completeness",
+        "value": 0.2727
+      },
+      {
+        "name": "review-currency",
+        "value": 1
+      },
+      {
+        "name": "attention-size",
+        "value": 11
+      },
+      {
+        "name": "days-to-active-median",
+        "value": 1
+      }
+    ],
+    "resolved": false
+  },
+  "history": [
+    {
+      "after": {
+        "status": "proposed"
+      },
+      "entity": "rule:go.errors.1",
+      "kind": "init",
+      "number": 1,
+      "plan": "sha256:6988e53c48a5ec3528cfdf8d4676191340f7f07e0855d2e3fb31fd6c66f15a71",
+      "status": "proposed",
+      "when": "2026-09-01T09:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "status": "trial"
+      },
+      "before": {
+        "status": "proposed"
+      },
+      "decision": "wrap-errors",
+      "entity": "rule:go.errors.1",
+      "kind": "promote",
+      "number": 2,
+      "plan": "sha256:04a75b82a19181e21969b952efa3a5be22f4047dbfb6efc5cf90144b4c12a358",
+      "status": "trial",
+      "when": "2026-09-03T09:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "status": "proposed"
+      },
+      "entity": "rule:go.layout.1",
+      "kind": "init",
+      "number": 3,
+      "plan": "sha256:d303991a596304fd0cdc6eabf9d64d79ce4ab049970c016d7dc3fe7ab4f96dbe",
+      "status": "proposed",
+      "when": "2026-09-04T09:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "owner": "alex",
+        "review_by": "2027-03-01",
+        "status": "active"
+      },
+      "before": {
+        "status": "proposed"
+      },
+      "decision": "house-call",
+      "entity": "rule:go.layout.1",
+      "kind": "promote",
+      "number": 4,
+      "plan": "sha256:d8f7fc1aa3f46625d14ba5e9c62718aca8392e203db4d7a42e8b0b2c173c9d95",
+      "status": "active",
+      "when": "2026-09-05T09:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "owner": "alex",
+        "review_by": "2027-03-01",
+        "status": "active"
+      },
+      "before": {
+        "status": "trial"
+      },
+      "decision": "wrap-errors-again",
+      "entity": "rule:go.errors.1",
+      "kind": "promote",
+      "number": 5,
+      "plan": "sha256:e9fb5d71bad087bb35a5e75797b7580726d3212551ab413b05b40aa55d07b47a",
+      "status": "active",
+      "when": "2026-10-03T09:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "status": "proposed"
+      },
+      "entity": "rule:base.naming.1",
+      "kind": "init",
+      "number": 6,
+      "plan": "sha256:f0c3529149ae52ca4e4e8198df30e14f20342ef54562106d832a0d5da911b523",
+      "status": "proposed",
+      "when": "2026-10-05T09:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "owner": "alex",
+        "review_by": "2027-03-01",
+        "status": "active"
+      },
+      "before": {
+        "status": "proposed"
+      },
+      "entity": "rule:base.naming.1",
+      "kind": "promote",
+      "number": 7,
+      "plan": "sha256:dc0f3e814a0994f8529779b458015a9093059d6044a57879043d7001ac83d6ac",
+      "status": "active",
+      "when": "2026-10-05T10:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "status": "proposed"
+      },
+      "entity": "rule:base.naming.2",
+      "kind": "init",
+      "number": 8,
+      "plan": "sha256:c30d2ee9e1537bd25fd9be8a68ac49314a4bb6e774bf1711a8078c9db9973f69",
+      "status": "proposed",
+      "when": "2026-10-06T09:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "replaced_by": "base.naming.1",
+        "status": "retired"
+      },
+      "before": {
+        "status": "proposed"
+      },
+      "entity": "rule:base.naming.2",
+      "kind": "retire",
+      "number": 9,
+      "plan": "sha256:49c618927ed7991d332c9942f0c19989a31c7a3e71ec6a045335d3e43186d38d",
+      "status": "retired",
+      "when": "2026-10-06T10:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "status": "proposed"
+      },
+      "entity": "rule:go.errors.3",
+      "kind": "init",
+      "number": 10,
+      "plan": "sha256:96f7b41845c06e2a694aef4f8b493f16490fcfe5fa7b15ce34bf53136b3e13ec",
+      "status": "proposed",
+      "when": "2026-11-02T09:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "owner": "alex",
+        "status": "trial",
+        "zero_by": "2027-06-01"
+      },
+      "before": {
+        "status": "proposed"
+      },
+      "entity": "rule:go.errors.3",
+      "kind": "promote",
+      "number": 11,
+      "plan": "sha256:09b2fce28e438ca81a4c50440febcf9c5df71d9e2e44bdd777daa9b35206b228",
+      "status": "trial",
+      "when": "2026-11-03T09:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "status": "proposed"
+      },
+      "entity": "rule:web.forms.1",
+      "kind": "init",
+      "number": 12,
+      "plan": "sha256:53678bfbeca4bd99805b2d69a9e0c6f102950e4f0a2bab0a21eae76830df2a7a",
+      "status": "proposed",
+      "when": "2026-11-04T09:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "owner": "alex",
+        "review_by": "2027-03-01",
+        "status": "active"
+      },
+      "before": {
+        "status": "proposed"
+      },
+      "decision": "house-call",
+      "entity": "rule:web.forms.1",
+      "kind": "promote",
+      "number": 13,
+      "plan": "sha256:2a0f0f0122462bb9edff414c0ef9a4de2068b400e2ab4bfe43d6bb78669c1528",
+      "status": "active",
+      "when": "2026-11-05T09:00:00Z",
+      "who": "alex"
+    },
+    {
+      "after": {
+        "literal": "make check",
+        "status": "active"
+      },
+      "before": {
+        "literal": "make test",
+        "status": "active"
+      },
+      "entity": "term:gate",
+      "kind": "edit",
+      "number": 14,
+      "plan": "sha256:3d1c5a8e0b7f4926a1d3c8e5f7b20946d1a8c3e57f0b4d92861c5e3a7f9b0d24",
+      "status": "active",
+      "when": "2026-11-06T09:00:00Z",
+      "who": "alex"
+    }
+  ],
+  "identity": {
+    "docs_url": "https://example.com/fixture-base/",
+    "explorer_url": "https://example.org/fixture-base/explorer/",
+    "extends": {
+      "content_hash": "sha256:ab78351089603a19341bd2b875a5f7348d516b1d60335727c5e54c1e62131640",
+      "rulebook": "fixture-parent",
+      "version": "0.9.0"
+    },
+    "format": 3,
+    "governance": {
+      "contribution": "proposals",
+      "decision_required": true,
+      "review_days": 180,
+      "trial_releases": 2
+    },
+    "imports": [
+      {
+        "content_hash": "sha256:b77b6a5859c584ff1f1acf5fc4f59e3d19d9a213e8bcf5a944a130fb0b3fa6c2",
+        "parts": [
+          "ui"
+        ],
+        "rulebook": "fixture-other",
+        "version": "0.3.0"
+      }
+    ],
+    "kind": "overlay",
+    "language": "en",
+    "licences": {
+      "checker_code": "Apache-2.0",
+      "presets": "MIT",
+      "rules": "CC-BY-4.0"
+    },
+    "name": "fixture-base",
+    "owners": [
+      "alex"
+    ],
+    "successor": "fixture-other",
+    "version": "1.2.0"
+  },
+  "presets": [
+    {
+      "digest": "sha256:63d6286460cdb0a9b76f0795153c8dcb8933f709a4ca577f8f8be2af2a135491",
+      "entries": 1,
+      "extends": [
+        {
+          "rulebook": "fixture-parent",
+          "version": "0.9.0"
+        }
+      ],
+      "licence": "MIT",
+      "name": "base",
+      "release": "1.2.0",
+      "tool": "stylelint"
+    }
+  ],
+  "proof_grid": [
+    {
+      "adapter_version": "1.0.0",
+      "binding": "base.errors.1/golangci-lint/errorlint",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "2.1.0"
+    },
+    {
+      "adapter_version": "1.0.0",
+      "binding": "base.errors.2/golangci-lint/nilerr",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "2.1.0"
+    },
+    {
+      "adapter_version": "1.0.0",
+      "binding": "base.naming.1/golangci-lint/revive.var-naming",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "2.1.0"
+    },
+    {
+      "binding": "base.targets.1/sqlfluff/one-change",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "none"
+    },
+    {
+      "binding": "base.targets.1/workflow-lint/pinned-actions",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "none"
+    },
+    {
+      "binding": "base.targets.2/iac-lint/tagged",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "none"
+    },
+    {
+      "binding": "base.targets.2/spec-lint/documented",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "none"
+    },
+    {
+      "binding": "base.targets.2/message-lint/subject-length",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "none"
+    },
+    {
+      "binding": "base.targets.2/registry-lint/named",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "none"
+    },
+    {
+      "binding": "base.targets.2/package-lint/licence-listed",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "none"
+    },
+    {
+      "adapter_version": "1.0.0",
+      "binding": "go.errors.1/golangci-lint/wrapcheck",
+      "result": "pass",
+      "run_level": "pair",
+      "tool_version": "2.1.0"
+    },
+    {
+      "adapter_version": "1.0.0",
+      "binding": "go.errors.1/golangci-lint/errorlint",
+      "result": "pass",
+      "run_level": "pair",
+      "tool_version": "2.1.0"
+    },
+    {
+      "adapter_version": "1.0.0",
+      "binding": "go.errors.3/golangci-lint/staticcheck.SA4006",
+      "result": "fail",
+      "run_level": "pair",
+      "tool_version": "2.1.0"
+    },
+    {
+      "binding": "go.layout.1/review/layout-reviewed",
+      "result": "reviewed",
+      "run_level": "pair",
+      "rung": 6,
+      "tool_version": "none"
+    },
+    {
+      "adapter_version": "1.0.0",
+      "binding": "go.layout.2/golangci-lint/wrapcheck",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "2.1.0"
+    },
+    {
+      "adapter_version": "1.0.0",
+      "binding": "go.layout.2/golangci-lint/depguard",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "2.1.0"
+    },
+    {
+      "binding": "go.layout.3/container-lint/one-process",
+      "reason": "no pair",
+      "result": "not run",
+      "tool_version": "none"
+    },
+    {
+      "binding": "web.forms.1/stylelint/field-label",
+      "result": "pass",
+      "run_level": "pair",
+      "tool_version": "16.0.0"
+    }
+  ],
+  "release": {
+    "assets": [
+      {
+        "digest": "sha256:63d6286460cdb0a9b76f0795153c8dcb8933f709a4ca577f8f8be2af2a135491",
+        "path": "presets/stylelint/base.json"
+      }
+    ],
+    "bump": "minor",
+    "checker_code": [
+      {
+        "digest": "sha256:60c93c1ff6c2418b948cae5b127341e5d8e1738b6feeda31431f89bf230dbb62",
+        "name": "wrapcheck-plugin",
+        "publisher": "alex"
+      }
+    ],
+    "contract": "1.3",
+    "date": "2026-11-07",
+    "format": 3,
+    "health": {
+      "numbers": [
+        {
+          "name": "rules-held",
+          "value": 0.8462
+        },
+        {
+          "name": "entries-explained",
+          "value": 1
+        },
+        {
+          "name": "proof-pass-rate",
+          "value": 0.75
+        },
+        {
+          "name": "completeness",
+          "value": 0.2727
+        },
+        {
+          "name": "review-currency",
+          "value": 1
+        },
+        {
+          "name": "attention-size",
+          "value": 11
+        },
+        {
+          "name": "days-to-active-median",
+          "value": 1
+        }
+      ],
+      "resolved": false
+    },
+    "release_note": "Adds a rule about checking an error before its value and a rule about labelling form fields.",
+    "tested_set": {
+      "adapters": [
+        {
+          "adapter": "golangci-lint",
+          "version": "1.0.0"
+        }
+      ],
+      "kits": [
+        {
+          "kit": "fixture-kit",
+          "version": "0.2.0"
+        }
+      ],
+      "minimum_engine": "0.1.0",
+      "plugins": [
+        {
+          "plugin": "wrapcheck-plugin",
+          "version": "1.4.0"
+        }
+      ],
+      "tools": [
+        {
+          "tool": "golangci-lint",
+          "version": "2.1.0"
+        },
+        {
+          "tool": "stylelint",
+          "version": "16.0.0"
+        }
+      ]
+    },
+    "version": "1.2.0"
+  },
+  "released": true,
+  "rendering_manifest": [
+    {
+      "release": "1.2.0",
+      "renderings": [
+        {
+          "language": "en",
+          "path": "pages/go/errors.md",
+          "rules": [
+            {
+              "rule": "go.errors.1",
+              "standing": "enforced"
+            },
+            {
+              "rule": "go.errors.3",
+              "standing": "planned"
+            }
+          ],
+          "source_hash": "sha256:218ea07ce580bed9ff2ad6450b283143ee8484d6daad9cc12261704a03d32b7e"
+        },
+        {
+          "language": "fr",
+          "omissions": [
+            {
+              "plan": "sha256:e9fb5d71bad087bb35a5e75797b7580726d3212551ab413b05b40aa55d07b47a",
+              "what": "go.errors.1 reasoning, whose translation is stale",
+              "when": "2026-11-07T09:00:00Z",
+              "who": "alex"
+            }
+          ],
+          "path": "pages/fr/go/errors.md",
+          "rules": [
+            {
+              "rule": "go.errors.1",
+              "standing": "enforced"
+            },
+            {
+              "rule": "go.errors.3",
+              "standing": "planned"
+            }
+          ],
+          "source_hash": "sha256:0c283dfc53679cd79159a688f68f239a85a28e5259faa3eba20f3da74c449e2f"
+        }
+      ],
+      "target": "pages"
+    }
+  ],
+  "rule_map": [
+    {
+      "rows": [
+        {
+          "arrived": "go.errors.1",
+          "left": "go.errors.1",
+          "mark": "weaker",
+          "reason": "The arrival asks wrapcheck only; errorlint is not asked."
+        },
+        {
+          "arrived": "go.errors.2",
+          "left": "go.errors.2",
+          "mark": "tighter",
+          "reason": "The arrival has it active; here it is proposed."
+        },
+        {
+          "arrived": null,
+          "left": "go.layout.1",
+          "mark": "none",
+          "reason": "The arrival has no layout rule."
+        },
+        {
+          "arrived": "ui.forms.1",
+          "left": "web.forms.1",
+          "mark": "same",
+          "reason": "The same check on the same key at the same severity."
+        }
+      ],
+      "rulebook": "fixture-other"
+    }
+  ],
+  "rules": [
+    {
+      "bindings": [
+        "golangci-lint/errorlint"
+      ],
+      "id": "base.errors.1",
+      "marks": [
+        "unproven"
+      ],
+      "origin": "imported",
+      "owner": "alex",
+      "review_by": "2027-03-01",
+      "sources": [
+        "rfc-0001"
+      ],
+      "standing": "planned",
+      "statement": "Return an error with the step that failed in it.",
+      "status": "active",
+      "strength": "must"
+    },
+    {
+      "bindings": [
+        "golangci-lint/nilerr"
+      ],
+      "id": "base.errors.2",
+      "marks": [
+        "trial",
+        "unproven"
+      ],
+      "origin": "authored",
+      "sources": [
+        "outage-note"
+      ],
+      "standing": "planned",
+      "statement": "Name the cause of an error and not only its symptom.",
+      "status": "trial",
+      "strength": "should"
+    },
+    {
+      "bindings": [
+        "golangci-lint/revive.var-naming"
+      ],
+      "id": "base.naming.1",
+      "marks": [
+        "unproven"
+      ],
+      "origin": "authored",
+      "owner": "alex",
+      "review_by": "2027-03-01",
+      "sources": [
+        "house-call"
+      ],
+      "standing": "advisory",
+      "statement": "Name a thing for what it holds.",
+      "status": "active",
+      "strength": "may"
+    },
+    {
+      "id": "base.naming.2",
+      "origin": "authored",
+      "replaced_by": "base.naming.1",
+      "standing": "retired",
+      "statement": "Name a thing for what it is.",
+      "status": "retired",
+      "strength": "may"
+    },
+    {
+      "bindings": [
+        "sqlfluff/one-change",
+        "workflow-lint/pinned-actions"
+      ],
+      "id": "base.targets.1",
+      "marks": [
+        "unproven"
+      ],
+      "origin": "authored",
+      "owner": "alex",
+      "pairs": [
+        {
+          "number": 1,
+          "target_type": "migration"
+        },
+        {
+          "number": 2,
+          "target_type": "workflow"
+        }
+      ],
+      "review_by": "2027-03-01",
+      "standing": "planned",
+      "statement": "Keep a change to a schema in a migration of its own.",
+      "status": "active",
+      "strength": "should"
+    },
+    {
+      "bindings": [
+        "iac-lint/tagged",
+        "spec-lint/documented",
+        "message-lint/subject-length",
+        "registry-lint/named",
+        "package-lint/licence-listed"
+      ],
+      "id": "base.targets.2",
+      "marks": [
+        "unproven"
+      ],
+      "origin": "authored",
+      "owner": "alex",
+      "review_by": "2027-03-01",
+      "standing": "planned",
+      "statement": "Describe a resource in code and an interface in a spec.",
+      "status": "active",
+      "strength": "should"
+    },
+    {
+      "aliases": [
+        "go.errs.1"
+      ],
+      "bindings": [
+        "golangci-lint/wrapcheck",
+        "golangci-lint/errorlint"
+      ],
+      "cons": [
+        "A wrapped error costs a line at every return."
+      ],
+      "exemptions": [
+        {
+          "path": "testdata/**",
+          "reason": "Fixtures hold planted code."
+        },
+        {
+          "kind": "library",
+          "reason": "A library returns the error it was given."
+        }
+      ],
+      "id": "go.errors.1",
+      "marks": [
+        "blocked"
+      ],
+      "origin": "authored",
+      "owner": "alex",
+      "pairs": [
+        {
+          "bad": "return err\n",
+          "good": "return fmt.Errorf(\"read the settings: %w\", err)\n",
+          "number": 1,
+          "target_type": "source"
+        },
+        {
+          "number": 2,
+          "target_type": "config"
+        }
+      ],
+      "pros": [
+        "A reader of the log sees what was being done when it failed.",
+        "errors.Is and errors.As still find the cause."
+      ],
+      "reasoning": "An error says what failed and what was being done.",
+      "reasoning_decision": "wrap-errors",
+      "relations": [
+        {
+          "kind": "see-also",
+          "rule": "go.layout.1"
+        },
+        {
+          "kind": "conflicts-with",
+          "rule": "go.layout.2"
+        },
+        {
+          "kind": "see-also",
+          "rule": "base.errors.1"
+        },
+        {
+          "kind": "refines",
+          "rule": "go.errors.2"
+        }
+      ],
+      "review_by": "2027-03-01",
+      "scope": {
+        "kinds": [
+          "service"
+        ],
+        "parts": [
+          "go"
+        ],
+        "paths": [
+          "**/*.go"
+        ]
+      },
+      "sources": [
+        "effective-go",
+        "tool-manual",
+        "error-study"
+      ],
+      "standing": "enforced",
+      "statement": "Wrap an error with what was being done.",
+      "status": "active",
+      "strength": "must",
+      "translations": [
+        {
+          "authoritative_hash": "sha256:81738bbf7851adeccbc0e69b4298a7b62f19a2a648c7299b2a04966dddac6c5e",
+          "entity": "go.errors.1",
+          "field": "statement",
+          "language": "fr",
+          "stale": false,
+          "text": "Enveloppez une erreur avec ce qui était en cours."
+        },
+        {
+          "authoritative_hash": "sha256:f3e17c194cc69178a98115219e19f39e89a7079df9c805a6d52f938a4d8399db",
+          "entity": "go.errors.1",
+          "field": "reasoning",
+          "language": "fr",
+          "stale": true,
+          "text": "Une erreur dit ce qui a échoué et ce qui était en cours."
+        }
+      ]
+    },
+    {
+      "id": "go.errors.2",
+      "origin": "migrated",
+      "standing": "proposed",
+      "statement": "Return an error and never panic in a library.",
+      "status": "proposed",
+      "strength": "should"
+    },
+    {
+      "bindings": [
+        "golangci-lint/staticcheck.SA4006"
+      ],
+      "id": "go.errors.3",
+      "marks": [
+        "trial",
+        "unproven"
+      ],
+      "origin": "authored",
+      "owner": "alex",
+      "pairs": [
+        {
+          "number": 1,
+          "target_type": "source"
+        }
+      ],
+      "standing": "planned",
+      "statement": "Check an error before the value it came with.",
+      "status": "trial",
+      "strength": "must",
+      "trial_shipped": [
+        "1.2.0"
+      ],
+      "zero_by": "2027-06-01"
+    },
+    {
+      "bindings": [
+        "review/layout-reviewed"
+      ],
+      "id": "go.layout.1",
+      "origin": "authored",
+      "owner": "alex",
+      "pairs": [
+        {
+          "number": 1,
+          "target_type": "prose"
+        }
+      ],
+      "review_by": "2027-03-01",
+      "sources": [
+        "house-call"
+      ],
+      "standing": "reviewed",
+      "statement": "Keep the program under cmd and everything else under internal.",
+      "status": "active",
+      "strength": "must"
+    },
+    {
+      "bindings": [
+        "golangci-lint/wrapcheck",
+        "golangci-lint/depguard"
+      ],
+      "id": "go.layout.2",
+      "marks": [
+        "blocked",
+        "unproven"
+      ],
+      "origin": "authored",
+      "owner": "alex",
+      "review_by": "2027-03-01",
+      "standing": "planned",
+      "statement": "Put every package in one folder of its own.",
+      "status": "active",
+      "strength": "must"
+    },
+    {
+      "bindings": [
+        "container-lint/one-process"
+      ],
+      "id": "go.layout.3",
+      "marks": [
+        "unproven"
+      ],
+      "origin": "authored",
+      "owner": "alex",
+      "review_by": "2027-03-01",
+      "standing": "planned",
+      "statement": "Keep a container image to one program.",
+      "status": "active",
+      "strength": "should"
+    },
+    {
+      "anchor": "forms",
+      "bindings": [
+        "stylelint/field-label"
+      ],
+      "id": "web.forms.1",
+      "origin": "authored",
+      "owner": "alex",
+      "pairs": [
+        {
+          "number": 1,
+          "target_type": "source"
+        }
+      ],
+      "review_by": "2027-03-01",
+      "sources": [
+        "house-call"
+      ],
+      "standing": "enforced",
+      "statement": "Give every form field a label.",
+      "status": "active",
+      "strength": "must"
+    },
+    {
+      "anchor": "forms",
+      "id": "web.forms.2",
+      "origin": "authored",
+      "owner": "alex",
+      "review_by": "2027-03-01",
+      "standing": "planned",
+      "statement": "Say what a field is for in its label.",
+      "status": "active",
+      "strength": "should"
+    },
+    {
+      "id": "web.forms.3",
+      "origin": "imported",
+      "owner": "alex",
+      "review_by": "2027-03-01",
+      "standing": "planned",
+      "statement": "Show an error beside the field it is about.",
+      "status": "active",
+      "strength": "should"
+    }
+  ],
+  "sources": [
+    {
+      "attribution": "alex",
+      "kind": "guide",
+      "locator": "https://example.com/effective-go",
+      "slug": "effective-go",
+      "title": "Effective Go"
+    },
+    {
+      "kind": "standard",
+      "locator": "RFC 0001",
+      "slug": "rfc-0001",
+      "title": "A standard of errors"
+    },
+    {
+      "attribution": "alex",
+      "kind": "study",
+      "locator": "doi:10.0000/fixture.1",
+      "slug": "error-study",
+      "title": "A study of error messages"
+    },
+    {
+      "kind": "incident",
+      "locator": "https://example.org/outage-1",
+      "slug": "outage-note",
+      "title": "The outage with no cause in its error"
+    },
+    {
+      "kind": "decision record",
+      "locator": "wrap-errors",
+      "slug": "wrap-record",
+      "title": "The record of wrapping"
+    },
+    {
+      "kind": "vendor document",
+      "locator": "https://example.com/linter/manual",
+      "slug": "tool-manual",
+      "title": "The linter manual"
+    },
+    {
+      "kind": "own decision",
+      "locator": "house-call",
+      "slug": "house-call",
+      "title": "A call the owners made"
+    }
+  ],
+  "structure": {
+    "kinds": [
+      {
+        "description": "A program that runs until it is stopped.",
+        "name": "Service",
+        "slug": "service"
+      },
+      {
+        "description": "Code other programs import.",
+        "name": "Library",
+        "slug": "library"
+      }
+    ],
+    "layers": [
+      {
+        "name": "Core",
+        "order": 1,
+        "slug": "core"
+      },
+      {
+        "name": "Language",
+        "order": 2,
+        "slug": "language"
+      }
+    ],
+    "parts": [
+      {
+        "aliases": [
+          "root"
+        ],
+        "concerns": [
+          {
+            "name": "Errors",
+            "order": 1,
+            "slug": "errors"
+          },
+          {
+            "name": "Naming",
+            "order": 2,
+            "slug": "naming"
+          },
+          {
+            "name": "Targets",
+            "order": 3,
+            "slug": "targets"
+          }
+        ],
+        "layer": "core",
+        "name": "Base",
+        "order": 1,
+        "owners": [
+          "alex"
+        ],
+        "slug": "base"
+      },
+      {
+        "concerns": [
+          {
+            "name": "Errors",
+            "order": 1,
+            "slug": "errors"
+          },
+          {
+            "name": "Layout",
+            "order": 2,
+            "slug": "layout"
+          }
+        ],
+        "layer": "language",
+        "name": "Go",
+        "order": 1,
+        "owners": [
+          "alex"
+        ],
+        "slug": "go"
+      },
+      {
+        "concerns": [
+          {
+            "name": "Forms",
+            "order": 1,
+            "slug": "forms"
+          }
+        ],
+        "guide": "language/web/guide.md",
+        "layer": "language",
+        "name": "Web",
+        "order": 2,
+        "slug": "web"
+      }
+    ]
+  },
+  "terms": [
+    {
+      "definition": "A check that stops a push when it fails.",
+      "literal": "make check",
+      "slug": "gate",
+      "translations": [
+        {
+          "authoritative_hash": "sha256:6dc539bc9f622f0008d02f342786cedddb00febf80bb0dcd303e0348a7b73c7d",
+          "entity": "gate",
+          "field": "definition",
+          "language": "fr",
+          "stale": false,
+          "text": "Un contrôle qui arrête un envoi quand il échoue."
+        }
+      ]
+    },
+    {
+      "definition": "Add what was being done to an error before it is returned.",
+      "slug": "wrap",
+      "translations": [
+        {
+          "authoritative_hash": "sha256:258d54cd5a8e4542ac88e7f282f01d52566d7e08144201512f3475283bc30386",
+          "entity": "wrap",
+          "field": "definition",
+          "language": "fr",
+          "stale": true,
+          "text": "Ajouter ce qui était en cours à une erreur avant de la rendre."
+        }
+      ]
+    }
+  ],
+  "tested_set": {
+    "adapters": [
+      {
+        "adapter": "golangci-lint",
+        "version": "1.0.0"
+      }
+    ],
+    "kits": [
+      {
+        "kit": "fixture-kit",
+        "version": "0.2.0"
+      }
+    ],
+    "minimum_engine": "0.1.0",
+    "plugins": [
+      {
+        "plugin": "wrapcheck-plugin",
+        "version": "1.4.0"
+      }
+    ],
+    "tools": [
+      {
+        "tool": "golangci-lint",
+        "version": "2.1.0"
+      },
+      {
+        "tool": "stylelint",
+        "version": "16.0.0"
+      }
+    ]
+  },
+  "versions": {
+    "contract": "1.3",
+    "engine": "0.1.0",
+    "format": 3
+  }
+}

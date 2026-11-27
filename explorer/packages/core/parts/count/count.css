@@ -1,0 +1,13 @@
+[data-part="count"] {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.gr-count-value {
+  font-weight: 600;
+  color: var(--gr-text-ink);
+}
+
+.gr-count-unit {
+  color: var(--gr-text-muted);
+}

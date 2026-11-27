@@ -1,0 +1,13 @@
+[
+  {
+    "files": [
+      {
+        "path": "lint-a.config.js",
+        "text": "// gragas: written from the bindings\nexport default [];\n"
+      }
+    ],
+    "notes": [
+      "b is written as a trial"
+    ]
+  }
+]

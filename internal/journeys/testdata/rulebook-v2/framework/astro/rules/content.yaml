@@ -1,0 +1,42 @@
+part: astro
+concern: content
+order: 2
+title: Content collections
+summary: >-
+  Content that a page reads at build time is declared in a collection with a schema, so a malformed entry
+  stops the build.
+rules:
+  - id: astro.content.1
+    slug: collection-schema
+    since: 0.1.0
+    rule: >-
+      Content a page reads at build time has a schema, and a bad entry fails the build.
+    detail: >-
+      Each collection is declared with a collection definition and a zod schema. An entry that is missing a
+      required field, or has a wrong type such as a date, fails `astro build`. The build itself refuses; there
+      is no separate check, and the plant is run once to prove it.
+    level: program
+    why: >-
+      Content errors found after deploy are published errors. The rule is rated C from the framework guide; no
+      site uses collections yet.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: astro-docs
+        where: content collections
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: G
+        note: >-
+          v1 class framework. `defineCollection({ schema })` with a zod schema; `astro build` fails on a
+          schema error. Plant: a content entry with a wrong date type fails `astro build`. Control: a valid
+          entry builds
+    open:
+      - No site uses collections yet; vacuous today.
+      - "v1 evidence, not yet a source: C (the framework's content-collections guide)"

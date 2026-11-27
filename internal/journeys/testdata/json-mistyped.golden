@@ -1,0 +1,12 @@
+{
+  "schema": 2,
+  "command": "",
+  "ended": "usage",
+  "msg": "unknown command \"chek\" for \"gragas\"\ndid you mean `gragas check`?",
+  "next": "gragas check",
+  "error": {
+    "kind": "usage",
+    "msg": "unknown command \"chek\" for \"gragas\"\ndid you mean `gragas check`?",
+    "hint": "gragas check"
+  }
+}

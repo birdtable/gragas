@@ -1,0 +1,40 @@
+$ gragas journal recover --help
+--- exit 0
+--- stdout
+
+  A run that was killed after its first
+  write has a record
+  with no close. recover puts every file
+  of each such run back
+  from the copies its record kept, under
+  the folder's lock, and
+  closes the record as rolled back. It
+  never finishes a run:
+  plan it again. Without --apply it
+  lists the runs it would
+  roll back and writes nothing.
+
+    gragas journal recover
+    gragas journal recover --apply
+
+  USAGE
+
+
+    gragas journal recover [--flags]
+
+
+  FLAGS
+
+    --accessible  Plain questions
+                  (ACCESSIBLE)
+    --apply       Write the files
+    --config      The settings file
+                  (GRAGAS_CONFIG)
+    -h --help     Help for recover
+    --json        Answer in one JSON
+                  document
+    --no-color    No colour (NO_COLOR)
+    --plain       Print plainly: nothing
+                  moves
+
+--- stderr

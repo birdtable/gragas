@@ -1,0 +1,111 @@
+format: 3
+part: code
+concern: idioms
+rules:
+  - id: code.idioms.1
+    statement: The error path returns early and the normal path stays unindented.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A guard clause keeps the normal path at one level, so the reader does not carry the failure branch while reading the success branch."
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: revive
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: code.idioms.2
+    statement: The standard library is used where it already does the job.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The mechanical neighbours are linters that flag helpers the standard library now has (exptostd, modernize with go fix, usestdlibvars). They hold the common cases only; knowing that the standard library already does the job needs knowing the intent."
+      pros:
+        - A hand-written helper beside a standard one is a copy that will drift.
+    sources:
+      - ref: golangci-lint-linters
+        where: modernize
+        says: "A suite of analyzers that suggest simplifications to Go code, using modern language and library features."
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: exptostd
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: golangci-lint
+        target: source
+        key: modernize
+        severity: error
+        rung: 0
+        run_point: review
+      - tool: golangci-lint
+        target: source
+        key: usestdlibvars
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: code.idioms.3
+    statement: A switch over an enum covers every case.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A default case counts as exhaustive in the tool's setting, and tests are excluded."
+      pros:
+        - "A new enum value that no switch handles is a silent bug; the linter finds it at the switch."
+    sources:
+      - ref: golangci-lint-linters
+        where: exhaustive
+        says: Check exhaustiveness of enum switch statements.
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: exhaustive
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: code.idioms.4
+    statement: "A long switch or if-ladder is table-driven, with the count of over-limit functions ratcheted."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Cyclomatic complexity counts every case, and the limit is 30 (a guess). Cognitive complexity scores a flat 159-line table 0 and a long switch +1 once, so it cannot see a long ladder; the cyclomatic count is needed beside it. The cheap cure, moving cases into helper functions, is caught only by the helper pair of code.size.3."
+      pros:
+        - "One repo has 5 switches of 10 or more cases. A study of 60 sampled bugs found none with a long ladder as root cause, so this is practice."
+    relations:
+      relates:
+        - code.size.3
+    sources:
+      - ref: golangci-lint-linters
+        where: gocyclo
+        says: Computes and checks the cyclomatic complexity of functions.
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: gocyclo
+        severity: error
+        rung: 0
+        run_point: land
+  - id: code.idioms.5
+    statement: A component has one reason to change.
+    strength: may
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      pros:
+        - A component with two reasons to change is edited by two kinds of change and is the likeliest place for a merge conflict and a regression. No accepted metric exists for single responsibility (the lack-of-cohesion measure was dropped on Go for the same reason).
+    relations:
+      relates:
+        - code.size.2

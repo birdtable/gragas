@@ -1,0 +1,11 @@
+name: withdraw
+order: 310
+context: R
+ends: plan
+summary: "Withdraw a release that should not be used"
+examples:
+  - {line: "gragas withdraw <release>", does: "show the plan"}
+  - {line: "gragas withdraw <release> --apply", does: "carry it out"}
+writes: ["the withdrawn list", "history.jsonl"]
+exits: ["done", "declined"]
+json: plan

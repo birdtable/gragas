@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-proof-result.schema.json",
+  "title": "Proof result of one binding under one tool version (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "binding",
+    "tool_version",
+    "result"
+  ],
+  "properties": {
+    "binding": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "tool_version": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "result": {
+      "$ref": "common.schema.json#/$defs/result",
+      "x-introduced": "1.0"
+    },
+    "rung": {
+      "$ref": "common.schema.json#/$defs/rung",
+      "x-introduced": "1.0",
+      "default": 0
+    },
+    "run_level": {
+      "type": "string",
+      "enum": [
+        "fixture",
+        "pair",
+        "project"
+      ],
+      "x-introduced": "1.0",
+      "default": "fixture"
+    },
+    "adapter_version": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "no pair",
+        "tool missing",
+        "limit hit",
+        "sandbox missing"
+      ],
+      "x-introduced": "1.0",
+      "default": "no pair"
+    },
+    "inputs": {
+      "$ref": "common.schema.json#/$defs/digestOrEmpty",
+      "x-introduced": "1.0",
+      "default": "",
+      "x-decides": "whether the cell is run again: a cell keeps its result only while its inputs equal the digest of what it would be proven on now; a cell with none is always run again"
+    },
+    "tool": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "result"
+      ],
+      "properties": {
+        "rung": {
+          "maximum": 5,
+          "x-introduced": "1.0",
+          "default": 0
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "not run"
+          ],
+          "x-introduced": "1.0"
+        }
+      }
+    },
+    {
+      "required": [
+        "rung",
+        "result"
+      ],
+      "properties": {
+        "rung": {
+          "const": 6,
+          "x-introduced": "1.0"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "not run",
+            "reviewed"
+          ],
+          "x-introduced": "1.0"
+        }
+      }
+    }
+  ]
+}

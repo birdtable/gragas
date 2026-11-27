@@ -1,0 +1,146 @@
+part: docs
+concern: links
+order: 6
+title: Links, citations and paths
+summary: >-
+  Every link, anchor, cited rule or ticket id and path named in docs and comments resolves, offline, and the
+  check runs at the cheapest tier. External links are checked by a separate, non-blocking step of the release
+  recipe, never as a gate step and never on a schedule. A version or a CI claim named in prose is held to the
+  file that owns it.
+rules:
+  - id: docs.links.1
+    slug: no-broken-links
+    since: 0.1.0
+    rule: >-
+      Docs have no broken file link or anchor, checked offline in the gate, and external links are checked by
+      a separate command that runs as a non-blocking step of the release recipe, never as a gate step and
+      never on a schedule.
+    detail: >-
+      Relative links and heading anchors are checked offline, with fragments included (without
+      --include-fragments the anchor breaks are not seen). External links are checked by their own command
+      over the network, with a cache; the release recipe runs it and prints its result in the release record,
+      and a dead link opens a finding but does not stop the release. The gate never reaches the network for
+      links. A docs-site build that fails on broken links is the same rule when a site exists; no docs site is
+      run today. Docs and agent instruction files are checked alike. Docs also have no markdown error and pass
+      spelling.
+    level: file
+    why: >-
+      One broken file link in one repo and 36 fragment failures in one file of another, on 5,800 links of
+      which 4,200 are remote. A site that is down for an hour is not the repo's fault, so it must not stop a
+      push, but a dead source must still be seen before a release goes out.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "1"
+        note: >-
+          the repo's own offline link test, file links and anchors, over docs at tier 1. Plant: a link to
+          a missing file, a link to a missing heading in another file and a link to a missing own anchor each
+          fail. Control: three good links pass
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. a separate external-links command (with the network and a cache) called as
+          a non-blocking step of the release recipe, writing its result into the release record; a test fails
+          a gate config that calls it. Plant: a gate step that checks external links fails the config test; a
+          release record with no external-link result fails. Control: a release whose record carries the
+          external-link result, red or green, passes
+    open:
+      - UI repositories had no row for this; the part now applies to them.
+  - id: docs.links.2
+    slug: cited-ids-resolve
+    since: 0.1.0
+    rule: No comment, doc or code cites a rule, decision or ticket id that does not exist.
+    detail: >-
+      A shared citation resolver reads comments and docs and resolves each id pattern against the rule list,
+      the decision files and the ticket index. Citations are never required by count.
+    level: word
+    why: >-
+      Seven repos' agent files all held dangling references; of 258 backticked references in instruction files
+      about 3 were dangling, and 4 of 26 source contradictions were knowledge-layer pointers.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ousterhout-aposd
+        where: ch. 16
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. a shared citation resolver (companion cite) over comments in .ts, .tsx and .astro
+          files and docs resolving id patterns against the standards index and decision files. Plant: a
+          comment citing a decision number that does not exist (decision 99) fails. Control: a valid citation
+          passes
+    open:
+      - "Weakest build in the set: the comment version has no measured faults."
+      - "Needs an allow list for runtime paths: one repo alone had 8 false hits."
+      - >-
+        v1 evidence, not yet a source: D (seven repos' agent files held dangling references)
+  - id: docs.links.3
+    slug: backticked-path-resolves
+    since: 0.1.0
+    rule: >-
+      A backticked path in a comment or doc resolves or the comment says it is a dead path and why, a
+      dependency version named in prose equals the lockfile's, and a sentence claiming CI or a workflow runs a
+      command is checked against the workflow files.
+    detail: >-
+      The resolver reads comments and docs. A version is a package name followed by a version in prose; it is
+      compared with the lockfile (go.sum, the package lock) and fails on a mismatch. A CI claim is a sentence
+      that names a workflow, CI or a hosted runner and a command; the command must appear in a workflow file
+      with the trigger the sentence names, so a doc that says CI runs the gate on push fails when no workflow
+      does.
+    level: word
+    why: >-
+      A comment that points at a path that is gone sends a reader and an agent to nothing; a version or a CI
+      claim in prose is a second copy of a fact whose home is the lockfile or the workflow, and it goes stale
+      first.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ousterhout-aposd
+        where: ch. 16
+        backs: rule
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. the citation resolver fails a backticked path that does not exist unless the
+          comment is marked dead-path with a reason, a prose version that differs from the lockfile, and a CI
+          sentence whose command and trigger no workflow file holds. Plant: a comment citing a missing path
+          fails; a doc naming a dependency at a version the lockfile does not hold fails; a doc saying CI runs
+          the tests on push with no such workflow fails. Control: a path that exists, and a dead-path marked
+          comment, pass; a version equal to the lockfile passes
+  - id: docs.links.4
+    slug: comments-hold-no-restated-facts
+    since: 0.1.0
+    rule: >-
+      No comment restates a fact that has a home elsewhere, and no code is commented out.
+    level: word
+    why: A restated fact goes stale in one of its two places.
+    kind: instruction
+    strength: Review
+    status: active
+    sources:
+      - ref: docs-reasons-stated
+        backs: rule
+    review_question: Does this comment repeat a fact that already has an owning file or table?
+    open:
+      - >-
+        Commented-out code has its own tool in the code part; a hand-read commented-code detector flagged 3
+        candidates and all 3 were false.

@@ -1,0 +1,199 @@
+repo: "go-run"
+plan_key_prefix: "swoop"
+is_library: true
+issue_key: "go-run-lib-1"
+picks:
+  - item: "golang.org/x/mod v0.42.0"
+    register_key: "version-and-semver"
+    job: "semver and pseudo-version reading (module.IsPseudoVersion, module.PseudoVersionRev)"
+    scope: "the version package"
+    ban: "depguard: deny pkg github.com/carlmjohnson/versioninfo, github.com/caarlos0/go-version"
+    banned_calls:
+      - "github.com/carlmjohnson/versioninfo"
+      - "github.com/caarlos0/go-version"
+    sources:
+      - "TARGET-STATE.md#1 swoop row (libraries required: x/mod)"
+      - "TARGET-STATE.md#2 swoop/version"
+      - "recut/final.json#swoop-3"
+      - "recut/final.json#swoop-1"
+    pattern: "(\\\\d|\\[0-9\\])\\+?\\)?\\\\\\.\\(?(\\\\d|\\[0-9\\])|ReadFile\\(.*go\\.mod"
+  - item: "std runtime/debug"
+    register_key: "std:runtime/debug"
+    job: "the build info read: stamped, else build info, else dev"
+    scope: "the version package"
+    ban: "none: review only"
+    banned_calls: []
+    sources:
+      - "TARGET-STATE.md#2 swoop/version"
+      - "recut/final.json#swoop-3"
+      - "fleet-libraries.md 2.2 (05b: version holds)"
+    pattern: "\"describe\"|git describe|\\.git/HEAD|\\.git/refs"
+  - item: "std encoding/json/v2 and jsontext (Go 1.27)"
+    register_key: "json-strict"
+    job: "read and write run records: case-exact names, duplicate keys refused, escape options kept so a written line is byte-equal"
+    scope: "the runlog package"
+    ban: "none: review only"
+    banned_calls: []
+    sources:
+      - "TARGET-STATE.md#2 swoop/run"
+      - "recut/final.json#swoop-2"
+      - "reports/06b (run/line.go replaced by json/v2)"
+    pattern: "\"encoding/json\""
+  - item: "golangci-lint v2.15.0"
+    register_key: "tool:golangci-lint"
+    job: "lint from the repo's own .golangci.yml with the bans of the register"
+    scope: "the repo"
+    ban: "none: the tool itself"
+    banned_calls: []
+    sources:
+      - "the supply decision"
+      - "recut/final.json#swoop-1"
+    pattern: "build\\.(ImportDir|Default)\\b|lint-debt|lintdebt"
+  - item: "gitleaks v8.30.1"
+    register_key: "tool:gitleaks"
+    job: "secret scan from the repo's own config"
+    scope: "the repo Taskfile"
+    ban: "none: the tool itself"
+    banned_calls: []
+    sources:
+      - "the supply decision"
+      - "recut/final.json#swoop-1"
+    pattern: "regexp\\.MustCompile\\(.*(token|secret|password)"
+  - item: "go-task v3.54.0 (the repo's own Taskfile)"
+    register_key: "tool:go-task"
+    job: "the tiers pre-commit, pre-push and release"
+    scope: "the repo"
+    ban: "none: the tool itself"
+    banned_calls: []
+    sources:
+      - "the supply decision"
+      - "recut/final.json#swoop-1"
+    pattern: "exec\\.Command\\(\"make\"|\\.stamp\\b|tier[A-Za-z]*Pool"
+  - item: "changie v1.26.0"
+    register_key: "tool:changie"
+    job: "changelog from change files; a library releases with a tag and a changie entry"
+    scope: "the repo"
+    ban: "none: the tool itself"
+    banned_calls: []
+    sources:
+      - "recut/decisions.json h2"
+      - "the supply decision"
+    pattern: "git log|conventional commit"
+  - item: "gotestsum v1.13.0"
+    register_key: "tool:gotestsum"
+    job: "race tests in shuffled order with a summary"
+    scope: "the repo Taskfile"
+    ban: "none: the tool itself"
+    banned_calls: []
+    sources:
+      - "TARGET-STATE.md#4 Go and tool pins"
+      - "the supply decision"
+    pattern: "test2json|json:\"Action\"|\"-json\""
+  - item: "govulncheck v1.9.0"
+    register_key: "tool:govulncheck"
+    job: "vulnerability scan of the module graph"
+    scope: "the repo Taskfile"
+    ban: "none: the tool itself"
+    banned_calls: []
+    sources:
+      - "TARGET-STATE.md#4 Go and tool pins"
+      - "the supply decision"
+    pattern: "osv\\.dev|vuln\\.go\\.dev"
+  - item: "go-licenses v2.0.1"
+    register_key: "tool:go-licenses"
+    job: "licence check and notices"
+    scope: "the repo Taskfile and release tier"
+    ban: "none: the tool itself"
+    banned_calls: []
+    sources:
+      - "TARGET-STATE.md#4 Go and tool pins"
+    pattern: "licen[cs]e.*walk|filepath\\.Walk.*LICENSE"
+not_for_this_repo:
+  - item: "any of our own libraries (go-files, go-proc, go-socket, go-console)"
+    why: "runlog takes no lock and imports no module of ours; go-run requires none. A caller that compacts locks with go-files and writes with write.File itself. go-console takes exit from go-run, not the other way."
+    sources:
+      - "TARGET-STATE.md#1 swoop row (\"repos of ours required: none\")"
+      - "recut/final.json#swoop-2"
+  - item: "github.com/opencontainers/go-digest and a shared sha256 text-form owner"
+    why: "dropped: the digest block is deleted and crypto/sha256 does it; no row, no ban, no unticketed finding."
+    sources:
+      - "register/libraries.yaml dropped (go-digest)"
+      - "recut/final.json#swoop-2 (Digest kept as is)"
+      - "merge/CROSS.md dropped packages"
+  - item: "github.com/carlmjohnson/versioninfo, github.com/caarlos0/go-version"
+    why: "denied by the version-and-semver row; the stamp-else-build-info-else-dev rule is about 90 own lines."
+    sources:
+      - "register/libraries.yaml version-and-semver"
+  - item: "goreleaser"
+    why: "a library builds nothing: it releases with a tag and a changie entry and has no goreleaser config. The live body of swoop-1 listed one and is corrected."
+    sources:
+      - "recut/decisions.json h2"
+      - "the supply decision (1)"
+  - item: "a runlog or exit conversion reader (version-2 lines)"
+    why: "no conversion and no compatibility: runlog reads version 3 only and refuses another version by name; a format change asks for a reinstall."
+    sources:
+      - "the supply decision (3)"
+      - "recut/final.json#swoop-2"
+      - "recut/final.json#swoop-5 (closed: Convert not built)"
+  - item: "testify, gotest.tools, testscript, any second test library"
+    why: "dropped; std testing only."
+    sources:
+      - "register/libraries.yaml dropped"
+findings:
+  - where: "run/line.go"
+    what: "a hand-made exact-name reader that works around case-insensitive field matching, with a duplicate-key walk"
+    lines: "57"
+    replaced_by:
+      - "std encoding/json/v2 and jsontext (Go 1.27)"
+    removed_by:
+      - "swoop-2"
+    sources:
+      - "TARGET-STATE.md#2 swoop/run (dropped: line.go)"
+      - "reports/06b rows (run/line.go delete)"
+      - "recut/final.json#swoop-2"
+    symbol: "run/line.go (whole file)"
+  - where: "version: Build.Time, Modified, Release, OS, Arch, Module; Short, Line, IsRelease"
+    what: "build-info fields no program reads, read by hand from runtime/debug"
+    lines: "169 to about 90 (about 79 deleted)"
+    replaced_by:
+      - "std runtime/debug"
+      - "golang.org/x/mod v0.42.0"
+    removed_by:
+      - "swoop-3"
+    sources:
+      - "reports/05b rows (version Time, Module: delete)"
+      - "recut/final.json#swoop-3"
+    symbol: "version.Build fields Time, Modified, Release, OS, Arch, Module; Short, Line, IsRelease"
+  - cut: true
+    where: "runlog/compact.go (142) and its file code"
+    what: "Log.Compact and its file code: no caller; the pure fold stays as Lines"
+    lines: 142
+    symbol: "Compact"
+    removed_by:
+      - "swoop-2"
+    sources:
+      - "recut/final.json#swoop-2 (Deleted, with no alias)"
+      - "TARGET-STATE.md#2 swoop/run (dropped: Compact file code)"
+  - cut: true
+    where: "runlog/os_other.go (42, cut to about 12), runlog/os_windows.go (15, cut to about 5), runlog/group_unix_test.go"
+    what: "GiveGroup (40 lines): a caller that needs a group sets it on the file itself"
+    lines: 40
+    symbol: "GiveGroup"
+    removed_by:
+      - "swoop-2"
+    sources:
+      - "recut/final.json#swoop-2 (Deleted, with no alias; file table)"
+      - "TARGET-STATE.md#2 swoop/run (dropped: GiveGroup)"
+blockers:
+  - ticket: "swoop-1"
+    why: "the import ticket: runlog, exit and version arrive as they are and go-run's own configs land"
+  - ticket: "swoop-2"
+    why: "removes line.go, Compact and the hand exact-name reader: json/v2 lands as the only reader; the json-strict job is review only"
+  - ticket: "swoop-3"
+    why: "cuts version to its 90 lines on runtime/debug and x/mod: version-and-semver ban"
+  - ticket: "gragas-new-1"
+    why: "the config checker the done test runs (`gragas check` over this repo's configs); the ban rows are proven against it"
+notes:
+  - "Package names after the renames: runlog (was run). Ticket bodies still say run."
+  - "exit stays whole: seven codes, 5 refused and 6 declined; no library row; swoop-5 is closed."
+  - "os_other.go and os_windows.go stay at about 12 and 5 lines (swoop-2 file table); the earlier report said delete, the live body wins."

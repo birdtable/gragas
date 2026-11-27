@@ -1,0 +1,185 @@
+$ gragas check --json
+--- stdout
+{
+  "schema": 2,
+  "command": "check",
+  "ended": "done",
+  "msg": "1,132 entries in 165 files, and no problem",
+  "data": {
+    "entries": 1132,
+    "files": 165,
+    "parts": [
+      {
+        "part": "arch",
+        "name": "Architecture and boundaries",
+        "entries": 79,
+        "enforced": 7,
+        "tools": 10
+      },
+      {
+        "part": "code",
+        "name": "Code health",
+        "entries": 31,
+        "enforced": 10,
+        "tools": 7
+      },
+      {
+        "part": "tests",
+        "name": "Tests",
+        "entries": 96,
+        "enforced": 3,
+        "tools": 11
+      },
+      {
+        "part": "gates",
+        "name": "Gates and enforcement",
+        "entries": 142,
+        "enforced": 4,
+        "tools": 16
+      },
+      {
+        "part": "supply",
+        "name": "Supply chain and release",
+        "entries": 76,
+        "enforced": 5,
+        "tools": 12
+      },
+      {
+        "part": "docs",
+        "name": "Docs and vocabulary",
+        "entries": 28,
+        "enforced": 0,
+        "tools": 16
+      },
+      {
+        "part": "agents",
+        "name": "Agents and review",
+        "entries": 45,
+        "enforced": 0,
+        "tools": 25
+      },
+      {
+        "part": "go",
+        "name": "Go",
+        "entries": 31,
+        "enforced": 9,
+        "tools": 8
+      },
+      {
+        "part": "ts",
+        "name": "TypeScript",
+        "entries": 54,
+        "enforced": 0,
+        "tools": 15
+      },
+      {
+        "part": "py",
+        "name": "Python",
+        "entries": 8,
+        "enforced": 0,
+        "tools": 0
+      },
+      {
+        "part": "cli",
+        "name": "CLI",
+        "entries": 90,
+        "enforced": 6,
+        "tools": 0
+      },
+      {
+        "part": "daemon",
+        "name": "Daemon",
+        "entries": 40,
+        "enforced": 0,
+        "tools": 0
+      },
+      {
+        "part": "service",
+        "name": "Backend service",
+        "entries": 101,
+        "enforced": 0,
+        "tools": 15
+      },
+      {
+        "part": "web",
+        "name": "Web front end",
+        "entries": 179,
+        "enforced": 0,
+        "tools": 5
+      },
+      {
+        "part": "pages",
+        "name": "Static pages and docs-only repositories",
+        "entries": 5,
+        "enforced": 0,
+        "tools": 0
+      },
+      {
+        "part": "react",
+        "name": "React",
+        "entries": 39,
+        "enforced": 0,
+        "tools": 6
+      },
+      {
+        "part": "astro",
+        "name": "Astro",
+        "entries": 4,
+        "enforced": 0,
+        "tools": 3
+      },
+      {
+        "part": "liquid",
+        "name": "Liquid themes",
+        "entries": 6,
+        "enforced": 0,
+        "tools": 0
+      },
+      {
+        "part": "store",
+        "name": "Data, any store",
+        "entries": 26,
+        "enforced": 0,
+        "tools": 0
+      },
+      {
+        "part": "postgres",
+        "name": "Postgres",
+        "entries": 25,
+        "enforced": 0,
+        "tools": 5
+      },
+      {
+        "part": "dynamodb",
+        "name": "DynamoDB",
+        "entries": 10,
+        "enforced": 0,
+        "tools": 1
+      },
+      {
+        "part": "aws",
+        "name": "AWS",
+        "entries": 5,
+        "enforced": 0,
+        "tools": 1
+      },
+      {
+        "part": "lambda",
+        "name": "AWS Lambda",
+        "entries": 4,
+        "enforced": 0,
+        "tools": 6
+      },
+      {
+        "part": "sst",
+        "name": "SST",
+        "entries": 8,
+        "enforced": 0,
+        "tools": 3
+      }
+    ]
+  }
+}
+--- stderr
+warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
+--- exit 0

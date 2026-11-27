@@ -1,0 +1,12 @@
+# key, then the value; tab-separated; \\ is one backslash, \t a tab.
+# Words whose bytes are what a quoting test holds to: a system's variable or path in them.
+dollar-tab	$HOME\t'a'
+dollar-space	$HOME 'a'
+backslash-name	back\\slash
+note-home	it's $HOME
+apply-line-home	gragas promote 'a; rm -rf x' go.errors.2 --note 'it'\\''s $HOME' --apply
+ps-dollar-backtick	$HOME`x`
+ps-dollar-line	gragas gen -C '$HOME`x`'
+a-b	a\\b
+drive-dir	C:\\dir\\
+drive-dir-line	gragas rule new --name 'C:\\dir\\'

@@ -1,0 +1,20 @@
+format: 3
+part: dynamodb
+concern: queries
+rules:
+  - id: dynamodb.queries.1
+    statement: "A Scan runs only in a migration or an export named on a short allow list, and a filter expression is never how a query gets its result."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "If removing a filter expression would change the answer a user sees, the key design is wrong and the access-pattern list needs a new line. The scanned-to-returned item ratio is measured per action."
+      pros:
+        - "A filter is applied after the items are read, so every removed item is still paid for and the response size limit is hit before the filter runs: a filter cannot save a bad model."
+    sources:
+      - ref: debrie-dynamodb-book
+        where: the three API action types
+        backs: rule
+      - ref: p-03-data
+        where: section 16
+        backs: rule

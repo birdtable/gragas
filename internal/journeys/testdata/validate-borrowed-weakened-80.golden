@@ -1,0 +1,30 @@
+$ gragas validate
+--- exit 1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Findings
+about                          what is wrong, and the fix
+bindings/base-errors-1.yaml:6  the record of base.errors.1 weakens the binding
+                               an import lends at golangci-lint config
+                               errorlint, at its severity: the severity would go
+                               from error to warning, which is weaker (S34) Fix:
+                               remove the record "bindings/base-errors-1.yaml"
+                               from the repository with git rm
+
+Notices
+  names check: the names check did not run: no names list was given; set the
+  names-file key or GRAGAS_NAMES_FILE
+  translations/fr/terms.yaml:8: the translation of term:wrap definition into fr
+  is stale: the en text changed after it was translated (fix: translate the new
+  text and record its hash)
+  rulebook.yaml: parent not fetched: fixture-parent 0.9.0, so the overlay
+  contract against it was not checked: no rule is checked against the parent's
+  ids and parts, and no tightening of the parent's rules is checked
+  rulebook.yaml: import not fetched: fixture-other 0.3.0, so the import contract
+  against it was not checked: its parts ui are not checked to exist, and no
+  tightening of its rules is checked
+0 migrated rules held from the prose lint until reworded; the count only falls.
+
+  findings   1 finding, 4 notices
+--- stderr

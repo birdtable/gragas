@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"version\":1,\"tool\":\"lint\",\"sets\":[{\"preset\":\"recommended\",\"entries\":[\"a\",\"b\"]}],\"observed\":[\"a\",\"b\",\"c\"]}")

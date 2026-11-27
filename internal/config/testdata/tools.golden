@@ -1,0 +1,31 @@
+a-list.yaml: refused: a-list.yaml: is not a table of tools: it must start with version: 1
+climbing-path.yaml: refused: climbing-path.yaml:3: tools.eslint@9.12.0 must be a clean path: write "<dir>/eslint"
+container-key.yaml: refused: container-key.yaml:4: unknown key "container.network": the keys are runtime, image
+container-relative-runtime.yaml: refused: container-relative-runtime.yaml:3: container.runtime must be an absolute path, and it is "bin/podman"
+empty.yaml: version 1
+full.yaml: version 1
+  tool eslint@9.12.0 <dir>/home/me/tools/node_modules/.bin/eslint
+  tool golangci-lint@2.14.1 <dir>/opt/golangci-lint/2.14.1/golangci-lint
+  tool golangci-lint@2.15.0 <dir>/opt/golangci-lint/2.15.0/golangci-lint
+  container runtime <dir>/usr/bin/podman
+  container image registry.example/gragas/proof@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+  sandbox userns <dir>/usr/bin/bwrap
+  sandbox macos <dir>/usr/bin/sandbox-exec
+image-by-tag.yaml: refused: image-by-tag.yaml:4: container.image must be an image named by its digest: a name that starts with a letter or digit and holds no space, control character or @, then @sha256: and 64 lower-case hex digits, and it is 'alpine:3.20'
+image-leading-dash.yaml: refused: image-leading-dash.yaml:3: container.image must be an image named by its digest: a name that starts with a letter or digit and holds no space, control character or @, then @sha256: and 64 lower-case hex digits, and it is '-registry.example/proof@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+image-two-ats.yaml: refused: image-two-ats.yaml:3: container.image must be an image named by its digest: a name that starts with a letter or digit and holds no space, control character or @, then @sha256: and 64 lower-case hex digits, and it is 'registry.example/proof@latest@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+image-upper-hex.yaml: refused: image-upper-hex.yaml:3: container.image must be an image named by its digest: a name that starts with a letter or digit and holds no space, control character or @, then @sha256: and 64 lower-case hex digits, and it is 'registry.example/proof@sha256:0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF'
+image-with-space.yaml: refused: image-with-space.yaml:3: container.image must be an image named by its digest: a name that starts with a letter or digit and holds no space, control character or @, then @sha256: and 64 lower-case hex digits, and it is 'registry.example/proof --privileged@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+key-case.yaml: refused: key-case.yaml:2: unknown key "Tools": keys are lower case, so write tools
+newer-version-last.yaml: not ready (install a gragas that reads tools file version 2): newer-version-last.yaml:3: the tools file is version 2, and this gragas reads version 1
+newer.yaml: not ready (install a gragas that reads tools file version 2): newer.yaml:1: the tools file is version 2, and this gragas reads version 1
+no-version-in-name.yaml: refused: no-version-in-name.yaml:3: tools.eslint is not tool@version
+no-version.yaml: refused: no-version.yaml:1: has no version: write version: 1 first
+not-yaml.yaml: refused: not-yaml.yaml: is not YAML: yaml: yaml: line 2: did not find expected node content
+relative-path.yaml: refused: relative-path.yaml:3: tools.eslint@9.12.0 must be an absolute path, and it is "node_modules/.bin/eslint"
+sandbox-key.yaml: refused: sandbox-key.yaml:3: unknown key "sandbox.firejail": the keys are userns, macos
+sandbox-relative.yaml: refused: sandbox-relative.yaml:3: sandbox.userns must be an absolute path, and it is "bwrap"
+unknown-key.yaml: refused: unknown-key.yaml:2: unknown key "tool-paths": the keys are version, tools, container, sandbox
+version-not-number.yaml: refused: version-not-number.yaml:1: version must be a whole number, 1
+version-zero.yaml: refused: version-zero.yaml:1: version 0 is not a tools file version: write version: 1
+written-twice.yaml: refused: written-twice.yaml:4: tools.eslint@9.12.0 is written twice, first on line 3: keep one

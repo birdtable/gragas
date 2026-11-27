@@ -1,0 +1,29 @@
+$ gragas
+--- 80 columns
+--- menu
+
+█▀▀ █▀█ ▄▀█ █▀▀ ▄▀█ ▄▀▀   the rulebook, as presets you import
+█▄█ █▀▄ █▀█ █▄█ █▀█ ▄▄▀   v1.2.3 (abc1234) go<version>
+
+┃ /
+┃ What would you like to do?
+┃ Or answer with --gragas <command>
+┃ > help     Show the help of a command
+┃   version  Say which build this is
+┃   gen      Say which generated files are out of date, and write them
+┃
+┃
+--- screen at the end
+
+█▀▀ █▀█ ▄▀█ █▀▀ ▄▀█ ▄▀▀   the rulebook, as presets you import
+█▄█ █▀▄ █▀█ █▄█ █▀█ ▄▄▀   v1.2.3 (abc1234) go<version>
+
+┃ /
+┃ What would you like to do?
+┃ Or answer with --gragas <command>
+┃ > help     Show the help of a command
+┃   version  Say which build this is
+┃   gen      Say which generated files are out of date, and write them
+┃
+┃
+--- exit 0

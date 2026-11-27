@@ -1,0 +1,189 @@
+format: 3
+part: tests
+concern: isolation
+rules:
+  - id: tests.isolation.1
+    statement: "A test inherits nothing from the run that started it: its own home and temp folder, and no agent or git variables."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A repo test refuses to pass the parent environment to a child process unless the call is marked. Every test package calls one shared isolate function at start-up (a TestMain in Go). In a child's environment a nil value, the parent environment as a whole and an append to it are all findings; the environment comes from the isolate helper. The agent and git variables removed are every GIT_* variable and the agent-session variables; the analyzer is named testenv."
+      pros:
+        - "A test that inherits the caller's home, git settings or agent variables passes on one machine and fails on another. Own bugs: 6 of 60 sampled bugs. One repo has the isolate helper; three others copy a client that passes the parent environment through."
+    sources:
+      - ref: p-07-testing
+        where: section 4
+        backs: rule
+  - id: tests.isolation.2
+    statement: "Specs get their store from one helper that asserts isolation, so no two tests share data."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The helper hands each spec its own database, table or file and asserts it is empty at start. A test that reaches a store any other way fails the scan."
+      pros:
+        - "Shared data couples tests through order and timing; one helper is the only place isolation is proved once. The reference practice has one helper per store kind; our Go side gets the same effect from a per-test home and temp folder plus shuffled order (tests.isolation.10)."
+    relations:
+      relates:
+        - tests.isolation.10
+    sources:
+      - ref: decision-27
+        backs: rule
+  - id: tests.isolation.3
+    statement: "Heavy test fixtures such as containers start once, in one place, and tests share them only through a helper with its own temp folder and no fixed port."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A container per test turns a suite into hours; a container started anywhere is a fixed port and a leaked process waiting to happen. The real engine is the reference for managed stores (tests.doubles.1)."
+    relations:
+      relates:
+        - tests.doubles.1
+  - id: tests.isolation.4
+    statement: "No test binds a fixed port; every listener asks for port zero or a path in the test's own folder."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "In test files every listen address is the literal \":0\", \"127.0.0.1:0\" or a path built from the test's own temp folder or testenv.ShortDir. Anything else is a finding: the check fails closed, because a scan for port literals alone passes a port from a constant, a config field or a built string."
+      pros:
+        - Two agents running the same suite on one host collide on a fixed port. Own bugs.
+  - id: tests.isolation.5
+    statement: A Unix socket path in a test is at most testenv.SocketPathMax bytes.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "The operating system limits socket paths to about 104 bytes and a deep temp folder passes it; one of our programs failed at 153 bytes."
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+  - id: tests.isolation.6
+    statement: "A test does not sleep to wait for an event; it waits on the event or uses a fake clock."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A sleep call in a test file is a finding on a shrink-only count per file; removal lowers the baseline. Where the runtime offers it, tests use its fake-time bubble (Go testing/synctest). Fixed waits that stay carry a written reason (tests.flakes.4)."
+      pros:
+        - "A sleep is a guess about speed that fails under load. Own bugs; counts in test files today: 48, 37, 34, 13, 5 and 4 across six repos."
+    relations:
+      relates:
+        - tests.flakes.4
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: tests.isolation.7
+    statement: "A test reads the machine (child processes, network, home folder, clock, /proc) only in a named place, and that list only shrinks."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "A read of the machine is an input the cache and the selector cannot see (tests.selection.6) and the reason a test passes on one host only. Own bugs. One repo has the scan: 7 files, 121 listed reads."
+    relations:
+      relates:
+        - tests.selection.6
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+  - id: tests.isolation.8
+    statement: "Default tiers never change shared machine state, a test launches its own browser and database and never attaches to the person's, and no script kills a process by name; an opt-in tier that must touch the service manager does so only under names hashed from its own root and proves its cleanup, and a privileged system test seals the host first and proves the seal."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Shared machine state is the service manager, the terminal multiplexer, the real home, the real git config, the person's browser and profile, and any process the test did not start. In the default tiers a scan against a machine-writer list (launchctl, systemctl, tmux, git config --global, the real home, a kill or pkill by name) fails, fakes of those programs sit on the test's PATH, and the isolate helper (tests.isolation.1) gives each test a temp home as a backstop. A test that needs a browser or a database starts its own on a temp profile or a temp data folder. An opt-in integration tier (declared as in tests.admission.5) may register units with the service manager only under names that carry a hash of its own root; its cleanup removes them and then lists what is left under that hash and fails if anything remains. A system test that needs a privileged container first seals the host's devices, kernel settings and cgroups from the container, and a check run before and after proves the seal held."
+      pros:
+        - "A test that registers a service, edits the real git config, drives the person's browser or kills a process by name damages the host it runs on; one repo's integration tests need root and write under a system folder. An opt-in tier that must touch the host is held to names it owns and a cleanup it proves, so a failed run leaves nothing behind."
+    relations:
+      relates:
+        - tests.isolation.1
+        - tests.admission.5
+    sources:
+      - ref: decision-65-tests
+        backs: rule
+  - id: tests.isolation.9
+    statement: "One gate run uses a temp folder reached through a symlink, and the suite passes."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "Code that compares paths without resolving links passes on Linux and fails on macOS, where the temp folder is a link. Own bugs."
+  - id: tests.isolation.10
+    statement: "Tests run in shuffled order in the gate, and the printed seed replays a failure."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The shuffle flag is set once in the shared runner configuration and a scan asserts it is in the gate command. One seed catches about half of two-test order pairs, so the admission ladder (tests.admission.1) uses several seeds as separate runs; a count flag with a shuffle seed reuses one order for every repeat."
+      pros:
+        - "A test that passes only in file order is not found by retries or double runs, which are banned (tests.flakes.1). Best practice, not measured."
+    relations:
+      relates:
+        - tests.admission.1
+        - tests.flakes.1
+  - id: tests.isolation.11
+    statement: "The machine is a stated input: a verdict names the OS and host it ran on, and a result from one OS never satisfies a row that needs another."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A verdict names the machine and OS it ran on and the tree it was computed for; the land step refuses a verdict with none, or one for another tree. Skips are counted separately (tests.admission.5)."
+      pros:
+        - "Own bugs: 17 of 60 sampled bugs were machine-dependent. A verdict names the machine and OS it ran on, so a result is never read as another machine's."
+    relations:
+      relates:
+        - tests.admission.5
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+  - id: tests.isolation.12
+    statement: "A suite that shares module state between tests lists the tests that need isolation, each with a reason, and a scan looks for the hazard."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: Turning off per-file isolation in the runner config is refused unless a needs-isolation list file exists. The hazard scan for module-level mutable state is a report.
+      pros:
+        - "Sharing a pool is faster and breaks tests that mutate module state; eight specs failed on the donor's first run without isolation. The three tests the lead named were not on the list and only one was traced."
+  - id: tests.isolation.13
+    statement: "Each module's suite runs with sibling modules unresolvable, a suite that still passes with its subject deleted fails, and a module's tests make other modules' data only through that module's public commands or its own fixtures."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A module is a unit of the declared import table (the architecture part's layers). Its suite is run with every module it may not import made unresolvable, so a test cannot reach a sibling the code could not; how that is done is the language part's resolver form (ts.modules.5 for TypeScript; the Go form is held in the Go part). A separate drive deletes the module's own source and runs its suite: a suite that still passes loads nothing of its subject and is vacuous. A test that needs another module's rows creates them through that module's public commands or fixtures that module ships, never by writing its tables directly."
+      pros:
+        - "A test that imports across modules passes for a module nobody could extract, a suite that never loads its subject proves nothing, and a test that writes another module's rows encodes that module's schema in a place its owner cannot see."
+    relations:
+      relates:
+        - ts.modules.5
+    sources:
+      - ref: decision-65-tests
+        backs: rule
+  - id: tests.isolation.14
+    statement: "A test builds the repository, files and folders it needs in its own temp folder, and never reads an ignored file, another member's output, the checkout's own git folder, or another repository's checkout."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "tests.isolation.1 holds that a test inherits nothing from the run that started it. This rule holds what a test may read from the tree around it: its own package's checked-in testdata and nothing a run writes. A test that needs a git repository makes one in its temp folder. A test that needs a built binary gets it from the package's shared setup (tests.runners.5). A test that needs another repository declares it and fetches it once in setup, or it is an opt-in member that skips with the exact command (tests.admission.5). A test that reads the checkout's own git folder fails in an exported tree and passes in a clone, which is two answers for one tree."
+      pros:
+        - "Two tests of one project needed the checkout's own git folder, so every exported tree carried a failure that had to be explained away; four tests of another organisation needed sibling checkouts and failed rather than skipped, so a fresh clone was red."
+    relations:
+      relates:
+        - tests.isolation.1
+        - tests.runners.5
+        - gates.command.21
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule

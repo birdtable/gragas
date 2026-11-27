@@ -1,0 +1,38 @@
+# Every text file is checked out with \n on every system, whatever core.autocrlf a clone has:
+# a test or a golden then reads the same bytes on Windows as on Linux and macOS.
+# The more specific lines below win: the hashed goldens stay -text, so no conversion ever
+# touches the bytes a digest was taken over.
+* text=auto eol=lf
+
+# Generated files: reviewed by their generator, not by hand.
+rulebook/rules.json linguist-generated=true
+rulebook/bindings.json linguist-generated=true
+.golangci.yml linguist-generated=true
+
+# The agent-instruction pointer is the same bytes on every checkout: Git for
+# Windows's core.autocrlf would end its one line in CRLF.
+CLAUDE.md text eol=lf
+
+# The surface change record: two changes made apart each append their own
+# step, and the sum the check reads holds both.
+docs/surface-marks.yaml merge=union
+
+# A hook is a shell script a checkout on any system runs as it is, so its line ends are
+# \n there too: a carriage return after the shebang fails it, and the pre-push hook compares
+# its sources with the pushed commit's.
+hooks/* text eol=lf
+
+# The crash journey's seeds and goldens: each golden holds the SHA-256 of every file of a
+# seeded root, so the seeds are checked out as their bytes on every system, never with a
+# carriage return put in.
+internal/journeys/testdata/history/** -text
+internal/journeys/testdata/v2/** -text
+internal/journeys/testdata/crash-*.golden -text
+
+# The two font licences are vendored with their own CRLF ends; they stay as received, and
+# PROVENANCE.json beside them holds the digests of the font files, so the folder is -text whole.
+explorer/packages/tokens/fonts/** -text
+
+# The fixture project the assets embed: its lock files hold the digests of its files, so each is
+# its bytes on every system.
+internal/host/assets/fixture/** -text

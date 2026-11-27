@@ -1,0 +1,54 @@
+$ gragas plugin test plugins/lint-b/2.0.0
+--- exit 1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Checks
+check  result     what it holds, and what is wrong
+C1     failed     the manifest passes its schema: /colour is not a member of
+                  this message
+C2     passed     the contract is the engine's and every need is a feature it
+                  has
+C3     failed     name, version and wasm digest are the bundle's: name is
+                  "lint-a" and the folder is "lint-b" (and 1 more)
+C4     passed     provides is not empty and grant ids are unique
+C5     failed     the module imports nothing but WASI preview 1: the plugin's
+                  module is refused: its sections cannot be read: section 120
+                  runs past the module
+C6     passed     each request passes its schema
+C7     not run    each call ends within the limits with exit code 0: the module
+                  was refused (see C5)
+C8     not run    each stdout is one JSON document that passes the response
+                  schema: the module was refused (see C5)
+C9     not run    each answer keeps every order rule: the module was refused
+                  (see C5)
+C10    not run    each answer equals the saved answer in canonical form: the
+                  module was refused (see C5)
+C11    not run    a second run gives the same bytes: the module was refused (see
+                  C5)
+C12    not run    a request with one unknown field gives the same answer: the
+                  module was refused (see C5)
+C13    not run    every run step names a granted program and passes the path
+                  rules: the module was refused (see C5)
+C14    not run    an unknown operation, target or for answers unsupported: the
+                  module was refused (see C5)
+C15    not run    an operation the plugin does not provide answers unsupported:
+                  the module was refused (see C5)
+C16    not run    both ends of the tool version range are served and one outside
+                  it is unsupported: the module was refused (see C5)
+C17    not run    a malformed request ends in a bug error or a crash, never in
+                  success: the module was refused (see C5)
+C18    passed     entries has a recording for each tool version tested
+C19    not asked  findings has a planted output, a clean control and a tool
+                  failure: findings is not in provides
+C20    not asked  plan has a one-round case and a refused case with a path: plan
+                  is not in provides
+C21    not asked  preset has a golden, the mark on its first line and a refused
+                  option: preset is not in provides
+C22    not asked  rank has a pair each for tighter, weaker and same, and a swap
+                  swaps the answer: rank is not in provides
+C23    not asked  a preset, recorded, reads back as the same entries: preset is
+                  not in provides
+
+  findings   plugins/lint-b/2.0.0: 4 passed, 3 failed, 11 not run, 5 not asked
+--- stderr

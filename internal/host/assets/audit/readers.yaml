@@ -1,0 +1,118 @@
+# The tool configs gragas check reads: for each tool, the files
+# its config may be in at a repository's root (the first that is there is
+# read; a file the reader's parser cannot read is not checked, never passed) and the kind of read. A kind is one the audit context has a reader for:
+#   entries     a key is an entry of the config that must be on; the entries
+#               are the tool's plugin's answer
+#   toml-keys   a key of a TOML document
+#   task-names  a key is a task the file must define
+#   yaml-keys   a key of a release tool's YAML file; a repo with no such file
+#               has no finding, the tool being its own choice
+#   os-files    the Go files that name an operating system, outside the folders
+#               a product spares (none, with no host layer); host is the key of
+#               the config whose list spares those folders
+# A row may hold counted: what the repository count reads of the tool, which
+# the tool's plugin gives in its manifest's counted. exclusions
+# are the key paths, from the config's root, of the lists whose every item
+# excludes code from the tool; loosening is each value, at its key path, that
+# excludes more than the tool's default: with unless, when it is there and is
+# anything but the default, a value with no text (a mapping, a float) too;
+# with values, when its text is one of them, which is right only for a tool
+# that reads a value as its exact text. A value's text is
+# a string as it is, true or false, an integer in decimal, or a list as
+# [a, b]; a null or an absent key counts nothing and is no error. directive is
+# the word of a Go comment, // then the word, that silences it at its line.
+# fold_keys says the tool reads a config's keys without their case: each step
+# of a path then matches a key in any case, and two keys of one mapping that
+# differ only in case are a loosening row. The row holds them
+# until the plugin is read, in the manifest's shape and
+# limits.
+#
+# The order is the order the tools are reported in. The core names no tool;
+# this is the one place that does.
+readers:
+  # golangci-lint 2.15.0 finds its config through viper 1.12.0, built without
+  # the finder tag: in a folder it takes .golangci with the first of viper's
+  # extensions that is there, in this order. The check reads the
+  # file the tool would; one it cannot parse as the tool does is not checked.
+  - tool: golangci-lint
+    files: [.golangci.json, .golangci.toml, .golangci.yaml, .golangci.yml, .golangci.properties, .golangci.props, .golangci.prop, .golangci.hcl, .golangci.tfvars, .golangci.dotenv, .golangci.env, .golangci.ini]
+    kind: entries
+    # golangci-lint's exclusion lists and its //nolint, as read from
+    # golangci-lint 2.15.0's own source. linters.exclusions
+    # rules and paths and formatters.exclusions paths each drop what an item
+    # names; each word of linters.exclusions.presets adds exclusion rules of its
+    # own (comments, std-error-handling, common-false-positives, legacy). The v1
+    # keys under issues and run are none of 2.15.0's (a version-2 config has no
+    # such key), and stay counted until the reader says which version it reads:
+    # a row on a dead key is the safe side. Each
+    # loosening is written as unless the tool's default, since 2.15.0 decodes
+    # its config through viper with weak typing (0, "f" and "" are false, 0.0
+    # and "0x0" are 0, and generated runs lax for any word but strict and
+    # disable): any other value is a row, a tighter one too, the safe side.
+    #   linters.exclusions.generated      strict is the default; lax takes more
+    #                                     files as generated
+    #   linters.exclusions.paths-except   keeps only the files it names, so a
+    #                                     list there is one row, its whole value,
+    #                                     and any change to it is a new row
+    #   run.tests                         false drops every test file
+    #   run.issues-exit-code              0 passes a run that has findings
+    #   issues.new                        true keeps only findings in changed lines
+    #   issues.new-from-rev, -merge-base, -patch, any value: the same, from a
+    #                                     revision, the merge base or a patch
+    # The formatters' generated already defaults to lax, so it counts nothing.
+    # viper 1.12.0, which 2.15.0 reads its config through, lower-cases every
+    # key it reads (insensitiviseMap), so Run: {Tests: false} is run.tests.
+    counted:
+      fold_keys: true
+      exclusions:
+        - [linters, exclusions, rules]
+        - [linters, exclusions, paths]
+        - [formatters, exclusions, paths]
+        - [linters, exclusions, presets]
+        - [issues, exclude-rules]
+        - [issues, exclude]
+        - [issues, exclude-dirs]
+        - [issues, exclude-files]
+        - [run, skip-dirs]
+        - [run, skip-files]
+      loosening:
+        - at: [linters, exclusions, generated]
+          unless: strict
+        - at: [linters, exclusions, paths-except]
+          unless: "[]"
+        - at: [run, tests]
+          unless: "true"
+        - at: [run, issues-exit-code]
+          unless: "1"
+        - at: [issues, new]
+          unless: "false"
+        - at: [issues, new-from-rev]
+          unless: ""
+        - at: [issues, new-from-merge-base]
+          unless: ""
+        - at: [issues, new-from-patch]
+          unless: ""
+      directive: nolint
+  - tool: gitleaks
+    files: [.gitleaks.toml]
+    kind: toml-keys
+  - tool: task
+    files: [Taskfile.yml, taskfile.yml, Taskfile.yaml, taskfile.yaml, Taskfile.dist.yml, taskfile.dist.yml, Taskfile.dist.yaml, taskfile.dist.yaml]
+    kind: task-names
+  - tool: goreleaser
+    files: [.goreleaser.yaml, .goreleaser.yml]
+    kind: yaml-keys
+  - tool: changie
+    files: [.changie.yaml, .changie.yml]
+    kind: yaml-keys
+  # The file-name and build-line half of arch.ports.24, which no linter reads:
+  # gragas lists the Go files that name an operating system
+  # outside the folders golangci-lint's os-host row spares (none in a product
+  # with no host layer), so the config is golangci-lint's, found as above. A gragas
+  # row's kind is a key of presets/gragas/base.yaml, which a check row with
+  # tool gragas names. Its files are golangci-lint's: edit that
+  # row, and this one with it (internal/preset_gragas_test.go holds them one).
+  - tool: gragas
+    files: [.golangci.json, .golangci.toml, .golangci.yaml, .golangci.yml, .golangci.properties, .golangci.props, .golangci.prop, .golangci.hcl, .golangci.tfvars, .golangci.dotenv, .golangci.env, .golangci.ini]
+    kind: os-files
+    host: linters.settings.depguard.rules.os-host.files

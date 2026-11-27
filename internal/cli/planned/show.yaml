@@ -1,0 +1,10 @@
+name: show
+order: 340
+context: B
+ends: listing
+summary: "Show one rule, term, source or decision"
+examples:
+  - {line: "gragas show <id>", does: "show it"}
+  - {line: "gragas show <id> --json", does: "as one JSON document"}
+exits: ["done"]
+json: show

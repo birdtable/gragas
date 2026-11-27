@@ -1,0 +1,11 @@
+name: propose
+order: 100
+context: B
+ends: plan
+summary: "Propose a change to a rulebook you do not own"
+examples:
+  - {line: "gragas propose", does: "show the plan and the document it would open"}
+  - {line: "gragas propose --apply", does: "record the proposal"}
+writes: ["proposals/"]
+exits: ["done", "declined"]
+json: proposal

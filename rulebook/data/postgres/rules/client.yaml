@@ -1,0 +1,105 @@
+format: 3
+part: postgres
+concern: client
+rules:
+  - id: postgres.client.1
+    statement: "Entry code never imports the database client or the query builder; only the store layer does."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "When handlers import the client, connection handling, error mapping and typed queries are re-implemented in each one."
+    relations:
+      relates:
+        - store.seams.1
+  - id: postgres.client.2
+    statement: "One shared package opens the Postgres connection (pool, IAM token) and maps its errors; no new connection pool is created outside it, and one certificate bundle and one 64-bit integer parser are shared."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A second pool constructor adds connections the budget does not count, and a second integer parser reads a 64-bit column differently from the first."
+  - id: postgres.client.3
+    statement: "The maximum number of database connections the services can open at once is computed from the concurrency the infrastructure allows, checked to be under the cluster limit, and the session timeouts are read back."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The budget is function concurrency times pool size, summed over services that share a cluster, written as data. The connection config sets a statement timeout and an idle-in-transaction timeout, and a test reads them back with SHOW on a fresh pooled connection. A measure sits beside it: connection count and the age of the oldest open transaction, read by hand at each release. Whether a managed pooler is used was not checked."
+      pros:
+        - "The first big surprise of a growing service is the remaining-connection-slots failure; a runtime that scales to many instances makes the sum large and spiky. Agents raise a pool size to cure a timeout and move the queue (inference)."
+    sources:
+      - ref: magda-just-use-postgres
+        where: appendix A section A.3 use connection pooling
+        backs: rule
+      - ref: postgres-docs
+        where: connections
+        backs: rule
+      - ref: p-03-data
+        where: section 10
+        backs: rule
+  - id: postgres.client.4
+    statement: "Transactions are opened only through the one shared transaction helper, which retries the serialisation and deadlock codes a bounded number of times and surfaces a typed failure after that."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The codes are 40001 and 40P01. A transaction makes no call outside the database. For a program in Go the same is one helper that retries serialisation failures, found by a scan for a transaction opened outside it."
+      pros:
+        - "A stronger isolation level obliges the application to retry, and a helper without the retry loses the write or fails the user. A forced serialisation failure on a real container is the only ordinary test that sees it."
+    sources:
+      - ref: jepsen-postgresql-12-3
+        backs: rule
+      - ref: postgres-docs
+        where: transaction isolation
+        backs: rule
+      - ref: p-03-data
+        where: section 7
+        backs: rule
+      - ref: decision-37
+        backs: rule
+  - id: postgres.client.5
+    statement: "A transaction that reads a set and writes on its strength states, as arguments to the helper, which invariant it protects and the isolation level it runs at, and the anomaly the level prevents."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The default level, Read Committed, is right for a single-row read-modify-write and wrong for reading a set and then inserting on the strength of it. The review asks: which invariant does this transaction protect, which anomaly would it suffer at this level, and what does the code do on a serialisation failure."
+      pros:
+        - "An agent copies the default level and cannot see the race, since no ordinary test produces it. The choice of level is made against a named anomaly, and the engine version matters (postgres.engine.1)."
+    relations:
+      relates:
+        - postgres.engine.1
+        - postgres.client.4
+    sources:
+      - ref: magda-just-use-postgres
+        where: ch. 2 section 2.4.3 multiversion concurrency control
+        backs: rule
+      - ref: p-03-data
+        where: section 7
+        backs: rule
+  - id: postgres.client.6
+    statement: "Optimistic concurrency uses a revision in the request body and one compare-and-set helper; a stale write is a conflict, distinct from not found, and never an entity tag or a precondition status."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - "A stale update that overwrites silently loses a write, and a conflict read as not found hides the race."
+    relations:
+      relates:
+        - store.consistency.3

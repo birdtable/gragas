@@ -1,0 +1,8 @@
+$ gragas term retire gate --decision-title It no longer holds --decision-text The rule says what the code stopped doing.
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    the term gate is used by 1 rule(s) and is not retired: go.errors.3
+    reword those rules with gragas rule replace, or take the term out of them,
+then retire it again
+--- stderr

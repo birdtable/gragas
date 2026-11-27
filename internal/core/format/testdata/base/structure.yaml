@@ -1,0 +1,11 @@
+format: 3
+layers:
+  - slug: core
+    name: Core
+    parts:
+      - slug: base
+        name: Base
+        owners: [team-b]
+        concerns:
+          - slug: errors
+            name: Errors

@@ -1,0 +1,11 @@
+format: 3
+part: web
+concern: forms
+rules:
+  - id: web.forms.3
+    statement: Show an error beside the field it is about.
+    strength: should
+    status: active
+    owner: alex
+    review_by: "2027-03-01"
+    origin: imported

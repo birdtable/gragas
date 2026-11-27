@@ -1,0 +1,9 @@
+$ gragas resolve
+--- exit 4
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  not ready  parent not fetched: fixture-parent 0.9.0 is not in the releases
+  cache, and this build fetches no parent (A50)
+    gragas validate
+--- stderr

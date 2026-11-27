@@ -1,0 +1,94 @@
+format: 3
+part: service
+concern: cycle
+rules:
+  - id: service.cycle.1
+    statement: "The suite starts one shared container per package in its global setup, and each test gets its own database cloned from a migrated template, never a container per file or a migration per test."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "tests.isolation.3 holds that heavy fixtures start once and are reached through a helper; this line gives the shape for a service. The global setup starts the engine once, runs the migrations once into a template, and each test clones the template into a database of its own. A container per file costs seconds per file; a clone costs milliseconds. A bind timeout that never changes whatever the load means the knob is not connected to the pool."
+      pros:
+        - "Four files cost 19 seconds per container per file against 7 seconds shared, and a template clone took 68 to 136 milliseconds against 210 to 322 to migrate; a container per file inside a fixed 10 second bind budget failed three tiers on the timeout."
+    relations:
+      relates:
+        - tests.isolation.3
+        - tests.runners.5
+        - tests.doubles.2
+    sources:
+      - ref: testcontainers-node
+        where: About
+        says: "Testcontainers is a library that supports tests, providing lightweight, throwaway instances of common databases"
+        backs: check
+  - id: service.cycle.2
+    statement: "A container image the tests use is pinned by digest and pulled in the tools step, before the lock and never inside the container's start call."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "gates.command.24 holds that an image is a tool. A pull inside the start call runs under the test's bind timeout and under the heavy-test lock, so a slow pull looks like a slow container and holds the slot for the download. The tools step pulls by digest when the pin changes (gates.command.19), and the start call finds the image present."
+      pros:
+        - "A pull inside the start call in one organisation made a constant bind timeout fire on the network, and nobody could tell the pull from the start."
+    relations:
+      relates:
+        - gates.command.24
+        - gates.command.19
+        - supply.provenance.7
+    sources:
+      - ref: docker-cli-image-pull
+        where: Pull an image by digest
+        says: "When pulling an image by digest, you specify exactly which version of an image to pull."
+        backs: rule
+  - id: service.cycle.3
+    statement: "The integration tier is a member of the push or the release tier, never a command outside every hook, and a skipped database test prints as a skip and is counted, never a quiet pass."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "gates.command.17 holds that a check belongs to the earliest moment where it fits the budget, and gates.command.30 that a member which cannot run here prints SKIPPED. The integration tier that needs the container runs at push where it fits and at release where it does not; it is a row of the members file either way. A test that skips because the database is absent is a skip in the report, and red at land (tests.admission.5)."
+      pros:
+        - "The integration tiers of eleven services in one organisation, 68 and 229 seconds in two of them, ran outside every hook and nothing proved them; two packages' own gates skipped 24 and 15 database tests quietly."
+    relations:
+      relates:
+        - gates.command.17
+        - gates.command.30
+        - tests.admission.5
+        - service.authz.2
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+  - id: service.cycle.4
+    statement: "At release a cross-service end-to-end tier proves what no unit suite can: it measures the state the services hold, never the response alone, and marks the data it writes with a run marker."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A response that says accepted proves the request was read; the order, the row or the event it should have produced is the thing to read back. Each run writes its marker into the data it makes, so the tier finds its own rows and leaves the rest alone, and a teardown removes them (tests.journeys.6). The tier is a release member with a net field (gates.command.30)."
+      pros:
+        - "One real order was lost in one organisation with every unit suite green, because nothing read the state after the response."
+    relations:
+      relates:
+        - tests.journeys.6
+        - tests.journeys.5
+        - gates.command.30
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+  - id: service.cycle.5
+    statement: "The deploy is a release member run by the hub after the tier, and a package that publishes has a publish workflow that runs the push tier first."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "supply.release.1 holds that a release runs the full gate first and that only the release workflow on the tag publishes. This line places the deploy and the publish in the members file: the deploy is a release member with an after edge to the tier, run by the hub (gates.command.31), and a publish is the same shape. A package that publishes with no workflow publishes from a working checkout nobody proved."
+      pros:
+        - "Six packages of one organisation publish with no workflow, and one service has no deploy on record."
+    relations:
+      relates:
+        - supply.release.1
+        - gates.command.31
+        - supply.workflows.5
+    sources:
+      - ref: service-reasons-stated
+        backs: rule

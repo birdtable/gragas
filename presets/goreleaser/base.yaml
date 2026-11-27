@@ -1,0 +1,15 @@
+# goreleaser base: the release settings gragas check holds a repository's
+# .goreleaser.yaml to. Written by hand; a repository copies it and extends it.
+version: 2
+
+archives:
+  - formats: [tar.gz]
+    # supply.licences.6: every archive ships the project's LICENSE and NOTICE.
+    files:
+      - LICENSE
+      - NOTICE
+
+# supply.release.5: the changelog entry is the one a person wrote and passes in
+# with --release-notes, so the tool's own changelog is never turned off beside it.
+changelog:
+  disable: false

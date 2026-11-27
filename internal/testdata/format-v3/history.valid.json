@@ -1,0 +1,19 @@
+[
+  {"format": 3, "number": 1, "kind": "create", "entity": "rule:go.errors.1", "after": {"status": "proposed"}, "who": "alex", "when": "2026-10-01T08:00:00Z", "plan": "sha256:2222222222222222222222222222222222222222222222222222222222222222"},
+  {
+    "format": 3,
+    "number": 2,
+    "previous": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "kind": "promote",
+    "entity": "rule:go.errors.1",
+    "before": {"status": "proposed", "owner": "alex", "review_by": "2026-12-01", "zero_by": "2026-11-01", "replaced_by": "go.errors.2", "literal": "sha256"},
+    "after": {"status": "trial", "owner": "alex", "review_by": "2027-04-01", "zero_by": "2027-01-01", "replaced_by": "go.errors.3", "literal": "sha512"},
+    "who": "alex",
+    "when": "2026-10-02T08:00:00Z",
+    "plan": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "decision": "keep-the-names-out",
+    "command": "gragas rule promote go.errors.1 --decision keep-the-names-out"
+  },
+  {"format": 3, "number": 3, "previous": "sha256:5555555555555555555555555555555555555555555555555555555555555555", "kind": "undo", "entity": "rule:go.errors.1", "before": {"status": "trial"}, "after": {"status": "proposed"}, "who": "alex", "when": "2026-10-03T08:00:00Z", "plan": "sha256:6666666666666666666666666666666666666666666666666666666666666666", "reverts": "sha256:5555555555555555555555555555555555555555555555555555555555555555"},
+  {"format": 3, "number": 4, "previous": "sha256:7777777777777777777777777777777777777777777777777777777777777777", "kind": "migrate", "entity": "rulebook:fixture@1.0.0", "after": {"owner": "alex"}, "who": "alex", "when": "2026-10-04T08:00:00Z", "plan": "sha256:8888888888888888888888888888888888888888888888888888888888888888", "statements": {"go.errors.1": "sha256:9999999999999999999999999999999999999999999999999999999999999999"}}
+]

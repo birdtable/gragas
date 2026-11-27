@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "word": "done",
+  "run": "1752f8bc",
+  "recovered": [
+    {
+      "run": "r3",
+      "command": "gragas gen --apply",
+      "completed": false
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+part: tests
+tools:
+  - key: vitest-eslint-plugin
+    name: "test lint: @vitest/eslint-plugin"
+    role: >-
+      Lints test files: no disabled tests, no focused tests, no commented-out tests, every test asserts, no
+      conditional expectations. A skipped, focused or assertion-less test fails lint. Rules enabled:
+      no-disabled-tests, no-focused-tests, no-commented-out-tests, expect-expect and no-conditional-expect.
+    version: 1.6.28
+    licence: MIT
+    binding: ts
+    ships: the lint preset for test files
+    state: chosen
+    why: >-
+      Holds tests.admission.2 and tests.admission.5 in the TypeScript runner; fired on a planted skip, focus
+      and empty body.
+    lost:
+      - name: eslint-plugin-vitest (unscoped npm name)
+        why: Stale at 0.5.4 (April 2024); the scoped name is the maintained package.
+    open:
+      - Released 22 Oct 2026 (source says).
+  - key: stryker
+    name: "mutation tester: Stryker"
+    role: >-
+      Changes the code on purpose (flips a condition, drops a line) and checks that some test fails; run on
+      the diff in core logic and shared parts.
+    version: 10.1.1
+    licence: Apache-2.0
+    binding: ts
+    ships: the mutation config with the vitest runner plugin and a threshold in config
+    state: candidate
+    why: Holds tests.admission.1 and tests.admission.3 for TypeScript.
+    open:
+      - >-
+        Not run; released 23 Oct 2026 (source says). It enters through the tool record and is in neither
+        stack's pins today.
+      - >-
+        Wanted for pure layers; no web row holds test efficacy of tests (the mutation row covers rules and
+        checks only).
+  - key: gremlins
+    name: "mutation tester: gremlins"
+    role: >-
+      Mutation testing for Go, run on the diff in core logic with the efficacy threshold and timeout
+      coefficient in its config file.
+    version: v0.6.0
+    binding: go
+    ships: the .gremlins.yaml config
+    state: candidate
+    why: >-
+      Verified 5 Nov that the threshold in config gates (exit 10) and the flag alone does not (exit 0 at 83
+      percent).
+    lost:
+      - name: go-mutesting (zimmski)
+        why: Dormant since 2024; the maintained forks and ooze were not tried.
+    open:
+      - >-
+        Default timeouts timed out all six mutants of a fast package until the timeout coefficient was set to
+        10.
+  - key: kernel-advisory-lock
+    name: "heavy-test lock: kernel advisory lock"
+    role: >-
+      A kernel lock serialises the container-backed tier across sessions; the kernel releases the lock when
+      the holder dies.
+    binding: any
+    ships: the lock helper in the shared gate pack, slots capped by the host
+    state: chosen
+    why: >-
+      Heavy tests from several sessions on one host collide; a kernel lock cannot go stale.
+    lost:
+      - name: flock(1) from a package manager
+        why: >-
+          The reference practice; our Go helper gives the same lock without a separate install.
+    open:
+      - Slot count is the host cap; workers per run follow tests.runners.2.
+  - key: shared-container
+    name: "real storage engine for tests: shared container"
+    role: >-
+      Starts a real Postgres or DynamoDB Local in one shared container for tests; for a file-based store a
+      real file in a test folder needs no container.
+    binding: any
+    ships: the container start in the runner's global setup
+    state: chosen
+    why: Holds tests.doubles.1 and tests.isolation.3.
+    open:
+      - Go side uses a real SQLite file in a test folder and needs no container.
+  - key: schemathesis
+    name: "contract fuzzer: Schemathesis"
+    role: Generates requests from an API spec and checks that the responses conform to it.
+    binding: any
+    ships: the contract-fuzz job config
+    state: candidate
+    why: >-
+      Candidate for tests.generated.4; the reference practice fuzzes each deployed API against its own
+      contract.
+    open:
+      - >-
+        Not tried here; for a daemon the equivalent today is fuzz targets for parsers and golden JSON.
+      - This tests a server; a page tests its fixtures against server samples instead.
+  - key: behaviour-tests-unit-and-integration
+    name: "test kind: behaviour tests (unit and integration)"
+    role: Unit and integration tests that prove a feature does what it should.
+    binding: any
+    ships: the shared runner preset
+    state: chosen
+    why: >-
+      Held by the isolation, doubles and golden rules; behaviour tests on ids and roles pass on any stack.
+  - key: property-based-tests
+    name: "test kind: property-based tests"
+    role: Tests that generate many inputs and check that a property always holds.
+    binding: any
+    ships: the property library in each program's test dependencies
+    state: chosen
+    why: >-
+      Held by tests.generated.1 to tests.generated.3; fast-check in TypeScript, fuzz targets with seeds in Go.
+    open:
+      - >-
+        No web row for generated-input tests of pure UI logic such as formatters and parsers.
+  - key: contract-conformance
+    name: "test kind: contract conformance"
+    role: Proof that the running service answers what its spec says.
+    binding: any
+    ships: the contract-fuzz job and the fixtures check
+    state: chosen
+    why: Held by tests.generated.4 and tests.doubles.6.
+    open:
+      - >-
+        A running daemon's answers are not yet checked against its published description.
+  - key: cross-service-journeys
+    name: "test kind: cross-service journeys"
+    role: >-
+      Tests that drive a whole business flow through several deployed parts against a real stack and assert
+      the outcome end to end.
+    binding: any
+    ships: the journey harness and the journey map
+    state: chosen
+    why: >-
+      Held by the journey rules; journeys run in both themes and two engines on the web side.
+  - key: mutation-no-weakened-assertions-no-mocking-our-own-code
+    name: "test quality checks: mutation, no weakened assertions, no mocking our own code"
+    role: Checks on the tests themselves, not on the code they cover.
+    binding: any
+    ships: the admission ladder and the test lint preset
+    state: chosen
+    why: Held by tests.admission.1 to tests.admission.6 and tests.doubles.2.
+    open:
+      - >-
+        Removed-assertion check for web tests and mutation of shared web parts were gaps in the catalogue.

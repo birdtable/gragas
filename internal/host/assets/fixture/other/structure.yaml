@@ -1,0 +1,21 @@
+format: 3
+layers:
+  - slug: language
+    name: Language
+    parts:
+      - slug: go
+        name: Go
+        owners: [alex]
+        concerns:
+          - slug: errors
+            name: Errors
+      - slug: ui
+        name: Interface
+        concerns:
+          - slug: forms
+            name: Forms
+kinds:
+  - slug: service
+    name: Service
+  - slug: library
+    name: Library

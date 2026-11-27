@@ -1,0 +1,23 @@
+waivers:
+  - id: w-old-b
+    rule: go.errors.1
+    path: old/**
+    reason: A planned fix was due by the expiry.
+    kind: planned fix
+    owner: alex
+    expiry: "2026-10-01"
+    ticket: FIX-1
+    created: {who: alex, when: "2026-08-01T10:00:00Z"}
+    suppression: "//nolint:wrapcheck // w-old-b"
+    state: expired
+  - id: w-closed-c
+    rule: go.errors.1
+    path: gone/**
+    reason: The code was deleted.
+    kind: false positive
+    owner: alex
+    expiry: "2027-01-01"
+    created: {who: alex, when: "2026-09-01T10:00:00Z"}
+    suppression: "//nolint:wrapcheck // w-closed-c"
+    state: closed
+    closed: {who: alex, when: "2026-10-10T10:00:00Z", why: by hand}

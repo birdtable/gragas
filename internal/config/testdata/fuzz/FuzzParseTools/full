@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("# Every key of the tools file, at a value that is not its default.\nversion: 1\ntools:\n  golangci-lint@2.15.0: /opt/golangci-lint/2.15.0/golangci-lint\n  golangci-lint@2.14.1: /opt/golangci-lint/2.14.1/golangci-lint\n  eslint@9.12.0: /home/me/tools/node_modules/.bin/eslint\ncontainer:\n  runtime: /usr/bin/podman\n  image: registry.example/gragas/proof@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\nsandbox:\n  userns: /usr/bin/bwrap\n  macos: /usr/bin/sandbox-exec\n")

@@ -1,0 +1,676 @@
+part: tests
+concern: selection
+order: 2
+title: Whole runs, and selecting tests by what changed
+summary: >-
+  A repo whose full suite fits its push budget runs it whole and uncached at every push, and a full uncached
+  run always satisfies the gate (decision 65). Selection by change is a tool a repo turns on only when its
+  suite is too slow to run whole; the selection rules below bind only where it is on. There, selection fails
+  closed: what it cannot place selects everything, every skip is named and proved, global checks always run
+  whole, and a full run backstops the selector at least every third release.
+rules:
+  - id: tests.selection.1
+    slug: selector-from-the-change
+    since: 0.1.0
+    rule: >-
+      A repo whose full suite fits its push budget runs it whole and uncached at every push, and a full run
+      always satisfies the gate; where a repo turns selection on, a program picks the tests from what changed,
+      prints what it skipped, and runs global checks whole.
+    detail: >-
+      Whole and uncached means every test of every package, with any result cache off (in Go `-count=1`),
+      because a cached pass is a claim about a run that did not happen. A repo turns selection on by a
+      declared setting in its gate config, with the measured whole-suite time that passed the push budget;
+      without that setting the selection rules (tests.selection.2 to 15) do not bind and a selected run does
+      not satisfy the gate. Where selection is on: it is by package in Go and by recorded reads in TypeScript;
+      global checks (types, lint configuration, structure, size, vulnerability scan, tidiness) are never
+      affected-only unless the tool is sound under caching: the rule table carries a scope field and the
+      runner refuses an affected-only run of a global check. The plan prints the global list and the gate
+      fails if one is missing from the run. The plan data is a protected path. Tests of the selector plant a
+      failing package behind a changed one, and an unknown path selects everything (tests.selection.2).
+    level: package
+    why: >-
+      Selection is a tool for a suite too slow to run whole, and its only failure mode is a missed dependency.
+      A full uncached run has no such failure and is the claim every target makes, so it is the default, and
+      the selection rules are kept for the day a suite outgrows its budget.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-18
+        backs: rule
+      - ref: decision-27
+        backs: rule
+      - ref: decision-65-tests
+        backs: rule
+      - ref: p-07-testing
+        where: section 5
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. the gate's push step runs the whole suite uncached unless the gate config declares
+          selection on with a measured whole-suite time; a cached or partial run without that setting fails
+          the gate. Plant: a push step that runs only the changed packages with no selection setting fails; a
+          cached test result at push fails. Control: a whole uncached run passes
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. where selection is on, the selector library lifted from our CLI repo's package
+          selector; the plan prints the global checks and the gate fails if one is absent. Plant: a plan that
+          omits the vet step for a small change fails, and a failing package behind a changed one is selected.
+          Control: the full plan passes
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. where selection is on, a rule table with a scope field; the runner refuses the
+          affected option on a global-scope check. Plant: the affected option on the type check is refused,
+          and a cross-file type error is caught by the whole run. Control: a global check run whole passes
+    relates:
+      - id: tests.selection.2
+        how: see
+    open:
+      - A cross-file plant for the global-check rule is planned and not run.
+  - id: tests.selection.2
+    slug: unplaced-selects-everything
+    since: 0.1.0
+    rule: >-
+      A change the selector cannot place selects everything and says why, for tests and for journeys alike;
+      selection never errs towards fewer.
+    detail: >-
+      Unplaced means a path in no class of the path-class table, a file no journey declares, go.mod and go.sum
+      or the package lockfile, build and release files, a platform version bump, the journey map and the
+      selector itself. The result names the path and the reason.
+    level: program
+    why: >-
+      Held today in two repos (6 of 6 unplaced paths select everything in one, 15 of 15 and 87 of 87 in the
+      trialled selector); every other path is a guess.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-18
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. selector tests with a planted failing journey behind a changed command (it must be
+          selected) and an unmapped path (it must select all). Plant: an unmapped path selects fewer than
+          everything. Control: an unmapped path selects all and names why
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. selector returns ALL with the reason for any path not in the path-class table;
+          lifted from two repos' pickers The Go-repo picker lifted is the gate-set selector; the other is the
+          browser-test picker. Plant: a path in no class selects everything and names why. Control: a placed
+          path selects its tests
+    open:
+      - >-
+        Settled by decision 65 (D-T82): selection is optional and binds only where a repo turns it on; a full
+        uncached run always satisfies the gate.
+      - "v1 evidence, not yet a source: operator direction; A"
+  - id: tests.selection.3
+    slug: every-input-counted
+    since: 0.1.0
+    rule: >-
+      Test selection counts every input a test has (files read, folders listed, modules loaded, programs run),
+      and a test that reads files, globs or spawns programs declares those inputs.
+    detail: >-
+      A test that reads the file system, globs or spawns declares its inputs with a tag line naming a glob; a
+      dynamic import is banned outside a declared list. A recorded-reads tracer (about 90 lines, about 200
+      with the selector, near-zero cost) records what each test actually reads. A read behind an unset branch
+      is not recorded. The selector is proved on the TypeScript runner (0 of 69 missed) before any
+      older-runner test file migrates (decision 10). Globbing libraries covered are glob and fast-glob, as
+      well as readFileSync, readdirSync, fs/promises, node:fs, import.meta.glob and the exec and spawn
+      families. The tracer and selector together are about 200 lines. A non-literal import() is banned outside
+      a declared list.
+    level: function
+    why: >-
+      44 of 87 test files in one repo read the file system or run a program, so a selector that looks only at
+      imports misses them.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-10
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. recorded-reads tracer and selector lifted from the trialled version, plus a lint
+          rule requiring the inputs tag on a test that reads files, globs or spawns. Plant: a test reading a
+          fixture file is selected when that fixture changes, and one that reads without declaring fails lint.
+          Control: a declared test passes
+    open:
+      - Recorded as written; a read behind an unset branch is not recorded.
+      - >-
+        The tracer is not in any repo; the first adoption proves it on the runner and migrates the files.
+      - "v1 evidence, not yet a source: A (44 of 87 test files)"
+  - id: tests.selection.4
+    slug: opaque-tests-always-run
+    since: 0.1.0
+    rule: A test whose inputs cannot be seen always runs.
+    level: function
+    why: >-
+      A test that spawns git or a shell reads things no tracer sees; one to two per suite.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. the opaque list; a test that spawns an opaque program is selected for any change.
+          Plant: a test spawning an opaque program is selected for an unrelated change. Control: a test with
+          seen inputs is selected only by its inputs
+    open:
+      - Trialled; not in any repo.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C (1 to 2 per suite)
+  - id: tests.selection.5
+    slug: selector-change-selects-all
+    since: 0.1.0
+    rule: A change to the selector, its map, its rules or the hooks selects everything.
+    level: program
+    why: >-
+      In one repo the reach map and the picker sit in the class that selects nothing, a hole held only by a
+      unit test; a documented trade there and a disagreement with the donor.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          the path-class table puts the selector, its map, its rules, the hooks and the table itself in the
+          all class; a unit test fails any selector file not in it. Plant: editing the reach map selects
+          everything. Control: an unrelated edit selects its own tests
+      - binding: go
+        class: test-kit
+        tier: "3"
+        note: >-
+          the same all-class entries for the Go selector, its journey map and the gate's plan data. Plant:
+          editing the journey map selects fewer than all journeys. Control: editing a command selects its
+          journeys
+    open:
+      - Today one repo's reach map and picker select nothing.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+  - id: tests.selection.6
+    slug: cache-only-when-visible
+    since: 0.1.0
+    rule: >-
+      A cached gate result is trusted only for units that read nothing the cache cannot see, and is keyed so
+      it can be recomputed from the commit.
+    detail: >-
+      Packages that read the machine (the list of tests.isolation.7) run with the cache off. A cached result
+      is keyed by the check, its command, the content ids of its inputs, the lockfile and the platform; it
+      records whether it came from a run or from the cache.
+    level: package
+    why: >-
+      A cache hides a changed home folder, clock or process; the key must carry every input. Own measure: one
+      repo's selector holds the machine-read list.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 23
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          packages from the machine-read list run with the count flag set to one. Plant: a machine-reading
+          package run from cache fails. Control: the same package with the cache off passes
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. cache key built from check, command, input content ids and lockfile, and
+          stored with a from-run or from-cache mark. Plant: a result keyed without the lockfile is refused.
+          Control: a fully keyed result is accepted
+    relates:
+      - id: tests.isolation.7
+        how: see
+      - id: tests.journeys.3
+        how: see
+      - id: tests.measures.7
+        how: see
+    open:
+      - >-
+        Built inside the verdict store; the cache tools on the market are banned as workspace tools (decision
+        11).
+    note: >-
+      The stale-build half of the source row is tests.journeys.3; the performance-ceiling half is
+      tests.measures.7.
+  - id: tests.selection.7
+    slug: no-test-twice
+    since: 0.1.0
+    rule: >-
+      No test runs twice on the same tree; a run is proved by a record keyed to the tree.
+    detail: >-
+      The one exception is the bounded repeat of new or changed test functions at admission (decision 32): one
+      step of the one proof, able only to fail.
+    level: program
+    why: >-
+      A second run is either waste or a rerun-to-green. One repo keeps the tree-keyed record from the test
+      JSON summary.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-32
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. tree-keyed record from the JSON test summary hash; the gate refuses a second run
+          on a recorded tree except the admission repeat The record is the go test -json summary, hashed with
+          the tree. Plant: a second run request for a recorded tree is refused. Control: a new tree runs
+    open:
+      - "v1 evidence, not yet a source: own measure (operator direction)"
+  - id: tests.selection.8
+    slug: skipped-is-not-a-pass
+    since: 0.1.0
+    rule: >-
+      A skipped, todo or zero-test run is not a pass; a skip is named in the output and in the verdict, and
+      nothing reports green for what it skipped.
+    detail: >-
+      The verdict has a not-run section naming each skipped step and its tier, and a schema check fails a
+      verdict without one. A check that needs a browser or a slow tool is named by tier and never silently
+      skipped. A gate fails closed on empty input: a glob that matches nothing or a run that finds zero tests
+      fails. The runner proves it ran its full list.
+    level: program
+    why: >-
+      Green for a skipped step is a lie the next reader believes. Today one repo prints its plan and loses it;
+      the tools already fail closed on empty globs (verified) but custom checks and name filters need the
+      runner to close the gap.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. plan file kept (not only printed); the verdict has a not-run section and a schema
+          check fails a verdict with none; the runner fails a zero-test run. Plant: a verdict that omits a
+          skipped browser step fails, and a run that found zero tests fails. Control: a verdict naming every
+          skip passes
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the same verdict format and not-run section in the Go gate summary. Plant: a
+          skipped package with no line in the verdict fails. Control: every skip named passes
+    open:
+      - >-
+        Settled by decision 65 (D-T82): selection is optional and binds only where a repo turns it on.
+  - id: tests.selection.9
+    slug: skips-proved
+    since: 0.1.0
+    rule: >-
+      Every unit a run skipped (a package or a journey) is proved skipped by a verdict that names the unit,
+      the inputs compared with the change and the tree, and a skip with no reason fails.
+    detail: >-
+      A package's reason is that nothing it imports or tests changed, or that the tier is not due. The land
+      step compares the skipped list with the full list and reruns one planted failing unit to show selection
+      still works. A tag's record says whether its test suites ran selected or in full, and at most two tags
+      pass between full runs (decision 27). A skip counts as proved only once the oracle of tests.selection.10
+      has run. Each release prints the age of the last whole run; no weekly or other scheduled run is added
+      (decision 66).
+    level: program
+    why: >-
+      Decision 18 says each skip is proved; without a per-skip record the claim is unproved. One repo records
+      only counts of packages run, skipped and cached.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-18
+        backs: rule
+      - ref: decision-27
+        backs: rule
+      - ref: decision-34
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. run record lists each skipped package with its reason keyed to the tree; land
+          replays a planted failing package; verdict line per skipped journey. Plant: a skipped package with
+          no reason fails, and a planted journey must be selected. Control: every skip carrying a reason and
+          the planted unit selected passes
+    relates:
+      - id: tests.selection.10
+        how: see
+    open:
+      - >-
+        Settled by decision 65 (D-T82): selection is optional; decision 27 holds only where a repo turns
+        selection on.
+      - "v1 evidence, not yet a source: own measure (operator direction)"
+    note: >-
+      Merges the package-skip record and the journey-skip proof, since one verdict format holds both.
+  - id: tests.selection.10
+    slug: selector-oracle
+    since: 0.1.0
+    rule: >-
+      Applies only to a repo that turns selection on: its selector is judged against an oracle that deletes
+      what tests read, runs everything and counts misses, at adoption, whenever the selector, its map or its
+      rules change, and on every third tag.
+    detail: >-
+      A repo that runs its suite whole (tests.selection.1) has no selector and records nothing here. One pass
+      runs the suite once per deletion, so it is a separate job outside the release time, run by dispatch at
+      the release step and not on a schedule. The result prints the corpus size, because a smaller corpus is
+      the known way round. It has run on script tests only, never on a browser grid.
+    level: program
+    why: >-
+      Selection has one failure mode, a missed dependency, and the oracle is the only check on it. Decision
+      18's "each skip proved" is unproved until the oracle runs; it learns dependencies from deletions only.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-40
+        backs: rule
+      - ref: decision-18
+        backs: rule
+      - ref: decision-65-tests
+        backs: rule
+      - ref: p-07-testing
+        where: section 10.2
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. oracle scripts that delete a read input, run all and compare (trialled); a release
+          job runs them on every third tag and on selector change The trialled scripts are oracle.mjs,
+          gen-muts.mjs and rescore.mjs. Plant: a selector with one input deleted from its map is caught.
+          Control: a complete map passes
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. the same oracle method over the Go selector's map, run at the release step. Plant:
+          a selector with one import edge removed from its map is caught. Control: a complete map passes
+    relates:
+      - id: tests.selection.1
+        how: see
+    open:
+      - >-
+        As it stands the oracle has run on script tests only and cannot run on a browser grid; recorded, not
+        redesigned.
+      - >-
+        No target product selects today, so the rule binds no target yet.
+  - id: tests.selection.11
+    slug: no-import-only-selector
+    since: 0.1.0
+    rule: >-
+      A browser-test selector that follows only the test files' imports never skips a test at land, and the
+      flag that does so is banned.
+    detail: >-
+      The banned flag is the runner changed-only option, --only-changed, which follows import graphs only.
+    level: program
+    why: >-
+      The runner's changed-only flag selected 0 tests on a change to the site (trialled): the rule was a guide
+      line and the lander ignored it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. plain-text scan of package scripts, the Makefile, workflow files and rule data for
+          the changed-only flag; a substring scan so a wrapper still contains the text. Plant: the flag in a
+          workflow fails. Control: a workflow without it passes
+    open:
+      - >-
+        Shared with the forbidden-command scan; a flag built from two strings would escape, reviewed by a
+        planted bypass list.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A (0 tests selected on a site
+        change)
+  - id: tests.selection.12
+    slug: full-run-backstop
+    since: 0.1.0
+    rule: >-
+      Applies only where selection is on: a full no-cache run backstops selection at least every third
+      release, the tag records whether it ran selected or in full, and a red locks further releases.
+    detail: >-
+      A repo with no selection runs whole at every push and records nothing here. At most two releases pass
+      since the last full run (decision 27). On a red the bad range is bisected, a lock file stops further
+      releases until the miss is fixed or reverted, and each miss becomes a permanent fixture. The backstop
+      runs on the merged tip or the tag, not after every land. A deliberate miss planted in the map must be
+      caught by it.
+    level: release
+    why: >-
+      Selection is exactly as safe as its map is complete; the backstop is how a miss is found and turned into
+      a fixture.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-27
+        backs: rule
+      - ref: decision-34
+        backs: rule
+      - ref: decision-65-tests
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. release job runs the full no-cache suite every third tag, writes the choice into
+          the tag, holds a lock file on red and a bisect script. Plant: a deliberate miss in the map is caught
+          by the full run. Control: a tag recording a full run within three releases passes
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. the release command refuses a tag whose record shows more than two selected
+          releases since the last full run. Plant: a third selected release in a row is refused. Control: a
+          full run resets the count
+    open:
+      - >-
+        No target product selects today, so the rule binds no target yet.
+      - >-
+        Nothing here has run; the lock file and bisect script are the on-a-miss procedure.
+    note: >-
+      Merges the whole-suite backstop and the third-release full run. A miss becoming a fixture is a person's
+      act.
+  - id: tests.selection.13
+    slug: release-proves-what-is-unproved
+    since: 0.1.0
+    rule: >-
+      A release reruns the full gate unless a verdict for its exact tree exists, and where selection is on the
+      scoped plan since the last tag is recorded in the tag.
+    detail: >-
+      The verdict is keyed to the tree hash and comes from a whole run of the gate (the push run or an earlier
+      release run); a verdict for another tree, or from a selected run, does not count. Where selection is on,
+      a tag with no recorded plan or no full-grid age is refused, the full grid runs when the last full
+      verdict is older than a stated line (every third release), and each release prints the age of the last
+      whole run.
+    level: release
+    why: >-
+      A release is a claim about one tree, so it either proves that tree or shows a verdict that already did.
+      Where selection is on, the release is exactly as safe as the map is complete, so the plan is recorded
+      with the tag.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-34
+        backs: rule
+      - ref: decision-27
+        backs: rule
+      - ref: decision-65-tests
+        backs: rule
+      - ref: decision-14
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. where selection is on, the release-ready command refuses a tag with no recorded
+          scoped plan or no full-grid age, and prints the age of the last whole run. Plant: a tag with no plan
+          record is refused, and a fixture history prints the age. Control: a tag with a plan record passes
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. the release command looks up a whole-run verdict keyed to the tree hash and reruns
+          the full gate when none exists. Plant: a release of a tree whose only verdict names another tree
+          reruns the gate. Control: a release of a tree with its own whole-run verdict skips the rerun and
+          names the verdict
+    open:
+      - "Nothing was run; the release command is a build under the hold on #3369."
+  - id: tests.selection.14
+    slug: plan-step-stays-cheap
+    since: 0.1.0
+    rule: >-
+      The plan step stays cheap as tests multiply, and an index is built if it passes 2 seconds.
+    level: program
+    why: >-
+      Timed at 0.7 s over 8,700 synthetic tests; a fixed timing gate on a loaded host is the fault
+      tests.flakes.4 forbids, so the number is read unloaded. A timing assertion on a loaded host is
+      load-sensitive.
+    kind: rule
+    strength: Answered
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class record. plan-step time recorded in the times file with the load; past the line the gate
+          blocks until the question is answered, measured unloaded. Plant: a synthetic suite of 8,700 tests
+          plans under 2 s on a quiet host; a planted slow plan is flagged. Control: a plan under the line
+          passes
+    review_question: >-
+      Is the selector's plan time, measured on an unloaded host, past 2 seconds, and if so where is the index?
+    relates:
+      - id: tests.flakes.4
+        how: see
+    open:
+      - >-
+        A watched number: the plan time is recorded with the load, and past the line it blocks until answered.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: tests.selection.15
+    slug: page-scoped-receipts
+    since: 0.1.0
+    rule: >-
+      Page-scoped runs keep a receipt per page and check, holding the content hash of the closure and the
+      green result, and a shared item selects every page.
+    level: program
+    why: A design with no build; the web notes warned against building a planner.
+    kind: rule
+    strength: Hard
+    status: later
+    when:
+      facets:
+        - test-selection
+    open:
+      - >-
+        Design only, not built; binds only where a repo turns selection on (decision 65, D-T82).
+  - id: tests.selection.16
+    slug: selection-after-the-floor-is-measured
+    since: 0.1.0
+    rule: >-
+      A repository turns test selection on at push only when its whole push, run with members at the same time
+      and tests in parallel, still misses its budget on a quiet host, and the owner decides it.
+    detail: >-
+      Until then every push runs the whole suite (tests.selection.1). When selection is turned on, the train
+      candidate and the release tier still run whole, the run prints every package it skipped and why
+      (tests.selection.9), the stamp records that the run was selected, and the oracle of tests.selection.10 runs
+      at adoption. A path no map places, and the shared inputs (the module files, the selector, the build file,
+      the tool list), select everything (tests.selection.2). The decision is the owner's and is recorded with the
+      measured floor that led to it.
+    level: program
+    why: >-
+      Selection buys about 20 seconds on a 50 second push and trades a whole run at every push for a whole run at
+      every train and release; the study recommends measuring the cheaper changes first.
+    kind: rule
+    strength: Answered
+    status: proposed
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    relates:
+      - id: tests.selection.1
+        how: refines
+      - id: gates.command.4
+        how: see
+    open:
+      - >-
+        Proposed on purpose: the owner decides after the measured floors of the concurrency and parallelism
+        rules (gates.command.18, tests.runners.4) are in. The rule becomes active, or is retired, with that
+        decision.
+  - id: tests.selection.17
+    slug: language-split-is-a-row-of-selection
+    since: 0.1.0
+    rule: >-
+      A split of the gate by language (the TypeScript members only when the explorer or its lock changed, no Go
+      member but the generators and the readers of the contract on a TypeScript-only change) is one row of the
+      selection map and follows tests.selection.16, not a separate switch.
+    detail: >-
+      The split saves seconds on a Go-only change and minutes on the rare change that touches only TypeScript.
+      It uses the same map, the same skipped-with-reason output and the same whole run at the train and the
+      release as selection does, so it is decided with it.
+    level: program
+    why: >-
+      A second switch beside selection would be a second way to skip a test, with its own gaps; as a row of the
+      map it is held by the oracle already.
+    kind: rule
+    strength: Answered
+    status: proposed
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    relates:
+      - id: tests.selection.16
+        how: refines
+    open:
+      - >-
+        Proposed on purpose, with tests.selection.16; it follows that decision.

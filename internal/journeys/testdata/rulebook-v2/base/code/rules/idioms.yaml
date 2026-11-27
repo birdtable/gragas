@@ -1,0 +1,178 @@
+part: code
+concern: idioms
+order: 7
+title: Idioms and function shape
+summary: >-
+  Small habits that keep code readable and that a linter can hold: the error path returns early, the standard
+  library is used where it does the job, a switch over an enum is exhaustive, a long ladder is a table, and a
+  component has one reason to change.
+rules:
+  - id: code.idioms.1
+    slug: early-return
+    since: 0.1.0
+    rule: The error path returns early and the normal path stays unindented.
+    level: function
+    why: >-
+      A guard clause keeps the normal path at one level, so the reader does not carry the failure branch while
+      reading the success branch.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: revive
+        tier: "1"
+        fix: auto
+        note: >-
+          golangci-lint revive early-return and indent-error-flow, enabled in the shared config. Plant: if err
+          == nil with a long body and an else that returns err fires both. Control: the guard-clause form
+          passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: practice (enabled in three of six
+        lint configs)
+  - id: code.idioms.2
+    slug: use-the-standard-library
+    since: 0.1.0
+    rule: The standard library is used where it already does the job.
+    detail: >-
+      The mechanical neighbours are linters that flag helpers the standard library now has (exptostd,
+      modernize with go fix, usestdlibvars). They hold the common cases only; knowing that the standard
+      library already does the job needs knowing the intent.
+    level: function
+    why: A hand-written helper beside a standard one is a copy that will drift.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: golangci-lint-linters
+        where: modernize
+        says: >-
+          A suite of analyzers that suggest simplifications to Go code, using modern language and library features.
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: exptostd
+        tier: "1"
+        fix: auto
+        note: >-
+          golangci-lint exptostd, modernize and usestdlibvars turned on. Plant: a local helper that the
+          standard library now has is reported. Control: a call to the standard function passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: modernize
+        tier: R
+        fix: auto
+        note: Held by the golangci preset, whose comment on modernize names this rule.
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: usestdlibvars
+        tier: "1"
+        fix: auto
+        note: Held by the golangci preset, whose comment on usestdlibvars names this rule.
+    review_question: >-
+      Does the standard library already do this, and what intent would a reader need to know to see it?
+    open:
+      - The linters cover a small share; the rest is review judgement.
+  - id: code.idioms.3
+    slug: exhaustive-switch
+    since: 0.1.0
+    rule: A switch over an enum covers every case.
+    detail: >-
+      A default case counts as exhaustive in the tool's setting, and tests are excluded.
+    level: function
+    why: >-
+      A new enum value that no switch handles is a silent bug; the linter finds it at the switch.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: golangci-lint-linters
+        where: exhaustive
+        says: >-
+          Check exhaustiveness of enum switch statements.
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: exhaustive
+        tier: "1"
+        fix: never
+        note: >-
+          golangci-lint exhaustive with default-signifies-exhaustive true, tests excluded (exhaustive 0.15.0
+          with golangci-lint 2.15.0). Plant: a switch over Mode missing a constant is reported (one hit on the
+          plant). Control: a switch covering every constant passes
+    open:
+      - The control was not run.
+  - id: code.idioms.4
+    slug: table-driven-ladders
+    since: 0.1.0
+    rule: >-
+      A long switch or if-ladder is table-driven, with the count of over-limit functions ratcheted.
+    detail: >-
+      Cyclomatic complexity counts every case, and the limit is 30 (a guess). Cognitive complexity scores a
+      flat 159-line table 0 and a long switch +1 once, so it cannot see a long ladder; the cyclomatic count is
+      needed beside it. The cheap cure, moving cases into helper functions, is caught only by the helper pair
+      of code.size.3.
+    level: function
+    why: >-
+      One repo has 5 switches of 10 or more cases. A study of 60 sampled bugs found none with a long ladder as
+      root cause, so this is practice.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: golangci-lint-linters
+        where: gocyclo
+        says: >-
+          Computes and checks the cyclomatic complexity of functions.
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: gocyclo
+        tier: "3"
+        fix: never
+        note: >-
+          golangci-lint gocyclo (counts every case) with the count of over-limit functions ratcheted, beside
+          gocognit. Plant: a 31-case switch is reported by gocyclo at limit 30 (cyclomatic 32). Control: a
+          table-driven version passes
+    relates:
+      - id: code.size.3
+        how: see
+    open:
+      - >-
+        gocognit on the same function was not run separately; the control was not run; the limit of 30 is a
+        guess.
+  - id: code.idioms.5
+    slug: one-reason-to-change
+    since: 0.1.0
+    rule: A component has one reason to change.
+    level: type
+    why: >-
+      A component with two reasons to change is edited by two kinds of change and is the likeliest place for a
+      merge conflict and a regression. No accepted metric exists for single responsibility (the
+      lack-of-cohesion measure was dropped on Go for the same reason).
+    kind: instruction
+    strength: Lens
+    status: proposed
+    when:
+      kinds:
+        - web-app
+    review_question: Does this component have one reason to change, or two?
+    relates:
+      - id: code.size.2
+        how: see
+    open:
+      - >-
+        No mechanism exists; code.size.2 and the web part's part-size rule narrow it indirectly. A model
+        question was clean in the trial.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"

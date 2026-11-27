@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "document-bundle.schema.json",
+  "title": "The rulebook bundle (document, spec 16.9)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "versions",
+    "release",
+    "released",
+    "identity",
+    "structure",
+    "terms",
+    "rules",
+    "bindings",
+    "sources",
+    "decisions",
+    "history",
+    "changelog",
+    "tested_set",
+    "health"
+  ],
+  "properties": {
+    "contract": {
+      "$ref": "common.schema.json#/$defs/contract",
+      "x-introduced": "1.0",
+      "x-decides": "which contract version's schema reads the document, and whether it is read or ends not ready on a newer major"
+    },
+    "versions": {
+      "$ref": "common.schema.json#/$defs/versions",
+      "x-introduced": "1.0"
+    },
+    "release": {
+      "$ref": "entity-release.schema.json",
+      "x-introduced": "1.0"
+    },
+    "released": {
+      "type": "boolean",
+      "description": "false for a working build marked unreleased",
+      "x-introduced": "1.0"
+    },
+    "identity": {
+      "$ref": "entity-rulebook.schema.json",
+      "x-introduced": "1.0"
+    },
+    "structure": {
+      "$ref": "entity-structure.schema.json",
+      "x-introduced": "1.0"
+    },
+    "terms": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-term.schema.json"
+      },
+      "x-introduced": "1.0"
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-rule.schema.json"
+      },
+      "x-introduced": "1.0",
+      "x-decides": "which rules a parent holds, so which an overlay may exclude or include"
+    },
+    "exclusions": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-exclusion.schema.json"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "bindings": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-binding.schema.json"
+      },
+      "x-introduced": "1.0",
+      "x-decides": "which bindings a parent or an import lends, so what an overlay's or an importer's binding is held to, S70"
+    },
+    "adapters_used": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tool",
+          "adapter_version"
+        ],
+        "properties": {
+          "tool": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "adapter_version": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "waiver_syntax": {
+            "anyOf": [
+              {
+                "$ref": "common.schema.json#/$defs/text"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the suppression text in the tool's own syntax, as the adapter describes it, with <id> where the waiver id goes; absent or null for a tool with no suppression of its own",
+            "x-introduced": "1.3",
+            "default": null
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "presets": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-preset.schema.json"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "checker_code": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-checker-code.schema.json"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "proof_grid": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-proof-result.schema.json"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "rules_to_bindings": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "x-introduced": "1.0",
+          "default": []
+        },
+        "bindings_to_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "x-introduced": "1.0",
+          "default": []
+        }
+      },
+      "x-introduced": "1.0",
+      "default": {}
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-finding.schema.json"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-decision.schema.json"
+      },
+      "x-introduced": "1.0"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-source.schema.json"
+      },
+      "x-introduced": "1.0"
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-history-entry.schema.json"
+      },
+      "x-introduced": "1.0"
+    },
+    "changelog": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-changelog-entry.schema.json"
+      },
+      "x-introduced": "1.0"
+    },
+    "tested_set": {
+      "$ref": "entity-tested-set.schema.json",
+      "x-introduced": "1.0"
+    },
+    "health": {
+      "$ref": "entity-health.schema.json",
+      "x-introduced": "1.0"
+    },
+    "rule_map": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-rule-map.schema.json"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "rendering_manifest": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-rendering-manifest.schema.json"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    }
+  }
+}

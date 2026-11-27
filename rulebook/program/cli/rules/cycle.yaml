@@ -1,0 +1,39 @@
+format: 3
+part: cli
+concern: cycle
+rules:
+  - id: cli.cycle.1
+    statement: "A screen has one golden per output at the width a person reads, 80 columns for a terminal, updated only by a person reading the diff, and the narrower widths are properties: no line wider than the screen, nothing cut off, the same rows in the same order."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "tests.journeys.8 holds the rule for any screen; this line is its terminal form and the member that holds it at push. The 80 column golden is the hand-read oracle. The 60 and 40 column runs check the three properties and keep no file, so an output change is one diff to read, not three. For a web screen a parity check against the generated pages fills the golden. cli.commands.15 and cli.look.8 named goldens at three widths; a later ruling replaced the two narrow goldens with the properties, and this rule holds where they conflict."
+      pros:
+        - "One project kept goldens at 80, 60 and 40 columns; each output change meant three diffs nobody read, and the 60 and 40 goldens went stale on the main branch unnoticed."
+    relations:
+      relates:
+        - tests.journeys.8
+      conflicts:
+        - cli.commands.15
+        - cli.look.8
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.cycle.2
+    statement: "A pty journey reads until its expected final frame or the program's exit, never for a fixed time, and the accessible and plain modes have goldens of their own where they differ from the default."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A journey that reads for a fixed time misses its golden under load and passes with time to spare on a quiet host, which is two answers for one tree. It waits on the condition: the frame it expects, or the exit (tests.runners.8, tests.isolation.6). The accessible and plain modes change what is drawn, so each has its own golden where the output differs and shares the default's where it does not."
+      pros:
+        - "One project's pty control missed its golden under load, at load 76 to 202 on one platform and only under load; the fix was to read until the frame, not longer."
+    relations:
+      relates:
+        - tests.runners.8
+        - tests.isolation.6
+        - cli.output.5
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule

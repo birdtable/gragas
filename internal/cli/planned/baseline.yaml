@@ -1,0 +1,11 @@
+name: baseline
+order: 430
+context: P
+ends: plan
+summary: "Record today's findings so only new ones fail"
+examples:
+  - {line: "gragas baseline", does: "show the plan"}
+  - {line: "gragas baseline --apply", does: "carry it out"}
+writes: [".gragas/baselines.yaml"]
+exits: ["done", "declined"]
+json: plan

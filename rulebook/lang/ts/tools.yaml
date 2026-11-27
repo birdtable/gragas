@@ -1,0 +1,170 @@
+part: ts
+tools:
+  - key: typescript-on-node-esm
+    name: "language: TypeScript on Node ESM"
+    role: >-
+      Typed JavaScript, checked by the compiler (`tsc --noEmit`) before the code runs; Node runs the output as
+      ES modules, including on the cloud function runtime.
+    binding: ts
+    ships: the project template (engines, version file, module settings)
+    state: chosen
+    why: >-
+      The compiler with every strict flag is the first and cheapest check on agent-written code.
+    open:
+      - >-
+        The source named Node 22 on Lambda; the major is pinned in the template and re-read at adoption.
+  - key: tsc-strict
+    name: "type checker: tsc strict"
+    role: >-
+      The language, its compiler and one shared strictness setting; the type gate for plain and React code.
+    binding: ts
+    state: chosen
+    why: >-
+      The type gate runs `tsc --noEmit`; Astro projects use `astro check`, the native compiler is a later
+      shadow run.
+    lost:
+      - name: native compiler (tsgo, TypeScript 7)
+        why: Blocked by two peer ranges; planned as a shadow run in ts.compiler.6.
+  - key: strictest-published-tsconfig
+    name: "compiler base: strictest published tsconfig"
+    role: >-
+      A published tsconfig base that turns on every strict flag, such as unchecked indexed access and exact
+      optional property types.
+    binding: ts
+    ships: the shared compiler base, copies byte-equal to the template
+    state: chosen
+    why: One base for every project, turned on one flag per change.
+  - key: shared-compiler-base-config
+    name: shared compiler base config
+    role: >-
+      The export of our own shared compiler base: strict mode, modern target and module settings, no emit,
+      listed last so it wins.
+    binding: ts
+    ships: the shared base package, adopted by a version bump
+    state: chosen
+    why: A shared rule changes once and reaches every project by a bump.
+  - key: eslint
+    name: "lint engine: ESLint"
+    role: >-
+      Reads the source and reports rule violations; the plugin ecosystem and type-aware rules the rulebook
+      relies on.
+    binding: ts
+    state: chosen
+    version: 10 (bulk suppressions, preserve-caught-error)
+    why: >-
+      The only engine with the plugins for layers, hooks, accessibility and the schema library.
+    lost:
+      - name: other linters as the only engine
+        why: >-
+          They lack the plugin ecosystem; the fast type-aware tool runs beside ESLint, not instead.
+  - key: typescript-eslint-strict-type-checked
+    name: "type-aware lint preset: typescript-eslint strict-type-checked"
+    role: >-
+      The preset that uses type information: no floating promises, no unsafe any flowing through, no needless
+      conditions.
+    binding: ts
+    state: chosen
+    why: >-
+      Held at error level in the shared config; typed cost is why it runs at the land tier in ESLint.
+  - key: shared-lint-config
+    name: shared lint config
+    role: >-
+      A type-aware, strict flat config with its plugin set, shipped as one versioned unit that repos adopt by
+      bumping the version.
+    binding: ts
+    ships: the shared lint package
+    state: chosen
+    why: One set of rules at error, changed in one place.
+  - key: oxlint-with-oxlint-tsgolint
+    name: "fast type-aware lint: oxlint with oxlint-tsgolint"
+    role: >-
+      Runs the type-aware correctness rules at the cheap tier on `.ts`, `.tsx` and `.astro` scripts and
+      frontmatter.
+    binding: ts
+    state: candidate
+    why: >-
+      0.6 CPU seconds for 3,633 files against 3.3 to 4.4 times the untyped ESLint cost.
+    open:
+      - >-
+        Compared on one rule, not the whole preset; version 1.91.0 was young when
+        measured under the former 14-day window; re-run on the newest release.
+      - It reads scripts and frontmatter, not `.astro` markup.
+  - key: zod-4
+    name: "schema library: zod 4"
+    role: >-
+      Declares the shape of data once; at run time it parses and rejects anything else, at compile time it
+      gives the TypeScript type. Also gives branded id types.
+    binding: ts
+    ships: the schema lint plugin (eslint-plugin-zod) in the shared lint config
+    state: chosen
+    why: One declaration serves the parse at the edge and the static type.
+    open:
+      - The lint plugin's rule list is in ts.lint.4.
+  - key: type-coverage
+    name: "type coverage: type-coverage"
+    role: >-
+      Reports the share of identifiers whose type is not `any`; its strict option also counts casts and
+      non-null assertions.
+    binding: ts
+    state: chosen
+    why: The measure behind the rule that escapes only fall (ts.type-safety.9).
+  - key: vitest
+    name: "test runner: Vitest"
+    role: Runs unit and integration tests, ESM-native; the one runner in every project.
+    binding: ts
+    state: chosen
+    why: One runner per project (ruled 4 Nov).
+    lost:
+      - name: jest, mocha, ava and the built-in node:test
+        why: >-
+          Banned as second runners; node:test files stay under a shrink-only baseline until migrated.
+  - key: fast-check
+    name: "property tests: fast-check"
+    role: Generates many inputs for a test and shrinks a failure to the smallest case.
+    binding: ts
+    state: chosen
+    why: Finds the edge cases hand-written examples miss.
+    open:
+      - >-
+        No UI catalogue row names generated-input tests; the rule that requires them is held in the base tests
+        part.
+  - key: ts-morph
+    name: "codemod library: ts-morph"
+    role: >-
+      Scripted, type-aware code changes across a whole repo, such as renaming a symbol, moving an import or
+      replacing a call.
+    binding: ts
+    state: chosen
+    why: >-
+      A repo-wide change by a script is reviewed once, where an agent edit per file is not.
+  - key: prettier
+    name: "formatter: Prettier"
+    role: >-
+      The format check of TypeScript, JavaScript and JSON: with the options of the shared preset, which are its
+      defaults written out, it lists the files that differ and exits non-zero, and reads and never rewrites.
+    binding: ts
+    version: 3.9.10
+    state: chosen
+    preset: presets/prettier/base.json
+    why: >-
+      Plain JavaScript, so the pinned folder of node tools stays one tree for every platform; run at commit
+      by the explorer-format member of gragas.
+    lost:
+      - name: Biome
+        why: >-
+          Ships a native binary per platform through optional packages, so the digest of the pinned node-tools
+          folder would differ by system (ruled).
+  - key: syncpack
+    name: "manifest linter: syncpack"
+    role: >-
+      One version of each shared package is enforced across repos by one config; lint exits non-zero on a
+      mismatch, with banned and allowed groups generated from the package list.
+    binding: ts
+    version: 15.3.3
+    state: chosen
+    why: >-
+      Tried on a planted manifest: exit 1 on a banned or unlisted package, exit 0 on listed and exactly pinned
+      ones.
+    open:
+      - >-
+        The source's config sat in the parent directory of the clones and pinned the shared-package scope.

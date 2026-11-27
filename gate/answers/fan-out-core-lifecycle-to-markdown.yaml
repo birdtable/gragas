@@ -1,0 +1,5 @@
+rule: arch.measures.1
+path: internal/core/lifecycle/draft.go
+fingerprint: 871cd1ca48c953b752bcb692d8651c1ec4381bcd734b99639f1b38d230f28c9f
+answer: keep
+reason: "the draft of a guide reads a guide's headings and strength lines from a parsed document; internal/markdown is the one parser, so the edge reaches no further and no second parser is written"

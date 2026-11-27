@@ -1,0 +1,10 @@
+$ gragas rebind std.errors.4 --tool golangci-lint --target source --key errorlint --severity warning
+--- exit 5
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    std.errors.4 is the parent fixture-parent 0.9.0's rule, and the
+  change is refused at its severity: the severity would go from error to
+  warning, which is weaker (S34)
+    exclude it with gragas rule exclude std.errors.4, which stands on a decision
+--- stderr

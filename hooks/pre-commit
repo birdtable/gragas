@@ -1,0 +1,5 @@
+#!/bin/sh
+# git runs this at the top of the tree. gragas-dev hook pre-commit runs the clone's
+# .tools/bin/task pre-commit, and nothing else (docs/checks.md, The Taskfile).
+# Armed once per clone, by the one command docs/checks.md (Setup) gives.
+exec env GOFLAGS=-mod=readonly GOWORK=off go run -trimpath ./cmd/gragas-dev hook pre-commit

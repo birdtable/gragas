@@ -1,0 +1,23 @@
+format: 3
+part: gates
+concern: readers
+rules:
+  - id: gates.readers.1
+    statement: A gate or repo reader of YAML refuses a duplicate key.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The keys of a YAML mapping are unique (YAML 1.2.2, section 3.2.1.1). A reader of the gate registry, the repo checks or the dev tool's own files that takes the last of two equal keys lets a second definition override the first without a word, so the strict reader is the one every such reader calls and the permissive one is banned in those folders."
+      pros:
+        - "A duplicate key in a gate list drops the first entry silently and the gate passes with a check missing."
+    sources:
+      - ref: yaml-1-2-2-mapping-keys
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: commit

@@ -1,0 +1,446 @@
+part: gates
+concern: ratchets
+order: 6
+title: Ratchets, baselines and debt
+summary: >-
+  Existing violations are recorded once and may only shrink. A baseline is a numeric ceiling per file that
+  survives rebases and moves, is registered with an owner and a zero-by stage, and is deleted at zero. Moves
+  are separate changes that rewrite keys and never counts.
+rules:
+  - id: gates.ratchets.1
+    slug: debt-may-not-grow
+    since: 0.1.0
+    rule: >-
+      Debt is a shrink-only list: a new rule starts with today's violations frozen, and a gate fails when a
+      cell gets worse.
+    detail: >-
+      Below the milestone a gate fails only when a cell gets worse; the change that needs a higher baseline
+      cannot raise it, because the check compares the working figure with the figure at the merge base.
+      Lowering is free. Each metric is a committed file per entry. A list may not grow without a person typing
+      the growth switch (`--write --grow`) and a named second reader (second-reader), the stored verdict of
+      gates.protection.1. A bulk suppression file alone is not a ratchet: it records existing violations,
+      fails new ones and can only shrink, but it needs the registry of gates.ratchets.4 beside it.
+    level: program
+    why: >-
+      Held in one Go repo (ratchet files, plant none recorded) and in two web repos (numeric baselines with
+      the grow switch). A new rule that cannot start frozen is never adopted.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-38
+        backs: rule
+    examples:
+      bad:
+        lang: yaml
+        code: |
+          # the counted lines: 12 at the merge base, 13 in the work tree
+          debt: 13
+      good:
+        lang: yaml
+        code: |
+          # the counted lines: 12 at the merge base, 12 in the work tree
+          debt: 12
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. Ratchet helper (lifted from the repo that holds it): a metric file per entry;
+          the check fails when the working-tree figure exceeds the figure at the merge base (`git show
+          <base>:file`); raising needs the stored verdict. Plant: Raise a baseline number in a branch; it
+          fails against the base. Raise it with the growth switch but no verdict; refused. Control: Lowering
+          the number passes.
+      - binding: any
+        class: preset-rule
+        tool: gragas
+        key: debt
+        tier: "3"
+        fix: never
+        note: >-
+          The debt key of the gragas preset, which gragas check computes: the lines of the work tree that
+          count as debt against the merge base's. Plant: one more counted line than at the base is a finding.
+          Control: the same count or fewer passes (internal/core/audit/repo_test.go)
+      - binding: ts
+        class: preset-config
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint bulk suppressions (built-in suppressions file); an unused suppression fails by default and
+          the pass-on-unpruned flag is never used in a gate. Plant: A new violation not in the suppressions
+          file fails; fixing an entry without pruning it fails. Control: The pruned file passes.
+    relates:
+      - id: gates.protection.1
+        how: see
+      - id: gates.ratchets.4
+        how: see
+    open:
+      - >-
+        Plant was never recorded in the repo that holds the Go ratchet; run it once when the helper is lifted.
+      - >-
+        The alternative, a repo-local script, is caught by the shared-gates rule that ratchet files go through
+        the helper path.
+      - "v1 evidence, not yet a source: own measure; A (baselines in two web repos)"
+    note: >-
+      Merges the Go debt rule, the web shrink-only list rule, the baseline-only-shrinks rule and the bulk
+      suppression tool entry.
+  - id: gates.ratchets.2
+    slug: per-file-ceiling
+    since: 0.1.0
+    rule: >-
+      A baseline is a numeric ceiling per file that only falls, and raising it needs a stored second-party
+      verdict.
+    detail: >-
+      A single count hides one file growing while another shrinks (the existing file baseline in the Go repo
+      is the `file-baseline`), so the ceiling is per file. A baseline entry that no longer applies also fails.
+    level: file
+    why: >-
+      The first size ratchet at a reference team recorded one violation for a file that grew from 400 to 3,000
+      lines. The Go baseline files are 39, 40, 79 and 828 lines (V-24).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          Ratchet helper with a numeric ceiling per file for size; a baseline entry that no longer applies
+          fails. Plant: Append lines to a baselined file past its number; it fails. Control: Shrinking the
+          file passes.
+    open:
+      - >-
+        Plant never recorded in the repo that has the file baseline; run once when the helper is lifted.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: gates.ratchets.3
+    slug: baseline-survives-moves
+    since: 0.1.0
+    rule: >-
+      A baseline survives a rebase, a rename and a deletion without resetting, and a baseline entry for a
+      missing file fails.
+    detail: >-
+      On a missing path the ratchet helper looks up the rename in the diff against the base: if the path was
+      renamed the entry must move with its number not raised; if deleted the entry must be removed in the same
+      change; otherwise fail. A structural move (renaming or moving a module, package or route) rewrites the
+      keys of every baseline and suppression list it touches and never their counts: the sum of each baseline
+      before and after is equal and no key names a missing path. Stale suppression keys already fail in the
+      ESLint bulk suppression file and in dependency-cruiser's known-violation list (dependency-cruiser
+      behaves the same) -- ESLint bulk suppression file and in known-list tools.
+    level: file
+    why: >-
+      Without this, a rename resets the baseline to zero and hides the debt. Not measured in Go; the web half
+      rests on a stale entry failing (exit 2) until pruned.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. Ratchet helper checks renames with `git diff -M --name-status` against the base
+          and compares the per-baseline sums before and after a move. Plant: Rename a baselined file without
+          moving the entry; fails. Double a count during a move; fails. Control: Rename with the entry moved
+          and the count unchanged passes.
+      - binding: ts
+        class: preset-config
+        tier: "2"
+        note: >-
+          A baseline key naming a path that no longer exists fails (bulk-suppression and known-list tools exit
+          non-zero on a stale entry). Plant: Renaming a file without rewriting its suppression key fails;
+          rewriting the key passes. Control: Unrenamed file passes.
+    open:
+      - >-
+        Half holds on the web side: the sum-equality script (about 15 lines) is unbuilt, so doubling a count
+        during a move is not seen.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice; D"
+  - id: gates.ratchets.4
+    slug: debt-registered
+    since: 0.1.0
+    rule: >-
+      Every baseline is a count made against the merge base, with an owner, a ticket and the stage by which
+      it is zero; growth against the merge base, or any non-zero count at the stage, fails.
+    detail: >-
+      There is no stored list of baselines. The count is made on the merge base and on the head in the same
+      run, so a count that grew fails however the change got there, and a baseline that nobody wrote down
+      cannot be forgotten. The owner, the ticket and the zero-by stage sit in the config that owns the
+      baseline, as a dated TODO which a lint rule turns into an error on the day. The zero check reads the
+      current milestone and fails on anything non-zero at or past the stage; the last stage's gate fails
+      while any count is above zero. One parent issue with sub-issues per rule drives the legacy debt to
+      zero.
+    level: process
+    why: >-
+      A ratchet that never reaches zero is a permanent exemption; whether our baselines have shrunk was never
+      measured. A reference team's countdowns to zero paid off.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-38
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. A count made on the merge base and on the head, plus a zero check reading the
+          milestone; a baseline with no owner or stage is a finding. Plant: A count that grew against the
+          merge base fails; a last stage with count 1 fails. Control: A count within its stage that did not
+          grow passes.
+    relates:
+      - id: gates.exemptions.4
+        how: see
+    open:
+      - >-
+        The expiry horizon is capped by data, and that cap is a guess (see gates.exemptions.4).
+      - >-
+        The counts against the merge base are the work of gragas-new-2 (gragas#928); no tool key makes them
+        yet.
+      - "v1 evidence, not yet a source: practice; D (a reference zero-check runs)"
+    note: >-
+      Merges the owner and zero-by rules from both sides, the registry rule and the ESLint suppressions plus
+      expiring-comment tool entry.
+  - id: gates.ratchets.5
+    slug: zero-baseline-deleted
+    since: 0.1.0
+    rule: >-
+      A baseline at zero is deleted and its rule becomes a plain error; an empty registered baseline file that
+      still exists fails.
+    detail: >-
+      At zero, the baseline file goes and the rule is absolute; a non-empty baseline at or past its stage
+      fails. The check fails on the empty file so the deletion is not forgotten.
+    level: file
+    why: An empty baseline left in place lets the rule quietly regrow.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The zero check fails when a registered baseline file exists with a count of zero.
+          Plant: A zero baseline file left in place fails. Control: The file deleted and the rule error
+          passes.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: gates.ratchets.6
+    slug: legacy-path-count
+    since: 0.1.0
+    rule: >-
+      No new file on a legacy path; the legacy count only shrinks and the baseline is deleted at zero.
+    detail: >-
+      Anything outside the declared layout is legacy, and the count of legacy files only falls. On the Go
+      side, files outside the standard layout are counted and the count only falls. On the web side, files in
+      no declared layer are a shrink-only list that is deleted at zero.
+    level: file
+    why: A legacy area that can take new files never empties.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. Ratchet helper counts files outside the declared layout and applies the
+          shrink-only rule. Plant: A new file added outside the declared layout fails. Control: A new file
+          inside a declared layer passes.
+    open:
+      - >-
+        The declared layout is project-specific; the rule is generic and the layout comes from each project's
+        rule data.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: gates.ratchets.7
+    slug: shared-package-size-ratchet
+    since: 0.1.0
+    rule: >-
+      Each shared package has a file-count ratchet that only shrinks, and growth needs an explicit gate-change
+      record.
+    detail: >-
+      A package over its size has a written reason and the count of large files only falls; raising a shared
+      package's ceiling is a gate change (gates.protection.1).
+    level: package
+    why: A shared package that grows without a count becomes the place everything lands.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The ratchet helper applied per shared package; growth requires the stored verdict.
+          Plant: Adding a file to a ratcheted shared package fails without a verdict. Control: Removing one
+          passes.
+    relates:
+      - id: gates.protection.1
+        how: see
+      - id: gates.ratchets.2
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      Related to the per-file ceiling (gates.ratchets.2), which counts lines; this counts files per package.
+  - id: gates.ratchets.8
+    slug: port-fingerprint
+    since: 0.1.0
+    rule: >-
+      A review-class item carries a fingerprint; when it changes, the gate fails until a reason that resolves
+      to a ticket or decision is recorded.
+    detail: >-
+      A generated port-surface file per package, diffed in the gate like the export list of a shared package.
+      It covers exported and unexported interfaces and the parameter structs they take; a function parameter
+      on a port goes on the fingerprint too. A `Do(op string, args ...any)` shape would freeze the surface, so
+      it is banned. The value is a committed diff a reviewer sees, not the reason: most landings already name
+      a ticket, so a resolving reason costs nothing. Whether the second case (a consumer broken unseen) is
+      real stays review.
+    level: package
+    why: >-
+      A port surface changed on 25 of one repo's 472 landings, 11 of another's 82 and 37 of 964 in a third;
+      real changes by construction, so 0 false fires. Struct-only changes this form cannot see: 18, 11 and 1.
+    kind: rule
+    strength: Answered
+    status: active
+    sources:
+      - ref: r-05-gates-on-real-code
+        where: section 3
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class our-cli. Check command `companion check port-surface`: generated port-surface file per
+          package diffed in the gate; the reason must resolve to a ticket or decision id. apidiff covers only
+          the exported API (to try). Plant: A new method with no reason fails; a field added to a parameter
+          struct (owed, passes today). Control: The same diff with a reason naming a ticket passes; an
+          unchanged port passes.
+    review_question: Did this port change break a consumer that the diff did not show?
+    open:
+      - >-
+        Note, 8 Nov 2026: the item is the fact answered. For an answer about an import the item is the
+        import, so its fingerprint covers the importing package’s import set and an unrelated edit to the
+        file renews nothing (gates.ratchets.11). This is this rule read on the item it names, not loosened.
+      - >-
+        No fault in our record; it would become a hard rule if a landed port change breaks a consumer unseen.
+        The plant for a parameter-struct field is owed.
+  - id: gates.ratchets.9
+    slug: move-commit-no-logic
+    since: 0.1.0
+    rule: >-
+      A commit that moves or renames files changes no behaviour and carries no logic edit.
+    detail: >-
+      A similarity check on renames at commit: for a commit marked as a move, every entry in the rename diff
+      at 100 percent similarity must be a pure rename; a mixed commit fails. Moves are declared, because an
+      unmarked move that changes behaviour passes. The known way round is moving, then editing, in two
+      commits, which is the wanted result. A move commit is added to the blame-ignore list
+      (`.git-blame-ignore-revs`). The thing moved is a separate change from the work that uses it.
+    level: file
+    why: >-
+      Mixed moves hide the real change from a reader (principles report P-02 section 5.14). Argued, no fault
+      of ours.
+    kind: rule
+    strength: Answered
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. `git diff -M100% --name-status` on a commit whose subject starts `move:`: every
+          entry must be R100; a mixed commit fails. About 30 lines over git. Plant: A commit marked `move:`
+          that renames a file and edits one line fails. Control: A pure rename passes.
+    review_question: Does this commit move files and also change behaviour?
+    open:
+      - >-
+        Detection works only for declared moves; undeclared moves pass, and the cheap cure is not to declare.
+        It would become a hard rule if moves were detected without a declaration (rename detection on every
+        commit with edit-size limits), which needs a build the evidence does not justify.
+    note: >-
+      Merges the Go move rule, the web move rule and the handbook rule that a move commit changes no
+      behaviour.
+  - id: gates.ratchets.10
+    slug: module-move-is-own-change
+    since: 0.1.0
+    rule: >-
+      A module move is its own change before the change that uses it: a codemod moves the files and rewrites
+      specifiers, mocks, citations and every baseline key in one commit, and one owner makes all moves.
+    detail: >-
+      The codemod moves files and rewrites import specifiers, mock strings, comment citations and every
+      registered baseline's path keys in the same commit, with zero logic change and an entry in the
+      blame-ignore list. One mover owns every move change at a time. A move commit may rewrite baseline keys,
+      never their count.
+    level: process
+    why: Concurrent moves conflict, and a move mixed with logic cannot be reviewed.
+    kind: rule
+    strength: Answered
+    status: proposed
+    checks: []
+    review_question: >-
+      Is this move a separate change, by the one mover, with every baseline key rewritten and no logic edit?
+    relates:
+      - id: gates.ratchets.3
+        how: see
+      - id: gates.ratchets.9
+        how: see
+    open:
+      - >-
+        Single-owner part is a process judgement with no check yet; the check mechanics are in
+        gates.ratchets.3 and gates.ratchets.9.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+    note: >-
+      v1 review check (review is not a v2 check class): Review of move changes against the single-owner list;
+      the key rewrite is held by gates.ratchets.3.
+  - id: gates.ratchets.11
+    slug: fingerprint-the-fact
+    since: 0.1.0
+    rule: >-
+      A fingerprint covers the fact the item answers, never the bytes of the file that holds it; an answer
+      about an import is keyed to the import set.
+    detail: >-
+      The item of a reviewed answer is what was asked: that package P imports I, that a function has a given
+      length class. The fingerprint is a digest of that fact (the sorted import list of P's non-test files, the
+      function's class), so an unrelated edit to the same file renews nothing and a change to the fact fails
+      the gate until a reason is recorded. Two answers about one file no longer renew together. Where the fact
+      is the file itself, as with a size class, the file digest is right. The answer's schema names the kind of
+      fingerprint, and a file fingerprint on an answer about an import is refused. File-level review of a
+      wiring file is a protected-path question, not a fingerprint.
+    level: package
+    why: >-
+      Own measure: 13 fingerprint renewals in three days, as many as additions, because two answers share one
+      wiring file and every edit to it renewed both.
+    kind: rule
+    strength: Answered
+    status: proposed
+    sources:
+      - ref: bazel-build-files
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        fix: never
+        note: >-
+          the measure step recomputes the import-set fingerprint and fails an answer whose fact changed with no
+          new reason, and refuses a file fingerprint on an import answer. Plant: an unrelated edit to the
+          importing file renews nothing, while adding an import fails the answer. Control: an answer with the
+          reason recorded passes
+    relates:
+      - id: gates.ratchets.8
+        how: see
+    open:
+      - >-
+        Proposed until the measure step fingerprints the import set. That is step 7 of gragas#477 (answers as
+        a folder of entries); the measure code is a judge path, so the change needs a security review. It has
+        no tool key to bind to until then.

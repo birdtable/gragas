@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("format: 3\nrules:\n  - id: go.errors.1\n    id: go.errors.2\n")

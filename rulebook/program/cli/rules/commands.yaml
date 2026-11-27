@@ -1,0 +1,572 @@
+format: 3
+part: cli
+concern: commands
+rules:
+  - id: cli.commands.1
+    statement: "A command that writes takes one of two declared forms: it needs an explicit --apply and its dry run writes nothing and ends by naming the apply command, or it writes only into a reviewable draft that a later, separate act makes effective. Its help says which form it has, and the list of writing commands and their form comes from the code, not from a typed list."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no commands.
+    reasoning:
+      definition: "A command registry (a walk of the command tree) carries a mutates annotation with the form (apply or draft) set by the command author. The matrix enumerates every command from the tree and runs those without the annotation expecting no write (tree hash equal before and after); an apply-form command run without --apply must leave the hash equal and end by naming the apply command; a draft-form command run once must change nothing a reader of the effective state sees until the separate act runs. A command with no declared form, or with both, fails. A repo-check analyser reports a command that calls a write helper and has no annotation. The reachability half is approximate (call graph through function values); the hash test is the real catch. The help golden must show the form line."
+      pros:
+        - "Own bugs: a dry run that wrote (9 of 60 sampled bugs in the output-truth class). The goal is that nothing changes without a person seeing the change first: for a tool that edits a machine the dry run is the only way to show it, and for a store with change sets the draft is the dry run, so a second mode there would be code with no reader. Declaring the form per command keeps the matrix test and the help honest."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.2
+    statement: "A command is safe to run twice: the second run changes nothing, or says it has nothing to do."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "Own measure; shares the fixtures and helper of cli.commands.1, so no extra build. Not measured in Go."
+    relations:
+      relates:
+        - cli.commands.1
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.commands.3
+    statement: "A command serialises its writes through the store's own concurrency (a transaction, an advisory lock or a file lock, declared once per store) taken before its first write, keeps a run record that can be undone, and a destructive step needs the thing's own name, typed at a terminal or given as --confirm NAME without one, which a blanket --yes never answers."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no commands.
+    reasoning:
+      definition: "Each store declares its one mechanism in rule data: a database's transaction, an advisory lock, or a kernel file lock through the platform's lock package for a file tree. A two-process test runs a writing command in a child holding the mechanism and starts a second: it must exit with the busy code (or the store must serialise the two with neither write lost), and the first run must be unharmed. An analyser asserts that every command with the mutates annotation acquires the declared mechanism before its first write helper. After a write a run record exists and undo restores the tree hash (record shape and undo discipline: cli.commands.24 and 25). A destructive step is one that removes data the program cannot fetch again (a drive formatted, a store or an owner's file deleted); it carries a destructive annotation. At a terminal it asks for the thing's own name typed out; without a terminal the only answer is --confirm NAME with that exact name. --yes answers only plain yes/no questions (cli.environment.8) and never a destructive step, and no other flag or environment variable answers it. A test drives each destructive command with --apply --yes and no --confirm and expects the refused code, and with a wrong name and expects the refused code."
+      pros:
+        - "Own bugs: state and concurrency, 5 of 60 sampled. The invariant is that two writers never interleave, and a database transaction holds it better than a file lock beside the database, so the mechanism is the store's. A typed name is the one confirmation an agent cannot answer by reflex; two target programs chose the same shape independently."
+    relations:
+      relates:
+        - cli.commands.24
+        - cli.environment.8
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.4
+    statement: Writes stay inside the scope the command names.
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "Only containment is mechanical: command tests run under a write sandbox with home, XDG folders, temp folder and working directory all inside one scratch root, and any write outside the root fails. Scope the command names is not machine readable. The test also takes a file-system snapshot (a hash of the whole parent of the scratch root) before and after, so a write the sandbox does not deny is still seen; this needs no strace-less tracing."
+      pros:
+        - "Own bugs: 2 of 60 sampled bugs were a write beyond the command's scope."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.commands.5
+    statement: "A binary never rewrites shared state, and it installs or upgrades by rename, a daemon included; uninstall and removal keep user state unless told otherwise, and a test proves it."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It installs nothing.
+    reasoning:
+      definition: "An explicit purge flag is fine. A script test runs install, write, uninstall and looks for the data. Reverting an install is the rollback rule of the supply part."
+      pros:
+        - "Own bugs. One repo has an install-is-a-rename test; the shared test is proposed."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.commands.6
+    statement: "An operation whose goal state already holds returns success, defined in the callee and documented (delete, stop, close, release, ensure); no caller needs the information."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    reasoning:
+      definition: "This defines away operation semantics, never untrusted input or a typo, so the swallowed-error and exit rules stand. Each site that tolerates a not-exist error is counted per package and printed at land, so swallowing dressed as this form shows as drift. Review: does any caller need to know this state was already reached, and is the rule stated on the callee? The analyser requires a double-call test for Delete, Stop, Close, Release and Ensure methods, using one helper. The tolerated sites counted are errors.Is(err, os.ErrNotExist), errors.Is(err, fs.ErrNotExist) and os.IsNotExist."
+      pros:
+        - "Practice. A count that only falls would punish legitimate idempotent deletes, so there is no number."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.commands.7
+    statement: "A multi-step operation that changes more than one thing says which of three it is: it rolls back, it resumes from a mark, or it is documented as having no rollback. A command that changes the machine only for the length of its run has a test that the change is undone after an error, an interrupt and a panic."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It changes no machine of its own.
+    reasoning:
+      definition: "Which of the three a multi-step operation is stays review. The temporary-change half is mechanical: a command annotated as changing the machine for its run (an app paused, a service stopped, a setting lowered) is driven by a test three times, once with a planted error in the middle, once with an interrupt sent mid-run (testenv.Binary.Start, then Running.Interrupt, Kill and Wait), and once with a planted panic; after each, the machine fixture must equal its state before the run. No workflow engine is adopted without a decision entry; the module allow file (S-2) refuses a workflow-engine module (temporal, cadence, argo) unless a decision entry is linked."
+      pros:
+        - "Practice. Which of the three outcomes a function has is semantic, but what is undone after a failure is a fact a test can see, and it is what keeps a program safe to interrupt for its whole life."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.8
+    statement: "Help is true and complete: every flag in the documents is registered and tested; every command's help has a one-line summary, usage, flags, two examples and what it writes; help has topics as well as commands; and every pointer in help or in a warning is in one form and resolves."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no flags.
+    reasoning:
+      definition: "The command tree is walked and every flag compared with the flag names in the README and docs fenced usage and flag tables; a documented flag not registered or a registered flag not documented fails. The matrix runs each flag once and a repo-check demands a test reference per flag name. Each command's help is parsed into its five parts (summary, usage, flags, examples, writes) and a missing or empty part fails; a read-only command says it writes nothing. help with no word lists commands and topics; help <command> prints the same bytes as <command> --help; help <command> <word> is a topic only when the command names that topic. A pointer has one fixed form (for example \"more: <program> help <topic>\"), and a test collects every pointer in help, warnings and doctor output and fails on one that names a command or topic not in the tree."
+      pros:
+        - "Own bugs: help that lies, 9 of 60 sampled. Help with the same parts across every program lets a person or an agent learn one tool and read all of them, and the resolving pointer test keeps help from pointing at a topic that moved."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.9
+    statement: "Output, help and docs say only what the code does. Verbs and options decided but not built are a list in data and absent from the command tree; a refused designed option names what this build has and the design that holds the slot, never a bare invalid; and a stub, placeholder return or not-implemented body in shipped source is reported."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "The not-built list is one file per command, internal/cli/planned/<name>.yaml (verb or option, the design that holds it), so deciding a command adds a file and building it deletes that file in the change that adds its package. A name is built or planned, never both and never neither: the registry test fails on a name in both and on a name in neither. A test fails when a listed verb or option appears in the tree, so a stub cannot ship in its place. A refusal for a listed option exits with the refused code and prints the options this build has and the design reference; a matrix test per listed option asserts both. A syntax-pattern rule matches a panic with a not-implemented string and return-only bodies with a TODO, over non-test source; a tier-2 report fails on a rise against the committed count."
+      pros:
+        - "Own bugs: 9 of 60 sampled bugs say what the code does not do. The list in data keeps the design and the program in step without a stub in shipped code, and naming the built alternatives turns a dead end into a next step. Wording truth cannot be judged by a program."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.10
+    statement: "A mistyped command or flag prints the nearest match and the line to type, on stderr, with empty stdout and the usage exit code."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "Own measure; the command framework supplies suggestions and the test proves they are on. One program prints its version line on stdout after a typo."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.commands.11
+    statement: "A flag has one meaning everywhere: the same name has the same type and shorthand in every command, and one concept has one spelling. Flags are long, lowercase and hyphenated, with short forms only from one short shared list; a closed-set flag lists its accepted values in help and is checked once against them; and a duration or a size is a string with a unit, in flags, config keys and JSON alike, never a bare number."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "A helper walks the command tree, groups flags by name and fails when type, shorthand or value kind differ, or two spellings of one concept exist (a list in rule data, such as dry-run and dryrun, json and output-json). It fails a flag name that is not lowercase and hyphenated and a short form not on the shared list (the base list holds -w and -f; a program adds to it only through rule data with a reason). A closed-set flag declares its set once; the parser checks the value against it before the command runs, and the help golden shows the set. A duration or size flag, config key or JSON field is typed as a duration or size and decoded from a string with a unit (15s, 2m, 64KiB); a bare integer is refused at parse time."
+      pros:
+        - "Own measure; the check proves name and type consistency, same meaning is judgement. A unit on every duration and size stops the oldest config bug (is 15 seconds or minutes), and a short-form list keeps an agent's flags readable."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.12
+    statement: "A bare command never hangs: at a terminal it offers a menu of what will work on this machine, off a terminal it prints help and exits with the usage code."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "Operator rule. Off a terminal a bare call did not do what was asked, so it is a usage outcome and a script can see it. One piped half ran in an earlier trial; the pty half needs a pseudo-terminal helper."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.13
+    statement: "Work that takes more than 2 seconds shows progress at a terminal and plain lines in a log; a progress line redraws only when the work advances, never on a timer of its own; and a person never waits on a silent screen."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "No spinner or bar ticks on its own clock: a redraw follows a work event (an item done, bytes read). Off a terminal the progress is a plain line at most once a minute, and under --json there is no progress on stdout. The test counts redraws against work events with a fake clock that never advances."
+      pros:
+        - "Operator ruling 4 Nov, practice. A self-ticking redraw wakes the machine for nothing and hides a stall behind motion. Slow steps in the real program are found only if fixtures can slow them."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.14
+    statement: "Every run reads the same way: a heading, what it reads, the work, a dry-run footer when nothing was written, one closing word; the banner shows only in the interactive menu."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "The banner is the menu's alone; a command run, --version and --help never print it. Once lessons exist (cli.commands.18) the run also carries a two to four line why from the lesson with a more: pointer on a dry run, and after a write the commands a person can run to check the result without the program; that part binds with cli.commands.18."
+      pros:
+        - "Operator rule; whether the run reads well is review (cli.commands.16). The banner on every run was a contradiction with the target programs, which show it in the menu only."
+    relations:
+      relates:
+        - cli.commands.18
+        - cli.commands.16
+        - cli.look.5
+        - cli.look.6
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.15
+    statement: "The main journeys of a CLI (first run, help, menu, one happy path, one refusal) run under a pty at 80 columns as goldens the gate cannot rewrite, and at 60 and 40 columns held to properties against them (tests.journeys.8)."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "Operator rule; scoped by the journey rules of the tests part. A phone over ssh is 40 to 60 columns."
+    relations:
+      relates:
+        - tests.journeys.8
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.16
+    statement: "A new or changed command or menu shows its terminal transcript in the change, and a reviewer judges it."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - No tool decides that an experience is good.
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.commands.17
+    statement: "The plan a dry run prints and the plan a read answer carries come from one function, a test holds them equal, and no write route or write command takes a dry-run parameter."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no commands or routes.
+    reasoning:
+      definition: "The dry-run sentence of a writing command is the plan field of the matching read (CLI --json and API answer). A test runs the dry run and the read on one fixture and compares the plan text byte for byte. A route that writes refuses a dry, dry_run or preview parameter, and an API contract check fails on one."
+      pros:
+        - "Two code paths for one plan drift: the dry run says one thing and the page another. One function makes the preview a person sees in the terminal and on a page the same fact."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.18
+    statement: "Every command that changes the machine has a lesson beside its code with fixed sections, every lesson cites at least one https source read before it went in, --explain prints the lesson before any command runs and writes nothing even with --apply, and a run shows the lesson's why and its check-it-yourself lines."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "The fixed sections are: what it is, what was found here, why, what it does, what it does not do, how to undo it or that there is nothing to undo, check it yourself, read more, sources. A test fails on a missing or empty section and on a lesson with no https source. --explain is a shared root flag answered before any command runs; it writes nothing even beside --apply, and a command with no lesson says so in one line rather than printing nothing. A dry run opens on two to four lines of why from the lesson and a more: pointer; an applied run ends, before its closing word, on the commands a person can run to check the result without the program. The same lesson prints from help <topic> and is the source of any generated guide (cli.commands.20)."
+      pros:
+        - "A tool that changes somebody's machine and cannot say what it found, why it acts, how to undo it and where the claim comes from is a tool a person stops trusting. Fixed sections make the lesson generatable and testable, and the sources are the one defence against an agent inventing a tuning."
+    relations:
+      relates:
+        - cli.commands.20
+        - cli.output.5
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.19
+    statement: "Every piece setup installs and every way a feature can fail quietly has a doctor line that names the fix when it is missing or wrong, and each subject the program manages has a help topic naming its sources."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "Setup declares what it installs in data; a test fails when an installed piece has no doctor check, and when a doctor finding that is not ok has no fix line. Each subject (a managed file, service or setting group) has a help topic, and the topic lists the sources of its lesson."
+      pros:
+        - "A feature that fails quietly is found by its owner months later; a doctor line per piece is the cheapest place to see it, and the fix line turns a finding into a step."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.20
+    statement: "Every command is declared once, in its own package; one registry is assembled from those declarations at build time; and help, help --json, the README's command table, the MCP tool list, the HTTP contract and agent skill text are generated from that registry and held equal by a test."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no commands.
+    reasoning:
+      definition: "A declaration carries the summary, the version the command arrived in, what a second run does, and who may run it; a command not yet built is declared in a file of the planned folder instead (cli.commands.9), and the registry joins both. The join of the built packages is generated and held by gen --check (cli.commands.29). help --json describes every command, flag, positional word, exit code and --json field so a UI can be built from it, and is the committed command-tree file of cli.output.4. Generated files say they are generated and are refused when edited by hand (cli.commands.23). A test regenerates every surface and fails on any difference from the committed copy."
+      pros:
+        - "A command described once and rendered everywhere cannot drift: the agent's skill, the MCP tool and the README are the program because they come from it. All three target programs already generate at least two surfaces from one source."
+    relations:
+      relates:
+        - cli.output.4
+        - cli.commands.23
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+      - ref: gh-root-join
+        says: "Each command is built in its own package and the root adds them; no table of the commands sits in one place apart from that join."
+        backs: rule
+      - ref: kubectl-cmd-join
+        backs: rule
+      - ref: cargo-commands-mod
+        backs: rule
+      - ref: terraform-commands
+        backs: rule
+      - ref: git-command-list
+        says: The list of commands is data beside the code that runs them.
+        backs: rule
+      - ref: gh-gen-docs
+        says: "The command documents are generated from the command tree by a program of the repository's own."
+        backs: rule
+  - id: cli.commands.21
+    statement: "A change that can lock the owner out refuses until the new access path is seen to carry an admin, keeps a whole-file undo, and a change to shared network or identity policy that reaches other devices is printed for the owner to apply, never applied by the program."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It changes no access of its own.
+    reasoning:
+      definition: "A lock-out change is one to access control, sign-in, the path a person reaches the machine by, or the identity source. Before writing, the command observes an admin session over the new path (seen recently, within a stated window); without it the command refuses and says what it did not see. It keeps the whole previous file and prints the one line that restores it. A policy that also binds other devices (a tailnet policy, a shared directory) is printed as the change to make, and the program holds no write credential for it."
+      pros:
+        - "The one change a person cannot undo from outside is the one that removes their way in; a refusal before the write is the only guard that works after it."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.22
+    statement: "A writing step reads the machine again after it runs and reports done only when the goal state holds, whatever its commands exited with; a config write is verified on a reloaded copy against the intended change before it replaces the original; and an action that asks another machine is reported by the outcome read back within a stated wait, failed with what was seen otherwise, never as sent or will retry."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It writes nothing of its own.
+    reasoning:
+      definition: "The first failed step stops the steps after it. A config write changes only the named table, keeps the rest byte for byte, reloads the result on a copy and refuses unless it equals the old config plus the stated change. An effect that is only a request (a packet, a message to a peer) has one attempt; success is its observed result. A test per writing command plants a step whose command exits 0 but leaves the state wrong."
+      pros:
+        - "Exit 0 is a claim about a command, not about the machine, and a tool that says done when the state is wrong is worse than one that says nothing. Reading back is cheap, and it is the same check the lesson prints for a person (cli.commands.18)."
+    relations:
+      relates:
+        - cli.commands.18
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.23
+    statement: "A command writes every file aside, flushes it, renames it into place and flushes its folder, keeping the old mode and owner; it edits a person-written config only in the lines it owns and keeps comments and order; a change to a file another program ships goes in that program's override or drop-in; and a generated file is marked, refused when edited by hand, and regenerated to resolve a merge conflict."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It writes no files of its own.
+    reasoning:
+      definition: "All file writes go through one shared write helper (a link is written where it points, not replaced). A config edit is a parsed, comment-keeping edit of the owned keys; a test round-trips a commented fixture. A vendor file (a file another package or program installs) is never written; the change goes in the override file or drop-in folder that program reads. A generated file carries a do-not-edit header naming the command that writes it; a check regenerates it and fails on a difference, and a merge conflict in it is resolved by running the command again after the rebase."
+      pros:
+        - "A half-written config after a power cut and a vendor file overwritten by an update are the two oldest ways a tool breaks a machine; two target programs wrote the same guard. The generated-file half stops a merge from silently un-generating a file."
+    relations:
+      relates:
+        - store.state-files.2
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.24
+    statement: "Every record a program keeps (run, backup, notification, manifest) carries a version and the same fixed fields whoever did the work, backend detail sits under one passed-through field, and answers are built from the record, never from the tool."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It keeps no records.
+    reasoning:
+      definition: "Each record kind has one schema with a version field; the backend that did the work fills the fixed fields and puts anything of its own under one detail field the program never branches on. A status or history answer reads records only; a test runs it with the backend tool absent and expects the same answer."
+      pros:
+        - A versioned record with fixed fields is what lets a record written by one backend be read after that backend is replaced.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.25
+    statement: "A run record keeps each changed file's copy and its digest after the run; undo refuses when a file no longer has that digest and names the runs that changed it since; a multi-file undo prints its way back rather than running it; and a batch of independent changes keeps one record and one undo per unit, takes the lock per unit and goes on past a failed unit."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It keeps no run records.
+    reasoning:
+      definition: "The way back may be a kept timestamped backup and the printed lines that restore it, with no undo command. A batch runs each unit as its own run in turn; one failed unit is reported and the rest still run."
+      pros:
+        - "The digest check is the difference between an undo and a second accident, and per-unit records keep one bad item from blocking or tangling the rest."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.26
+    statement: "Commands follow [group] verb [noun], with verbs from one shared base list of plain imperatives that a program extends only by declaring its domain verbs in its own single table; each verb has one documented meaning across the tool; ids and names are positional and every other input is a flag."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "The shared base list holds the verbs users of common tools already know (for example list, show, add, remove, start, stop, run, logs, status, doctor, help, version); get, make and destroy are refused as command names. A program's domain verbs sit in one table in its own code with a meaning each; no second table exists. A test reads the base list and the program's table against the command tree and fails on a verb in neither, on a verb used with two meanings, and on a positional that is not an id or a name."
+      pros:
+        - "A shared verb list lets an agent that learned one program drive another without reading its help; the base plus one declared table keeps the list extendable without each program inventing synonyms."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.27
+    statement: "A command needing root is registered apart from owner-level ones, and which group a command sits in follows whether it needs root, never the name of the operating system."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: Proposed with the privileged-helper design. A test would read the command tree and fail on a root command in the owner group or on a group split chosen by operating system.
+      pros:
+        - "Privilege is the boundary that matters to a person deciding what to run; an operating-system split puts a root action beside an owner one on the next platform."
+    relations:
+      relates:
+        - daemon.access.8
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+      - ref: decision-47
+        backs: rule
+  - id: cli.commands.28
+    statement: "A restore writes into a fresh folder the program makes (owner-only, not existing before, no link, not a served or published folder) and refuses an existing path, a link and a served folder; an in-place restore needs its own flag with a dry run listing every file it replaces; and a restore stops before writing when space is low."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It restores nothing.
+    reasoning:
+      definition: "The fresh folder is made with mode 0700 by the program's own account (root for a system service). The space check compares the backup's size with the free space of the target and stops with the numbers. The in-place flag is separate from --apply and its dry run lists every path it would replace."
+      pros:
+        - "The fresh-folder default is what makes a restore safe to run by reflex; a restore over live data is the one backup action that can destroy what it was meant to save."
+    relations:
+      relates:
+        - daemon.backups.1
+        - postgres.migrations.5
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.commands.29
+    statement: "Each command family is one package that declares its own row (name, order, summary, two examples, exit words, JSON kind, files written, menu place) next to its command; the root holds no list of commands and reads a generated join; no init function registers a command."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no commands.
+    reasoning:
+      definition: "A group of verbs that share a context and a plan screen is one package with a file per verb, not a package per verb. The row is a typed value in the package, exported with the function that builds the command; a package that exports one and not the other does not compile into the join. Order is the command's place in the spec's table and is unique; a command the spec does not name takes a high number and sorts by name. The menu place says which screen leads with the command and at what rank, so no list of leads exists in the root. A generator writes the join from the folders of command packages, sorted by name, and gen --check fails when it is stale. A test walks the joined registry for the cross-cutting rules (two examples, exit words, unique order) instead of a column each builder edits. A command package never sets a run hook that the root owns (the persistent pre-run and post-run, with or without the error return): a package that sets its own replaces the root's, which silently skips the shared refusals and the write claim, and with a join per package no shared line is left to catch it. The registry test walks the joined tree and fails on any command that sets one. A command decided and not built is a file of the planned folder (cli.commands.9)."
+      pros:
+        - "Own measure: in one program every new command edited the registry table, the root help block, the menu lists, four cross-cutting goldens, the README table and two generated command documents, so two builders on two commands collided on the same lines. The organisation's run log of 8 Nov 2026 shows each landing sending the waiting candidates through a rebase and a full gate run. Surveyed command line programs keep a command's code and help in the command's own package, and all but one keep the join by hand; the one that does not registers from init functions, which breaks arch.ports.12 and go.layout.2."
+    relations:
+      relates:
+        - cli.commands.9
+        - cli.commands.20
+        - cli.commands.26
+        - arch.structure.9
+        - go.layout.2
+    sources:
+      - ref: gh-root-join
+        backs: rule
+      - ref: kubectl-cmd-join
+        backs: rule
+      - ref: kubectl-cmd-sanity
+        says: "Cross-cutting command rules (examples, help text) are tests that walk the joined tree, not columns each command edits."
+        backs: rule
+      - ref: cargo-commands-mod
+        backs: rule
+      - ref: hugo-commands
+        backs: rule
+      - ref: docker-commands-register
+        says: The one surveyed program that registers commands from init functions through blank imports.
+        backs: rule

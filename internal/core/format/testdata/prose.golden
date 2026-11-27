@@ -1,0 +1,18 @@
+## clean control
+## a term with a literal passes
+## two sentences
+language/go/rules/errors.yaml:6: the statement is 2 sentences; a statement is one (fix: reword it to one sentence, and move the rest to the reasoning)
+## passive
+language/go/rules/errors.yaml:6: the statement is passive ("is wrapped") (fix: reword it with the actor first, in the imperative)
+## not the imperative
+language/go/rules/errors.yaml:6: the statement starts with "Every", which is not the imperative (fix: reword it to start with a verb, as in "Wrap the error")
+## a description
+language/go/rules/errors.yaml:6: the statement starts with "Returns", which is not the imperative (fix: reword it to start with a verb, as in "Wrap the error")
+## we
+language/go/rules/errors.yaml:6: the statement says we or our (fix: reword it to address the reader in the imperative)
+## a bare tool name outside the rulebook's terms
+language/go/rules/errors.yaml:6: this line holds a name the names list refuses (fix: reword it, or define a term whose literal is the name and write {term})
+## an undefined term
+language/go/rules/errors.yaml:6: the term {lint} is not defined in terms.yaml (fix: define the term, or write the words out)
+## over the budget
+language/go/rules/errors.yaml:6: the statement is 16 words and the budget is 12 (fix: shorten it, or move detail to the reasoning)

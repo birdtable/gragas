@@ -1,0 +1,5 @@
+tool_versions:
+  golangci-lint: 2.1.0
+  stylelint: 16.0.0
+last_fetch: "2026-11-05T09:00:00Z"
+withdrawn_seen: []

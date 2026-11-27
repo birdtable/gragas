@@ -1,0 +1,3 @@
+heading 1 line 1 "Open fence" #open-fence
+block lines 3-5 info "gragas" closed false under #open-fence bytes 14-59 body 24-59 "id: go.errors.9\nrule: never closed\n"
+error line 3: a fenced block is not closed

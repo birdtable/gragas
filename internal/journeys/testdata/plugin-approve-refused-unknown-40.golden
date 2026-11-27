@@ -1,0 +1,9 @@
+$ gragas plugin approve lint-z
+--- exit 5
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    no such plugin: the lock
+  holds none called lint-z
+    gragas plugin list
+--- stderr

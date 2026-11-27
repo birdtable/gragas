@@ -1,0 +1,25 @@
+$ gragas check --fail-on tracked-files
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Findings
+about      what is wrong, and the fix
+notes.lnk  go.errors.2 (gragas link): is
+           a tracked symbolic link,
+           which Git for Windows checks
+           out as a file holding the
+           link's text Fix: track the
+           file the link points at in
+           its place
+1 column not shown: kind
+
+Not checked
+  no rule of the pinned parts binds a
+  tool, so no tool config was judged
+  task: a member's timeout holds only
+  from go-task 3.53.1; this check cannot
+  see the go-task version
+
+  findings   1 finding, 0 exempt, 2 not
+  checked
+--- stderr

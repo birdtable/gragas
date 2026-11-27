@@ -1,0 +1,1 @@
+{"contract":1,"features":[],"op":"rank","body":{"tool_version":"1.0.0","pairs":[{"key":"max","aspect":"value","preset":500,"found":300},{"key":"max","aspect":"value","preset":500,"found":700},{"key":"max","aspect":"value","preset":500,"found":500},{"key":"max","aspect":"value","preset":"x","found":1}]}}

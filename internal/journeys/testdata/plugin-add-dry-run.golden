@@ -1,0 +1,22 @@
+$ gragas plugin add <bundles>/lint-a/1.0.0
+--- exit 6
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Plugin lint-a@1.0.0
+  file:plugins/lint-a/1.0.0/plugin.wasm: added
+  file:plugins/lint-a/1.0.0/plugin.yaml: added
+  plugin:lint-a@1.0.0: sha256:99f8602a3203331eb3a1a14d2ba1b7a18f17b1ed3b00698edf78b3ee9fddb0fa
+  this approves nothing: gragas plugin approve lint-a@1.0.0 shows what an approval covers
+
+what is written where
+  make plugins/lint-a/1.0.0/plugin.wasm
+  make plugins/lint-a/1.0.0/plugin.yaml
+  make plugins/lock.yaml
+This was a dry run and nothing was changed. Add --apply to make these changes.
+
+  declined   nothing was changed
+    gragas plugin add
+<bundles>/lint-a/1.0.0
+--apply
+--- stderr

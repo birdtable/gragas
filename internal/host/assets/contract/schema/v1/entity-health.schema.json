@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-health.schema.json",
+  "title": "The seven health numbers of a release (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "numbers"
+  ],
+  "properties": {
+    "numbers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "value"
+        ],
+        "properties": {
+          "name": {
+            "$ref": "common.schema.json#/$defs/slug",
+            "x-introduced": "1.0"
+          },
+          "value": {
+            "type": "number",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "minItems": 7,
+      "maxItems": 7,
+      "x-introduced": "1.0"
+    },
+    "resolved": {
+      "type": "boolean",
+      "description": "an overlay carries two sets: its own, and the one resolved over its parent",
+      "x-introduced": "1.0",
+      "default": false
+    }
+  }
+}

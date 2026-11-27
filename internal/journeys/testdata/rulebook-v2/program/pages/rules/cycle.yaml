@@ -1,0 +1,190 @@
+part: pages
+concern: cycle
+order: 1
+title: Static pages and docs-only repositories in the development cycle
+summary: >-
+  What a repository of HTML pages with no build, or a repository of Markdown or nothing, adds to the moments
+  of the development cycle: links that resolve offline against a reviewed baseline, a ledger that matches the
+  pages, a rendered golden and a narrow-width property per page with the accessibility engine, a members
+  file that says when there is no push tier, and a pack that rebuilds on a fresh clone. These lines add
+  members to the core moments and never a moment of their own.
+rules:
+  - id: pages.cycle.1
+    slug: links-resolve-offline-against-a-baseline
+    since: 0.1.0
+    rule: >-
+      At commit every link between pages and to an asset resolves offline, and for a docs repository every
+      Markdown link too; the first run freezes a reviewed baseline of the broken links that exist, and it
+      only shrinks.
+    detail: >-
+      docs.links.1 holds that docs have no broken file link, checked offline in the gate. This line places the
+      check at commit for pages, where it took 0.16 seconds for 1,747 inputs, and gives it a baseline
+      (gates.ratchets.1) for a repository that already breaks it, so the member is green on the day it lands
+      and red on the first new broken link. External links are a release step, never a gate member
+      (docs.links.1). The secrets scan of the staged diff runs at commit as for every project
+      (supply.secrets.1).
+    level: program
+    why: >-
+      One fleet's design pages had 1,752 broken references on the first run, 1,733 of them from one file; a
+      check with no baseline would stay red and be ignored.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: lychee-readme
+        where: the --offline option
+        says: >-
+          Only check local files and block network requests
+        backs: check
+    review_question: >-
+      Does this commit tier check every link offline, and how long is the baseline today against the first
+      run?
+    relates:
+      - id: docs.links.1
+        how: see
+      - id: gates.ratchets.1
+        how: see
+      - id: supply.secrets.1
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the link member at commit and the baseline is a registered
+        baseline. No tool key is bound yet; the docs part's link checker is the candidate.
+  - id: pages.cycle.2
+    slug: the-ledger-matches-the-pages
+    since: 0.1.0
+    rule: >-
+      At commit the ledger or index that lists the pages matches the pages on disk: every page is listed and
+      every listing is a page.
+    detail: >-
+      A repository of pages keeps a list of them, as an index page or a data file. The check compares the list
+      with the files both ways in 0.16 seconds. docs.freshness.1 holds that an index is generated and never
+      written by hand; where the ledger is generated this check is the generated-files diff, and where it is
+      written this check is what keeps it true.
+    level: program
+    why: >-
+      A page not in the ledger is a page nobody finds, and a ledger row with no page is a broken link on the
+      index.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: pages-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this commit tier compare the ledger with the pages both ways, and is the ledger generated or
+      written?
+    relates:
+      - id: docs.freshness.1
+        how: see
+      - id: gates.own-rules.3
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the ledger member at commit with both counts in the report. No
+        tool key is bound yet.
+  - id: pages.cycle.3
+    slug: a-golden-a-narrow-property-and-the-engine-per-page
+    since: 0.1.0
+    rule: >-
+      At push every page has a rendered golden at one width a person reads, updated only by a person reading
+      the diff, a narrow-width property that the page does not overflow sideways, and the accessibility
+      engine over it.
+    detail: >-
+      tests.journeys.8 holds one golden width and properties at the narrower ones for any screen; this line
+      is its form for a page. The golden is the rendered page at the width a person reads; the property at
+      a phone width is no horizontal overflow; and the engine runs over each page as web.accessibility.1 has
+      it for an application. Neither was measured on the host that studied the stack, which had no browser
+      run.
+    level: program
+    why: >-
+      A page with no rendered check changes under its author's eyes only, and a page that overflows at a phone
+      width is read by nobody on a phone.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: axe-core-readme
+        where: axe-core
+        says: >-
+          Axe is an accessibility testing engine for websites and other HTML-based user interfaces.
+        backs: check
+    review_question: >-
+      Which width is each page's golden, who updated it last, does the narrow run check overflow, and does the
+      engine run over every page?
+    relates:
+      - id: tests.journeys.8
+        how: see
+      - id: web.accessibility.1
+        how: see
+      - id: gates.command.30
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the render member with os and net fields and a page count in the
+        report. No tool key is bound yet.
+  - id: pages.cycle.4
+    slug: no-code-means-no-push-tier-and-says-so
+    since: 0.1.0
+    rule: >-
+      A repository with no code has no push tier beyond the commit checks, and its members file says so.
+    detail: >-
+      gates.command.23 holds that a repository with nothing to run says so in its members file, so an empty
+      file and a missing file differ. For a docs repository the push tier is the commit members run again
+      on the whole tree, and the file lists them and nothing else. A push tier that runs nothing and says
+      nothing is a green nobody can read.
+    level: program
+    why: >-
+      One repository of one fleet had no file at all and 36 of 38 checked nothing at commit; a file that says
+      what is not run is the difference between nothing to do and nothing done.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: pages-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this repository's members file say what its push tier runs, and does it say when that is only the
+      commit members?
+    relates:
+      - id: gates.command.23
+        how: see
+      - id: gates.plants.8
+        how: see
+    open:
+      - >-
+        Planned check: the runner refuses a repository with no members file and prints the file's statement
+        for one with no push members. No tool key is bound yet.
+  - id: pages.cycle.5
+    slug: the-pack-rebuilds-on-a-fresh-clone
+    since: 0.1.0
+    rule: >-
+      At release the pack and the site index rebuild on a fresh clone, and a build that skips either on a
+      clean clone fails.
+    detail: >-
+      gates.command.21 holds that every member passes on a fresh clone after the documented setup. A pages
+      repository that bundles its pages into a pack and an index must build both from the clone alone; a
+      build that finds no earlier output and skips is a build that never ran. The release member clones the
+      tag (supply.release.10) and checks the two outputs exist and match the pages.
+    level: release
+    why: >-
+      One fleet's design pages skipped both the pack and the index on a clean clone, so the published set was
+      whatever the last machine had built.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: pages-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this release build the pack and the index from a fresh clone of the tag, and what does the build do
+      when it finds no earlier output?
+    relates:
+      - id: gates.command.21
+        how: see
+      - id: supply.release.10
+        how: see
+    open:
+      - >-
+        Planned check: the release member's report names the two outputs and their sizes. No tool key is bound
+        yet.

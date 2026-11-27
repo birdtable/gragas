@@ -1,0 +1,20 @@
+format: 3
+part: astro
+concern: content
+rules:
+  - id: astro.content.1
+    statement: "Content a page reads at build time has a schema, and a bad entry fails the build."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "Each collection is declared with a collection definition and a zod schema. An entry that is missing a required field, or has a wrong type such as a date, fails `astro build`. The build itself refuses; there is no separate check, and the plant is run once to prove it."
+      pros:
+        - "Content errors found after deploy are published errors. The rule is rated C from the framework guide; no site uses collections yet."
+    sources:
+      - ref: astro-docs
+        where: content collections
+        backs: rule

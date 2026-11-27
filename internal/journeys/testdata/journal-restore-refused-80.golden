@@ -1,0 +1,9 @@
+$ gragas journal restore r1
+--- exit 5
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    a.txt moved after run r1: run r4 changed it since, and putting its
+  copy back would undo that
+    gragas journal restore r4
+--- stderr

@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "contract": "1.3",
+  "command": "coverage",
+  "word": "done",
+  "dir": "",
+  "rules_held": 0,
+  "entries_explained": 2,
+  "coverage": {
+    "rules_to_bindings": [],
+    "bindings_to_rules": [
+      "golangci-lint config: errorlint",
+      "golangci-lint config: recommended"
+    ]
+  },
+  "rules": [
+    {
+      "rule": "go.errors.1",
+      "standing": "planned",
+      "held": false,
+      "entries": [
+        "golangci-lint config: errorlint"
+      ]
+    },
+    {
+      "rule": "go.errors.2",
+      "standing": "planned",
+      "held": false,
+      "entries": [
+        "golangci-lint config: recommended"
+      ]
+    },
+    {
+      "rule": "go.errors.3",
+      "standing": "planned",
+      "held": false,
+      "entries": []
+    }
+  ],
+  "entries": [
+    {
+      "tool": "golangci-lint",
+      "entry": "config: errorlint",
+      "rules": [
+        "go.errors.1"
+      ]
+    },
+    {
+      "tool": "golangci-lint",
+      "entry": "config: recommended",
+      "rules": [
+        "go.errors.2"
+      ],
+      "set": "recommended",
+      "members": [
+        "errcheck",
+        "govet",
+        "staticcheck"
+      ]
+    }
+  ],
+  "unmapped": [
+    {
+      "tool": "golangci-lint",
+      "entry": "unused"
+    }
+  ]
+}

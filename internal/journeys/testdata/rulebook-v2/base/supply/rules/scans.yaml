@@ -1,0 +1,281 @@
+part: supply
+concern: scans
+order: 5
+title: Vulnerability scans and security analysis
+summary: >-
+  Known-vulnerable code is found before it ships. A scan of dependencies runs in the full gate the land job
+  runs before main, over the source or lockfile, and a second scan runs over the artifact that ships. A
+  security static analyser runs with every exclusion named, and the three code habits it guards
+  (parameterised SQL, argument-list child processes, secure randomness and constant-time compare) are held
+  explicitly.
+rules:
+  - id: supply.scans.1
+    slug: known-vulnerability-scan-at-push
+    since: 0.1.0
+    rule: >-
+      A known-vulnerability scan of dependencies runs in the pre-push gate (in the release gate only when it
+      does not fit the push budget), over the source for Go and over the lockfile for web, its result is read
+      as text, and it fails on high severity.
+    detail: >-
+      The scan is a member of the one gate command, so the pre-push hook runs it on every push; a land tier,
+      where a repo has one, runs it again. When the scan's network wait does not fit the hook budget of
+      gates.hooks.4 it moves to the release workflow and still blocks the release. For Go the scan is
+      reachability-aware and runs in source mode with the tool pinned in the shared makefile fragment. For web
+      it is the package manager audit with --audit-level high (severity-filtered) over the lockfile,
+      pnpm-lock.yaml, with a planted vulnerable version and a clean control; its ignore entries carry an
+      expiry date and a reason.
+    level: program
+    why: >-
+      A dependency with a known vulnerability is the cheapest way in for an attacker. Before this rule the
+      word vulnerability had no hit in the web catalogue, and audit appeared only as a tier-4 report. The Go
+      scan was in six of seven repositories already. Under decision 65 there is no hosted land job, so
+      a scan placed only at land had no tier that runs.
+    kind: rule
+    strength: Hard
+    status: retired
+    replaced_by: supply.scans.7
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+      - ref: operator-points
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          govulncheck pinned in the tools module, source mode in the gate command the pre-push hook runs,
+          output text read and not the exit code only. Plant: a module with a known vulnerable dependency
+          version that is reachable in code fails. Control: a clean module passes
+      - binding: ts
+        class: preset-config
+        tier: "2"
+        note: >-
+          The package manager audit at high severity over the lockfile in the gate command the pre-push hook
+          runs, with ignores carrying a reason and expiry. Plant: lodash 4.17.15 and minimist 0.0.8 in a scratch
+          lock fail at high severity. Control: a lock of clean packages exits 0
+    relates:
+      - id: gates.hooks.4
+        how: see
+      - id: supply.scans.7
+        how: see
+    open:
+      - >-
+        Both scans need the network; a run with no network exits as could not run, never as a pass.
+    note: >-
+      Retired by rulebook#55's ruling: the scan's home is the full tier, which the land job runs
+      on the merged tree before main, not the pre-push hook. The rest of the rule moves to supply.scans.7
+      unchanged.
+  - id: supply.scans.2
+    slug: shipped-artifact-scanned
+    since: 0.1.0
+    rule: >-
+      The artifact that ships is scanned for known vulnerabilities, not only the source, and the gate reads
+      the text of the result.
+    detail: >-
+      A zero exit can still print a module-level advisory, so the text is read. The scan runs on the candidate
+      at land when release files change, and again on the shipped artifact after publish as a report. A
+      library ships no binary, so the open question is whether a library is exempt. The command is govulncheck
+      -mode=binary.
+    level: release
+    why: >-
+      A scan of the source can pass while the built binary carries a vulnerable module; one binary exited 0
+      and printed a module-level advisory.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          govulncheck in binary mode on the release artifact, output text read. Plant: a binary built from a
+          vulnerable dependency fails. Control: a clean binary passes
+    open:
+      - The exemption of a library, which ships no binary to scan, is open.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: supply.scans.3
+    slug: security-analyser-with-named-exclusions
+    since: 0.1.0
+    rule: A security static analyser runs, and every exclusion is named with a reason.
+    detail: >-
+      Four rule families are enabled by name so an exclusion cannot drop them silently: SQL built by
+      formatting (G201), SQL built by concatenation (G202), subprocess launched with variable data (G204) and
+      weak randomness (G404).
+    level: function
+    why: >-
+      The analyser is the largest source of suppressions, so an unnamed exclusion can quietly remove the
+      families that matter.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: hoffman-web-app-security
+        where: session vulnerabilities and SQL injection
+        backs: rule
+      - ref: harsanyi-100-go-mistakes
+        where: common SQL mistakes
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: gosec
+        tier: "1"
+        fix: never
+        note: >-
+          gosec in golangci-lint with G201, G202, G204 and G404 enabled by name and exclusions listed with
+          reasons. Plant: a query built with fmt.Sprintf fires. Control: a parameterised query passes
+    relates:
+      - id: supply.scans.4
+        how: see
+      - id: supply.scans.6
+        how: see
+    open:
+      - >-
+        Half of the source row is this rule and half is practice (two extra scans); the extra scans are held
+        by supply.scans.4 to supply.scans.6 and are not built.
+  - id: supply.scans.4
+    slug: sql-parameterised
+    since: 0.1.0
+    rule: >-
+      All SQL is parameterised, so no SQL text is built from data and identifiers come from a closed list.
+    level: function
+    why: >-
+      SQL text built from data is the injection fault. In the Go estate no single-line Sprintf SQL existed in
+      six repositories, so this pins good practice and fixes no live fault.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: hoffman-web-app-security
+        where: SQL injection
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          gosec G201 and G202 plus an analyser or ast-grep scan for SQL strings outside the store package.
+          Plant: a query concatenated from a variable fires, and so does one built with Sprintf. Control: a
+          parameterised query passes
+    open:
+      - >-
+        The gosec part is configured; the scan for SQL strings outside the store package is proposed and not
+        built.
+    note: Postgres-specific SQL rules sit in the postgres part.
+  - id: supply.scans.5
+    slug: child-process-argument-list
+    since: 0.1.0
+    rule: >-
+      A child process starts with an argument list, never a shell string with data in it; an option terminator
+      comes before data arguments.
+    detail: >-
+      A person's own pager or command line is the named exemption, with a reasoned nolint. An exempt case is a
+      person own $PAGER or command line. The scan targets sh -c and other shell-with-data forms.
+    level: function
+    why: >-
+      A shell string with data in it is command injection. The three shell-string sites in the Go estate were
+      all a person's own pager or command line.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: hoffman-web-app-security
+        where: command injection
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tier: "1"
+        note: >-
+          gosec G204 plus a scan for exec.Command with sh, bash or zsh and a non-literal argument. Plant:
+          exec.Command("sh", "-c", value) with data in value fires. Control: a literal script passes
+    open:
+      - The shell scan is proposed and not built.
+  - id: supply.scans.6
+    slug: secure-randomness-and-constant-time-compare
+    since: 0.1.0
+    rule: >-
+      Security randomness comes from the cryptographic generator, the non-cryptographic generator is banned
+      for tokens, and a secret is compared in constant time.
+    detail: >-
+      The compare scan targets == on values with secret-named variables (token, secret).
+    level: function
+    why: >-
+      A token from the ordinary generator is guessable, and an equality compare of a secret leaks it by
+      timing. The three imports of the ordinary generator found were a tool, a solver and a fixture.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: hoffman-web-app-security
+        where: session vulnerabilities
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tier: "1"
+        note: >-
+          gosec G404 and an analyser for == on values named token or secret. Plant: a session token from
+          math/rand fires, and a token compared with == fires. Control: crypto/rand and a constant-time
+          compare pass
+    open:
+      - >-
+        The compare scan is not built and stays practice; constant-time compare was already in two
+        repositories.
+  - id: supply.scans.7
+    slug: known-vulnerability-scan-before-main
+    since: 0.1.0
+    rule: >-
+      A known-vulnerability scan of dependencies runs in the full gate, which the land job runs on the merged
+      tree before main, over the source for Go and over the lockfile for web; its result is read as text, and
+      it fails on high severity.
+    detail: >-
+      The scan is a member of the one gate command's full tier. The land job calls the push tier and then the
+      full tier, so the scan runs on every change before it reaches main, and the release runs it again. The
+      pre-push hook may leave it out: its list is a declared subset of the land job's (gates.command.1). For Go
+      the scan is reachability-aware and runs in source mode with the tool pinned in the tools module. For web
+      it is the package manager audit with --audit-level high (severity-filtered) over the lockfile,
+      pnpm-lock.yaml, with a planted vulnerable version and a clean control; its ignore entries carry an
+      expiry date and a reason.
+    level: program
+    why: >-
+      A dependency with a known vulnerability is the cheapest way in for an attacker. The scan waits on the
+      network, which the push budget cannot carry on every push, so its home is the full tier. Before main it
+      still runs on every change: the land job runs the full tier on the merged tree, so nothing the scan
+      would refuse reaches main.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: rulebook-55-ruling
+        backs: rule
+      - ref: fleet-decisions-pd-142
+        backs: rule
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          govulncheck pinned in the tools module, source mode in the full tier of the gate command the land
+          job runs, output text read and not the exit code only. Plant: a module with a known vulnerable
+          dependency version that is reachable in code fails. Control: a clean module passes
+      - binding: ts
+        class: preset-config
+        tier: "2"
+        note: >-
+          The package manager audit at high severity over the lockfile in the full tier of the gate command the
+          land job runs, with ignores carrying a reason and expiry. Plant: lodash 4.17.15 and minimist 0.0.8 in
+          a scratch lock fail at high severity. Control: a lock of clean packages exits 0
+    relates:
+      - id: gates.command.1
+        how: see
+      - id: supply.scans.1
+        how: see
+    open:
+      - >-
+        Both scans need the network; a run with no network exits as could not run, never as a pass.

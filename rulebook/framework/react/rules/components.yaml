@@ -1,0 +1,85 @@
+format: 3
+part: react
+concern: components
+rules:
+  - id: react.components.1
+    statement: "A component that fetches is a page orchestrator or a container with a marked name, never a file in the presentational components folder."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "Pages orchestrate and containers carry a marked file name; leaf parts take data as props and import no data layer. The import rule is the one that holds it: the presentational folder may not depend on the api, store or query folders."
+      pros:
+        - "A leaf part that fetches cannot be reused or tested without the network, and data access spreads into the design system."
+    sources:
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.components.2
+    statement: "Interactive parts come from one unstyled accessible primitive library; nobody hand-writes a combobox, menu or similar widget."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "Widget roles written by hand (`<div role=\"combobox\">`; combobox, menu, menuitem, listbox, option, tablist, tab, dialog, tooltip) written by hand outside the shared parts package fail. Other primitive libraries (Radix, react-aria-components, Ark, Headless UI, cmdk, vaul) and the old `@base-ui-components/react` package name are banned in the manifest; hand-written widgets are replaced by the library's. The threshold for a hand copy (more than 3) is rule data with its reason, not a project's choice. A copy-in component set is allowed on the same base when its source lives in the shared parts package. The dialog behaviour is held by the accessibility rules either way; this rule is also the component-stack lint of web.accessibility.11: the primitive library's dialog is the overlay, and a hand-rolled `role=\"dialog\"` outside an import from the primitive fails."
+      pros:
+        - "Hand-built widgets drift from the accessibility contract: in the source a hand-built combobox was 416 lines and a date picker 371 lines. The chosen library gave zero violations under the script and style policy."
+    relations:
+      relates:
+        - web.accessibility.11
+    sources:
+      - ref: decision-8
+        backs: rule
+      - ref: decision-30
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.components.3
+    statement: "HTML that comes from data renders only through a markdown renderer and a sanitiser under the trusted-types default policy; no component uses raw `dangerouslySetInnerHTML`."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The renderer is react-markdown with dompurify as the sanitiser. The raw-markup funnel names the property so the React recommended lint set flags it (`react/no-danger`); the one funnel module is the only place it may appear. The policy for scripts never contains unsafe-inline."
+      pros:
+        - Markup built from data is the way untrusted input reaches the page as script.
+    relations:
+      relates:
+        - web.structure.2
+    sources:
+      - ref: owasp-xss-prevention
+        backs: rule
+      - ref: w3c-trusted-types
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.components.4
+    statement: "No component passes a `style` prop to a DOM element; styling comes from token-generated classes."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "`react/forbid-dom-props` with `style` as an error (`react/forbid-dom-props: style`); `forbid-dom-props` is component-stack only. This is the component-stack form of the inline-style ban in web.tokens.3 (no colour literal) and web.tokens.15 (theme from tokens); the template stack holds it with html-validate `no-inline-style`."
+      pros:
+        - "An inline style carries colours, sizes and fonts past the token theme and the colour-literal lint; a regex that matched only some shapes reported zero and missed the rest."
+    relations:
+      relates:
+        - web.tokens.3
+        - web.tokens.15
+    sources:
+      - ref: decision-65-react
+        backs: rule

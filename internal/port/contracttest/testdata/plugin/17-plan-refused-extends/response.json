@@ -1,0 +1,1 @@
+{"error":{"code":"refused","message":"the standin hands no tool this config: it sets extends, which reaches beyond its one file","path":"/config/0/data"}}

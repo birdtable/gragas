@@ -1,0 +1,9 @@
+$ gragas journal restore r1
+--- 80 columns
+--- screen at the end
+
+
+  refused    a.txt moved after run r1: run r4 changed it since, and putting its
+  copy back would undo that
+    gragas journal restore r4
+--- exit 5

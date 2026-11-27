@@ -1,0 +1,5 @@
+rule: arch.measures.1
+path: internal/core/api/cache.go
+fingerprint: 154d5e3cdaa96886a0fd0cefef3e0a1d03a5171bcd4be6b9cf0b5805b3be164e
+answer: keep
+reason: "the import is in guard.go: guard edit writes no file, so a refusal it journals has no run of its own: GuardEdit names that run by the instant and the first eight hex digits of the input's digest.Hex, the one digest function (arch.shared, digest row), so two refusals in one instant keep two ids; layers.yaml allows internal/digest to core/api, and it decides nothing of the verdict. Read again when internal/core/api's import set became internal/core/audit, the std io, strconv, strings and time, internal/digest and internal/model/contract; this edge is used as answered above, so still true. Read again for import: the package import set gained internal/markdown, which has its own answer; this edge is used as answered above, so still true."

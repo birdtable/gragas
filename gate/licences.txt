@@ -1,0 +1,37 @@
+# The one SPDX allowlist (supply.licences.1, .2): every library the tree builds, on
+# every system make's CROSS names, carries only licences listed here, by exact id.
+# A library with no licence, or one the classifier cannot name, fails. The tree's own
+# module is judged too, so LICENSE must classify as one of these. A module go.mod
+# requires may be passed over only by a supply.licences.1 row of gate/exemptions.yaml,
+# until its expiry.
+#
+# Who may change it: a line added, changed or removed here is the reviewer's to pass
+# at review; the file is on no protected list.
+#
+# Four forms, one to a line; a line of no other shape is refused:
+#   <id>                    a plain SPDX id: every library may carry it.
+#   public-domain <module>  that module's licence file is a dedication to the public
+#                           domain, which the classifier cannot name: that module
+#                           passes with it, and no other does.
+#   <module> takes <id>     that module's licence file offers a choice (an OR); <id>,
+#                           which must be a plain id below, is the side taken, so the
+#                           scan never names the side not taken for that module. For
+#                           any other module the sides are judged as written.
+#   <module> adds <id>      that module may carry <id> beside the allowed ids, and no
+#                           other module may.
+# MPL-2.0 is allowed linked unmodified: the scan refuses an MPL-2.0 library that go.mod
+# replaces, as its source is then not the module as published.
+Apache-2.0
+BSD-2-Clause
+BSD-3-Clause
+ISC
+MIT
+MPL-2.0
+# SQLite's text, a dedication to the public domain, linked by two programs.
+public-domain modernc.org/sqlite
+# libcap's psx is "BSD-3-Clause OR GPL-2.0-only"; BSD-3-Clause is the licence taken.
+kernel.org/pub/linux/libs/security/libcap/psx takes BSD-3-Clause
+# libcap's cap, which go-testkit's contain requires on Linux, is "BSD-3-Clause OR GPL-2.0-only" as psx is.
+kernel.org/pub/linux/libs/security/libcap/cap takes BSD-3-Clause
+# The ICU licence part of chardet, linked by one program through its crawler.
+github.com/saintfish/chardet adds ICU

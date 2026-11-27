@@ -1,0 +1,20 @@
+$ gragas conflicts
+--- exit 1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+golangci-lint source: errorlint differs in severity
+rule         value  options  severity
+go.errors.1  -      -        error
+go.errors.2  -      -        warning
+
+Resolve each in one of three ways
+split the entry: give each rule an entry of its own, since different options are
+usually different entries
+rebind one rule to another entry or value: gragas rebind
+declare a conflicts relation on both rules and record a decision that names the
+winning binding: gragas decision new
+
+  findings   1 conflict open, 0 resolved
+    gragas rebind
+--- stderr

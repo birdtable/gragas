@@ -1,0 +1,219 @@
+{
+  "contract": "1.3",
+  "command": "",
+  "summary": "The rulebook, as presets you import",
+  "about": "Gragás is a rulebook plus presets: shared configs that\nprojects import into their own tool configs. This\nprogram checks the rulebook and writes the files made\nfrom it.\n\n  gragas validate                              list the findings and notices\n  gragas validate --json                       as one JSON document\n  gragas migrate --name rb --owner me          show the plan\n  gragas migrate --name rb --owner me --apply  carry it out\n  gragas rule new                              add a draft rule\n  gragas rule retire \u003cid\u003e                      retire a rule and keep its id\n  gragas term new                              define a term\n  gragas term retire \u003cslug\u003e                    retire a term nothing uses\n  gragas source new                            record a source\n  gragas source edit \u003cslug\u003e                    change a source\n  gragas decision new                          record a decision\n  gragas decision supersede \u003cslug\u003e             supersede a decision by a new one\n  gragas undo                                  show the plan\n  gragas undo --entry 12 --apply               carry it out\n  gragas guard edit                            judge an edit on standard input\n  gragas guard staged                          judge the staged change\n  gragas import \u003cfolder\u003e                       show the plan\n  gragas import \u003cfolder\u003e --apply               carry it out\n  gragas attention                             list it\n  gragas attention --json                      as one JSON document\n  gragas history                               list the entries\n  gragas history \u003cid\u003e                          list the entries for one rule\n  gragas bind \u003cid\u003e --key \u003centry\u003e               show the plan\n  gragas bind \u003cid\u003e --apply                     carry it out\n  gragas rebind \u003cid\u003e --to-key \u003cnew\u003e            show the plan\n  gragas rebind \u003cid\u003e --apply                   carry it out\n  gragas unbind \u003cid\u003e --key \u003centry\u003e             show the plan\n  gragas unbind \u003cid\u003e --apply                   carry it out\n  gragas conflicts                             list them\n  gragas conflicts --json                      as one JSON document\n  gragas coverage                              list it\n  gragas coverage --json                       as one JSON document\n  gragas tools                                 list them\n  gragas tools --json                          as one JSON document\n  gragas plugin test \u003cfolder\u003e                  run the checks over one bundle\n  gragas plugin contract --json                say the contract number and features, as one JSON document\n  gragas resolve                               list it\n  gragas resolve --json                        as one JSON document\n  gragas explain \u003cid\u003e                          say what holds a rule\n  gragas explain \u003ctool\u003e \u003ckey\u003e                  say which rules hold it\n  gragas preset                                show the preset files that are new or differ\n  gragas preset --check                        name each file that differs, writing nothing\n  gragas init --kind rulebook                  show the plan for a rulebook\n  gragas init --kind rulebook --apply          write it\n  gragas check                                 list the findings\n  gragas check --json                          as one JSON document\n  gragas contract validate \u003cfile\u003e              check a document\n  gragas contract fields rule                  list the rule entity's fields\n  gragas version                               say which build this is\n  gragas version --json                        as one JSON document\n  gragas journal list                          list the runs\n  gragas journal recover --apply               roll an interrupted run back\n  gragas cache list                            list it\n  gragas cache clear --apply                   clear it\n  gragas gen                                   list the files out of date\n  gragas gen --apply                           write them\n\nEnvironment:\n  GRAGAS_NAMES_FILE  a private file of names public\n                     text must not hold, one regular\n                     expression a line; unset skips it\n  XDG_STATE_HOME     where gen --apply keeps its lock\n                     and run record (gragas/ in it),\n                     else the user's state folder\n  CI                 set: no colour, banner or question\n  NO_COLOR, TERM, COLUMNS, ACCESSIBLE  as everywhere\n\nExit codes: 0 done, 1 refused or failed, 2 usage,\n3 busy, 4 not ready.",
+  "usage": "gragas",
+  "commands": [
+    {
+      "name": "attention",
+      "summary": "List what needs the owner's attention first"
+    },
+    {
+      "name": "bind",
+      "summary": "Bind a rule to the tool setting that holds it"
+    },
+    {
+      "name": "cache",
+      "summary": "List or clear what gragas keeps in its cache"
+    },
+    {
+      "name": "check",
+      "summary": "Validate the rulebook tree"
+    },
+    {
+      "name": "conflicts",
+      "summary": "List rules whose settings disagree and offer the three resolutions"
+    },
+    {
+      "name": "contract",
+      "summary": "Check documents, read fields, write a fixture"
+    },
+    {
+      "name": "coverage",
+      "summary": "List the rules tools hold and those none hold"
+    },
+    {
+      "name": "decision",
+      "summary": "Record a decision or supersede one, with a history entry for each change"
+    },
+    {
+      "name": "explain",
+      "summary": "Explain a rule or a tool entry by what holds it"
+    },
+    {
+      "name": "gen",
+      "summary": "Regenerate the generated files"
+    },
+    {
+      "name": "guard",
+      "summary": "Refuse a hand edit of a lifecycle field"
+    },
+    {
+      "name": "history",
+      "summary": "List the history of a rule or of the rulebook"
+    },
+    {
+      "name": "import",
+      "summary": "Bring a guide and a tool's config in as rules, grandfathering what the config holds"
+    },
+    {
+      "name": "init",
+      "summary": "Set up a project or a rulebook"
+    },
+    {
+      "name": "journal",
+      "summary": "List, recover or restore runs that wrote here"
+    },
+    {
+      "name": "migrate",
+      "summary": "Move a rulebook to the format this build reads"
+    },
+    {
+      "name": "plugin",
+      "summary": "Prove, list, approve, add or upgrade a plugin, or say which contract this gragas speaks"
+    },
+    {
+      "name": "preset",
+      "summary": "Write every tool's preset from the rulebook's bindings"
+    },
+    {
+      "name": "rebind",
+      "summary": "Move a rule's binding to another tool setting"
+    },
+    {
+      "name": "resolve",
+      "summary": "List the rulebook a chain resolves to, and where each entry came from"
+    },
+    {
+      "name": "rule",
+      "summary": "Add or change a rule, with its history"
+    },
+    {
+      "name": "source",
+      "summary": "Record or change a source, with its history"
+    },
+    {
+      "name": "term",
+      "summary": "Add, change or retire a term, with its history"
+    },
+    {
+      "name": "tools",
+      "summary": "List the tools the rules bind to"
+    },
+    {
+      "name": "unbind",
+      "summary": "Remove a rule's binding"
+    },
+    {
+      "name": "undo",
+      "summary": "Take back the last change the history records, with a new entry"
+    },
+    {
+      "name": "validate",
+      "summary": "Check a rulebook and list what is wrong in it"
+    },
+    {
+      "name": "version",
+      "summary": "Print this build"
+    }
+  ],
+  "flags": [
+    {
+      "name": "accessible",
+      "type": "bool",
+      "default": "false",
+      "usage": "Plain questions (ACCESSIBLE)"
+    },
+    {
+      "name": "config",
+      "type": "string",
+      "default": "",
+      "usage": "The settings file (GRAGAS_CONFIG)"
+    },
+    {
+      "name": "json",
+      "type": "bool",
+      "default": "false",
+      "usage": "Answer in one JSON document"
+    },
+    {
+      "name": "no-color",
+      "type": "bool",
+      "default": "false",
+      "usage": "No colour (NO_COLOR)"
+    },
+    {
+      "name": "plain",
+      "type": "bool",
+      "default": "false",
+      "usage": "Print plainly: nothing moves"
+    }
+  ],
+  "global_flags": [
+    {
+      "name": "accessible",
+      "type": "bool",
+      "default": "false",
+      "usage": "Plain questions (ACCESSIBLE)"
+    },
+    {
+      "name": "config",
+      "type": "string",
+      "default": "",
+      "usage": "The settings file (GRAGAS_CONFIG)"
+    },
+    {
+      "name": "json",
+      "type": "bool",
+      "default": "false",
+      "usage": "Answer in one JSON document"
+    },
+    {
+      "name": "no-color",
+      "type": "bool",
+      "default": "false",
+      "usage": "No colour (NO_COLOR)"
+    },
+    {
+      "name": "plain",
+      "type": "bool",
+      "default": "false",
+      "usage": "Print plainly: nothing moves"
+    }
+  ],
+  "exits": [
+    {
+      "word": "done",
+      "code": 0
+    },
+    {
+      "word": "failed",
+      "code": 1
+    },
+    {
+      "word": "findings",
+      "code": 1
+    },
+    {
+      "word": "usage",
+      "code": 2
+    },
+    {
+      "word": "busy",
+      "code": 3
+    },
+    {
+      "word": "not ready",
+      "code": 4
+    },
+    {
+      "word": "refused",
+      "code": 5
+    },
+    {
+      "word": "declined",
+      "code": 6
+    }
+  ]
+}

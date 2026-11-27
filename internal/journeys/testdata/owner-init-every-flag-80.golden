@@ -1,0 +1,8 @@
+$ gragas init --kind rulebook --name demo --rulebook-kind overlay --version 1.0.0 --language en --licence CC-BY-4.0 --presets-licence MIT --docs-url https://example.test --owner team-a --parent base --parent-version 1.0.0 --parent-hash sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa --import other@2.0.0=go,ts=sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb --layer language --part go --apply
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  not ready  already a rulebook: this folder holds its identity file
+    gragas validate
+--- stderr
+--- exit 4

@@ -1,0 +1,18 @@
+part: arch
+concern: layers
+title: Layers
+summary: Code is split into named layers and imports run one way.
+rules:
+  - id: arch.layers.1
+    slug: imports-run-one-way
+    rule: Imports run one way through named layers.
+    kind: rule
+    strength: Hard
+    level: file
+    status: active
+    since: 1.0.0
+    colour: blue
+    checks:
+      - binding: go
+        class: test-kit
+        tier: 5

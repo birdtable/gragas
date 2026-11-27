@@ -1,0 +1,29 @@
+{
+  "$comment": "The strictest compiler base (ts.compiler.5). It holds the strict flags and nothing about modules or emit: tsconfig.library.json and tsconfig.bundler.json add those, and a package sets only lib, types and jsx. A flag only joins the list below and never leaves it (ts.compiler.2); one left off is named in leftOff with its reason, and test/compiler-flags.test.ts pins it off (ts.compiler.4).",
+  "leftOff": {
+    "isolatedDeclarations": "the schemas' types are inferred from the zod schemas that are generated, and a generated declaration is not written out by hand"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "useUnknownInCatchVariables": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "erasableSyntaxOnly": true,
+    "noUncheckedSideEffectImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": false,
+    "resolveJsonModule": false,
+    "allowJs": false,
+    "target": "es2023"
+  }
+}

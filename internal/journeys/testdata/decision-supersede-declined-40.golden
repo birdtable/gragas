@@ -1,0 +1,39 @@
+$ gragas decision supersede wrap --decision-slug wrap-with-context --title Wrap with context --text Say what was being done. --rejected the bare cause: it loses where it failed
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+What changes
+  new decision wrap-with-context: Wrap
+  with context, which supersedes wrap
+  wrap is marked superseded by
+  wrap-with-context and stays in the
+  book
+  2 rule(s) move from wrap to
+  wrap-with-context: go.errors.1,
+  go.errors.2
+
+Consumer actions
+  2 rule(s) stand on wrap-with-context
+  now, and are listed in its citations:
+  go.errors.1, go.errors.2
+
+What is written where
+  decisions.yaml: adds wrap-with-context
+  and sets superseded_by of wrap
+  language/go/rules/errors.yaml: sets
+  the decision of 2 rule(s)
+  history.jsonl: appends 4 entries (the
+  supersession, the new decision, and
+  one for each rule)
+This was a dry run and nothing was
+changed. Add --apply to make these
+changes.
+
+  declined   nothing was changed
+    gragas decision supersede wrap
+--decision-slug wrap-with-context
+--rejected 'the bare cause: it loses
+where it failed' --text 'Say what was
+being done.' --title 'Wrap with context'
+--apply
+--- stderr

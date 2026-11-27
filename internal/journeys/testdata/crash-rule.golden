@@ -1,0 +1,51 @@
+$ gragas rule new --concern go.errors --statement Return errors, do not panic. --strength must --own --decision-title Errors are returned --decision-text Panics hide failures from the caller. --apply
+--- before
+a7378c2c06875a3c26c08883fb1d663d593226832fc6ff7e40c62544adccfc71 language/go/rules/errors.yaml
+93d53f8940029b3e40a77be9c8d8df9c0c239c28bb88ad6136ebc7eb3d847ae1 presets/golangci-lint/settings.yml
+7d1543288bbbe5e0ef83911768156af6f901e0611bf851dce435757f72ea996b rulebook.yaml
+860f82f9bebaf053658f0d86939b59c005959ce62bfb361e7b8566bc6c3069ac structure.yaml
+--- after
+b741c74afed11b6e65a68a1fffdb45e4cfcd6e929281a4938db72908ff83dd5e decisions.yaml
+27f041a25045c8b0e5e9fec8729db99663a9bd749a1782fa6a65760d43aa599c history.jsonl
+35ce0bef2e60e242cbdedfc09f8c8b5f2b5e08779b57678e96700cdf8e06416b language/go/rules/errors.yaml
+93d53f8940029b3e40a77be9c8d8df9c0c239c28bb88ad6136ebc7eb3d847ae1 presets/golangci-lint/settings.yml
+7d1543288bbbe5e0ef83911768156af6f901e0611bf851dce435757f72ea996b rulebook.yaml
+b9de3b2015b551916b02ac75a9e4ae7ba397e27027aeef4f71347a622f21d91a sources.yaml
+860f82f9bebaf053658f0d86939b59c005959ce62bfb361e7b8566bc6c3069ac structure.yaml
+--- boundaries
+before-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+after-record
+after-record
+after-record

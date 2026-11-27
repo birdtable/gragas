@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"op\":\"rank\",\"body\":[1,2]}")

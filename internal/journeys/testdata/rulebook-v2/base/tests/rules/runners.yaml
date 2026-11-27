@@ -1,0 +1,463 @@
+part: tests
+concern: runners
+order: 9
+title: Test runners and their configuration
+summary: >-
+  One runner runs the unit tests in the gate tiers from one shared preset, with its worker count derived from
+  the slots the job tool gives it and heavy tests serialised across sessions.
+rules:
+  - id: tests.runners.1
+    slug: unit-tests-in-the-gate
+    since: 0.1.0
+    rule: >-
+      Unit tests run in the gate from one runner, uncached, over the whole tree, or where selection is on for
+      the packages that changed.
+    detail: >-
+      The default is every unit test of every package with the result cache off (tests.selection.1); a repo
+      runs only the changed packages only when it has turned selection on.
+    level: program
+    why: >-
+      A test that is not in the gate does not exist for the agent; unit tests are the fastest tier.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-tests
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "2"
+        note: >-
+          the gate's rule table names the unit-test step for every program, run over the whole tree uncached,
+          or fed by the selector (tests.selection.1) where selection is on. Plant: a program with no unit-test
+          step in the gate list fails; a cached unit-test run with selection off fails. Control: a program
+          with the step passes
+    relates:
+      - id: tests.selection.1
+        how: see
+    open:
+      - >-
+        Integration tests run at the land step and journeys at their own tier; the unit tier is the floor.
+  - id: tests.runners.2
+    slug: workers-from-slots
+    since: 0.1.0
+    rule: >-
+      Test and browser workers per run equal cores divided by concurrent slots, with the slot count read from
+      the job tool and never hard-coded, applied only inside a slot.
+    level: program
+    why: >-
+      On the current host 15 cores and two heavy slots give 7 workers per run; a hard-coded number
+      oversubscribes one run and starves another.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "2"
+        note: >-
+          ESLint no-restricted-syntax on numeric literals for the worker options in the unit-test and
+          browser-test configs; the value must derive from the slot variable (Biome form is a GritQL plugin on
+          the same literals). Plant: workers set to 4 in a config file fires. Control: workers derived from
+          the slot variable passes
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          the parallelism flag set from the slot variable in the shared Makefile fragment. Plant: a hard-coded
+          parallelism number in the gate command fails the gate scan. Control: a derived value passes
+    open:
+      - >-
+        The Go form is inferred; the catalogue states the rule in terms of the TypeScript runners.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: tests.runners.3
+    slug: one-runner-preset
+    since: 0.1.0
+    rule: >-
+      The test runner configuration is one shared preset, and race, leak and shuffle flags are set once in the
+      shared fragment.
+    level: program
+    why: >-
+      One preset is the only place a flag is set once; the reference practice has one preset for every
+      program.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-10
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "2"
+        note: >-
+          every runner config extends the shared preset, read back from the resolved config. Plant: a config
+          that does not extend the preset fails. Control: a config extending it passes
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          race, leak-check and shuffle flags set once in the shared Makefile fragment. Plant: a gate command
+          without the shared flags fails the gate scan. Control: the shared fragment passes
+    open:
+      - One runner in every project is decision 10 (Vitest everywhere).
+  - id: tests.runners.4
+    slug: tests-parallel-by-default
+    since: 0.1.0
+    rule: >-
+      A test runs in parallel with the others of its package by default, and a test that runs alone says why in
+      its own code.
+    detail: >-
+      A test that needs its own process state (an environment variable, the working folder, a global) is the
+      exception, and it carries a comment naming the state it needs. A test that only needs a variable for a
+      child process sets it on that child's environment and stays parallel. The cases of a long table test are
+      parallel subtests when each has its own temp folder. A package whose tests all run one at a time is a
+      finding in the tier report, with the share of its wall time. This rule holds the tests; gates.command.17
+      to .20 hold the members around them. The shuffle seed (tests.isolation.10) still prints, and a test that
+      fails only in parallel is a bug ticket, never a retry (tests.flakes.1).
+    level: program
+    why: >-
+      One push kept 1.7 of 15 CPUs busy because two packages ran 152 and 101 tests one after another; making
+      them parallel removes the longest member of the tier without dropping a test.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: go-testing-package
+        where: func (*T) Parallel
+        says: >-
+          Parallel signals that this test is to be run in parallel with (and only with) other parallel tests.
+        backs: rule
+    review_question: >-
+      Does this test run in parallel, and if it runs alone, does its code say which process state it needs?
+    relates:
+      - id: tests.runners.2
+        how: see
+      - id: tests.isolation.1
+        how: see
+      - id: tests.isolation.10
+        how: see
+    examples:
+      bad:
+        lang: go
+        code: |
+          func TestParse(t *testing.T) {
+              // no t.Parallel: paralleltest reports it
+          }
+      good:
+        lang: go
+        code: |
+          func TestParse(t *testing.T) {
+              t.Parallel()
+          }
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: paralleltest
+        tier: "1"
+        fix: never
+        note: >-
+          The shared preset enables paralleltest, which reports a test that never calls t.Parallel; a serial test
+          says its reason in the suppression. Plant: a test with no t.Parallel is reported. Control: a parallel
+          test, and a serial one with its reason, are not. Held by TestThePresetShowsASerialTestRedAndOneWithItsReasonGreen
+          in internal/preset_parallel_test.go.
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: tparallel
+        tier: "1"
+        fix: never
+        note: >-
+          The shared preset enables tparallel, which reports a parallel parent over a subtest that is not. Plant:
+          a half-parallel test is reported. Control: a fully parallel one is not. Same test.
+    open:
+      - >-
+        A count of serial tests per package in the tier report is not built yet. The packages still serial are
+        listed in gate/serial-packages.txt, a baseline that may only fall.
+
+  - id: tests.runners.5
+    slug: setup-once-per-package
+    since: 0.1.0
+    rule: >-
+      Expensive setup (a build, a clone, a started program) runs once per package, in TestMain or a once, and
+      never once per test or per case.
+    detail: >-
+      A case that needs a different input to the same built program reuses the build and changes the input. A
+      case that must have its own build says so in its code. The setup writes nothing into the tree under test.
+      This is about how many times the work is done; tests.isolation.3 holds how the shared fixture is reached
+      (through a helper with its own temp folder and no fixed port), and both hold together.
+    level: program
+    why: >-
+      One test built the landing judge and ran the landing script four times, 38 to 47 seconds of every push, to
+      prove four things that one build could show.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: go-testing-package
+        where: func TestMain
+        says: >-
+          TestMain runs in the main goroutine and can do whatever setup and teardown is necessary around a call to m.Run.
+        backs: rule
+    review_question: >-
+      How many times does this package do its expensive setup in one run, and could it do it once?
+    relates:
+      - id: tests.isolation.3
+        how: see
+    open:
+      - >-
+        Planned check: per-test cost in the tier report, with the tests over a stated share of the package's wall
+        time listed beside the setup they repeat. No tool key is bound yet.
+  - id: tests.runners.6
+    slug: race-detector-at-push
+    since: 0.1.0
+    rule: >-
+      The race detector runs at push over the light packages, and the heavy race run is on demand; the race
+      detector is not turned off at push.
+    detail: >-
+      The light packages run with the race detector on in the push tier, because a race there costs a few
+      seconds of wall time and is found at the earliest moment. The heavy race run (the packages whose race
+      build takes minutes) leaves every tier and runs when the owner asks for it, or when the hub asks the owner
+      first. A change that adds shared state across goroutines to a heavy package asks for that run in its pull
+      request. Turning the race detector off at push is not taken: it saves about 17 seconds of wall time today
+      and about none once members run together.
+    level: program
+    why: >-
+      The heavy race tests took 6 minutes 38 seconds of a release and found no race; the light race run costs
+      17 seconds of wall time and keeps every race visible at push.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: go-race-detector
+        where: Runtime Overheads
+        says: >-
+          The cost of race detection varies by program, but for a typical program, memory usage may increase by
+          5-10x and execution time by 2-20x.
+        backs: rule
+    review_question: >-
+      Is the race detector on for this package at push, and if the package is heavy, has its race run been asked
+      for in this change?
+    relates:
+      - id: tests.runners.3
+        how: see
+      - id: gates.hooks.4
+        how: see
+    open:
+      - >-
+        Planned check: the gate's member table names the race flag for the light members and no heavy race member
+        in any tier. The members change in gate/members.yaml, a protected path with its own verdict, and is the
+        work of gragas#638's follow-up tickets.
+  - id: tests.runners.7
+    slug: race-off-at-push-names-a-daily-run
+    since: 0.1.0
+    rule: >-
+      A project that turns the race detector off at push names who runs it on the main branch each day, and an
+      issue opens on a red.
+    detail: >-
+      The name is a person, a scheduled job or an agent, written in the project's test guide, and the run is
+      daily on the default branch. A red opens an issue with the failing package and no one waits for the next
+      day to read it. This project keeps the detector on at push (tests.runners.6), so the rule binds a project
+      that takes the other road; a daily run that the guide asks for and nobody runs is the failure it prevents.
+    level: program
+    why: >-
+      In one project the daily race run its docs asked for was not happening, and its main branch failed the race
+      detector on a data race in test code.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: birdtable-study-issue-641
+        where: item 3
+        says: >-
+          the daily race run the docs asked for wasn't happening, and main now fails race on a data race in test
+          code.
+        backs: rule
+    review_question: >-
+      If this project runs no race detector at push, who runs it on main each day, and where does a red go?
+    relates:
+      - id: tests.runners.6
+        how: see
+  - id: tests.runners.8
+    slug: fake-clocks-for-waits
+    since: 0.1.0
+    rule: >-
+      A test that waits out real time (a timeout, a retry delay, a poll) runs on a fake clock, and a real sleep in
+      a test is a finding with its reason beside it.
+    detail: >-
+      The code under test takes its clock as an input, or the test runs it inside a bubble whose time package is
+      fake, so a wait of seconds takes no wall time. A test that must observe real time, such as one of the clock
+      adapter itself, says so in its code. The wait is not shortened by setting a smaller timeout in the test, as
+      that tests another number.
+    level: program
+    why: >-
+      A test that waits out real time takes that time on every run however many cores it has; a fake clock takes
+      none, and a ruling applies it with the other time recommendations.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: go-synctest
+        where: Time
+        says: >-
+          Within a bubble, the time package uses a fake clock.
+        backs: rule
+    review_question: >-
+      Does this test sleep or wait on a timer, and could its clock be fake?
+    open:
+      - >-
+        Planned check: a list of time.Sleep and real-timer waits in test files with a stated reason beside each.
+        No tool key is bound yet.
+  - id: tests.runners.9
+    slug: one-test-run-per-module
+    since: 0.1.0
+    rule: >-
+      A module's whole suite is one invocation of the test tool per tier, so the runner spreads its packages
+      over the CPUs, and a per-package timeout lives in that invocation's flags, named in the members file.
+    detail: >-
+      Two batches of one module run the second after the first and the CPUs idle between them. One invocation
+      over the whole module lets the test tool schedule every package at once. A second invocation for a cover
+      profile is the same suite run twice; one run gives the verdict and the profile. A second module in the
+      same repository (a web folder, a tools module) is its own member with its own folder. The timeout that
+      applies to each package is a flag of the invocation and the members file names it, so the number is in
+      one place.
+    level: program
+    why: >-
+      One project ran its tests as two batches, 135 seconds, where one batch takes 51 seconds; another ran its
+      Go tests then its web tests in series; a third ran the test tool twice, the second time for a cover
+      profile sent nowhere.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      How many times does this tier invoke the test tool for this module, and where is the per-package timeout
+      written?
+    relates:
+      - id: tests.runners.1
+        how: see
+      - id: tests.runners.4
+        how: see
+      - id: tests.measures.5
+        how: see
+    open:
+      - >-
+        Planned check: the members file has one test member per module and the member's command is one
+        invocation. Plant: two test members for one module fail. Control: one member passes. No tool key is
+        bound yet.
+  - id: tests.runners.10
+    slug: the-tree-reading-package-is-lean
+    since: 0.1.0
+    rule: >-
+      The package whose tests read the whole tree reads it once through one shared snapshot and scans in
+      parallel, and it may run without the race detector at push when an on-demand race member covers it.
+    detail: >-
+      Every project has one package of tests that read every file: names scans, repository rules, layout
+      checks. It runs on every change whatever changed, so it sets a floor for every push and makes selection
+      pointless for itself. Its tests share one read of the tree taken in the package's setup
+      (tests.runners.5) and scan that snapshot in parallel (tests.runners.4). It checks text, not concurrency,
+      so under the race detector it is 7 to 40 times slower for nothing; tests.runners.6 keeps the detector on
+      at push for the light packages, and this package is the one exception, covered by the on-demand race
+      run.
+    level: package
+    why: >-
+      It was the slowest package in every project of one fleet, 7 to 40 times slower under the race detector:
+      47 seconds to 334 seconds in one, and one test from 4.5 seconds to 72.8 seconds in another.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this tree-reading package take one snapshot in setup and scan it in parallel, and which race member
+      covers it if it runs without the detector at push?
+    relates:
+      - id: tests.runners.4
+        how: see
+      - id: tests.runners.5
+        how: see
+      - id: tests.runners.6
+        how: see
+    open:
+      - >-
+        Planned check: the tier report lists the tree-reading package's wall time and its share of the test
+        member, and the members file names the on-demand race member that covers it. No tool key is bound yet.
+  - id: tests.runners.11
+    slug: the-gates-own-tests-are-ordinary-tests
+    since: 0.1.0
+    rule: >-
+      The gate's own tests run in the test member, parallel and built once, and never as a serial step of their
+      own on every push.
+    detail: >-
+      A gate has tests: of its runner, its scripts, its plants (gates.plants.12). They are tests like any
+      other and belong in the test member, where they run beside the rest and share the package's setup. A
+      self-test step that runs each gate once more, or a sweep that runs each gate twice, is the suite run
+      again in series, and it sets the push time.
+    level: program
+    why: >-
+      Self-tests set the push time in three repositories of one fleet, 126 of 189 seconds in one service and
+      221 of 254 seconds in another; the gate's tests were one project's slowest package, 126 seconds, for the
+      same reason.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      Where do this gate's own tests run, and does any member run them again as a step of its own?
+    relates:
+      - id: gates.plants.12
+        how: see
+      - id: tests.runners.5
+        how: see
+    open:
+      - >-
+        Held today by a test of gragas, not a bound check: TestTheGeneratedCopyBuildsVetsLintsAndFailsItsStubs
+        in cmd/gragas-new runs the command generator's checks in the test member, parallel, with the copy made
+        once; its plant is a template that gives a global variable, which the lint of the copy refuses, and its
+        control is the clean template, which passes. Left to build: a tool key in a preset that checks the
+        members file has no member whose command is the gate's own test suite outside the test member, so the
+        row can be added without raising the baselines of checks-unresolved, checks-without-fix and
+        advisory-with-checks.
+  - id: tests.runners.12
+    slug: a-runner-setting-is-proved-on-the-whole-suite
+    since: 0.1.0
+    rule: >-
+      A change to the test runner's pool, isolation or worker settings is proved on the whole suite in the
+      shared pool, on every host the project claims, before it lands.
+    detail: >-
+      Isolation off, a shared pool, a worker count: each changes what every test sees, and a test that passes
+      alone can fail only there. The change's proof is the whole suite under the new setting on each claimed
+      platform (gates.command.16), run where the other gates run, not on a quiet machine. A selected run proves
+      nothing for a setting that touches every test.
+    level: program
+    why: >-
+      One fleet set isolation off on a shared pool; four specs went red only there, one at 31 seconds against 6
+      seconds alone, and two changes were held off the main branch for 4 hours 23 minutes.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this change touch the runner's pool, isolation or workers, and was the whole suite run under it on
+      every claimed host?
+    relates:
+      - id: tests.runners.3
+        how: see
+      - id: tests.isolation.12
+        how: see
+      - id: gates.command.16
+        how: see
+    open:
+      - >-
+        Planned check: a change to the runner config file is a protected path whose verdict names the
+        whole-suite run on each platform. No tool key is bound yet.

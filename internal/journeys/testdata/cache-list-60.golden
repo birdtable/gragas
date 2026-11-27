@@ -1,0 +1,24 @@
+$ gragas cache list
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+gragas cache list
+Kind      Files  Size  Oldest closed  Open
+journal   0      0 B   none           -
+explain   0      0 B   none           -
+config    0      0 B   none           -
+releases  0      0 B   none           -
+scratch   0      0 B   none           -
+tools     0      0 B   none           -
+journal: nothing is kept
+explain: this build keeps none: it is filled by a later
+release
+config: this build keeps none: it is filled by a later
+release
+releases: this build keeps none: it is filled by a later
+release
+scratch: nothing is kept
+tools: nothing is kept
+
+  done       6 kinds listed
+--- stderr

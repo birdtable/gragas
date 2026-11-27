@@ -1,0 +1,245 @@
+part: web
+concern: speed
+order: 8
+title: Bytes and speed
+summary: >-
+  Budgets for the bundle, the dependency list and the work a page does on load, and the rules that keep them
+  from growing.
+rules:
+  - id: web.speed.1
+    slug: byte-budget
+    since: 0.1.0
+    rule: >-
+      A byte budget per kind of file is measured on the built output, and the check proves it can fail.
+    detail: >-
+      One gzip limit per kind and per chunk class (core, first visit) is read from the parameters file; the
+      budget tool runs over the built output and exits non-zero on any breach. Where the tool cannot split by
+      class, the site's own budget script is the lift candidate. The gate runs a planted breach and a clean
+      build once per tier. The site's own budget script is `check-budget`.
+    level: deploy
+    why: >-
+      One site's first visit weighs 300 KB gzipped, with 98,304 bytes of core; an admin visit weighs 303,936
+      bytes. Its marks are said, not failed: 19 chunks are over today.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: size-limit-with-bundler-plugin
+        tier: "3"
+        note: >-
+          size-limit with its file plugin over the built output, gzip, one limit per kind and chunk class from
+          the parameters file; exit 1 on any breach. Plant: a 400 KB script copied into a scratch build output
+          must exit 1 naming the file. Control: the clean build passes
+    open:
+      - >-
+        Adoption goes through the shrink-only baseline of the ratchet, because 19 chunks are over today.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: 300 KB first visit, 98,304 bytes
+        core
+  - id: web.speed.2
+    slug: static-first
+    since: 0.1.0
+    rule: "Static first: script is added only to pages where a behaviour needs it."
+    detail: >-
+      A scan of the built HTML fails any script element, module-preload link or inline handler on a page not
+      listed under the allowed-scripts section of the parameters file; a listed page names the behaviour. The
+      check first asks whether the HTML validator or a JavaScript-off render already does it. Check the
+      `html-validate` rule first.
+    level: deploy
+    why: >-
+      1,787 bytes of hand code against 5,302 for a tagged-template runtime and 69,135 for React; React fits 70
+      percent of one site's core budget.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. a built-output scan of our CLI against the allowed-scripts list. Plant: a built
+          content page with one added script fails. Control: the same page listed with a reason passes
+    open:
+      - >-
+        Which runtime a content site may ship is unsettled; the check only holds the per-page allow list.
+      - Build only if no HTML-validator rule does it.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: web.speed.3
+    slug: route-splitting
+    since: 0.1.0
+    rule: >-
+      Route-level code splitting is on per area where a router exists, and development tooling never ships in
+      the production bundle.
+    detail: >-
+      The router's automatic splitting setting is read back from the build config, and the entry chunk is held
+      at the core budget so an unsplit app breaches the byte budget; chunk count is a report. A test-only
+      module is absent from the non-test build.
+    level: deploy
+    why: No route budgets are asked for in the source; the core budget holds it.
+    kind: rule
+    strength: Hard
+    status: retired
+    replaced_by: react.performance.2
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: size-limit-with-bundler-plugin
+        tier: "3"
+        note: >-
+          the router's code-splitting option read from the bundler config plus size-limit on the entry chunk
+          at the core budget. Plant: setting the splitting option false in a scratch app with 3 routes makes
+          the entry chunk exceed the core limit. Control: the split build passes
+    open:
+      - No project using a router exists yet; the state is design until the pilot.
+      - The option names are router specific and belong in react.
+      - "v1 evidence, not yet a source: D; no route budgets asked for"
+  - id: web.speed.4
+    slug: csp-zero-violations
+    since: 0.1.0
+    rule: >-
+      The built page loads with zero violations under its declared content security policy; script-src never
+      contains unsafe-inline, there is no inline script, define-vars style injection or client island, and
+      trusted types stay on.
+    detail: >-
+      A browser test serves the built output under its generated policy, adds a `securitypolicyviolation`
+      listener to every page and state, and fails on any event. A policy evaluator fails a generated policy
+      whose script-src contains unsafe-inline. ESLint bans the `define:vars` and `client:` directives in
+      templates. Template stack: a generated policy meets it.
+    level: deploy
+    why: >-
+      One site's index page has 3 inline scripts and 12 style attributes; a Preact island adds 2 scripts and a
+      style block.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tool: eslint
+        tier: "3"
+        note: >-
+          a Playwright test with the violation listener, a CSP evaluator wrapper (about 10 lines in the kit),
+          and ESLint `no-restricted-syntax` on the directives. Plant: a page with one inline script and no
+          hash fires the listener; a policy with unsafe-inline fails the evaluator. Control: the clean page
+          raises 0 events
+    open:
+      - >-
+        The listener was trialled on eight spike builds and held in one site's text rule; not re-run for this
+        catalogue.
+      - The schema library's no-unsafe-eval setting is in the tool entry.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: 3 inline scripts and 12 style
+        attributes in one site's index
+  - id: web.speed.5
+    slug: shrink-only
+    since: 0.1.0
+    rule: >-
+      The bundle and the dependency list only shrink, with one recorded exemption and a ceiling; banned
+      dependencies already present are a shrink-only list.
+    detail: >-
+      Two shrink-only numbers in the committed baseline: total gzip bytes per kind, and the count of direct
+      dependencies plus banned names present; the check reads the diff, not only totals, so a new file
+      importing a banned name fails (ESLint `no-restricted-imports` generated from the ban data). The
+      dependency half is also held by a banned-group rule in the version checker. A recorded exemption lets
+      the message functions grow the bundle to a ceiling of about +15 kB gzipped at 2,900 messages (measured
+      +7.0 kB on one version, and +22.6 kB on an older version with shorter strings), until the bundle is back
+      under the pre-conversion budget; a high number is fixed within the message compiler.
+    level: program
+    why: >-
+      The baseline format is already held in two sites; the single exemption is for the message-function cost
+      of the content rules.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the shared ratchet baseline with two shrink-only numbers, a banned-group rule
+          in the version checker and generated `no-restricted-imports`. Plant: add one dependency and one 5 KB
+          file; both rises are refused. Control: a commit that lowers both passes
+    open:
+      - Depends on the shared ratchet.
+      - >-
+        The ceiling's figures are measured on specific versions of the message compiler and need re-measuring.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.speed.6
+    slug: render-budget-under-churn
+    since: 0.1.0
+    rule: >-
+      A budget exists for render cost under churn on any stack with a live list, counted in commits and
+      rendered rows, not milliseconds.
+    detail: >-
+      A test counts commits and rendered rows for one update to a live list and asserts the count against a
+      declared render budget. A rule-table list names each live list; a list with no matching render-budget
+      test fails the pairing scan.
+    level: program
+    why: >-
+      Solid's keyed list passed behaviour and failed churn; a count is deterministic, unlike time.
+    kind: rule
+    strength: Hard
+    status: retired
+    replaced_by: react.performance.1
+    checks:
+      - binding: ts
+        class: test-kit
+        tool: vitest
+        tier: "3"
+        note: >-
+          a Vitest test with the framework profiler counts commits and rows for one update, plus the pairing
+          scan. Plant: removing memoisation so one update re-renders all 200 rows exceeds the budget. Control:
+          a keyed memoised list passes
+    open:
+      - "Belongs in react: the profiler form is React specific."
+      - >-
+        No React project exists. Half holds: counts are enforceable, but which lists are live is declared by
+        hand, so a new live list nobody declares escapes.
+  - id: web.speed.7
+    slug: no-undeclared-origin
+    since: 0.1.0
+    rule: Nothing loads from another origin unless it is declared.
+    detail: >-
+      The same browser run as the policy check uses a request allow list of origins from the parameters file
+      (empty by default); any other origin fails. The policy sets default-src and connect-src to self so the
+      browser blocks it too. A static host scan of the built output is a report only.
+    level: deploy
+    why: >-
+      One site's built files name seven hosts, not all fetched; the static scan is noisy, so the run-time
+      listener is the gate.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a Playwright request listener against the declared origins, plus a policy with default-src and
+          connect-src set to self. Plant: an image from another host fails with the host named. Control: a
+          clean page, and a declared origin, pass
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+  - id: web.speed.8
+    slug: core-web-vitals-field
+    since: 0.1.0
+    rule: Core Web Vitals are good at the 75th percentile, judged only on field data.
+    level: release
+    why: A lab score is a stand-in, not this measure.
+    kind: measure
+    strength: Hard
+    status: later
+    when:
+      facets:
+        - field-traffic
+    checks: []
+    open:
+      - >-
+        Blocked: no site has a field population (the consoles are loopback or tailnet). It binds when a site
+        has field traffic.
+    note: >-
+      v1 review check (review is not a v2 check class): a field-data read (the web-vitals library or the
+      field-data API) at release as a report, once a public origin has traffic

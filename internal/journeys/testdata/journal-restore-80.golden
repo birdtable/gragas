@@ -1,0 +1,8 @@
+$ gragas journal restore r1
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+cp -- $STATE/ROOT.copies/r1/18b7cb099a9ea3f50ba899b5ba81e0d377a5f3b16f8f6eeb8b3e58cd4692b993 a.txt
+
+  done       1 line put run r1 back; none was run
+--- stderr

@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("\xef\xbb\xbf\xef\xbb\xbf\x0a#opts:\x0a#  a: true\x0a")

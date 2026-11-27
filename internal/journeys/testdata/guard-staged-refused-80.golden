@@ -1,0 +1,14 @@
+$ gragas guard staged
+--- exit 5
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Lifecycle fields the staged change does not record
+about             field   before    after   the command
+rule:go.errors.2  status  proposed  active  gragas rule promote go.errors.2
+
+  refused    status of rule:go.errors.2 is staged with no line of history.jsonl
+    gragas rule promote go.errors.2
+--- stderr
+refused: status of rule:go.errors.2 is staged with no line of history.jsonl
+instead: gragas rule promote go.errors.2

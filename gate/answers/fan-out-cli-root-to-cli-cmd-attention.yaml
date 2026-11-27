@@ -1,0 +1,5 @@
+rule: arch.measures.1
+path: internal/cli/root/join_gen.go
+fingerprint: 7b3c845a6a705e857344b13fe59085135fdbcd58a0fcce9b3082c6398ea3348e
+answer: keep
+reason: "the root joins the attention command package as it joins every command package below internal/cli/cmd, through the one generated join file, so a new command is a new folder and no shared line; the package draws only through the session the root hands it and reads nothing itself, the listing being computed by the core from the book and the Clock port; read again when the root came to import the attention command package beside the guard-edit packages through the generated join file, and this edge is unchanged"

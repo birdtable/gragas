@@ -1,0 +1,140 @@
+part: code
+concern: duplication
+order: 3
+title: Duplicated code
+summary: >-
+  Duplicated blocks only fall inside a repository, measured across packages by a clone detector that also sees
+  renamed copies. Functions that do the same job written differently are looked for as advice, and the count
+  of copies across repositories is the shared-code concern of the arch part.
+rules:
+  - id: code.duplication.1
+    slug: clones-only-fall
+    since: 0.1.0
+    rule: >-
+      Duplicated blocks only fall, measured across packages by a clone detector; no new clone is added inside
+      a repository.
+    detail: >-
+      For Go there are two rows. The lint runner's detector (dupl) runs at 60 tokens and compares within one
+      package only, as a tripwire. A standalone build of the same detector, pinned in the tool list like the
+      other Go tools and built offline, runs over every non-test file at 60 tokens, so it sees across
+      packages; its clone-group count goes to the measure output and to a shrink-only baseline row, at its
+      count on the day of adoption and then at 0. For TypeScript a clone detector (jscpd) runs over the
+      source roots with generated files ignored, and the clone count and the cloned-block metric are held by
+      a shrink-only ratchet through one ratchet helper; its thresholds are 10 lines and 80 tokens. No Node
+      tool is used where a Go one does the job in the Go gate. A clone found at adoption goes on the
+      baseline.
+    level: file
+    why: >-
+      One Go repo has 82 source clones (1.25% of tokens); two web repos had 2 clones (0.26%) and 5 (0.15%).
+      The lint runner's detector misses cross-package copies, so a cross-package detector is needed. The two
+      reports' figures are not reconciled.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: dupl
+        tier: "3"
+        fix: never
+        note: >-
+          the within-package tripwire: dupl with a threshold of 60 tokens (0 hits in the first Go program
+          that adopts it, so it is safe to lower from 150). Plant: a 70-token block copied inside one package
+          fails. Control: an unrelated block passes
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        fix: never
+        note: >-
+          the standalone dupl over every non-test file at 60 tokens, measured by the dev binary; the
+          clone-group count is written to the measure output and held by a shrink-only baseline row. Plant: a
+          receiver-unwrapping helper copied into a third package reports one more group and fails. Control:
+          the groups already on the baseline pass
+      - binding: ts
+        class: preset-config
+        tool: jscpd
+        tier: "2"
+        note: >-
+          jscpd 5.4.2 --min-lines 10 --min-tokens 80 over source with generated files ignored; the clone count
+          compared with a committed count and allowed only to fall; --ignore-identifiers-style mode for
+          renamed copies where the option exists in 5.x (ignore-identifiers is read at adoption). Plant: a
+          copy of a 12-line block into a second file raises the count and fails; removing it passes. Control:
+          removing the copy passes
+    relates:
+      - id: code.duplication.2
+        how: see
+    open:
+      - >-
+        Conflict C-22 in the sources: the two reports' figures for the Go clone count are not reconciled.
+      - >-
+        The web trial found nothing in a renamed copy by default; code.duplication.2 covers that.
+      - >-
+        Proposed until the checks exist. The standalone detector, its pin in the tool list and the baseline
+        row are step G2 of the shared-code proposal (gragas#513); the clone groups it finds on adoption are
+        listed by file and line in the row, and the later small-clone steps lower it to 0. The shared preset
+        holds the lint runner's dupl threshold at 150 tokens today; the move to 60, which the first Go check
+        describes, is part of step G2 (the proposal found 0 hits at 60, so it is safe).
+  - id: code.duplication.2
+    slug: renamed-copies-seen
+    since: 0.1.0
+    rule: >-
+      The duplicate-block check runs a second pass that ignores identifiers, with the same shrink-only
+      ratchet, so a copy with renamed names is seen.
+    detail: >-
+      For Go, the standalone detector of code.duplication.1 is token-based and already ignores identifier
+      names, so the renamed-copy pass is met by the engine at 60 tokens; the threshold goes to 40 once the 60
+      pass is clean. For TypeScript the second pass uses identifier matching in its consistent mode at 50
+      tokens and 8 lines beside the default pass; the blind mode lets any name match any other and matches
+      too much. The default pass returns 0 clones on a renamed copy.
+    level: file
+    why: >-
+      Renaming every name defeats a name-based detector for free; the shape is what repeats.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: test-kit
+        tool: gragas
+        tier: "3"
+        fix: never
+        note: >-
+          the standalone detector of code.duplication.1, which ignores identifier names by construction, with
+          the same baseline row. Plant: a copy with every name changed reports a clone group and fails.
+          Control: an unrelated function reports 0 groups
+    open:
+      - A code-clone tool from another family (PMD CPD) was judged not needed.
+      - >-
+        Proposed until the Go check exists: step G2 of the shared-code proposal (gragas#513). The TypeScript
+        pass stays the jscpd second pass above.
+  - id: code.duplication.3
+    slug: same-job-written-differently
+    since: 0.1.0
+    rule: >-
+      Functions that do the same job written differently are looked for as advice when a package is added that
+      overlaps a shared one; a semantic near-match to a shared export blocks until answered.
+    detail: >-
+      The optional mechanism is a clone tool's semantic mode (experimental, a 548 MB local model) or an
+      offline embedding tool that lists pairs with the same intent and different syntax. A report from it is a
+      hint, not a gate.
+    level: function
+    why: >-
+      Same job written differently is a semantic question; a text detector cannot see it.
+    kind: instruction
+    strength: Answered
+    status: active
+    sources:
+      - ref: go-review-r-02-donor-section-gap
+        where: section 3.5
+        backs: rule
+    review_question: >-
+      Is there a shared export that does what this new function does, and why is it not used?
+    open:
+      - >-
+        Not run and no plant. The mechanism is experimental, and a semantic report is a hint only.
+      - "v1 evidence, not yet a source: practice (none tried)"

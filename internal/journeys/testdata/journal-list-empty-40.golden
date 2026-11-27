@@ -1,0 +1,10 @@
+$ gragas journal list
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+gragas journal list
+
+  done       no run has written on this
+  folder
+--- stderr

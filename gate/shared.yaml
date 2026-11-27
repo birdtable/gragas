@@ -1,0 +1,217 @@
+# The shared capabilities (arch.shared.8): one row a capability more than one
+# package or program needs, with the package that owns it and the export to
+# use, the shared module's package and export where it has one (a package of
+# go-files, go-run or go-console, the platform's libraries), and the
+# primitives only the owner may reach. A primitive is a call, as its import
+# path and name, or a whole import. make gen renders the ban of each primitive
+# of a row that is not later into .golangci.yml, with an exclusion for the
+# owner's own files, and the rows into the instruction block. A row is later
+# while copies of its primitive stand outside the owner; its ban comes with the
+# change that removes them. internal/shared_test.go holds each owner to
+# layers.yaml, each banned primitive to its rendered ban and each ban to a row,
+# and each shared-module export to the module's source at the version go.mod
+# pins. Held to gate/schema/shared.schema.json. The file only shrinks what is
+# allowed: against the base, a package added to allow, a
+# tests reprieve, a row turned back to later, a later row's until moved to
+# another wait, a row removed or renamed (named in removed), a primitive
+# dropped and an owner moved each stand on a decision record the base does not
+# hold, named by a decision key. An until says in plain words what the row
+# waits for, and names no issue by its number; a base's until that named one,
+# put in words, is the same wait and no widening.
+shared:
+  - capability: lock
+    owner: internal/host/fs
+    export: Lock.Take
+    shared: {package: github.com/birdtable/go-files/lock, export: Take}
+    primitives:
+      - call: syscall.Flock
+      - call: golang.org/x/sys/unix.Flock
+    status: shared
+    since: 0.1.0
+  # No shared module builds a digest block: gragas's own internal/digest
+  # holds the sums, canon and the stamp's HMAC included, so the row
+  # stays local. internal/journeys sums on its own (tests.journeys.2) and is the
+  # one package allowed beside the owner; the list only shrinks.
+  - capability: digest
+    owner: internal/digest
+    export: Hex
+    primitives:
+      - call: crypto/sha256.New
+      - call: crypto/sha256.Sum256
+    allow:
+      - {package: internal/journeys, why: "tests.journeys.2: its tests sum on their own"}
+    status: local
+    since: 0.1.0
+  # The host's own write wraps the shared module's (go-files write.FileIn). No
+  # package beside the owner calls the raw primitives; test files do until
+  # their calls move onto the module's helper.
+  - capability: atomic-write
+    owner: internal/host/fs
+    export: Writer.Replace
+    shared: {package: github.com/birdtable/go-files/write, export: FileIn}
+    primitives:
+      - call: os.CreateTemp
+      - call: os.Rename
+    tests:
+      spared: "test files still make the raw calls the module's helper will take over"
+      until: "the test files' raw calls move onto go-files' write helper"
+    status: shared
+    since: 0.1.0
+  # The rule for a versioned file's version key: a whole number of at least 1,
+  # and one newer than the reader is not ready. One copy, read
+  # by the settings and tools files and by the pin, each in its own words. It
+  # is a rule and not a call, so no primitive stands outside it to ban.
+  - capability: version
+    owner: internal/ordered
+    export: Version
+    status: local
+    since: 0.1.0
+  # Reading a tar, zip or gzip archive. The release
+  # reads the archive it verifies; gragas-dev's fetch unpacks a pinned tool's
+  # download, the one package allowed beside it. Each import is denied
+  # whole, so compress covers gzip and every other compress package. Test
+  # files build the archives they feed both readers, until they are put
+  # behind one helper.
+  - capability: archive
+    owner: cmd/gragas-release
+    export: ReadArchive
+    primitives:
+      - import: archive/tar
+      - import: archive/zip
+      - import: compress
+    allow:
+      - {package: cmd/gragas-dev, why: "fetch unpacks a pinned tool's download, a gzipped tar or a zip, to the one member it checks"}
+    tests:
+      spared: "test files build tar, zip and gzip archives to feed the readers they test"
+      until: "the test files' archive and compress uses go through one helper"
+    status: local
+    since: 0.1.0
+  # A download over the network: gragas-dev's fetch
+  # takes a pinned tool's archive over https alone, on every redirect, with
+  # a cap on the body. net/http is denied whole, so httptest and httputil
+  # are too. Test files serve and fetch from httptest servers, until their
+  # net/http uses go through one helper.
+  - capability: fetch
+    owner: cmd/gragas-dev
+    export: FetchHTTPS
+    primitives:
+      - import: net/http
+    tests:
+      spared: "test files serve and fetch from httptest servers"
+      until: "the test files' net/http uses go through one helper"
+    status: local
+    since: 0.1.0
+  # Walking a tree: host/fs lists a tree inside a
+  # root, judged and scoped. Fourteen product sites in eleven files still walk
+  # on their own, so the row is later and bans nothing until they call
+  # Tree.List; test files are spared until then as well, since they walk the
+  # temp trees they build.
+  - capability: walk
+    owner: internal/host/fs
+    export: Tree.List
+    primitives:
+      - call: path/filepath.WalkDir
+      - call: io/fs.WalkDir
+    tests:
+      spared: "test files walk the temp trees they build"
+      until: "the fourteen product sites that walk call host/fs Tree.List"
+    status: later
+    until: "the fourteen product sites that walk call host/fs Tree.List"
+    since: 0.1.0
+  # Reading YAML: the one strict reader, which refuses
+  # a key twice, an anchor and a merge key. The register's own-yaml-v3 rule in
+  # layers.yaml already denies go.yaml.in/yaml/v3 outside it, so the row bans
+  # nothing more; what it adds is the line in docs/shared.md that names the
+  # reader to call, and the shrink check on the owner.
+  - capability: ordered-yaml
+    owner: internal/ordered
+    export: ParseStrict
+    status: local
+    since: 0.1.0
+  # Canonical JSON: the one encoder of the bytes a
+  # digest or a signature is taken over. The register's
+  # own-encoding-json-jsontext rule already denies encoding/json/jsontext
+  # outside canon and ordered, so the row bans nothing more; it adds the line
+  # in docs/shared.md and the shrink check, as ordered-yaml does.
+  - capability: canonical-json
+    owner: internal/canon
+    export: Encode
+    status: local
+    since: 0.1.0
+  # The splice of a text between two marker lines had three bodies:
+  # cli/root/describe.go, cmd/gragas-docs/planned.go and dev/layers/render.go.
+  # The first moved here; the deletion of the old engine and migrate, which
+  # the row's until names, replaces the other two by a call and turns this row
+  # to local. Until then the row is a named owner
+  # with no ban: a call of bytes or strings has no name that tells a splice
+  # from another use, so a later copy is the review's.
+  - capability: marker-splice
+    owner: internal/rendered
+    export: Splice
+    status: later
+    until: "the old engine and migrate are deleted"
+    since: 0.1.0
+  # Which of a set of rendered files differ from the tree, given a read function.
+  # It was one body, in cmd/gragas-docs; the preset check reads it too. The
+  # wait its until names turns it to local; no primitive is banned: see
+  # marker-splice.
+  - capability: stale-compare
+    owner: internal/rendered
+    export: Compare
+    status: later
+    until: "the old engine and migrate are deleted"
+    since: 0.1.0
+  # A run's copy of a file before it is replaced, and the restore that puts one
+  # back. The journal's records are go-run's runlog, opened
+  # through the state folder held as Log.Root; a copy and a restore still go
+  # through host/fs's own Writer: the copy in the held state folder, the
+  # restore in the project's root. go-files' write.Keep and PutBack open a
+  # file's folder by its path, and v0.14.0's KeepIn and PutBackIn take the file
+  # and its copy beneath one root, where a file and its copy here are beneath
+  # two. The row is later until go-files brings a form over two roots (merged
+  # after v0.15.0, which go.mod pins, and not in a tag yet),
+  # and Journal.Keep and the restore move onto it. No primitive is banned: a copy
+  # is a Writer.Replace, which no call name tells from another write.
+  - capability: journal-copy
+    owner: internal/host/fs
+    export: Journal.Keep
+    status: later
+    until: "a go-files tag keeps and restores a file over two roots"
+    since: 0.1.0
+  # A private folder made below a path not judged yet: every name of it that is
+  # there is judged top down first, then what is missing is made, by go-files'
+  # trust.MkdirPrivate. A folder that is there is walked and kept, not judged
+  # private.
+  # host/fs's state folder, host/git's releases cache and the sandbox's base
+  # go through it. No primitive is banned: confine.MkdirPrivate below a root its
+  # caller already opened and judged is the module's own use, and the
+  # making before the judging is a matter of order no call names.
+  - capability: private-dir
+    owner: internal/host/trust
+    export: Private
+    shared: {package: github.com/birdtable/go-files/trust, export: MkdirPrivate}
+    status: shared
+    since: 0.1.0
+  # The dev tools' first-error writer: text written until a write fails, and that
+  # failure kept, so a closed pipe is reported, not dropped. Seven cmd/gragas-*
+  # tools each kept a copy; one stands now, in internal/dev/say, and its lines count under dev-tool-lines. No
+  # primitive is banned: a copy is an io.WriteString behind a nil check, and
+  # io.WriteString has no name that tells this use from any other, so an
+  # eighth copy is the review's, as for marker-splice.
+  - capability: first-error-writer
+    owner: internal/dev/say
+    export: Speaker
+    status: local
+    since: 0.1.0
+  # Where a checkout keeps what its worktrees share (git rev-parse
+  # --git-common-dir, made absolute): no platform library has it (go-run,
+  # go-proc and go-files hold none). It lives in platformgap, the place for
+  # generic code a library lacks, until go-proc gives gitenv the helper; the
+  # swap is one import. No primitive is banned: a
+  # git rev-parse is a run of the git adapter's own and has no name of its own.
+  - capability: common-git-dir
+    owner: internal/platformgap/goproc/commondir
+    export: CommonDir
+    status: later
+    until: "go-proc's gitenv gives the common git dir"
+    since: 0.1.0

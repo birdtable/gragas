@@ -1,0 +1,17 @@
+# The sources every fixture tree uses, unless the tree has its own.
+sources:
+  a-book:
+    kind: book
+    title: A book on layers
+    locator: isbn:9780000000002
+  decision-1:
+    kind: decision
+    title: "Decision 1: errors are wrapped"
+    locator: decision:1
+    verified:
+      "on": "2026-01-02"
+      by: the operator
+  other-lint-rule:
+    kind: external-rule
+    title: Another rulebook's rule on wrapping
+    locator: rule:otherbook/E-1

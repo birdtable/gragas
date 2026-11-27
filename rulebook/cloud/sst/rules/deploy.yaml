@@ -1,0 +1,28 @@
+format: 3
+part: sst
+concern: deploy
+rules:
+  - id: sst.deploy.1
+    statement: "The infrastructure tool and its shared components package are exact-pinned to one version across the repository, and no local-path link (file: or link: protocols) reaches the main branch."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "One version of the tool is in use. A local-path dependency is for experiments and fails at land. The same holds for the build tool in Go: tools pinned once and no replace directive or workspace file in a committed tree. A no-local-link rule is also supply hygiene."
+      pros:
+        - A range or a local link makes the deployed infrastructure depend on something the repository does not hold.
+  - id: sst.deploy.2
+    statement: "Services deploy only through one deploy guard, and the land check fails on the deletion or replacement of a state-bearing resource."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The guard reads the plan and refuses a plan that deletes or replaces a database, bucket, queue or identity resource without a recorded exit. In Go, an upgrade is by rename, the previous binary is kept, and it is put back by itself when the new one does not answer healthy."
+      pros:
+        - "A replacement of a stateful resource is a deletion with a new name; the plan shows it, and only a guard stops it."

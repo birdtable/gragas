@@ -1,0 +1,311 @@
+part: web
+concern: cycle
+order: 13
+title: Stories, tokens and browser journeys in the development cycle
+summary: >-
+  What a web front end with stories, design tokens or browser end-to-end tests adds to the moments of the
+  development cycle: story renders with the accessibility engine at push for a design system and at land for
+  an application, the story build as a member, counted plays, one contrast check over every token pair, a
+  small browser smoke set at push and the sharded full suite at release, with waits on conditions and a
+  teardown that unroutes. These lines add members to the core moments and never a moment of their own.
+rules:
+  - id: web.cycle.1
+    slug: every-story-renders-with-the-accessibility-engine
+    since: 0.1.0
+    rule: >-
+      Every story renders in a real browser with the accessibility engine at error; for a design system that
+      is a push member, and for an application it runs at land.
+    detail: >-
+      web.accessibility.1 holds that every story passes the engine as an error in both themes. This line
+      places it in the cycle. A design system's stories are its product, so they render at push, where 474
+      stories with the engine took 44 seconds. An application's stories are many and the render runs at
+      land, with the plays (web.cycle.3). A story the engine skips carries an owner and an expiry
+      (gates.exemptions.4).
+    level: program
+    why: >-
+      One fleet's design system shipped two versions with its stories unrun, and its consumer opened seven
+      contrast tickets in eight days.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: storybook-accessibility-testing
+        where: Configure accessibility tests, the error level
+        says: >-
+          violations return a failing test in the Storybook UI and CLI/CI
+        backs: check
+      - ref: storybook-vitest-addon
+        where: Vitest addon
+        says: >-
+          test the rendering and behavior of your components in a real browser environment.
+        backs: check
+    review_question: >-
+      At which moment do this project's stories render with the accessibility engine, is the engine at error,
+      and does every skipped story carry an owner and an expiry?
+    relates:
+      - id: web.accessibility.1
+        how: see
+      - id: web.testing.11
+        how: see
+      - id: gates.exemptions.4
+        how: see
+    open:
+      - >-
+        Planned check: the members file has the story member at push for a library and at land for an
+        application, and the runner config sets the engine to error. No tool key is bound yet.
+  - id: web.cycle.2
+    slug: the-story-build-is-a-member
+    since: 0.1.0
+    rule: >-
+      The story build is a member of the push tier.
+    detail: >-
+      A story build that fails is found at publish otherwise. It is a member with its cost listed, and the
+      story render member declares it runs after it where it reads the built output (gates.command.28).
+    level: program
+    why: >-
+      One fleet's design system had its story build, 17.6 seconds, in no gate before the publish.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: storybook-publish
+        where: Build Storybook as a static web application
+        says: >-
+          Storybook will create a static web application capable of being served by any web server.
+        backs: check
+    review_question: >-
+      Is the story build a member of this push tier with its cost listed?
+    relates:
+      - id: gates.command.23
+        how: see
+      - id: gates.command.28
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the story build member. No tool key is bound yet.
+  - id: web.cycle.3
+    slug: plays-are-counted-and-share-the-page
+    since: 0.1.0
+    rule: >-
+      For an application, story renders and plays run at land, the plays are counted in the report, and renders
+      and plays share one browser page so a story is opened once per width.
+    detail: >-
+      gates.measures.6 holds that a green carries its counts; a play count that falls against the base fails
+      landing. Opening a story for the render and again for the play doubles the time; the render reuses the
+      play's page, so the verdicts of one pass serve the other.
+    level: program
+    why: >-
+      Eighteen story plays once went unrun in a green of one fleet's main web application, and renders reused
+      475 verdicts from the plays once they shared the page.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: web-reasons-stated
+        backs: rule
+    review_question: >-
+      How many plays did this land run count, how does that compare with the base, and is each story opened
+      once per width?
+    relates:
+      - id: gates.measures.6
+        how: see
+      - id: web.testing.11
+        how: see
+    open:
+      - >-
+        Planned check: the story member's report carries a play count compared with the base's. No tool key is
+        bound yet.
+  - id: web.cycle.4
+    slug: one-contrast-check-over-every-pair
+    since: 0.1.0
+    rule: >-
+      Token contrast is checked over every pair of tokens drawn together, in both themes, as one check at
+      push.
+    detail: >-
+      web.tokens.8 holds the contrast ratios and that the check is a pure test over the tokens. This line
+      holds its shape in the cycle: one member, every pair the roles allow (web.tokens.9), both themes, so a
+      new token or a new ground is covered the day it lands and not when a consumer finds it.
+    level: program
+    why: >-
+      Seven contrast tickets in eight days came from a test that held one token pair, and one miss reached 61
+      stories in the consumer.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: web-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this project's contrast check cover every pair its roles allow, in both themes, in one member?
+    relates:
+      - id: web.tokens.8
+        how: see
+      - id: web.tokens.9
+        how: see
+    open:
+      - >-
+        Planned check: the contrast member's report carries the pair count and the theme count. No tool key is
+        bound yet.
+  - id: web.cycle.5
+    slug: a-small-browser-smoke-set-at-push
+    since: 0.1.0
+    rule: >-
+      At push a small browser smoke set runs: the journeys that prove the page loads and the main path works,
+      beside the other members at no wall cost; the member declares the network and its platform, and a skip
+      is red at land.
+    detail: >-
+      The smoke set is a handful of journeys, chosen for what a cheaper test cannot see (tests.journeys.4),
+      and it runs in the pool beside the build and the tests, so it adds nothing to the wall time when it is
+      shorter than the longest member. The member carries net and os fields (gates.command.30); on a builder's
+      machine with no browser it prints SKIPPED, and at land that skip is red. The full suite is a release
+      member (web.cycle.6).
+    level: program
+    why: >-
+      Ten journeys of one project, 17.4 seconds, run beside its site check at no wall cost; browser gates in a
+      no-network sandbox of another fleet failed 49 of 49 blocks with a network error nobody read as a skip.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: web-reasons-stated
+        backs: rule
+    review_question: >-
+      Which journeys are in this project's push smoke set, does the member declare net and os, and is its
+      skip red at land?
+    relates:
+      - id: gates.command.30
+        how: see
+      - id: tests.journeys.4
+        how: see
+      - id: web.delivery.2
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the smoke member with net and os and a journey count under a
+        stated cap. No tool key is bound yet.
+  - id: web.cycle.6
+    slug: the-full-browser-suite-at-release-sharded-by-duration
+    since: 0.1.0
+    rule: >-
+      At release the full browser suite runs sharded across the pool's workers, with the shards balanced by
+      each journey's recorded duration and never by file count, and both browser engines run until the grid
+      is green and balanced.
+    detail: >-
+      A shard by file puts the slow journeys in one shard and the suite waits for it. The runner records each
+      journey's duration and the next run balances by it. The worker count is the pool's (gates.command.27);
+      more shards on a loaded host only add contention. Both engines run at release until the grid has been
+      green and the shards balanced; then the owner decides on the green numbers which engines stay. A release
+      does not carry a known red journey; a tolerated red is a listed entry with an owner and an expiry
+      (gates.exemptions.4, tests.flakes.6).
+    level: release
+    why: >-
+      One project's slowest shard fell from 1,573 seconds to about 1,261 when balanced by duration, and its
+      grid was red three of three releases.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: playwright-test-sharding
+        where: Sharding tests between multiple machines
+        says: >-
+          To shard the test suite, pass --shard=x/y to the command line.
+        backs: check
+    review_question: >-
+      How are this project's release shards balanced, where is each journey's duration recorded, and is any
+      red journey carried without a listed entry?
+    relates:
+      - id: gates.command.27
+        how: see
+      - id: gates.exemptions.4
+        how: see
+      - id: tests.flakes.6
+        how: see
+    open:
+      - >-
+        Planned check: the release member's report carries each shard's wall time and the spread between the
+        slowest and the fastest. No tool key is bound yet.
+  - id: web.cycle.7
+    slug: browser-waits-are-conditions-on-a-fake-clock
+    since: 0.1.0
+    rule: >-
+      A browser journey waits on a condition through the runner's auto-wait and never on a sleep; a fixed
+      budget scales by a printed load factor; and the page's own timers run on the runner's fake clock.
+    detail: >-
+      tests.runners.8 and tests.isolation.6 hold that no test waits out real time. In a browser the runner
+      waits for the element to be ready before it acts, so a journey that sleeps is waiting twice. A budget
+      that must be fixed (a page load) is multiplied by a factor from the host's load and the factor prints,
+      so a red under load is read as one. The page's own timers (a poll, a toast, a debounce) run on the
+      runner's clock, so a wait of seconds takes none.
+    level: file
+    why: >-
+      Fixed 10 and 15 second browser budgets of one fleet ran out at load 65, and a 5 second idle wait of one
+      project was paid twice per journey.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: playwright-actionability
+        where: Introduction
+        says: >-
+          It auto-waits for all the relevant checks to pass and only then performs the requested action.
+        backs: rule
+      - ref: playwright-clock
+        where: Introduction
+        says: >-
+          Utilizing Clock functionality allows developers to manipulate and control time within tests
+        backs: rule
+    review_question: >-
+      Does this journey sleep anywhere, is each fixed budget scaled by the printed factor, and do the page's
+      timers run on the fake clock?
+    relates:
+      - id: tests.runners.8
+        how: see
+      - id: tests.isolation.6
+        how: see
+      - id: tests.measures.11
+        how: see
+    open:
+      - >-
+        Planned check: a scan of journey files for a timeout wait with no stated reason, and the load factor
+        on the report's first lines. No tool key is bound yet.
+  - id: web.cycle.8
+    slug: teardown-unroutes-and-actions-re-resolve
+    since: 0.1.0
+    rule: >-
+      A journey's teardown removes every route handler it added, so a poll in flight cannot fail the next
+      journey, and an action re-resolves its locator after the component's ready mark.
+    detail: >-
+      A route handler left on the page answers a poll that fires after the journey ended, and the failure
+      lands on whichever journey runs next. The teardown fixture unroutes all handlers and waits for the ones
+      in flight. A locator held across a re-render points at an element that is gone; the runner re-resolves a
+      locator each time it acts, so the action waits for the component's ready mark and then locates.
+    level: file
+    why: >-
+      A poll left routed after one journey failed the next in one fleet, and a held element handle failed on
+      the re-render.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: playwright-class-page
+        where: unrouteAll
+        says: >-
+          Removes all routes created with page.route() and page.routeFromHAR().
+        backs: check
+      - ref: playwright-locators
+        where: Locating elements
+        says: >-
+          Every time a locator is used for an action, an up-to-date DOM element is located in the page.
+        backs: rule
+    review_question: >-
+      Does this project's teardown fixture unroute every handler and wait for those in flight, and does any
+      journey hold an element across a re-render?
+    relates:
+      - id: tests.journeys.6
+        how: see
+      - id: tests.isolation.1
+        how: see
+    open:
+      - >-
+        Planned check: the shared fixture file holds the unroute call and a scan finds no element handle held
+        across an await. No tool key is bound yet.

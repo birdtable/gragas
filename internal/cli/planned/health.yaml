@@ -1,0 +1,10 @@
+name: health
+order: 290
+context: B
+ends: listing
+summary: "Say how healthy a release is"
+examples:
+  - {line: "gragas health", does: "say it"}
+  - {line: "gragas health --json", does: "as one JSON document"}
+exits: ["done"]
+json: health

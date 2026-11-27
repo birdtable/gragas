@@ -1,0 +1,321 @@
+part: service
+concern: outbound
+order: 8
+title: Outbound calls
+summary: >-
+  Calls to other services go through generated clients and one shared client constructor that owns signing,
+  timeouts, trace forwarding, failures and retries. Hosts come from configuration, and a consumer of an
+  outside API stays below its limit.
+rules:
+  - id: service.outbound.1
+    slug: clients-generated-from-callee-contract
+    since: 0.1.0
+    rule: >-
+      A new service integration enters only through the provider published contract and a generated client,
+      with no hand-written client and no permission string copied from local code.
+    detail: >-
+      One change adds the contract sync, the generated client, the owning domain services list, the
+      regenerated permission registry and the generated test handlers. Every service client is generated from
+      a published contract, or is listed as missing with a ticket; each operation of a permissioned contract
+      carries its permission. In Go, a provider paths, headers and fields live in one adapter and a shape that
+      crosses a language boundary has one source.
+    level: package
+    why: >-
+      A hand-written client is a second reading of the callee contract, and it goes stale without anything
+      failing.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a gate step that every client package is the output of the generator from a published contract or
+          has a ticketed missing-entry, and that no client file is hand-edited. Plant: a hand-written client
+          module fails; a client whose contract is not published and not listed fails. Control: a generated
+          client passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that each provider has one adapter and a boundary shape has one generated source. Plant: a
+          second hand-written adapter fails. Control: one adapter passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.outbound.2
+    slug: every-call-has-timeout
+    since: 0.1.0
+    rule: >-
+      Every outbound call has a timeout, and the timeout is non-optional on the shared client.
+    detail: >-
+      In Go, every HTTP client has a timeout or a context and the shared surface is listed; clients carry
+      timeouts.
+    level: function
+    why: >-
+      A call without a timeout holds a worker for as long as the callee stays silent, and the failure spreads
+      upstream.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          the shared client constructor typed with a required timeout and an ast-grep rule failing a fetch or
+          client construction without one. Plant: a client constructed with no timeout fails. Control: a
+          client with a timeout passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          forbidigo on http.Get and a default client, plus a lint requiring a timeout or context on every
+          client. Plant: a default http client fails. Control: a client with a timeout passes
+  - id: service.outbound.3
+    slug: signing-in-one-client-package
+    since: 0.1.0
+    rule: Request signing lives in one client package.
+    detail: >-
+      In Go, identifiers are made in one function and the primitives are banned outside the owner.
+    level: package
+    why: Signing code in many places is verified in none; one owner can be proved once.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          import restriction on the signing library to the client package. Plant: a service that imports the
+          signing library fails. Control: the client package passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          depguard and forbidigo on signing primitives outside the one owner package. Plant: a signing
+          primitive used outside the owner fails. Control: the owner passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.outbound.4
+    slug: no-callee-host-literal
+    since: 0.1.0
+    rule: >-
+      No callee host or gateway identifier appears as a literal in source (`src`); it comes from configuration
+      or a derived name.
+    level: function
+    why: >-
+      A literal host pins a stage and cannot be moved; it also hides which services a program depends on.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing a URL or gateway identifier string literal in source files outside the config
+          module. Plant: a source file with a callee host literal fails. Control: a host read from the config
+          module passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      In Go, one function builds identifiers and URL writing is confined to one owner. Beyond the SSRF rule,
+      which concerns a host that arrives in a request.
+  - id: service.outbound.5
+    slug: forward-trace-and-caller-token
+    since: 0.1.0
+    rule: The shared client forwards the trace id and the caller token on every call.
+    detail: In Go, a run id joins a command-line call to the daemon it spoke to.
+    level: function
+    why: >-
+      Without the trace id a request cannot be followed across services; without the caller token the callee
+      cannot authorise the original user.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          a client test calling a stub callee and asserting the trace header and caller token arrive. Plant: a
+          client that drops the trace id fails. Control: a client forwarding both passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.outbound.6
+    slug: client-failures-throw
+    since: 0.1.0
+    rule: >-
+      The shared client throws on an unresolvable callee, a signing failure and a non-2xx response; it never
+      returns a default.
+    detail: In Go, errors are returned and never swallowed.
+    level: function
+    why: >-
+      A client that turns a failure into an empty result passes the fault downstream, where it looks like
+      missing data.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          client tests against a stub returning 500, an unknown host and a signing error, asserting a thrown
+          error each time. Plant: a client returning undefined on a 500 fails. Control: a thrown error passes
+  - id: service.outbound.7
+    slug: one-retry-policy
+    since: 0.1.0
+    rule: >-
+      Retry lives in the one shared client constructor: idempotent calls only, at one layer, with exponential
+      backoff and jitter, a bounded number of attempts and a retry budget (retries as a fraction of requests).
+      A hand-rolled retry loop is not allowed.
+    detail: >-
+      The behaviour test runs the client against a handler that always fails and asserts the attempts stay
+      under the budget; it checks behaviour as well as form because the known way round a loop ban is
+      recursion or a timer. The attempt count (three) and the budget (about 10 percent of requests) are
+      examples from the SRE book, not numbers measured on these services. A measure goes beside it: the retry
+      ratio. In the reference stack the layers that can each retry are the cloud SDK, the shared client, the
+      queue redelivery and the function async retry; whether all four are active on a given path was not
+      checked.
+    level: function
+    why: >-
+      Three retries at each of five layers multiplies to a 243-fold load on the bottom layer. Retry traffic
+      can keep a system overloaded after its cause is gone (metastable failure). Reasoning from incident
+      analysis, not a measurement of the reference estate.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: builders-library-timeouts-retries
+        where: timeouts, retries and backoff with jitter
+        backs: rule
+      - ref: google-sre-book
+        where: handling overload; client retry budget
+        backs: rule
+      - ref: bronson-metastable-failures
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 15
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing a loop with a catch and a setTimeout or sleep outside the shared constructor.
+          Plant: a hand-rolled retry loop fails the scan. Control: the shared constructor retry passes
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          behaviour test running the client against an always-failing handler and asserting attempts under the
+          budget and no retry of a non-idempotent call. Plant: a client without a budget fails; a retried
+          non-idempotent call fails. Control: a budgeted client passes
+    open:
+      - The attempt count and the 10 percent budget are examples, not measured.
+      - Which of the four retry layers are active on a path was not checked.
+    note: >-
+      Extends every-call-has-timeout and clients-generated-from-callee-contract, which say nothing of what the
+      retry policy must be. A Go binding is reserved: the shared client keeps back-off for later.
+  - id: service.outbound.8
+    slug: outbound-host-from-config
+    since: 0.1.0
+    rule: >-
+      An outbound call host comes from configuration; where a feature stores a customer-supplied address (a
+      callback, an image URL), the code resolves it and checks it against an allowlist before it fetches.
+    level: function
+    why: >-
+      A server that fetches an address an attacker chose reaches things the attacker cannot (server-side
+      request forgery). Argued; whether any service takes an address from a request was not traced.
+    kind: rule
+    strength: Review
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: mcdonald-grokking-web-app-security
+        where: ch. 14 (server-side request forgery)
+        backs: rule
+    review_question: Can any part of this outbound address come from a request?
+    open:
+      - >-
+        Review until a plant exists: a seeded handler that fetches body.url must be flagged.
+      - An agent passes a URL straight through (inference).
+    note: >-
+      Beyond no-callee-host-literal: that keeps hosts out of source and says nothing of a host that arrives in
+      a request.
+  - id: service.outbound.9
+    slug: third-party-concurrency-ceiling
+    since: 0.1.0
+    rule: >-
+      A consumer whose work includes a call to an outside API is rate-limited: it has a concurrency ceiling
+      set below that API published limit, and a replay or redrive of its queue is throttled by the same
+      ceiling.
+    detail: >-
+      A consumer marked as calling an outside API must set a maximum concurrency, and the value must come from
+      a named constant with the third party limit beside it.
+    level: deploy
+    why: >-
+      A replay or backlog runs at the speed of the consumers, so an outside API can be hit at many times its
+      normal rate after a redrive. Argued; no case from the reference estate.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: bellemare-bedm
+        where: ch. 13 (third-party API replay surge) and ch. 7
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          infrastructure scan failing a queue consumer marked as calling an outside API when it sets no
+          MaximumConcurrency or the value is not a named constant with the limit beside it. Plant: a
+          marketplace-calling consumer with no concurrency cap fails the scan. Control: a consumer capped
+          below the documented limit passes
+    review_question: What does a replay of this queue do to the API it calls?
+    open:
+      - "With agents: holds (inference)."
+    note: >-
+      Extends subscription-has-dead-letter-redrive and the concurrency-cap rules in the AWS part, whose guard
+      already reads the queue maximum concurrency but ties it to no limit.

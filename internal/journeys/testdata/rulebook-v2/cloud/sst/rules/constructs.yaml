@@ -1,0 +1,129 @@
+part: sst
+concern: constructs
+order: 2
+title: Shared constructs and names
+summary: >-
+  Infrastructure is declared through shared constructs only. Names, log settings and the stage are set in one
+  place each, and infrastructure code never imports application source.
+rules:
+  - id: sst.constructs.1
+    slug: shared-constructs-only
+    since: 0.1.0
+    rule: >-
+      Infrastructure is declared only through the shared constructs, not raw cloud resources or overrides.
+    detail: >-
+      A raw function resource (sst.aws.Function), a raw table (aws.dynamodb.Table), raw gateway resources
+      (aws.apigateway.*), a bundler override, function layers, local components and a bare network
+      configuration (vpcConfig) each fail; the shared construct sets them. In Go, unit files come from a
+      template and are checked, not hand-written.
+    level: deploy
+    why: >-
+      A raw resource skips everything the shared construct sets (grants, logging, retention, naming), and the
+      gap appears in the one service that used it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rules failing sst.aws.Function, aws.dynamodb.Table and aws.apigateway.* constructors, the
+          bundler override key, layers, local component imports and the bare network configuration in the
+          infrastructure code. Plant: a raw function construct fails. Control: the shared function construct
+          passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: sst.constructs.2
+    slug: program-name-in-one-place
+    since: 0.1.0
+    rule: The program name is written in exactly one place in the infrastructure code.
+    detail: >-
+      In Go, every path and identifier of persistent state is made from the program name in one function.
+    level: function
+    why: A name repeated in many places is renamed in some.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing a string literal equal to the program name outside the one service definition
+          file. Plant: the program name as a literal in a second file fails. Control: a reference to the
+          service definition passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: sst.constructs.3
+    slug: log-format-and-stage-in-one-place
+    since: 0.1.0
+    rule: >-
+      The log format, log groups and the stage name are set only by one shared component or file.
+    detail: >-
+      No logFormat: JSON option set per function, no raw LogGroup, and the stage variable ($app.stage) read
+      only in the one stages file (stages.ts). In Go, one logging handler with version and run id, and the
+      environment read only in config.
+    level: function
+    why: >-
+      A log format or stage read set in many places drifts: the metric filters and alarms then miss some
+      functions.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rules failing a logFormat option, a LogGroup and a read of $app.stage outside the shared
+          component and the stages file. Plant: a function setting its own log format fails; a stage read in a
+          handler file fails. Control: the shared component and stages file pass
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: sst.constructs.4
+    slug: infra-never-imports-application
+    since: 0.1.0
+    rule: Infrastructure code never imports application source.
+    detail: >-
+      In Go, the entry and storage layers follow a layer table, and deploy code under its own folder imports
+      no program package.
+    level: package
+    why: >-
+      Infrastructure code that pulls in application modules runs them at deploy time and ties a deploy to
+      application internals.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          an import-boundary rule on the infrastructure folders forbidding imports from the application source
+          folders. Plant: an infrastructure file importing a handler module fails. Control: one importing the
+          shared constructs passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          depguard or a layer-table test: deploy code imports no program package. Plant: a deploy package
+          importing a program package fails. Control: deploy code with its own helpers passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

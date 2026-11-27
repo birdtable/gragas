@@ -1,0 +1,34 @@
+$ gragas gen --help
+--- stdout
+
+  Makes the generated files from the rulebook's YAML
+  and compares them with the tree. A dry run first: it
+  says which files it would write. --apply writes them,
+  each whole, under the lock, and records the run.
+  --check writes nothing and fails when a file would
+  change, for the checks before a push.
+
+    gragas gen
+    gragas gen --apply
+    gragas gen --check
+
+  USAGE
+
+
+    gragas gen [--flags]
+
+
+  FLAGS
+
+    --accessible  Plain questions (ACCESSIBLE)
+    --apply       Write the files
+    --check       Fail when a file would change
+    --config      The settings file (GRAGAS_CONFIG)
+    -C --dir      The repository holding rulebook/ (.)
+    -h --help     Help for gen
+    --json        Answer in one JSON document
+    --no-color    No colour (NO_COLOR)
+    --plain       Print plainly: nothing moves
+
+--- stderr
+--- exit 0

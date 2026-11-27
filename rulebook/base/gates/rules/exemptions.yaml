@@ -1,0 +1,131 @@
+format: 3
+part: gates
+concern: exemptions
+rules:
+  - id: gates.exemptions.1
+    statement: "Every lint disable directive names the rule it disables and gives a reason; a blanket disable is an error."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "For Go, the `//nolint` directive names its linter (`nolintlint` with require-specific and require-explanation) and gives an explanation; a bare directive is refused. For TypeScript, a disable directive must carry a description and name the rule it disables (the eslint-comments rules). The reason follows the one record format of gates.exemptions.4. nolintlint cannot check an expiry or an owner; that is the record check."
+      pros:
+        - "2,435 live nolint lines in Go with no exit record; the shared nolintlint is enabled nowhere (V-2, V-5). One repo has 662 suppression lines, 318 outside tests. A reference trial counted 548 and 624 nolintlint findings in two repos, mostly test files."
+    relations:
+      relates:
+        - gates.exemptions.4
+    sources:
+      - ref: decision-4
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: nolintlint
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: gates.exemptions.2
+    statement: "An unused lint disable directive is reported as an error, and a fixed finding makes the run fail until its suppression is pruned."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "For Go, nolintlint refuses an unused directive. For TypeScript the linter setting reports unused disable directives as errors, and bulk suppressions fail on an unused entry (the flag that passes on unpruned suppressions is never used in a gate)."
+      pros:
+        - A directive that no longer suppresses anything is dead debt and hides the next real violation at the same line.
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: nolintlint
+        severity: error
+        rung: 0
+        run_point: commit
+      - tool: gragas
+        target: source
+        key: directive
+        severity: error
+        rung: 0
+        run_point: land
+  - id: gates.exemptions.3
+    statement: A block-level lint disable is re-enabled in the same file.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Applies to TypeScript, where a block disable opens a range. A Go nolint scopes to one line or declaration, so there is no open block to close. Suppression comments are counted and only fall; an open block is the same debt."
+      pros:
+        - An open block silently disables the rule for the rest of the file.
+  - id: gates.exemptions.4
+    statement: "Every exception has a recorded exit in one format, across `//nolint` disables, exemptions, allow-file entries and baselines: a reason that names an artifact, an owner and an expiry, and the gate fails on an expired entry."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The reason names an artifact (a ticket, a decision or a measurement). One parser reads all three kinds of list and fails on empty fields, a past date, a missing owner, or a reason naming a ticket that does not resolve; it prints the count of renewals. Every exemption and suppression entry (feature-flags, connector gates, lint suppressions, every exemptions file and baseline) carries a ticket and an expiry. Vulnerability ignores are entries of the same lists, with a ticket and an expiry. The expiry horizon is capped by data, and that cap is a guess; an expiry makes a gate fail with no code change, so the notice window is designed."
+      pros:
+        - "Nolint lines, baselines and allow files have reasons but mostly no dates (none have owners). The ten other rows lean on this one format (counted exemptions, debt registry, rule-pack exemptions and others)."
+    relations:
+      relates:
+        - gates.ratchets.4
+    sources:
+      - ref: ford-bea
+        where: chapter 4
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 7.2
+        backs: rule
+  - id: gates.exemptions.5
+    statement: "Suppressions are counted, separately inside and outside test files, and each count only falls; skipped tests count too."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The shared ratchet counts nolint and lint-ignore lines per repo (and `eslint-disable` comments, type-ignore directives and skipped tests for TypeScript), split test and non-test files by filename, with a baseline file per class that only falls. No new escape hatch: no new suppression, no skipped hook (gates.hooks.5), no skipped test."
+      pros:
+        - "There were 1,362 suppression lines outside tests; in one repo 231 of 548 unused findings were outside test files (V-8). The built baseline split exists but no repo gate uses it."
+    relations:
+      relates:
+        - gates.hooks.5
+  - id: gates.exemptions.6
+    statement: "An exemption names a path and a reason, is counted so it can only shrink, and an unused one is a finding."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The exemption list is held as records (gates.exemptions.4) counted in the shrink-only baseline; an exemption that matches nothing is a finding; a new exemption raises the count and is refused. Narrowing where a rule applies also takes a gate-change record (gates.protection.1)."
+      pros:
+        - "An exemption nobody counts does not shrink. A reference team's `showsRecordId` became a counted list only after a ticket (V-64)."
+    relations:
+      relates:
+        - gates.exemptions.4
+        - gates.protection.1
+  - id: gates.exemptions.7
+    statement: "Extend rather than exempt: an exemption is time-boxed with a ticket and a zero-by date, and a rule exempted repeatedly for the same kind of reason is reviewed."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "When the same rule is exempted three times (a set number) for the same kind of reason, a change request on the rule is due: either the rule or the structure is wrong."
+      pros:
+        - "Repeated exemptions mean the rule or the structure is wrong; an exemption count that nobody reads hides it."
+  - id: gates.exemptions.8
+    statement: "A rule that is switched off in a shared config carries its measured reason beside it, and a pack states for each row the reason it narrows a base row."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: For example the markdown table-alignment rule switched off for producing most of the findings on one service carries that measurement next to the setting. A check is measured on a real repo before it is required.
+      pros:
+        - An unexplained off switch is indistinguishable from an accident.
+  - id: gates.exemptions.9
+    statement: "Every banned or parked item has a re-entry trigger, a recheck date and an owner, and a check fails when a recheck date passes."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A watch-list of parked or held items, each with a trigger, a recheck date, an owner and the card it reopens; a size trigger gets a measured signal. The ban covers the family of the banned library. A concern not needed yet has its owner named in advance."
+      pros:
+        - A ban with no way back is a permanent decision made by default.

@@ -1,0 +1,16 @@
+format: 3
+part: lambda
+concern: runtime
+rules:
+  - id: lambda.runtime.1
+    statement: A middleware or plumbing library is imported only by the one package that owns that concern.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "For the handler wrapper (ordered before, after and error steps) the owner is the shared runtime package; no other package imports the middleware engine. The same holds for each concern with an owner, enforced by import rules; a direct dependency outside the list fails. In Go there is one importable owner per concern."
+      pros:
+        - "A library imported in many packages has many configurations, and a fix or an upgrade must be found in all of them."

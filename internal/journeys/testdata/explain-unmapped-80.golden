@@ -1,0 +1,9 @@
+$ gragas explain golangci-lint unused
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+no rule of this rulebook binds golangci-lint unused
+
+  done       unmapped: no rule explains this entry (golangci-lint)
+--- stderr

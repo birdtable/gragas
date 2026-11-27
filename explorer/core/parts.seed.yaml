@@ -1,0 +1,641 @@
+# Parts the relations boards name (the first pass). One entry per data-part.
+# purpose: who looks at the part and what it tells them.
+# measured: the number the design fixes, per width, in CSS px unless a unit is given.
+# A width the part is not drawn at is null. A later pass turns this file into the catalogue.
+# This file lists the parts of every view. Each pass of the design adds its views under views.
+views:
+  - view: relations
+    route: /relations/:kind/:id
+    purpose: >-
+      A maintainer or a reviewer opens this view from a rule, a decision or a term to see
+      what that entity touches and what a change to it could break.
+    conveys:
+      - the entity in focus, by id and standing, largest and first
+      - what needs a person next: a conflict, first in the list and the only dashed red line
+      - the other neighbours, grouped by how they relate, each with standing or kind
+    breakpoints: { phone: 390, tablet: 900, desktop: 1440 }
+    states: [default, loading, empty, error, stale]
+    parts:
+      - name: frame
+        purpose: the view's own width, the three named breakpoints
+        measured: { width: { phone: 390, tablet: 900, desktop: 1440 } }
+      - name: header
+        purpose: where the reader is and how to move, the same on every view
+        measured: { height: { phone: 60, tablet: 60, desktop: 60 } }
+      - name: unreleased
+        purpose: says the rulebook has no release yet, on every view (S38)
+        measured: { count: 1 }
+      - name: unreleased-strip
+        purpose: the same mark under the header when text is grown and the chip no longer fits
+        measured: { count: 1 }
+      - name: nav
+        purpose: the primary views of the explorer
+        measured: { count: { phone: null, tablet: null, desktop: 5 } }
+      - name: search
+        purpose: finds an entity by id or word, to centre the view on it
+        measured: { height: { phone: null, tablet: null, desktop: 32 } }
+      - name: search-button
+        purpose: opens search where the field does not fit
+        measured: { width: { phone: 44, tablet: 44, desktop: null }, height: { phone: 44, tablet: 44, desktop: null } }
+      - name: pages-button
+        purpose: opens the list of views where the nav does not fit
+        measured: { width: { phone: 44, tablet: 44, desktop: null }, height: { phone: 44, tablet: 44, desktop: null } }
+      - name: more
+        purpose: the views the nav does not show, on desktop
+        measured: { height: { phone: null, tablet: null, desktop: 32 } }
+      - name: relations-crumb
+        purpose: names the view and the kind of the entity in focus
+        measured: { count: 1 }
+      - name: relations-focus
+        purpose: the entity the view is centred on, with its standing, statement and next action
+        measured: { width: { phone: 358, tablet: 852, desktop: 1064 }, id-size: { phone: 24, tablet: 28, desktop: 28 } }
+      - name: open-entity
+        purpose: the next action, open the entity on its own view
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: copy-link
+        purpose: copies the URL of this view, since state is in the URL
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: relations-kinds
+        purpose: chooses which kinds of neighbour are shown, with counts
+        measured: { width: { phone: 358, tablet: 852, desktop: 264 }, row-height: { phone: null, tablet: 44, desktop: 32 }, count: 10 }
+      - name: relations-kind
+        purpose: one kind of neighbour, a toggle with its count
+        measured: { height: { phone: null, tablet: 44, desktop: 32 }, count: 10 }
+      - name: relations-kinds-toggle
+        purpose: opens the kind filter on a phone
+        measured: { width: { phone: 358, tablet: null, desktop: null }, height: { phone: 44, tablet: null, desktop: null } }
+      - name: relations-graph
+        purpose: draws the focus and its neighbours as nodes and labelled edges, own SVG, no chart library
+        measured: { width: { phone: null, tablet: 852, desktop: 640 }, height: { phone: null, tablet: 420, desktop: 500 } }
+      - name: relations-focus-node
+        purpose: the focus in the graph
+        measured: { width: { phone: null, tablet: 188, desktop: 188 }, height: { phone: null, tablet: 60, desktop: 60 } }
+      - name: relations-node
+        purpose: one neighbour in the graph, with its id and its standing or kind
+        measured: { width: { phone: null, tablet: 140, desktop: 112 }, height: { phone: null, tablet: 48, desktop: 48 }, count: { phone: null, tablet: 13, desktop: 13 } }
+      - name: relations-list
+        purpose: every neighbour as text, so the graph is never the only way to read the view
+        measured: { width: { phone: 358, tablet: 852, desktop: 392 }, groups: 10, rows: 13 }
+      - name: relations-group
+        purpose: the neighbours of one kind
+        measured: { count: 10 }
+      - name: relations-group-head
+        purpose: names the kind and counts it, conflicts first
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: relations-row
+        purpose: one neighbour, centres the view on it
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 }, count: 13 }
+      - name: standing
+        purpose: the standing of a rule as a word and a symbol, never colour alone
+        measured: { height: 24 }
+      - name: observation
+        purpose: how a project sets a binding or a tool entry, as a word and a symbol
+        measured: { height: 24 }
+      - name: mark
+        purpose: a mark beside a standing, such as trial
+        measured: { height: 24 }
+      - name: stale-banner
+        purpose: says the bundle is from an older contract major and is read as it is
+        measured: { min-height: { phone: 44, tablet: 44, desktop: 44 } }
+      - name: relations-empty
+        purpose: an entity nothing links to, with why and the terms view
+        measured: { max-width: 56ch }
+      - name: relations-error
+        purpose: an id the rulebook does not know, with search
+        measured: { max-width: 56ch }
+      - name: open-terms
+        purpose: leaves the empty state for the terms view
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: open-rules
+        purpose: leaves the error state for the rules view
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: search-action
+        purpose: opens search from the empty and error states
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+  - view: rules
+    route: /rules
+    purpose: >-
+      A maintainer, a reviewer or a project owner opens this view to find the rules that matter to them. It answers: which rules are these, and how firmly does each hold?
+    conveys:
+      - "How many rules match, live, as the filters change: \"8 of 96 rules\"."
+      - "The filters that are set, each removable, and one place to clear them all."
+      - "Each rule by id and statement, with its standing as a word and a symbol and its marks beside it."
+    breakpoints: { phone: 390, tablet: 900, desktop: 1440 }
+    states: [default, loading, empty, error, stale]
+    parts:
+      - name: rules-crumb
+        purpose: "names the view the reader is in"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: rules-head
+        purpose: "the title and the live count of the rules shown"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: rules-count
+        purpose: "how many rules match, spoken as it changes (aria-live polite)"
+        measured: { height: { phone: 24, tablet: 24, desktop: 24 } }
+      - name: rules-filters
+        purpose: "the filters, with a count beside every option"
+        measured: { width: { phone: 358, tablet: 852, desktop: 264 }, groups: { phone: null, tablet: 1, desktop: 5 } }
+      - name: rules-filter
+        purpose: "one group of options: standing, strength, part, kind, mark"
+        measured: { count: { phone: null, tablet: null, desktop: 5 } }
+      - name: rules-filter-option
+        purpose: "one option, a toggle with its count"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: rules-filters-button
+        purpose: "opens the filters that do not fit, with how many are set"
+        measured: { height: { phone: 44, tablet: 44, desktop: null }, width: { phone: 358, tablet: null, desktop: null } }
+      - name: rules-active
+        purpose: "the filters that are set, each removable"
+        measured: { chip-height: { phone: 44, tablet: 44, desktop: 32 }, remove-target: { phone: 24, tablet: 24, desktop: 24 } }
+      - name: rules-clear
+        purpose: "clears every filter at once"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: rules-find
+        purpose: "finds a rule among those shown"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: rules-sort
+        purpose: "chooses the order of the list"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: rules-list
+        purpose: "the matching rules, one row each"
+        measured: { width: { phone: 358, tablet: 852, desktop: 768 } }
+      - name: rules-row
+        purpose: "one rule: id, statement, part, strength, standing and marks"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 }, count: { phone: 8, tablet: 8, desktop: 8 } }
+      - name: rules-empty
+        purpose: "filters that match nothing, with a way back"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: rules-clear-all
+        purpose: "the one button of the empty and error states"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: open-bars
+        purpose: "leaves the empty state for the standing bars"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: rules-error
+        purpose: "a link that names a standing the rulebook does not have"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+  - view: rule
+    route: /rules/:id
+    purpose: >-
+      A maintainer, a reviewer or a project owner opens this view from the rules view to learn one rule: what it says, why, what enforces it and how well that is proved. It answers: can I trust this rule, and what does it ask of me?
+    conveys:
+      - "The rule by id, its standing with its marks, and its statement, largest and first."
+      - "What it says and why, in the anatomy: definition, pros, cons, decision, and an example pair."
+      - "What enforces it and what proves it: the bindings, then the proof grid."
+      - "How it came to be and what it touches: the history, the relations and the translations."
+    breakpoints: { phone: 390, tablet: 900, desktop: 1440 }
+    states: [default, loading, empty, error, stale]
+    parts:
+      - name: rule-crumb
+        purpose: "names the view and the rule the reader is in"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: rule-head
+        purpose: "the rule by id, standing, marks and statement"
+        measured: { id-size: { phone: 24, tablet: 28, desktop: 28 }, count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: rule-contents
+        purpose: "moves to a section of the rule"
+        measured: { width: { phone: 358, tablet: 852, desktop: 264 } }
+      - name: rule-contents-item
+        purpose: "one section anchor"
+        measured: { count: { phone: null, tablet: 6, desktop: 6 }, height: { phone: null, tablet: 44, desktop: 32 } }
+      - name: rule-section
+        purpose: "one of the six sections"
+        measured: { count: { phone: 6, tablet: 6, desktop: 6 } }
+      - name: rule-example
+        purpose: "the example pair, one that does not pass and one that does"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 }, min-width: { phone: 220, tablet: 220, desktop: 220 } }
+      - name: rule-bindings
+        purpose: "the tools that enforce the rule"
+        measured: { row-min-height: { phone: 64, tablet: 56, desktop: 52 } }
+      - name: binding-row
+        purpose: "one binding: tool, key, rung, run point, severity, observation"
+        measured: { count: { phone: 2, tablet: 2, desktop: 2 } }
+      - name: proof-grid
+        purpose: "tool by tool version and run level, each cell a result"
+        measured: { columns: { phone: 3, tablet: 3, desktop: 3 }, rows: { phone: 2, tablet: 2, desktop: 2 } }
+      - name: proof-cell
+        purpose: "one result as a symbol and a word"
+        measured: { min-height: { phone: 24, tablet: 24, desktop: 24 } }
+      - name: rule-history
+        purpose: "what happened to the rule, newest first"
+        measured: { count: { phone: 3, tablet: 3, desktop: 3 } }
+      - name: history-row
+        purpose: "one event with its date and who"
+        measured: { count: { phone: 3, tablet: 3, desktop: 3 } }
+      - name: rule-relations
+        purpose: "the nearest relations, with a way to the relations view"
+        measured: { count: { phone: 3, tablet: 3, desktop: 3 } }
+      - name: open-relations
+        purpose: "leaves for the relations view centred on this rule"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: rule-translations
+        purpose: "the languages the rule is translated into and whether each is current"
+        measured: { count: { phone: 2, tablet: 2, desktop: 2 } }
+      - name: translation-row
+        purpose: "one language and its state"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 } }
+      - name: rule-error
+        purpose: "an id the rulebook does not know"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+  - view: standing
+    route: /standing
+    purpose: >-
+      A rulebook owner or a reviewer opens this view to see how firmly the rulebook holds. It answers: how many of our rules are enforced, and where are the gaps?
+    conveys:
+      - "The whole rulebook as one bar, the six standings in a fixed order from firmest to retired, with each count in a legend."
+      - "The marks beside it: how many rules are trial, blocked or unproven."
+      - "Each part as its own bar on the same scale, so the gaps stand out. Planned and proposed are the gaps."
+      - "Every number as text, in a table, so no bar is the only way to read it."
+    breakpoints: { phone: 390, tablet: 900, desktop: 1440 }
+    states: [default, loading, empty, error, stale]
+    parts:
+      - name: bars-crumb
+        purpose: "names the view the reader is in"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: bars-head
+        purpose: "the title and how many rules are counted"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: bars-total
+        purpose: "the whole rulebook: one bar, its legend and its marks"
+        measured: { width: { phone: 358, tablet: 852, desktop: 1064 } }
+      - name: bars-bar
+        purpose: "one stacked bar of the six standings, own drawn, no chart library"
+        measured: { height: { phone: 32, tablet: 40, desktop: 40 }, width: { phone: 358, tablet: 852, desktop: 1064 } }
+      - name: bars-segment
+        purpose: "one standing in a bar, as wide as its count, with its count as text where it fits"
+        measured: { min-width: { phone: 2, tablet: 2, desktop: 2 }, label-from: { phone: 36, tablet: 36, desktop: 36 } }
+      - name: bars-legend
+        purpose: "the six standings with symbol, word and count"
+        measured: { count: { phone: 6, tablet: 6, desktop: 6 } }
+      - name: bars-marks
+        purpose: "how many rules carry each mark"
+        measured: { count: { phone: 3, tablet: 3, desktop: 3 } }
+      - name: bars-part
+        purpose: "one part: its name, its count and its bar, a link to its rules"
+        measured: { min-height: { phone: 64, tablet: 44, desktop: 32 }, bar-height: { phone: 20, tablet: 32, desktop: 32 }, bar-width: { phone: 358, tablet: 600, desktop: 640 }, count: { phone: 4, tablet: 4, desktop: 4 } }
+      - name: bars-table
+        purpose: "every count as text, part by standing"
+        measured: { width: { phone: 358, tablet: 852, desktop: 392 }, rows: { phone: 5, tablet: 5, desktop: 5 }, columns: { phone: 8, tablet: 8, desktop: 8 } }
+      - name: bars-table-row
+        purpose: "one part in the table"
+        measured: { count: { phone: 4, tablet: 4, desktop: 4 } }
+      - name: bars-empty
+        purpose: "a rulebook with no rules"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: bars-error
+        purpose: "a bundle built without bindings"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+  - view: rulebooks
+    route: /rulebooks
+    purpose: >-
+      A rulebook owner or a project owner opens this view to see where their rules come from. It answers: what do I inherit, from whom, and what changed between releases?
+    conveys:
+      - "The chain, base first, with the rulebook this project reads marked."
+      - "What each rulebook imports or cites."
+      - "How rules moved between two releases: the rule map, row by row, with its mark and reason."
+      - "Archived rulebooks and their successors."
+    breakpoints: { phone: 390, tablet: 900, desktop: 1440 }
+    states: [default, loading, empty, error, stale]
+    parts:
+      - name: rulebooks-head
+        purpose: "the title and how many rulebooks are in play"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: rulebooks-chain
+        purpose: "the chain from the base to the rulebook the project reads"
+        measured: { width: { phone: 358, tablet: 852, desktop: 520 }, links: { phone: 3, tablet: 3, desktop: 3 } }
+      - name: rulebooks-link
+        purpose: "one rulebook in the chain, with kind, version and rule count"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 } }
+      - name: rulebooks-imports
+        purpose: "the rulebooks imported or cited"
+        measured: { count: { phone: 2, tablet: 2, desktop: 2 }, row-min-height: { phone: 64, tablet: 56, desktop: 52 } }
+      - name: rulebooks-map
+        purpose: "the rule map between two releases, row by row"
+        measured: { columns: { phone: 4, tablet: 4, desktop: 4 }, rows: { phone: 3, tablet: 3, desktop: 3 }, width: { phone: 358, tablet: 852, desktop: 520 } }
+      - name: rulebooks-map-row
+        purpose: "one rule: the id left, the id arrived at, the mark and the reason"
+        measured: { count: { phone: 3, tablet: 3, desktop: 3 } }
+      - name: rulebooks-archived
+        purpose: "archived rulebooks with their successor"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: rulebooks-crumb
+        purpose: "names the view the reader is in"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: rulebooks-empty
+        purpose: "a base rulebook with no parent and no imports"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: rulebooks-error
+        purpose: "an overlay whose parent release is not in the bundle"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+  - view: terms
+    route: /terms
+    purpose: >-
+      A rule author or a reader opens this view to learn what a word means in this rulebook. It answers: what does this word mean here, and where is it used?
+    conveys:
+      - "The term, in plain type, with its one definition."
+      - "Its literal, where it has one, in a code face, so a header name or a package is exact."
+      - "How many rules use it, to see which words matter."
+      - "A way to find a term: search, and on larger screens a letter index."
+    breakpoints: { phone: 390, tablet: 900, desktop: 1440 }
+    states: [default, loading, empty, error, stale]
+    parts:
+      - name: terms-head
+        purpose: "the title and how many terms there are"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: terms-find
+        purpose: "finds a term by its words"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 }, max-width: { phone: 358, tablet: 420, desktop: 420 } }
+      - name: terms-index
+        purpose: "jumps to the terms of one letter"
+        measured: { count: { phone: null, tablet: 1, desktop: 1 }, width: { phone: null, tablet: 852, desktop: 264 } }
+      - name: terms-letter
+        purpose: "one letter of the index"
+        measured: { height: { phone: null, tablet: 44, desktop: 32 } }
+      - name: terms-list
+        purpose: "the terms, one row each"
+        measured: { width: { phone: 358, tablet: 852, desktop: 768 } }
+      - name: terms-row
+        purpose: "one term: its name, definition, literal and use count"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 }, count: { phone: 5, tablet: 5, desktop: 5 } }
+      - name: terms-used
+        purpose: "how many rules use the term"
+        measured: { height: { phone: 20, tablet: 20, desktop: 20 } }
+      - name: terms-crumb
+        purpose: "names the view the reader is in"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: terms-empty
+        purpose: "a rulebook with no terms"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: terms-error
+        purpose: "a name the rulebook does not define"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: open-attention
+        purpose: "leaves the empty state for the attention view"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+  - view: tools
+    route: /tools
+    purpose: >-
+      A rulebook owner or a project owner opens this view to see which tools do the enforcing and where a config has drifted from the rules. It answers: what runs, and what runs that no rule explains?
+    conveys:
+      - "Each tool, with how many entries and rules it has and the version range its plugin describes."
+      - "How projects set each tool: the observation counts, as a word and a symbol."
+      - "The unmapped entries: in a config, with no rule behind them, with the reason where an overlay excluded the rule."
+      - "A key to the six observations."
+    breakpoints: { phone: 390, tablet: 900, desktop: 1440 }
+    states: [default, loading, empty, error, stale]
+    parts:
+      - name: tools-head
+        purpose: "the title and how many tools and unmapped entries there are"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: tools-list
+        purpose: "the tools the bindings name"
+        measured: { width: { phone: 358, tablet: 852, desktop: 768 } }
+      - name: tools-row
+        purpose: "one tool: entries, rules, plugin range and observation counts"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 }, count: { phone: 4, tablet: 4, desktop: 4 } }
+      - name: tools-unmapped
+        purpose: "entries in a config that no rule explains"
+        measured: { count: { phone: 2, tablet: 2, desktop: 2 } }
+      - name: tools-unmapped-row
+        purpose: "one unmapped entry, with why it is unmapped"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 } }
+      - name: tools-key
+        purpose: "the six observations as word and symbol"
+        measured: { count: { phone: null, tablet: 6, desktop: 6 }, width: { phone: null, tablet: 852, desktop: 264 } }
+      - name: tools-crumb
+        purpose: "names the view the reader is in"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: tools-empty
+        purpose: "no binding names a tool"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: tools-error
+        purpose: "a bundle without the effective config"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+  - view: coverage
+    route: /coverage
+    purpose: >-
+      A rulebook owner opens this view to see how far the rules and the tool configs agree, both ways. It answers: which rules are held by a tool, and which entries explain nothing?
+    conveys:
+      - "Rules held: how many rules have an effective binding, as a count and a bar, never colour alone."
+      - "Entries explained: how many entries in an effective config a rule explains."
+      - "The rules with no effective binding, each with its standing word and symbol and its marks."
+      - "The entries no rule explains, as unmapped, and the upstream preset counted as one covered set."
+    breakpoints: { phone: 390, tablet: 900, desktop: 1440 }
+    states: [default, loading, empty, error, stale]
+    parts:
+      - name: coverage-head
+        purpose: "the title and both counts in a line"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: coverage-meters
+        purpose: "the two counts and their bars"
+        measured: { count: { phone: 2, tablet: 2, desktop: 2 }, width: { phone: 358, tablet: 852, desktop: 264 } }
+      - name: coverage-meter
+        purpose: "one count with its bar and what it counts"
+        measured: { bar-height: { phone: 12, tablet: 12, desktop: 12 } }
+      - name: coverage-rules
+        purpose: "the rules with no effective binding"
+        measured: { count: { phone: 4, tablet: 4, desktop: 4 } }
+      - name: coverage-rule-row
+        purpose: "one rule with no binding: id, statement, standing and marks"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 } }
+      - name: coverage-entries
+        purpose: "the entries no rule explains"
+        measured: { count: { phone: 4, tablet: 4, desktop: 4 } }
+      - name: coverage-entry-row
+        purpose: "one unexplained entry and its tool"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 } }
+      - name: coverage-sets
+        purpose: "upstream presets counted as one covered set"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: coverage-set-row
+        purpose: "one covered set with its entries and rules"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 } }
+      - name: coverage-crumb
+        purpose: "names the view the reader is in"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: coverage-empty
+        purpose: "a rulebook with no bindings"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: coverage-error
+        purpose: "a bundle without the effective config"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: open-tools
+        purpose: "leaves the error state for the tools view"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+  - view: health
+    route: /health
+    purpose: >-
+      A rulebook owner or a consumer opens this view to judge how complete the rulebook is. It answers: how healthy is this rulebook, by the seven numbers the release publishes?
+    conveys:
+      - "Each of the seven numbers, as a count over a total or a duration, in a code face so digits line up."
+      - "How each is counted, in one line."
+      - "What the release claimed beside what the engine computes, so a difference is seen."
+      - "That no project is named in any number."
+    breakpoints: { phone: 390, tablet: 900, desktop: 1440 }
+    states: [default, loading, empty, error, stale]
+    parts:
+      - name: health-head
+        purpose: "the title and a line saying the numbers are computed now"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: health-grid
+        purpose: "the seven numbers as cards"
+        measured: { columns: { phone: 1, tablet: 3, desktop: 3 }, count: { phone: 7, tablet: 7, desktop: 7 } }
+      - name: health-card
+        purpose: "one number: its name, value, how it is counted and its claim"
+        measured: { min-height: { phone: 120, tablet: 120, desktop: 120 } }
+      - name: health-value
+        purpose: "the number itself"
+        measured: { font-size: { phone: 22, tablet: 22, desktop: 22 } }
+      - name: health-claim
+        purpose: "what the release claimed for this number"
+        measured: { count: { phone: 7, tablet: 7, desktop: 7 } }
+      - name: health-note
+        purpose: "how to read the numbers"
+        measured: { width: { phone: 358, tablet: 852, desktop: 264 } }
+      - name: health-crumb
+        purpose: "names the view the reader is in"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: health-empty
+        purpose: "a rulebook with no active rule"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: health-error
+        purpose: "a claim the engine does not reproduce"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: open-changelog
+        purpose: "leaves the error state for the changelog"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+  - view: changelog
+    route: /changelog
+    purpose: >-
+      A project owner opens this view before an upgrade to learn what a release changes for them. It answers: what changed, and what do I do about it?
+    conveys:
+      - "Each release with its date, or unreleased, and the bump the engine computed."
+      - "Each change by rule: the kind, the rule's standing as a word and a symbol, the consumer action and the remedy where there is one."
+      - "The kinds of change, so a reader knows what tightened means."
+      - "That an explanation or translation change is shown but needs no action."
+    breakpoints: { phone: 390, tablet: 900, desktop: 1440 }
+    states: [default, loading, empty, error, stale]
+    parts:
+      - name: changelog-head
+        purpose: "the title and how many releases there are"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: changelog-release
+        purpose: "one release: its version, date or unreleased, bump and changes"
+        measured: { count: { phone: 2, tablet: 2, desktop: 2 } }
+      - name: changelog-bump
+        purpose: "the bump the engine computed for the release"
+        measured: { height: { phone: 20, tablet: 20, desktop: 20 } }
+      - name: changelog-entry
+        purpose: "one change to one rule"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 } }
+      - name: changelog-kind
+        purpose: "the kind of change, as text in a chip"
+        measured: { height: { phone: 20, tablet: 20, desktop: 20 } }
+      - name: changelog-action
+        purpose: "what a project does about the change"
+        measured: { count: { phone: 5, tablet: 5, desktop: 5 } }
+      - name: changelog-remedy
+        purpose: "how to do it, where there is a way"
+        measured: { count: { phone: 2, tablet: 2, desktop: 2 } }
+      - name: changelog-key
+        purpose: "the kinds of change"
+        measured: { count: { phone: null, tablet: 6, desktop: 6 }, width: { phone: null, tablet: 852, desktop: 264 } }
+      - name: changelog-crumb
+        purpose: "names the view the reader is in"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: changelog-empty
+        purpose: "a rulebook with no release"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: changelog-error
+        purpose: "a release the bundle does not hold"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+  - view: attention
+    route: /attention
+    purpose: >-
+      A rulebook maintainer opens this view to learn which rules need them now. It answers: what is out of date, unproven or past a date, and what do I do?
+    conveys:
+      - "The eight kinds, each with how many rules it holds. The kind that needs two batches says so instead of showing a zero."
+      - "Each rule: its id, its kind, why it is listed and the fix, in text."
+      - "The rule's standing as a word and a symbol, and trial and unproven as marks."
+      - "That the list is derived: nothing is typed into it."
+    breakpoints: { phone: 390, tablet: 900, desktop: 1440 }
+    states: [default, loading, empty, error, stale]
+    parts:
+      - name: attention-head
+        purpose: "the title and how many rules need a maintainer"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: attention-kinds
+        purpose: "the eight kinds with their counts"
+        measured: { count: { phone: 8, tablet: 8, desktop: 8 }, width: { phone: 358, tablet: 852, desktop: 264 } }
+      - name: attention-kind
+        purpose: "one kind and how many rules it holds"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: attention-list
+        purpose: "the rules that need a maintainer"
+        measured: { count: { phone: 5, tablet: 5, desktop: 5 }, width: { phone: 358, tablet: 852, desktop: 768 } }
+      - name: attention-row
+        purpose: "one rule: id, kind, why, fix, standing and marks"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 } }
+      - name: attention-why
+        purpose: "the kind and why the rule is listed"
+        measured: { count: { phone: 5, tablet: 5, desktop: 5 } }
+      - name: attention-crumb
+        purpose: "names the view the reader is in"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: attention-empty
+        purpose: "a rulebook where nothing needs a maintainer"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: attention-error
+        purpose: "an id the bundle does not hold"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: open-health
+        purpose: "leaves the empty state for the health view"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+  - view: here
+    route: /here
+    purpose: >-
+      A project owner opens this view, on their own machine, to see how their project stands against its rulebook. It answers: where do I differ, and what does check say?
+    conveys:
+      - "The six observations with how many entries have each, as a word and a symbol."
+      - "The entries to look at: weaker, absent and unmapped, and an excluded one greyed with the overlay and decision that excluded it."
+      - "The checks: a finding fails a gate, a notice never does."
+      - "Where the report came from, and that it was read here and sent nowhere."
+    breakpoints: { phone: 390, tablet: 900, desktop: 1440 }
+    states: [default, loading, empty, error, stale]
+    parts:
+      - name: here-head
+        purpose: "the title and how many entries and how many to look at"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: here-source
+        purpose: "where the report came from, and the way to open another"
+        measured: { width: { phone: 358, tablet: 852, desktop: 264 } }
+      - name: here-open
+        purpose: "chooses a report file on this machine"
+        measured: { height: { phone: 44, tablet: 44, desktop: 32 } }
+      - name: here-counts
+        purpose: "the six observations with their counts"
+        measured: { count: { phone: 6, tablet: 6, desktop: 6 } }
+      - name: here-entries
+        purpose: "the entries that differ from the rulebook"
+        measured: { count: { phone: 4, tablet: 4, desktop: 4 } }
+      - name: here-entry
+        purpose: "one entry, its observation and why"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 } }
+      - name: here-checks
+        purpose: "what check says about the project"
+        measured: { count: { phone: 3, tablet: 3, desktop: 3 } }
+      - name: here-check
+        purpose: "one check, as a finding or a notice"
+        measured: { min-height: { phone: 64, tablet: 56, desktop: 52 } }
+      - name: here-kind
+        purpose: "finding or notice, as text in a chip"
+        measured: { height: { phone: 20, tablet: 20, desktop: 20 } }
+      - name: here-crumb
+        purpose: "names the view the reader is in"
+        measured: { count: { phone: 1, tablet: 1, desktop: 1 } }
+      - name: here-empty
+        purpose: "the no-report state"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }
+      - name: here-error
+        purpose: "a file that is not a report"
+        measured: { max-width: { phone: "56ch", tablet: "56ch", desktop: "56ch" } }

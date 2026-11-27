@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rules-json.schema.json",
+  "title": "The generated rulebook/rules.json (schema v2): every part, kind, source and rule, each rule with its derived standing",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "generated_by",
+    "schema",
+    "parts",
+    "kinds",
+    "sources",
+    "rules"
+  ],
+  "properties": {
+    "generated_by": {
+      "const": "gragas gen"
+    },
+    "schema": {
+      "const": 2,
+      "description": "the rulebook schema version"
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "$ref": "parts.schema.json#/properties/parts/items"
+      }
+    },
+    "kinds": {
+      "$ref": "products.schema.json#/properties/kinds"
+    },
+    "sources": {
+      "$ref": "sources.schema.json#/properties/sources"
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "rules.schema.json#/$defs/ruleBody",
+        "required": [
+          "part",
+          "concern",
+          "standing"
+        ]
+      }
+    }
+  }
+}

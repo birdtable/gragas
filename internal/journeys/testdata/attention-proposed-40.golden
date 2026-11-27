@@ -1,0 +1,64 @@
+$ gragas attention
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+every rule is proposed, so the whole
+book is listed, grouped by what is
+missing
+
+missing source (3)
+rule         fix
+go.errors.1  gragas rule edit
+             go.errors.1 --cite <source
+             slug>
+go.errors.2  gragas rule edit
+             go.errors.2 --cite <source
+             slug>
+go.errors.3  gragas rule edit
+             go.errors.3 --cite <source
+             slug>
+1 column not shown: what is wrong
+
+missing example pair (2)
+rule         fix
+go.errors.1  add good.* and bad.* under
+             pairs/go.errors.1/1/ and
+             list the pair in the rule
+go.errors.2  add good.* and bad.* under
+             pairs/go.errors.2/1/ and
+             list the pair in the rule
+1 column not shown: what is wrong
+
+missing decision (3)
+rule         fix
+go.errors.1  gragas rule promote
+             go.errors.1
+             --decision-title "..."
+             --decision-text "...", or
+             name one in its reasoning
+go.errors.2  gragas rule promote
+             go.errors.2
+             --decision-title "..."
+             --decision-text "...", or
+             name one in its reasoning
+go.errors.3  gragas rule promote
+             go.errors.3
+             --decision-title "..."
+             --decision-text "...", or
+             name one in its reasoning
+1 column not shown: what is wrong
+
+owner missing (2)
+rule         fix
+go.errors.2  gragas rule edit
+             go.errors.2 --rule-owner
+             <name>
+go.errors.3  gragas rule edit
+             go.errors.3 --rule-owner
+             <name>
+1 column not shown: what is wrong
+override rate: no batches given
+
+  done       3 rules need attention, 10
+  items
+--- stderr

@@ -1,0 +1,11 @@
+$ gragas check
+--- exit 4
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  not ready  no base ref is named, so
+  there is no merge base to hold the
+  history to: set base-ref in the
+  settings file, or GRAGAS_BASE_REF
+    base-ref: origin/main
+--- stderr

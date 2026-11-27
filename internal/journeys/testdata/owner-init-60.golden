@@ -1,0 +1,9 @@
+$ gragas init
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  not ready  already a rulebook: this folder holds its
+  identity file
+    gragas validate
+--- stderr
+--- exit 4

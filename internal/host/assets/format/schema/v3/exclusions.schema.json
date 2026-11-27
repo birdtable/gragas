@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "exclusions.schema.json",
+  "title": "exclusions.yaml: the parent rules an overlay drops (format v3)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "exclusions"],
+  "properties": {
+    "format": {"$ref": "common.schema.json#/$defs/format"},
+    "exclusions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["overlay", "rule", "number", "decision", "who", "when"],
+        "properties": {
+          "overlay": {"$ref": "common.schema.json#/$defs/slug", "description": "the overlay's name"},
+          "rule": {"$ref": "common.schema.json#/$defs/id", "description": "the parent's rule id"},
+          "number": {"type": "integer", "minimum": 1, "description": "the sequence number: a second exclusion of the same rule gets the next one"},
+          "decision": {"$ref": "common.schema.json#/$defs/slug"},
+          "who": {"$ref": "common.schema.json#/$defs/text"},
+          "when": {"$ref": "common.schema.json#/$defs/timestamp"},
+          "lifted": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["decision", "who", "when"],
+            "properties": {
+              "decision": {"$ref": "common.schema.json#/$defs/slug"},
+              "who": {"$ref": "common.schema.json#/$defs/text"},
+              "when": {"$ref": "common.schema.json#/$defs/timestamp"}
+            },
+            "description": "a lifted record stays, marked lifted"
+          }
+        }
+      }
+    }
+  }
+}

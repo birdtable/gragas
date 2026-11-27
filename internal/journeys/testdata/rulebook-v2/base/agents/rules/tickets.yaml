@@ -1,0 +1,364 @@
+part: agents
+concern: tickets
+order: 5
+title: Tickets and changes
+summary: >-
+  The ticket is what an agent works from, so it is checked like code: it names only what exists at its base,
+  lists the files it expects to touch, names a check that can fail, and arrives as one concern with its
+  purpose and proof. These rules hold the largest fault class in our record, a ticket's false claim about the
+  code.
+rules:
+  - id: agents.tickets.1
+    slug: ticket-names-exist
+    since: 0.1.0
+    rule: >-
+      A ticket names only files, commands, symbols and rules that exist at its base when dispatched, marks
+      what it will create, and is dispatched only when its cited anchors resolve, its gates are on the line
+      and no open decision or escalation blocks it.
+    detail: >-
+      Dispatch is refused while any condition fails: an anchor (file, rule, decision) the ticket cites does
+      not resolve at the base, a gate its done-when names is not in the gate's list, or a decision or
+      escalation the ticket depends on is still open. A ticket is dispatchable only when its anchors resolve,
+      its gates are on the line and no open decision or escalation blocks it. A ticket lint resolves each
+      backticked path, command, symbol and rule id against the base of the day at dispatch and fails closed on
+      an unresolved name. A marked name that already exists fails. The ticket template defines the mark and
+      requires names in the Files list to be backticked. A moved-path check names a path whose basename and
+      parent now exist elsewhere. Tickets keep their original text so a later fault can be traced, and the
+      marked share is printed for the reader. It runs at dispatch, not at intake, because a plan written
+      against a future layout hit on 91% of 2,296 tickets at intake.
+    level: process
+    why: >-
+      The largest fault class we have: 52 of 137 faults in our run log were a ticket's false claim about the
+      code (principles report P-09 section 4 O1). On real history it caught 11 of about 16 known name faults.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-09-agentic-development
+        where: sections 4 O1, 6.1 and 9.2 item 1
+        backs: rule
+      - ref: decision-38
+        backs: rule
+      - ref: decision-65-agents
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. companion ticket-lint (ticketlint) at dispatch resolves backticked path, command,
+          symbol and rule id against the base; marked-new names must be absent (a marked-new absent name
+          passes), unmarked names must exist; a moved-path detector; Files names must be backticked. Plant: a
+          ticket citing a path and a symbol the base lacks is refused; a marked new existing name is refused.
+          Control: a ticket citing a real path and a marked new absent file passes
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the dispatch step reads the ticket's done-when gates against the gate list and its
+          dependencies against open decisions and escalations, and refuses on any. Plant: a ticket whose
+          done-when names a gate not on the line is refused; a ticket blocked by an open escalation is
+          refused. Control: a ticket with every anchor resolved and no open blocker is dispatched
+    open:
+      - >-
+        The planner cannot see the whole repo; the known way round is marking everything as to be created, so
+        the marked share is printed for the reader.
+      - >-
+        No ticket carries a mark yet: as written 178 of 219 landed tickets refuse, 168 of them legitimately;
+        with hindsight marks 31 remain (11 of 58 faulted, 20 of 161 clean), which is weak.
+      - >-
+        Only about 20 of 104 false-claim and scope faults can be caught by a name check at all.
+      - >-
+        Trialled on Go tickets only; no ticket linter that resolves symbols, commands and ids against a base
+        was found by search.
+    note: >-
+      Merges the Go and UI rows and the handbook rule; the tier is dispatch, outside the 0 to 4 grid.
+  - id: agents.tickets.2
+    slug: scope-list-against-diff
+    since: 0.1.0
+    rule: >-
+      A ticket's scope lists the files and consumers its author expects to touch, a change that adds a method
+      to a shared port lists every implementer, and at land the gap between the list and the diff blocks until
+      it is answered.
+    detail: >-
+      Review asks at intake what the change's exported surface breaks. At land the diff's files are compared
+      with the scope list, generated files left out, and the listed-touched share is printed. A mismatch
+      blocks until the author answers with a recorded reason.
+    level: process
+    why: >-
+      The second 52 of the 137 faults (104 of 137 together were ticket premise or scope). Run on real tickets
+      the gate form did not discriminate: 74% of tickets had an unlisted file, 52% of faulted ones against 65%
+      of clean ones.
+    kind: rule
+    strength: Answered
+    status: active
+    sources:
+      - ref: p-09-agentic-development
+        where: sections 4 O1, 4 O5, 6.1 and 9.2 item 1
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. at land a comparison of the diff's files against the scope list with the
+          listed-touched share, blocking until a recorded answer exists. Plant: a scoped ticket with an
+          unlisted file in its diff is listed and blocks until answered. Control: a diff within the listed
+          scope passes
+    review_question: >-
+      What does this change's exported surface break, and who implements the port it changes?
+    open:
+      - >-
+        Conflict between sources: the criterion and the handbook say report only and refuse nothing; the
+        best-practice strength is Answered (a mismatch blocks until answered). Held as Answered; to be settled
+        by the operator.
+      - >-
+        The class has no working gate: an unlisted file is the normal case. The compiler already forces
+        consumers of a changed name, and the overlap check stays.
+      - >-
+        Listed-touched share: median 1.0, 7 percent under 0.5. Tickets do not state the names they change, so
+        a reference search has little to start from. A one-line reason would be paper at this rate.
+      - >-
+        v1 evidence, not yet a source: own bugs (the second 52 of the 137 run-log faults)
+    note: >-
+      Merges the Go row, the UI row and the handbook rule. People in a finding means people and review agents;
+      in one project the main finder was the designer agent (31 of 72) and the operator found 5.
+  - id: agents.tickets.3
+    slug: done-when-check-ran
+    since: 0.1.0
+    rule: >-
+      A done-when names a check, and the land step proves the check ran: a named test that runs zero tests
+      fails, and the output is kept.
+    detail: >-
+      The land step runs the named check on the tree, reads the number of tests run and fails on zero.
+      Evidence that the test can go red comes from the deliberate break on the tree, not from a red run on the
+      base, because a new test cannot compile against a base that lacks what it calls. A make-line gate in a
+      done-when is an exit code only and counts as no red evidence. A diff that changes behaviour and carries
+      no test change states why not.
+    level: process
+    why: >-
+      Eight faults were a done-when that could not hold or turn red, and 4 of 15 drives could not turn a test
+      red. 6 of 159 named tests never existed, and a Go run on an unknown name exits 0. Red on the base gave 0
+      of 12 real tickets (7 no tests, 4 compile failures, 1 green). 85 of 280 gate lines are make lines.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-09-agentic-development
+        where: sections 4 O1, 4 O3 and 9.2 items 1 and 4
+        backs: rule
+      - ref: p-07-testing
+        where: section 10.2 item 2
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the land step runs the named check and parses go test -json for run events,
+          failing on zero (go test -run on an unknown name exits 0 and prints no tests to run). Plant: a
+          done-when naming a test that does not exist is refused. Control: a done-when naming a real test
+          passes with one run event
+      - binding: ts
+        class: fact
+        tool: vitest
+        tier: "3"
+        note: >-
+          v1 class our-cli. vitest run -t name with the json reporter, failing unless numPassedTests is at
+          least 1; a Playwright list count for browser checks. Plant: vitest run on a nonexistent name exits 0
+          with numPassedTests 0 and must be refused. Control: a real test name gives numPassedTests 1
+    open:
+      - >-
+        The Go form was verified on 5 Nov (the unknown name exits 0, no run events); the TypeScript runner's
+        own exit on no matching tests was read only from the run in the UI row. Check what your runner does.
+      - The red-evidence half is the deliberate break held by the tests part.
+      - Tried on Go tickets only.
+      - >-
+        v1 evidence, not yet a source: own bugs (8 faults; 6 of 159 named tests never existed)
+    note: >-
+      Merges the Go row, the UI row and the handbook rule; each language has its own check.
+  - id: agents.tickets.4
+    slug: purpose-and-proof
+    since: 0.1.0
+    rule: >-
+      A change arrives with its statement of purpose and the proof it was run, a change with neither is
+      refused before anyone reads it, and tests changed in the same diff are listed first.
+    detail: >-
+      The land check reads the change text for a purpose line and a verdict tied to the tree. A purpose line
+      equal to the ticket title fails, the change summary orders test files first, and the verdict hash must
+      equal the tree. Form is a commit linter (empty body, trailer exists); the tree binding is ours.
+    level: process
+    why: >-
+      Reading cost is what agents raise, so the cost moves to the submitter; practitioner consensus, not a
+      measurement. Nothing refuses a change for missing evidence today.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-09-agentic-development
+        where: sections 9.2 item 5, 5.6 and 9.3
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. commitlint 21.2.4 body-empty and trailer-exists for Verdict, plus a land step that
+          checks the purpose line differs from the ticket title, the verdict hash equals the tree and test
+          files come first in the summary. Plant: a change with an empty-body message is refused; a change
+          whose quoted verdict names another tree is refused. Control: a change with a distinct purpose line
+          and a current verdict passes
+    open:
+      - >-
+        Presence check only: a paraphrase of the ticket title passes the purpose test; boilerplate is the
+        known way round and the rest stays for the reader.
+      - The tree-bound verdict half belongs to the land check of the gates part.
+      - "v1 evidence, not yet a source: D (practitioner consensus, not a measurement)"
+  - id: agents.tickets.5
+    slug: one-concern-per-change
+    since: 0.1.0
+    rule: >-
+      A change has one concern, planned as a ticket before work starts and sized for one review, an issue
+      opens with the owner's dated words and has Today, Want, Security (when a border is touched), Done when
+      and Design, and diff size and post-land rework are shown together per ticket.
+    detail: >-
+      An issue title is a claim about what should be true. The body opens with the owner's words and their
+      date, then the sections Today, Want, Security (when the change touches a trust border), Done when and
+      Design; the issue form holds the sections and a check refuses an issue without them. The title is a
+      claim, and the body has the owner's dated words. A page archetype or a dialog per ticket for the web
+      part, planned first through the issue form and the plan gate. A pull request template whose lines mirror
+      the gates (spec regenerated, glossary term added, decision linked, what was reused, a new dependency
+      justified) fixes the shape. No size limit is set: a ceiling would be met by splitting, which the rework
+      count beside it exposes. A change over the size line blocks until answered, with rework shown beside it.
+    level: process
+    why: >-
+      Practitioner consensus, not a measurement; a size ceiling is a guess and splitting beats it.
+    kind: rule
+    strength: Answered
+    status: active
+    sources:
+      - ref: p-02-enforcement-and-measure
+        where: sections 5.13 and 7.2 item 2
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 9.3
+        backs: rule
+      - ref: decision-65-agents
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class our-cli. diff-size and post-land rework per ticket from the delivery record, blocking a
+          change over the size line until it is answered. Plant: an oversize diff blocks until answered.
+          Control: a diff under the line passes
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class our-cli. an issue-shape check that refuses an issue with no dated owner quote or a missing
+          Today, Want, Done when or Design section. Plant: an issue with no Done when section is refused.
+          Control: an issue with every section passes
+    review_question: Is this one concern, and is the rework count beside the diff size?
+    open:
+      - >-
+        A concern count is judgement; it would become a rule only with a measured ceiling, and the criterion
+        itself gives no limit.
+      - The plan gate is not a Go row; there is no UI plan gate yet.
+    note: >-
+      Merges the Go and UI rows and the reference's one-concern rule; the pull request template is a tool.
+  - id: agents.tickets.6
+    slug: done-claim-carries-artefact
+    since: 0.1.0
+    rule: >-
+      A done claim carries an artefact naming its question; a picture decides nothing alone and measured
+      numbers decide.
+    level: process
+    why: >-
+      Three pictures were read as fine in one repository before one was measured (in one project).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the land check requires Evidence lines in the change text that point at existing
+          run-record files. Plant: a change whose Evidence line points at no file is refused. Control: an
+          Evidence line pointing at an existing run record passes
+    review_question: >-
+      Does the artefact answer the question it names, with measured numbers rather than a picture?
+    open:
+      - "Half: presence is checkable, adequacy is review."
+      - Applies to the web part's changes.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A (one project's measure)"
+  - id: agents.tickets.7
+    slug: fault-becomes-a-plant
+    since: 0.1.0
+    rule: >-
+      A fault found by a person becomes a planted check or a journey before its ticket closes.
+    level: process
+    why: Five recurrence pairs in one record show a fault fixed without a plant returns.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: agents-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the land check requires a ticket labelled fault to touch a plants or journeys
+          path, a glob held in the rule data, before it closes. Plant: a fault ticket closed with a diff
+          touching no plant path is refused. Control: a fault ticket whose diff adds a plant passes
+    review_question: Is the plant this fault ticket added the right plant for the fault?
+    open:
+      - >-
+        Half: that a plant path was touched is checkable; that it is the right plant is review.
+      - "v1 evidence, not yet a source: A (five recurrence pairs)"
+  - id: agents.tickets.8
+    slug: register-with-permanent-ids
+    since: 0.1.0
+    rule: >-
+      Every bug and gap found is a row with a permanent id in one register, code, tests and docs cite it by
+      that id, an open row links its issue, and a test checks both.
+    detail: >-
+      The register is one file in the repo. An id is never reused or renumbered; a closed row stays with its
+      outcome. Nothing found lives only in a chat, a session transcript or a commit message. The test fails an
+      open row with no issue link and a cited register id that has no row (docs.links.2 resolves the
+      citation).
+    level: file
+    why: >-
+      A fault that lives only in a chat is found again by the next person at full cost, and an id that moves
+      breaks every comment and test that cited it.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-agents
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          a register test that parses the register, fails an open row with no issue link and a duplicate id,
+          and resolves every cited register id in code, tests and docs. Plant: an open row with no issue link
+          fails; a test citing a register id with no row fails; a reused id fails. Control: a register whose
+          open rows all link issues and whose ids are unique passes
+    relates:
+      - id: docs.links.2
+        how: see

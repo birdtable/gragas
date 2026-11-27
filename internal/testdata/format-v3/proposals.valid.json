@@ -1,0 +1,6 @@
+[
+  {"format": 3, "slug": "tighten-errors", "target": "parent", "state": "open", "link": "https://example.com/parent/pull/1", "opened": "2026-10-04", "document": {"contract": "1.0.0", "change": {"rule": "go.errors.1"}}},
+  {"format": 3, "slug": "second", "target": "parent", "state": "accepted", "opened": "2026-10-05", "document": {}},
+  {"format": 3, "slug": "third", "target": "parent", "state": "declined", "opened": "2026-10-06", "document": {}},
+  {"format": 3, "slug": "fourth", "target": "parent", "state": "withdrawn", "opened": "2026-10-07", "document": {}}
+]

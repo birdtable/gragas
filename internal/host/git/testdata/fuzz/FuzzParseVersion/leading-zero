@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("git version 0.0.01\n")

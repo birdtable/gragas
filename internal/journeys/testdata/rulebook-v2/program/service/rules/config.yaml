@@ -1,0 +1,103 @@
+part: service
+concern: config
+order: 11
+title: Configuration
+summary: >-
+  Configuration is read once, in one module, from the environment, and the infrastructure that sets the
+  environment is held to the same schema.
+rules:
+  - id: service.config.1
+    slug: environment-read-in-config-module
+    since: 0.1.0
+    rule: >-
+      The environment is read only in the config module, with a short exempt path list that only a reviewed
+      rule change may extend.
+    detail: >-
+      In Go, os.Getenv is banned outside the config package, which reads with os.LookupEnv; the terminal variables sit in the shared UI
+      package.
+    level: function
+    why: >-
+      Environment reads scattered through code mean no one can list what a service needs to run, and a missing
+      variable fails at first use.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint no-restricted-properties on process.env, or an ast-grep rule, with a short exempt path list
+          in the rule config. Plant: a process.env read in a handler fails. Control: a read in the config
+          module passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          forbidigo on os.Getenv outside the config package. Plant: os.Getenv in a handler package fails.
+          Control: the config package passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.config.2
+    slug: environment-parsed-once
+    since: 0.1.0
+    rule: >-
+      The environment is parsed once, by a schema in the config module, and the rest of the code reads the
+      typed result.
+    detail: >-
+      In Go, every config key and variable has a reader, a default and a doc row, read in one package.
+    level: function
+    why: >-
+      Parsing at each use repeats the defaults and coercions, and a bad value fails late.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test that the config module exports one schema parse and a rule failing a second parse call.
+          Plant: a second parse of the environment fails. Control: one parse at start passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that every config key has a reader, a default and a doc row. Plant: a key with no doc row
+          fails. Control: a documented key passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.config.3
+    slug: infra-environment-validates-under-schema
+    since: 0.1.0
+    rule: >-
+      The infrastructure environment map of a service validates under the same schema the service parses at
+      start.
+    level: deploy
+    why: >-
+      A variable named in the infrastructure but not in the schema (or the reverse) is found by a failed
+      deploy or a failed start, not by a check.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that loads the infrastructure environment map and parses it with the service config schema.
+          Plant: an infrastructure variable missing from the schema fails; a required schema key missing from
+          the map fails. Control: a map that parses passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

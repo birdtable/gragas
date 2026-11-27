@@ -1,0 +1,300 @@
+part: store
+concern: state-files
+order: 2
+title: State files
+summary: >-
+  How a program keeps its own files on disk. Every path comes from one function, a state file is replaced
+  whole only by the atomic write and the atomic write proves its promise, a move flushes before it removes, an
+  append journal line is one write, secrets are written with their final mode, state on a network file system
+  is refused where the format needs a local disk, and a path from outside is confined.
+rules:
+  - id: store.state-files.1
+    slug: one-function-makes-every-path
+    since: 0.1.0
+    rule: >-
+      Every path, file name and identifier of persistent state is made in one function of one package, from
+      the program's name.
+    detail: >-
+      No literal for .local, Library, XDG_ or /var/lib appears elsewhere. The check is a forbidigo or AST test
+      on those literals outside the paths package, with a shrink-only count.
+    level: package
+    why: >-
+      Seven places in one repository spelled the XDG rule and nine sites another one /var/lib; paths were
+      resolved by five rules in at least seven places.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - library
+        reason: It has no state of its own.
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          forbidigo or an AST test on the path literals outside the paths package with a shrink-only count.
+          Plant: a literal path outside the paths package fails. Control: the paths package passes
+    open:
+      - >-
+        The shared paths function is proposed; one program's resolver is the best starting body.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: own measure (read)
+  - id: store.state-files.2
+    slug: atomic-write-only
+    since: 0.1.0
+    rule: >-
+      Every file a program writes, state or config, is replaced whole only by the atomic write: written to a
+      temporary file in the same folder, flushed, renamed into place and its folder flushed, with the original
+      mode and owner kept and a link written where it points; a bare write, rename or create onto such a path,
+      and a new hand-written temp-then-rename, are violations.
+    detail: >-
+      The rule covers a person's config that a command edits as much as the program's own state: the atomic
+      write keeps the mode and owner of the file it replaces and, when the path is a symbolic link, writes the
+      file the link points to and leaves the link. A new kind of file a program writes goes through the same
+      helper; the rule does not list kinds. Banned outside the owner package: os.WriteFile, os.Rename,
+      os.Create, os.CreateTemp, os.Link, (*os.Root).Rename and unix.Renameat, with a per-file shrink-only
+      allow list for legitimate non-state uses (counts today per repository: WriteFile 1 to 23, Rename 1 to
+      14, Link 0 to 9). Atomic-write libraries that do not flush the folder are not imported. An ast-grep
+      shape rule of the same intent stays as advice, with its five known bypasses kept as fixtures. The
+      root-confined variant stays in the Linux-only programs. Verified under golangci-lint with forbidigo: the
+      selector is flagged where it is taken, so f := os.Rename and r.Rename on an os.Root both fire.
+    level: function
+    why: >-
+      Thirteen bodies replace a whole file and twelve of them are outside the owner; 52 non-test WriteFile
+      sites exist and 14 replace a state file in place. A helper that makes the temp file elsewhere is caught
+      only because CreateTemp is banned too. A config rewritten by a bare write loses its mode, its owner or
+      the link a person made, and a crash halfway leaves half a file.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-03-data
+        where: sections 2 to 4
+        backs: rule
+      - ref: decision-65-store
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          forbidigo (analyze-types) banning the write primitives outside the atomic-write package with a
+          per-file shrink-only allow list. Plant: Rename, an alias of Rename, Root.Rename, Renameat, Link then
+          Remove, Create, WriteFile and a CreateTemp helper outside the owner each fire. Control: the owner
+          package passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test of the atomic-write helper that replaces a file with mode 0640 and a symbolic link to it, and
+          asserts the mode, the owner and the link are kept and the target is replaced. Plant: a helper that
+          replaces the link with a plain file, or writes mode 0644, fails. Control: the helper keeping mode,
+          owner and link passes
+    open:
+      - >-
+        The ban is path-blind (WriteFile for a log is also hit), so per-repository allow lists will be tens of
+        lines.
+      - >-
+        The shape rule flags only the direct copy (1 of 6 planted forms), so it is advice, not a gate.
+      - Gaps in the shared write package are a create-exclusive helper and a copy.
+  - id: store.state-files.3
+    slug: atomic-write-keeps-its-promise
+    since: 0.1.0
+    rule: >-
+      The atomic write keeps its promise and proves it: a unique temp name, the file flushed, rename, the
+      folder flushed, the temp removed on failure, with a crash-injection test after each step.
+    detail: A weaker promise is a named option, not a copy.
+    level: function
+    why: >-
+      A write that skips a flush looks atomic until the machine stops. One program's test already plants a
+      bypass of the shared write.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - library
+        facets:
+          - not-state-file-owner
+        reason: Only the owner of the atomic write carries it.
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a crash-injection test inside the atomic-write package that stops the write after each step. Plant:
+          removing the file flush from the replace function makes the injected-kill test fail. Control: the
+          intact write passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: own measure (read)
+  - id: store.state-files.4
+    slug: move-flushes-before-remove
+    since: 0.1.0
+    rule: >-
+      A move of user data (copy, then remove the source) flushes the copy and its folder before it removes the
+      source.
+    level: function
+    why: >-
+      One program's copy-across removes the source after a copy it never flushed, though its comment says the
+      copy is on disk (read, not run).
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - facets:
+          - no-user-data
+        reason: There is no source to lose.
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a recording file system test logging Sync and Remove, with every Sync before Remove in the shared
+          copy function, and a ban on hand-written copy-then-remove. Plant: remove before sync fails. Control:
+          sync then remove passes
+    open:
+      - The shared copy function is proposed.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: own measure (read; the failure was
+        not run)
+  - id: store.state-files.5
+    slug: journal-line-is-one-write
+    since: 0.1.0
+    rule: >-
+      An append-only journal line is one write ending in a newline; a torn last line is ended before the next
+      append, and the reader skips and counts what it cannot read.
+    detail: >-
+      No rotation library for a multi-writer journal. The append flag is banned outside the journal package,
+      and a shape rule finds a seek to end followed by a write in one function. The shape rule matches
+      $F.Seek(0, io.SeekEnd) in a function that also calls .Write(; it misses a variable such as whence :=
+      io.SeekEnd.
+    level: function
+    why: >-
+      Fourteen production files in six repositories open with the append flag (19 sites). In a trial of four
+      append shapes, a rotation library lost records under three writers.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: store-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          forbidigo on the append flag (os, syscall and unix selectors) outside the journal package, and an
+          ast-grep rule for a seek to end followed by a write in one function. Plant: an append open in a
+          handler fires; seek-end then write fires. Control: a seek-only function passes
+    open:
+      - >-
+        A flag or seek whence held in a variable passes the pattern; it is kept as a fixture.
+      - The os selector is not in the verified set and must be added.
+      - >-
+        The shared journal package is proposed; counts of nine append bodies were not confirmed by a second
+        count.
+  - id: store.state-files.6
+    slug: secret-written-with-final-mode
+    since: 0.1.0
+    rule: >-
+      A secret is written with its final mode in a folder only the owner can list, and the program refuses a
+      file that is wider.
+    detail: The mode is 0600, or 0640 with a named group.
+    level: function
+    why: >-
+      One program writes a file that will hold an API key with a truncating write and an existence check,
+      leaving a window where it is wider than intended.
+    kind: rule
+    strength: Hard
+    status: active
+    unless:
+      - facets:
+          - no-secrets
+        reason: There is nothing to protect.
+    sources:
+      - ref: store-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a mode assertion after every write path and a read-time refusal helper in the atomic-write package.
+          Plant: a 0644 secret fails. Control: a 0600 secret passes
+    open:
+      - >-
+        The read-time refusal helper is proposed; the write option for the final mode exists.
+  - id: store.state-files.7
+    slug: local-disk-only-where-needed
+    since: 0.1.0
+    rule: >-
+      A state file on a network or FUSE file system is refused where the format needs a local disk (a
+      write-ahead log or a lock file).
+    level: function
+    why: A log or lock on a network file system gives silent corruption or no exclusion.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - facets:
+          - no-log-or-lock-file
+        reason: It has no format that needs a local disk.
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a table test of file-system names. Plant: an NFS name is refused. Control: a local name passes
+    open:
+      - Held in one program only; the shared function waits for a second program.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: store.state-files.8
+    slug: outside-path-confined
+    since: 0.1.0
+    rule: >-
+      A path from outside (a flag, a config value, an environment variable or a request) is confined before
+      use, and an archive or folder from outside is unpacked under traversal, link and size limits, with each
+      refused entry named.
+    detail: >-
+      Confine with filepath.IsLocal or a rooted file system handle (os.Root), or the platform's equivalent in
+      another language. An archive, an imported folder or a feedback bundle from outside is untrusted: an
+      entry whose path leaves the target, a symbolic or hard link, an entry over the per-entry size limit and
+      a total over the archive limit are each refused by name, and nothing is written for a refused archive.
+    level: function
+    why: >-
+      A path from a caller can escape its directory. The traversal word had no hits in the catalogue before
+      this row, and the security analyser's rule for variable paths fires on every ordinary call (3 hits on
+      3), so it cannot gate.
+    kind: rule
+    strength: Lens
+    status: active
+    sources:
+      - ref: decision-65-store
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tier: R
+        note: >-
+          gosec G304 and G305 plus an analyser for a flag, environment or request path reaching Open or Join
+          without IsLocal or a rooted handle. Plant: a path from a flag opened raw fails. Control: a confined
+          path passes
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          an unpack test with planted archives (a ../ entry, a link entry, an oversized entry, an archive over
+          the total limit). Plant: an archive with a ../ entry that writes outside the target fails. Control:
+          a clean archive inside the limits unpacks
+    review_question: >-
+      Does any path that came from a flag, config, environment or request reach an open or a join without
+      being confined first?
+    open:
+      - >-
+        Practice only until a taint tool is tried; it would become a rule with a path-traversal fault.
+      - A confine helper is proposed.

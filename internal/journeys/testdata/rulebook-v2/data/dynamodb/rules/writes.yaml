@@ -1,0 +1,169 @@
+part: dynamodb
+concern: writes
+title: Writes, conditions and expiry
+summary: >-
+  Writes go through one shared toolkit that keeps them correct under races and retries. Each action does one
+  storage command, uniqueness and check-then-write use conditions, and an expiry attribute is checked by the
+  reader rather than trusted to deletion.
+rules:
+  - id: dynamodb.writes.1
+    slug: entry-code-never-imports-sdk
+    since: 0.1.0
+    rule: >-
+      Entry code such as a handler never imports the DynamoDB SDK; only the store layer does.
+    level: file
+    why: >-
+      When handlers call the SDK directly, key building, conditions and retries are re-implemented in each
+      one.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint no-restricted-imports on the DynamoDB client packages outside the store layer. Plant: a
+          handler importing the DynamoDB client fails. Control: the store layer importing it passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          depguard denying the AWS DynamoDB SDK module outside the store package. Plant: a command package
+          importing the SDK fails. Control: the store package importing it passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      This is the DynamoDB binding of the general rule that entry code never imports a storage client, held in
+      the store part.
+  - id: dynamodb.writes.2
+    slug: one-command-per-action
+    since: 0.1.0
+    rule: >-
+      An action unit holds one storage command and imports no repository or sibling action.
+    level: file
+    why: >-
+      One command per action keeps each storage effect testable on its own and stops actions composing each
+      other into hidden transactions.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint no-restricted-imports between action files, and an ast-grep rule counting storage commands
+          per action file. Plant: an action file that sends two commands, or imports a sibling action, fails.
+          Control: an action with one command passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: dynamodb.writes.3
+    slug: writes-through-the-toolkit
+    since: 0.1.0
+    rule: >-
+      Aggregate writes go only through the shared write toolkit's versioned write functions; deletes are
+      allowed only in allow-listed short-lived actions; audit tables are append-only.
+    detail: >-
+      Every service that uses DynamoDB writes aggregates through the toolkit, which owns the version check and
+      the conditional write. A delete outside the allow list fails. An audit table, such as a record of
+      sign-in events, accepts inserts only. The toolkit has a conformance suite that every release runs.
+    level: program
+    why: >-
+      One write path is the only place where conditions, versions and retries can be proved once and trusted
+      everywhere.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint no-restricted-imports and no-restricted-syntax on PutCommand, UpdateCommand and DeleteCommand
+          outside the toolkit and the delete allow list. Plant: a raw update in a service action fails; a
+          delete outside the allow list fails. Control: a write through the toolkit passes
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          the toolkit conformance suite, run at every toolkit release. Plant: a toolkit write that drops its
+          version check fails the suite. Control: the released toolkit passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: dynamodb.writes.4
+    slug: conditions-and-transaction-tokens
+    since: 0.1.0
+    rule: >-
+      Every insert-if-absent and every read-modify-write uses a condition expression in the same call;
+      uniqueness beyond the primary key is kept by a guard item written in the same transaction; a retried
+      transactional write carries a client token.
+    detail: >-
+      Check-then-write is the case this rule exists for, written in one conditional call instead of a read
+      followed by a write.
+    level: function
+    why: >-
+      Uniqueness and association checks written as read-then-write are broken by races. A transactional write
+      with a client token is idempotent for a window, so a retry does not write twice.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: bailis-feral-concurrency-control
+        backs: rule
+      - ref: debrie-dynamodb-book
+        where: uniqueness with conditions and transactions
+        backs: rule
+      - ref: aws-dynamodb-docs
+        where: transactions and client tokens
+        backs: rule
+      - ref: p-03-data
+        where: sections 13 and 17
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: G
+        note: >-
+          the toolkit conformance suite runs two concurrent creates with the same unique value and expects one
+          success and one typed conflict, and retries a transaction with the same token and expects one write.
+          Plant: a toolkit write that skips its condition lets both creates through and fails the test.
+          Control: the conditional write passes
+    open:
+      - >-
+        The idempotency window of a client token is to be re-checked against current AWS documentation.
+      - >-
+        v1 evidence, not yet a source: practice (a study of application-level uniqueness checks broken by
+        races)
+  - id: dynamodb.writes.5
+    slug: reader-checks-expiry
+    since: 0.1.0
+    rule: >-
+      Where an item carries a time-to-live attribute, every read that must not see an expired item checks the
+      attribute itself.
+    detail: The table's deletion of expired items is cleanup, never the moment of expiry.
+    level: function
+    why: >-
+      Expired items are deleted only eventually, typically within about two days, so a session or
+      processing-key table that trusts deletion honours an expired token for that long.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: debrie-dynamodb-book
+        where: "advanced concepts: time-to-live, and the session-store example"
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: G
+        note: >-
+          a toolkit read-helper test inserts an item whose expiry is past and still present, and asserts the
+          helper does not return it. Plant: a read helper that does not compare the attribute fails. Control:
+          the helper that compares it passes
+    open:
+      - Verify the current deletion delay in AWS documentation before quoting it.

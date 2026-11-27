@@ -1,0 +1,110 @@
+part: daemon
+concern: logging
+order: 4
+title: Daemon logs
+summary: >-
+  A daemon's logs have a level and a time, carry no secret or private text, and go where the service manager
+  reads them or to a capped file, with a priority prefix under the journal.
+rules:
+  - id: daemon.logging.1
+    slug: level-time-no-secret
+    since: 0.1.0
+    rule: >-
+      A daemon's logs have a level and a time; hold no secret, sign-in code, token, prompt, conversation,
+      device or address; mark a field reported by an untrusted peer as reported; and go where the service
+      manager reads them or to a capped, rotated file in the daemon's run folder that a caller can neither
+      grow without bound nor forge. The log line is designed, not built.
+    detail: >-
+      A capped file has a stated size and rotation (for example 1 MiB) and refusals are rate-limited per peer,
+      so a caller cannot fill the disk through the log. A value from a peer is written as a field, never
+      spliced into the message, and control sequences are stripped. The list of things never logged is a list
+      in the logging package that a canary test walks; a new kind of sensitive value is added to the list, not
+      to each call.
+    level: program
+    why: >-
+      Practice; a secret in a log outlives the process that wrote it, and a program that runs agents handles
+      prompts and conversations that are as private as a secret. A log a caller can grow or forge is an attack
+      on the disk or the record.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          sloglint in golangci-lint (attr-only, no-global, context options; to verify) plus a run-the-binary
+          test that parses logs for level and time and a canary secret that must not appear. Plant: a log of a
+          canary token, prompt or address fails, and a file log that grows past its cap fails. Control: a log
+          line with level, time and no canary passes
+    relates:
+      - id: go.logging.2
+        how: see
+    open:
+      - Secret-free needs the canary test; the sloglint option set is to verify.
+    note: The version-and-run-id rule for every log line is go.logging.2.
+  - id: daemon.logging.2
+    slug: journal-priority-prefix
+    since: 0.1.0
+    rule: Journal lines carry a priority prefix under JOURNAL_STREAM, and none without it.
+    level: word
+    why: Evidence T; the test is planned (fix A9).
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          terminal test that sets JOURNAL_STREAM and asserts each line carries the systemd priority prefix;
+          without it no prefix The prefix is <N>, the systemd priority; the test runs through uitest. Plant: a
+          line without a prefix under the variable fails. Control: a prefixed line passes
+  - id: daemon.logging.3
+    slug: audit-file-and-plain-words
+    since: 0.1.0
+    rule: >-
+      An audit record is an append-only file the program owns, the service manager's journal may hold a copy
+      but is never the record, and a daemon answers a person in plain words, writing the underlying tool's own
+      words only to its log.
+    detail: >-
+      The audit file lives in the program's state folder, is opened for append only, and survives a journal
+      rotation. A tool's raw error (a service manager's message, a library's text) goes to the log with the
+      command that produced it; the answer to the person says what happened and what to do in the program's
+      own words.
+    level: program
+    why: >-
+      An audit record that rotates away with the journal is not an audit, and a raw tool message shown to a
+      person is noise at best and a leak of internals at worst.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that the audit writer opens its file append-only in the state folder and that a journal-only
+          audit fails; a test that drives a failing tool and asserts the person's answer holds none of the
+          tool's text while the log does. Plant: an audit written only to the journal fails, and an answer
+          that carries a service manager's raw message fails. Control: an append-only audit file and an answer
+          in the program's own words pass

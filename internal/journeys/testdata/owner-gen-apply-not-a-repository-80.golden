@@ -1,0 +1,10 @@
+$ gragas gen --apply
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+reading rulebook/ in .
+
+  not ready  . is not a rulebook repository: it has no rulebook/parts.yaml
+    gragas gen -C <the gragas repository>
+--- stderr
+warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
+--- exit 4

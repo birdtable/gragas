@@ -1,0 +1,6 @@
+$ gragas version extra
+--- stdout
+--- stderr
+error: unknown command "extra" for "gragas version"
+       did you mean `gragas version`?
+--- exit 2

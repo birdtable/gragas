@@ -1,0 +1,84 @@
+/* The status mark: symbol and word always together; the role colour is added
+   on top and is never the only sign. A mark is a chip drawn hollow (trial),
+   outlined (blocked) or dotted (unproven) beside its standing. */
+
+[data-part="status-mark"] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gr-space-1);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
+}
+
+.gr-status-symbol {
+  display: inline-block;
+  min-width: 1.25rem;
+  text-align: center;
+  font-family: var(--gr-font-mono);
+  font-weight: 500;
+}
+
+[data-role="violet"] {
+  color: var(--gr-standing-violet);
+}
+[data-role="green"] {
+  color: var(--gr-standing-green);
+}
+[data-role="blue"] {
+  color: var(--gr-standing-blue);
+}
+[data-role="amber"] {
+  color: var(--gr-standing-amber);
+}
+[data-role="grey"] {
+  color: var(--gr-standing-grey);
+}
+[data-role="slate"] {
+  color: var(--gr-standing-slate);
+}
+
+[data-observation="as-set"] {
+  color: var(--gr-observation-as-set);
+}
+[data-observation="tighter"] {
+  color: var(--gr-observation-tighter);
+}
+[data-observation="weaker"] {
+  color: var(--gr-observation-weaker);
+}
+[data-observation="absent"] {
+  color: var(--gr-observation-absent);
+}
+[data-observation="unmapped"] {
+  color: var(--gr-observation-unmapped);
+}
+[data-observation="excluded"] {
+  color: var(--gr-observation-excluded);
+}
+
+.gr-status-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gr-space-1);
+  padding: 0 var(--gr-space-2);
+  border-radius: var(--gr-radius-full);
+  border: 1px solid currentcolor;
+  border-style: solid;
+}
+
+.gr-status-mark[data-mark="trial"] {
+  color: var(--gr-mark-trial);
+  background: transparent;
+}
+
+.gr-status-mark[data-mark="blocked"] {
+  color: var(--gr-mark-blocked);
+  border-width: 2px;
+}
+
+.gr-status-mark[data-mark="unproven"] {
+  color: var(--gr-mark-unproven);
+  border-style: dotted;
+  border-width: 2px;
+}

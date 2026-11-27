@@ -1,0 +1,4 @@
+[
+  {"format": 3, "name": "errwrap-plugin", "tool": "golangci-lint", "publisher": "alex", "tests": "testdata", "licence": "Apache-2.0"},
+  {"format": 3, "name": "shared-analyzer", "tool": "golangci-lint", "publisher": "sam", "from": "shared-go"}
+]

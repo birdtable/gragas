@@ -1,0 +1,88 @@
+part: go
+tools:
+  - key: go-fix-and-modernize
+    name: "language fixer: go fix and modernize"
+    role: >-
+      Applies modern idioms through the language's own fix tool and the linter's modernize analyzers. The
+      modernize analyzers run through golangci-lint.
+    binding: go
+    ships: >-
+      a gate step running the fixer in diff mode once, plus the linter's modernize analyzers
+    state: chosen
+    why: >-
+      go fix -diff exits non-zero when the diff is not empty (exit 1 with 246 hunks in one repo). Debt today:
+      246, 178, 97, 63 (lower bound), 47 and 9 hunks; adopt with one auto-fix commit; no autofix in the gate.
+    open:
+      - It works per build configuration; it runs once, on the system the gate runs on.
+      - Plant is an old index loop that a range over an integer replaces.
+  - key: golangci-lint
+    name: "linter runner: golangci-lint"
+    role: >-
+      Runs the Go linters and analyzers the preset enables, with the settings the preset gives them.
+    binding: go
+    ships: presets/golangci/base.yml, the shared preset a Go repository copies
+    state: chosen
+    preset: presets/golangci/base.yml
+    key_source: golangci-lint help linters
+    note: >-
+      Added by schema v2: a check's key names a linter the preset enables, or a dotted setting of it.
+  - key: go-task
+    name: "task runner: go-task"
+    role: >-
+      Runs the tiers of a repo's checks and its hook task from one Taskfile, so no repo writes its own runner,
+      stamp or Makefile fan-out.
+    version: v3.54.0
+    binding: go
+    ships: the Taskfile a repo commits, pinned through the go tool directive
+    state: chosen
+    why: >-
+      The Taskfile's own hook task replaces a separate hook runner, and a tier is a task, not a script a repo
+      writes again.
+  - key: gotestsum
+    name: "test reporter: gotestsum"
+    role: >-
+      Reads go test's event stream and reports the counts and each failure, so no repo hand-writes a result counter.
+    version: v1.13.0
+    binding: go
+    ships: a pinned tool of the repo, run by the test task
+    state: chosen
+    why: A hand-written counter or event reader is code a maintained tool already is.
+  - key: goreleaser
+    name: "release builder: goreleaser"
+    role: >-
+      Builds the archives, checksums and notices of a release from one config, so no repo writes that script.
+    version: v2.20.0
+    binding: go
+    ships: a pinned tool of the repo and its release config
+    state: chosen
+    preset: presets/goreleaser/base.yaml
+    why: A hand-written archive, checksum and notices script is code a maintained tool already is.
+  - key: changie
+    name: "changelog writer: changie"
+    role: >-
+      Keeps a changelog from one small file per change, so no repo parses commits or writes a release script.
+    version: v1.26.0
+    binding: go
+    ships: a pinned tool of the repo and its change files
+    state: chosen
+    preset: presets/changie/base.yaml
+    why: A changelog writer that parses commits is code a maintained tool already is.
+  - key: govulncheck
+    name: "vulnerability scan: govulncheck"
+    role: >-
+      Scans the module graph, and a built binary, for known vulnerabilities that the code reaches. It is the Go
+      scan; no other scanner is run over a Go module.
+    version: v1.9.0
+    binding: go
+    ships: a pinned tool of the repo, run in source mode by the pre-push tier and in binary mode on the artifact
+    state: chosen
+    why: It is reachability-aware, which a lockfile scanner is not.
+  - key: go-tool-directive
+    name: "pinned tools: the go tool directive"
+    role: >-
+      Pins each tool of a repo as a tool line in go.mod, or in a tools modfile where the repo prefers one, and
+      runs it through go tool.
+    binding: go
+    ships: the tool lines of the repo's go.mod
+    state: chosen
+    why: A tool-fetch package, a Makefile curl block with a checksum or a second tool manager is code the toolchain already is.

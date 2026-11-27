@@ -1,0 +1,19 @@
+format: 3
+part: ts
+concern: gates
+rules:
+  - id: ts.gates.1
+    statement: "A Node gate registers its uncaught-exception handler first, refuses an empty subject, sets process.exitCode and never calls process.exit before its last rule."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The handler for uncaught exceptions and unhandled rejections is registered before any import that can throw, and it sets a failing exit code and prints the gate's name. The gate fails when its subject (the file list, the rule list, the parsed tree) is empty. It sets `process.exitCode` and lets the event loop drain, so every rule runs and every pending write is flushed; `process.exit` is called by no gate file. The language-neutral rules (the gate list derived from the files, a gate that never imports its subject, a checker that counts what it parsed) live in the gates and architecture parts. Biome form: a GritQL plugin for a `process.exit` call in a gate file. ESLint form: `n/no-process-exit` (or `no-restricted-syntax` on the same call) for gate files. The handler order and the empty-subject refusal are held by the plant test, engine-free."
+      pros:
+        - "A gate that exits early skips the rules after it and can cut its own output, and a gate with no handler can die on a throw and leave a zero exit code; both report green for work that did not happen."
+    sources:
+      - ref: nodejs-docs
+        where: process.exitCode
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule

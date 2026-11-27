@@ -1,0 +1,541 @@
+part: tests
+concern: isolation
+order: 1
+title: Hermetic, deterministic tests
+summary: >-
+  A test gives the same answer on any machine at any load and in any order. It inherits nothing from the run
+  that started it, waits on events and not on time, binds no fixed port, touches the machine only in named
+  places and never changes shared machine state. A verdict says which machine it ran on.
+rules:
+  - id: tests.isolation.1
+    slug: test-inherits-nothing
+    since: 0.1.0
+    rule: >-
+      A test inherits nothing from the run that started it: its own home and temp folder, and no agent or git
+      variables.
+    detail: >-
+      A repo test refuses to pass the parent environment to a child process unless the call is marked. Every
+      test package calls one shared isolate function at start-up (a TestMain in Go). In a child's environment
+      a nil value, the parent environment as a whole and an append to it are all findings; the environment
+      comes from the isolate helper. The agent and git variables removed are every GIT_* variable and the
+      agent-session variables; the analyzer is named testenv.
+    level: function
+    why: >-
+      A test that inherits the caller's home, git settings or agent variables passes on one machine and fails
+      on another. Own bugs: 6 of 60 sampled bugs. One repo has the isolate helper; three others copy a client
+      that passes the parent environment through.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-07-testing
+        where: section 4
+        backs: rule
+    checks:
+      - binding: go
+        class: analyzer
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          v1 class our-plugin. go/analysis analyzer run as a golangci-lint module plugin: in test files and
+          test-helper packages every exec.Cmd gets its Env from the shared isolate helper; flags a nil Env,
+          the parent environment as Env or as append source, and a package that runs children with no TestMain
+          calling isolate. usetesting covers os.Setenv and temp folders but not the parent environment into a
+          child (verified, silent on Cmd.Env). Plant: a test running a git child with Cmd.Env unset fails, and
+          one with Env set to the parent environment fails. Control: Env taken from the isolate helper passes
+    open:
+      - >-
+        Source says the analyzer is built once and published by the shared gate pack, not per repo; the host
+        was proved by the fixed-port analyzer prototype (8 s build, 87 MB binary).
+      - >-
+        A repo-wide scan was only proposed in the catalogue; the TypeScript side has no row of its own.
+      - "v1 evidence, not yet a source: own bugs (6 of 60)"
+  - id: tests.isolation.2
+    slug: store-from-one-helper
+    since: 0.1.0
+    rule: >-
+      Specs get their store from one helper that asserts isolation, so no two tests share data.
+    detail: >-
+      The helper hands each spec its own database, table or file and asserts it is empty at start. A test that
+      reaches a store any other way fails the scan.
+    level: package
+    why: >-
+      Shared data couples tests through order and timing; one helper is the only place isolation is proved
+      once. The reference practice has one helper per store kind; our Go side gets the same effect from a
+      per-test home and temp folder plus shuffled order (tests.isolation.10).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-27
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "2"
+        note: >-
+          ESLint no-restricted-imports on store clients inside spec files, allowing only the shared store
+          helper (Biome form is noRestrictedImports with the same allow list). Plant: a spec that opens its
+          own store client fails. Control: the same spec using the helper passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          the shared test helper creates a per-test temp folder and home (tests.isolation.1) and the suite
+          runs shuffled (tests.isolation.10). Plant: two tests writing the same fixed path fail under shuffle.
+          Control: each test using its own temp folder passes
+    relates:
+      - id: tests.isolation.10
+        how: see
+    open:
+      - >-
+        The TypeScript check is the restricted-import form only; whether the helper really asserts emptiness
+        is not checked.
+  - id: tests.isolation.3
+    slug: heavy-fixtures-once
+    since: 0.1.0
+    rule: >-
+      Heavy test fixtures such as containers start once, in one place, and tests share them only through a
+      helper with its own temp folder and no fixed port.
+    level: package
+    why: >-
+      A container per test turns a suite into hours; a container started anywhere is a fixed port and a leaked
+      process waiting to happen. The real engine is the reference for managed stores (tests.doubles.1).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "2"
+        note: >-
+          no-restricted-imports of the container library everywhere except the runner's global setup file.
+          Plant: a spec that starts a container itself fails. Control: the container started in global setup
+          passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          one storage test helper starts the engine in its own temp folder; the fixed-port scan
+          (tests.isolation.4) covers its listener. Plant: a second start of the engine outside the helper
+          fails the import scan. Control: tests using the helper pass
+    relates:
+      - id: tests.doubles.1
+        how: see
+    open:
+      - >-
+        The Go side needs no container for a file-based store, so the Go check is the helper convention only.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+      - "v1 reference, not yet a source: Testcontainers practice, one shared container"
+  - id: tests.isolation.4
+    slug: no-fixed-port
+    since: 0.1.0
+    rule: >-
+      No test binds a fixed port; every listener asks for port zero or a path in the test's own folder.
+    detail: >-
+      In test files every listen address is the literal ":0", "127.0.0.1:0" or a path built from the test's
+      own temp folder or testenv.ShortDir. Anything else is a finding: the check fails closed, because
+      a scan for port literals alone passes a port from a constant, a config field or a built string.
+    level: function
+    why: Two agents running the same suite on one host collide on a fixed port. Own bugs.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: analyzer
+        tier: "1"
+        note: >-
+          v1 class our-plugin. go/analysis analyzer in the shared test-hygiene plugin: every net.Listen,
+          ListenConfig.Listen, http.Server.Addr and httptest listener address in a test file must be a
+          constant ending ":0" or a path from the temp folder or testenv.ShortDir The analyzer is in the
+          testhygiene plugin family. Plant: Listen on ":8080", a port from a constant and a port from a
+          formatted string each fail. Control: 127.0.0.1:0 passes
+    open:
+      - >-
+        Prototype verified 5 Nov: a 60-line analyzer built into a custom golangci-lint (8 s, 87 MB, needs a
+        clone of the linter at build time) fired on both plants; the production version is built once and
+        published by the gate pack. forbidigo cannot read arguments (verified).
+      - >-
+        The TypeScript side has no row; a web test server asking for port zero is held only through the runner
+        config.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own bugs"
+  - id: tests.isolation.5
+    slug: short-socket-path
+    since: 0.1.0
+    rule: A Unix socket path in a test is at most testenv.SocketPathMax bytes.
+    level: function
+    why: >-
+      The operating system limits socket paths to about 104 bytes and a deep temp folder passes it; one of our
+      programs failed at 153 bytes.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. testenv.ShortDir(t) makes a short socket folder and the test asserts the length is
+          at most testenv.SocketPathMax bytes; the fixed-port analyzer also fails a unix-socket listen whose path does not come
+          from the helper The helper is testenv.ShortDir(t); the plant path is a long-name folder under the temp
+          folder. Plant: a unix listen on a temp-folder path over testenv.SocketPathMax fails. Control: the helper's path
+          passes
+    open:
+      - >-
+        The build is a few more lines in the same analyzer host; no plant was recorded beyond the failing
+        case.
+  - id: tests.isolation.6
+    slug: no-sleep-for-events
+    since: 0.1.0
+    rule: >-
+      A test does not sleep to wait for an event; it waits on the event or uses a fake clock.
+    detail: >-
+      A sleep call in a test file is a finding on a shrink-only count per file; removal lowers the baseline.
+      Where the runtime offers it, tests use its fake-time bubble (Go testing/synctest). Fixed waits that stay
+      carry a written reason (tests.flakes.4).
+    level: function
+    why: >-
+      A sleep is a guess about speed that fails under load. Own bugs; counts in test files today: 48, 37, 34,
+      13, 5 and 4 across six repos.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: forbidigo
+        tier: "1"
+        fix: never
+        note: >-
+          forbidigo with pattern for the sleep call, type analysis on, scoped to test files by a golangci
+          exclusion (path-except), plus a per-file shrink-only count; uniq-by-line off so a second hit on one
+          line shows The forbidigo pattern is ^time\.Sleep$ with analyze-types on. Plant: a new sleep in a
+          test file fails. Control: a file with an unchanged count passes, and a removal lowers the baseline
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          eslint-plugin-playwright no-wait-for-timeout at error, and no-restricted-syntax on setTimeout-based
+          waits in specs (Biome form is a GritQL plugin on the same waits). Plant: a spec with a fixed timeout
+          wait fails. Control: a spec waiting on an element or event passes
+    relates:
+      - id: tests.flakes.4
+        how: see
+    open:
+      - >-
+        Verified 5 Nov on golangci-lint 2.14.0: forbidigo with type analysis flags the call; usetesting does
+        not cover it.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own bugs"
+  - id: tests.isolation.7
+    slug: machine-reads-named
+    since: 0.1.0
+    rule: >-
+      A test reads the machine (child processes, network, home folder, clock, /proc) only in a named place,
+      and that list only shrinks.
+    level: file
+    why: >-
+      A read of the machine is an input the cache and the selector cannot see (tests.selection.6) and the
+      reason a test passes on one host only. Own bugs. One repo has the scan: 7 files, 121 listed reads.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. companion check machine-reads, a syntax-and-types scan of test files for process
+          starts, network, home folder, clock and /proc reads against a list file, shrink-only; lifted from
+          the repo that has it. Plant: a test calling the home-folder lookup outside the listed place fails.
+          Control: the listed file unchanged passes
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. the recorded-reads tracer (tests.selection.3) lists what each test reads; reads
+          outside the named list fail. Plant: a test that reads the home folder outside the list fails.
+          Control: a listed read passes
+    relates:
+      - id: tests.selection.6
+        how: see
+    open:
+      - >-
+        Only the Go form is proposed in the catalogue; the TypeScript form is derived from the selector's
+        tracer and is not written anywhere.
+  - id: tests.isolation.8
+    slug: no-shared-machine-state
+    since: 0.1.0
+    rule: >-
+      Default tiers never change shared machine state, a test launches its own browser and database and never
+      attaches to the person's, and no script kills a process by name; an opt-in tier that must touch the
+      service manager does so only under names hashed from its own root and proves its cleanup, and a
+      privileged system test seals the host first and proves the seal.
+    detail: >-
+      Shared machine state is the service manager, the terminal multiplexer, the real home, the real git
+      config, the person's browser and profile, and any process the test did not start. In the default tiers a
+      scan against a machine-writer list (launchctl, systemctl, tmux, git config --global, the real home, a
+      kill or pkill by name) fails, fakes of those programs sit on the test's PATH, and the isolate helper
+      (tests.isolation.1) gives each test a temp home as a backstop. A test that needs a browser or a database
+      starts its own on a temp profile or a temp data folder. An opt-in integration tier (declared as in
+      tests.admission.5) may register units with the service manager only under names that carry a hash of its
+      own root; its cleanup removes them and then lists what is left under that hash and fails if anything
+      remains. A system test that needs a privileged container first seals the host's devices, kernel settings
+      and cgroups from the container, and a check run before and after proves the seal held.
+    level: function
+    why: >-
+      A test that registers a service, edits the real git config, drives the person's browser or kills a
+      process by name damages the host it runs on; one repo's integration tests need root and write under a
+      system folder. An opt-in tier that must touch the host is held to names it owns and a cleanup it proves,
+      so a failed run leaves nothing behind.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-tests
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. the machine-writer scan of the same family as tests.isolation.7, with its own list
+          file, over default-tier tests. Plant: a test running git config --global against the real home
+          fails; a script that runs pkill by name fails. Control: a fake on PATH passes
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          the opt-in tier's cleanup lists every unit carrying its root's hash after the run and fails on any;
+          a seal check reads the container's device, kernel-setting and cgroup access before and after a
+          privileged run. Plant: an opt-in test that leaves one hashed unit behind fails; a privileged
+          container with the host's devices visible fails the seal check. Control: a run that removes every
+          hashed unit and keeps the seal passes
+    relates:
+      - id: tests.isolation.1
+        how: see
+      - id: tests.admission.5
+        how: see
+    note: >-
+      The daemon's own units and restarts are exercised in a sandbox only (see the daemon part).
+  - id: tests.isolation.9
+    slug: symlinked-temp-folder
+    since: 0.1.0
+    rule: One gate run uses a temp folder reached through a symlink, and the suite passes.
+    level: program
+    why: >-
+      Code that compares paths without resolving links passes on Linux and fails on macOS, where the temp
+      folder is a link. Own bugs.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          one gate step runs the suite with TMPDIR set to a symlink, from the shared Makefile fragment The
+          gate step is make linked-tmp, which runs TMPDIR=<symlink> go test ./... Plant: a test comparing a
+          path without resolving links fails under the linked temp folder. Control: the same test resolving
+          links passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own bugs"
+  - id: tests.isolation.10
+    slug: shuffled-order
+    since: 0.1.0
+    rule: Tests run in shuffled order in the gate, and the printed seed replays a failure.
+    detail: >-
+      The shuffle flag is set once in the shared runner configuration and a scan asserts it is in the gate
+      command. One seed catches about half of two-test order pairs, so the admission ladder
+      (tests.admission.1) uses several seeds as separate runs; a count flag with a shuffle seed reuses one
+      order for every repeat.
+    level: package
+    why: >-
+      A test that passes only in file order is not found by retries or double runs, which are banned
+      (tests.flakes.1). Best practice, not measured.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          the gate command carries the shuffle flag and the gate scan asserts it The command is go test
+          -shuffle=on; gatescan asserts the flag is in the gate command. Plant: removing the flag fails the
+          scan, and an order-dependent pair fails under shuffle. Control: the flag present and independent
+          tests pass
+      - binding: ts
+        class: preset-config
+        tier: "2"
+        note: >-
+          the shared test runner preset sets sequence shuffle with a printed seed, read back from the resolved
+          config. Plant: a preset without shuffle fails the read-back. Control: the shared preset passes
+    relates:
+      - id: tests.admission.1
+        how: see
+      - id: tests.flakes.1
+        how: see
+    open:
+      - No measurement of how many of our tests depend on order.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: tests.isolation.11
+    slug: machine-is-an-input
+    since: 0.1.0
+    rule: >-
+      The machine is a stated input: a verdict names the OS and host it ran on, and a result from one OS never
+      satisfies a row that needs another.
+    detail: >-
+      A verdict names the machine and OS it ran on and the tree it was computed for; the land step refuses a
+      verdict with none, or one for another tree. Skips are counted separately (tests.admission.5).
+    level: package
+    why: >-
+      Own bugs: 17 of 60 sampled bugs were machine-dependent. A verdict names the machine and OS it ran on, so a result is
+      never read as another machine's.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. verdict line keyed to the tree and carrying OS and host; the land step refuses a
+          verdict with no OS or host, or one for another tree. Plant: a verdict with no host, or computed for another
+          tree, is refused. Control: a verdict naming its OS and host on the same tree is accepted
+    relates:
+      - id: tests.admission.5
+        how: see
+    open:
+      - "v1 evidence, not yet a source: own bugs (17 of 60)"
+    note: >-
+      Merges the platform-only rule with the machine-as-input rule, since one verdict check holds both.
+  - id: tests.isolation.12
+    slug: shared-pool-isolation
+    since: 0.1.0
+    rule: >-
+      A suite that shares module state between tests lists the tests that need isolation, each with a reason,
+      and a scan looks for the hazard.
+    detail: >-
+      Turning off per-file isolation in the runner config is refused unless a needs-isolation list file
+      exists. The hazard scan for module-level mutable state is a report.
+    level: package
+    why: >-
+      Sharing a pool is faster and breaks tests that mutate module state; eight specs failed on the donor's
+      first run without isolation. The three tests the lead named were not on the list and only one was
+      traced.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "2"
+        note: >-
+          runner config read-back and a config rule that forbids isolate false (and shared pool options)
+          unless the needs-isolation list file exists. Plant: isolate false without the list fails. Control:
+          with the list file the config passes
+    open:
+      - The hazard scan for module-level mutable state is a report only; no plant.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C: eight specs failed on the first
+        shared-pool run
+  - id: tests.isolation.13
+    slug: module-suite-alone
+    since: 0.1.0
+    rule: >-
+      Each module's suite runs with sibling modules unresolvable, a suite that still passes with its subject
+      deleted fails, and a module's tests make other modules' data only through that module's public commands
+      or its own fixtures.
+    detail: >-
+      A module is a unit of the declared import table (the architecture part's layers). Its suite is run with
+      every module it may not import made unresolvable, so a test cannot reach a sibling the code could not;
+      how that is done is the language part's resolver form (ts.modules.5 for TypeScript; the Go form is held
+      in the Go part). A separate drive deletes the module's own source and runs its suite: a suite that still
+      passes loads nothing of its subject and is vacuous. A test that needs another module's rows creates them
+      through that module's public commands or fixtures that module ships, never by writing its tables
+      directly.
+    level: package
+    why: >-
+      A test that imports across modules passes for a module nobody could extract, a suite that never loads
+      its subject proves nothing, and a test that writes another module's rows encodes that module's schema in
+      a place its owner cannot see.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-tests
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. a subject-deleted drive that removes each module's source in a scratch tree, runs
+          its suite and fails when it passes; a scan that fails a test writing to a table owned by another
+          module in the schema's owner map. Plant: a suite whose tests import only a helper and never the
+          subject passes with the subject deleted and fails the drive; a test inserting into another module's
+          table fails the scan. Control: a suite that fails with its subject deleted, and a test that seeds
+          through the other module's command, pass
+    relates:
+      - id: ts.modules.5
+        how: see
+    note: >-
+      The resolver clause is language-shaped and lives in each language part; this rule holds the shared
+      intent.
+  - id: tests.isolation.14
+    slug: a-test-owns-its-fixtures
+    since: 0.1.0
+    rule: >-
+      A test builds the repository, files and folders it needs in its own temp folder, and never reads an
+      ignored file, another member's output, the checkout's own git folder, or another repository's checkout.
+    detail: >-
+      tests.isolation.1 holds that a test inherits nothing from the run that started it. This rule holds what
+      a test may read from the tree around it: its own package's checked-in testdata and nothing a run writes.
+      A test that needs a git repository makes one in its temp folder. A test that needs a built binary gets
+      it from the package's shared setup (tests.runners.5). A test that needs another repository declares it
+      and fetches it once in setup, or it is an opt-in member that skips with the exact command
+      (tests.admission.5). A test that reads the checkout's own git folder fails in an exported tree and
+      passes in a clone, which is two answers for one tree.
+    level: program
+    why: >-
+      Two tests of one project needed the checkout's own git folder, so every exported tree carried a failure
+      that had to be explained away; four tests of another fleet needed sibling checkouts and failed rather than
+      skipped, so a fresh clone was red.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      What does this test read outside its own temp folder and testdata, and would it pass in an exported tree
+      with no git folder?
+    relates:
+      - id: tests.isolation.1
+        how: see
+      - id: tests.runners.5
+        how: see
+      - id: gates.command.21
+        how: see
+    open:
+      - >-
+        Planned check: the tier runs the tests once in an exported tree and once with the ignored files
+        removed, and a test that passes in the clone and fails there is listed. No tool key is bound yet.

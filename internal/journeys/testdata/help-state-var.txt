@@ -1,0 +1,2 @@
+# The name the help goldens print for the variable that places the state folder.
+XDG_STATE_HOME

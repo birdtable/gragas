@@ -1,0 +1,624 @@
+part: web
+concern: states
+order: 4
+title: States and data on screen
+summary: >-
+  How data reaches the screen: generated clients, validated payloads, designed loading, empty and failure
+  states, and the libraries chosen for common behaviour.
+rules:
+  - id: web.states.1
+    slug: six-states-drawn
+    since: 0.1.0
+    rule: >-
+      Every data region declares one of six states (ready, loading, empty, error, stale, disconnected) and
+      draws each; loading is marked busy in its final boxes, empty says what is missing and what to do, and
+      shared state parts draw them.
+    detail: >-
+      Loading is marked `aria-busy`, keeps its final box size (no shift) and says what it waits for after 10
+      seconds. Empty has text and an action. Error has Retry. Stale shows its age. Disconnected has a status
+      region. Loading, empty and failure use the shared state parts (a section or inline loader, or a
+      page-shaped skeleton; the empty-state part; the error-state part); no bare spinner and no bare
+      "Checking" text. A page declares its regions in a data file (id, states); the land-tier run forces each
+      state per region (route interception for loading, error, empty, stale and disconnected; a fixture for
+      ready). The count of declared regions must equal the count of region elements in the page, which proves
+      the check reads something. The state set is a closed type, and a switch-exhaustiveness lint makes a
+      missing case a type error. The regions file is `regions.json`; the count is of `[data-region]` elements;
+      the 10-second wait is fast-forwarded with `page.clock`.
+    level: program
+    why: >-
+      The heaviest fault class in our record: 23 of 144. No benchmark scoring this was found, which the stack
+      report says is not proof.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tool: typescript-eslint-strict-type-checked
+        tier: "3"
+        note: >-
+          v1 class shared-code. the shared Playwright kit's `forceState(region, state)` and `checkState`, run
+          at land against the page's regions data file; `@typescript-eslint/switch-exhaustiveness-check` on
+          the closed state union. Plant: a region with its error state not drawn fails `checkState`; removing
+          a region from the data file while it is in the page fails the count equality. Control: a region
+          drawing all six states passes
+    open:
+      - >-
+        Half holds: the look is review. The kit function was trialled on 12 plants; `stale` then `offline` was
+        not run on either site; the closed state type is planned. Needs browser binaries.
+      - The test is test code in the shared kit, not a CLI state.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A, heaviest: 23 of 144
+  - id: web.states.2
+    slug: real-server-run
+    since: 0.1.0
+    rule: >-
+      The page ran against the real server before it is called done, on one made-up world, and the run names
+      its build.
+    detail: >-
+      The land step runs the end-to-end suite against the real binary and writes a run record (tree hash, the
+      daemon's reported version, date, journeys run); it refuses to land unless the record's tree equals the
+      change's tree and its build string equals the built daemon's.
+    level: process
+    why: "Faults that only a mock allowed: 8 in one site, 3 in another, 3 in a third."
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - static-data
+        reason: >-
+          The page reads one published document and writes nothing to a server: there is no live server, reconnect, write or request budget beyond the file reads.
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the land step writes the run record and the land check compares the record's tree
+          and build string with the change's. Plant: landing with a record for another tree fails; a mock-only
+          run (no daemon version in the record) fails. Control: a record whose tree and build match passes
+    open:
+      - >-
+        Half holds: presence of a matching record is a rule; that the run looked at the right thing, on one
+        made-up world, is review.
+      - >-
+        The e2e run against the real binary is unproven as a rule; the baseline did not reach a real server.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: mock-only faults 8, 3 and 3
+  - id: web.states.3
+    slug: transport-only-rings
+    since: 0.1.0
+    rule: >-
+      The live transport only rings: state travels in whole answers so a missed message costs one read, and a
+      failed stream falls back to polling and notices when open never comes.
+    detail: Stream drop uses `routeWebSocket` or a held-open event route.
+    level: function
+    why: The browser's 6-connection limit is the reason; neither site has the fallback.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - static-data
+        reason: >-
+          The page reads one published document and writes nothing to a server: there is no live server, reconnect, write or request budget beyond the file reads.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a kit test drops one stream message (a routed socket, or a held-open event route that omits an
+          event) and asserts the page converges by re-reading; it makes the stream never send `open` and
+          asserts polling within the stated interval; it asserts requests follow each ring. Plant: a client
+          that applies the ring payload without re-reading shows stale state after a dropped event and fails.
+          Control: a re-read client passes
+    open:
+      - >-
+        The design is judgement; the drop test is mechanical. A "one live mechanism" lint would fail this
+        design, so it is not used. No fault in our record; built because every rule binds from adoption.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: web.states.4
+    slug: failed-read-in-plain-words
+    since: 0.1.0
+    rule: >-
+      A failed read names the cause in plain words through one table of codes, keeps old content, offers Retry
+      and carries an id the reader can quote; a raw server or exception message is never shown.
+    detail: >-
+      Error text comes from one table typed `Record<ErrorCode, string>`, so a missing code is a type error. A
+      backend code maps to a local message through one describer; an unknown code shows generic text with a
+      reference id; enum labels are exhaustive maps. The error part is fed by the describer, never by the raw
+      message. A lint bans rendering `.message` in view files; the kit asserts Retry, old content kept and a
+      run id present, and two forced runs must show different ids. A golden of the error-state text is kept.
+      Words are review.
+    level: word
+    why: >-
+      One site shows "500 Internal Server Error: internal error"; another stays on "Checking..." with no Retry
+      on the shell only. The donor built this gate and it is still open.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - static-data
+        reason: >-
+          The page reads one published document and writes nothing to a server: there is no live server, reconnect, write or request budget beyond the file reads.
+    checks:
+      - binding: ts
+        class: test-kit
+        tool: eslint
+        tier: "3"
+        note: >-
+          v1 class shared-code. the error-code table type, an ESLint `no-restricted-syntax` on member access
+          to `.message` inside rendered expressions in view files, and the kit's `forceState(error)`
+          assertions. Plant: rendering `err.message` in a view fails the lint; an error card with no Retry
+          fails the kit; an id identical across two runs fails. Control: an error rendered through the
+          describer with Retry and a fresh id passes
+    open:
+      - >-
+        The lint catches the direct form; `String(err)` or a template string passes (known gap).
+      - Words are review.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: two sites above
+  - id: web.states.5
+    slug: unread-value-is-dash
+    since: 0.1.0
+    rule: >-
+      A value nobody read is shown as a dash with its reason, never as 0, idle or clean.
+    detail: >-
+      For each nullable field in the contract schema the fixture generator sets null and the page must show a
+      dash with a reason. The scan on `?? 0` and `|| 0` in view files is a hint that warns or needs a reason
+      (known false positives). The hint lint is `no-restricted-syntax` on `??` with a 0 right side and on `||`
+      with a 0 right side in view files.
+    level: word
+    why: Two sites showed an unread value as zero; the scan hit 59 and 48 lines.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: web-reasons-stated
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. a kit test with a null fixture per nullable field of the contract schema, plus
+          a hint lint on `??` with a zero right side. Plant: a page rendering `data.ram ?? 0` for a null field
+          fails the kit. Control: a dash with a reason passes
+    open:
+      - The scan alone is a hint; the null-fixture test is the rule.
+      - "v1 evidence, not yet a source: A: 59 and 48 lines in two sites"
+  - id: web.states.6
+    slug: validate-at-entry
+    since: 0.1.0
+    rule: >-
+      A response is checked against a schema where it enters, never cast; external payloads, cache hydration
+      and URL parameters are validated at the boundary, in development and test every response is validated,
+      and the check tolerates extra fields.
+    detail: >-
+      A newer server must not break an older page, so the boundary schema is non-strict and an extra field is
+      accepted and ignored; a person's own config refuses unknown keys. Schemas come from the generated
+      output. Type-aware lint (`no-unsafe-assignment`, `no-unsafe-argument`, `no-unsafe-return`) flags the
+      untyped value a JSON parse returns, and `consistent-type-assertions` with `assertionStyle: never` in the
+      api folder bans `as T` on responses. A unit test per boundary sends an extra field. Boundary library
+      options: `zod/mini` or ajv.
+    level: function
+    why: >-
+      One site has 3 hits, the one network cast; another has 0. The test is who wrote it.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ford-bea
+        where: ch. 7 on Postel's law
+        backs: rule
+      - ref: b-01-evolutionary-architectures
+        where: section 2.7
+        backs: rule
+      - ref: b-01-evolutionary-architectures
+        where: section 5.1
+        backs: rule
+      - ref: b-04-philosophy-of-software-design
+        where: T9
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "2"
+        note: >-
+          type-aware lint through oxlint and tsgolint as above, and a tolerant-reader unit test per boundary.
+          Plant: `const d = (await res.json()) as Disk` fails; `DiskSchema.parse(await res.json())` passes; an
+          extra field from the server is accepted. Control: a schema parse at the boundary passes
+    open:
+      - >-
+        Typed lint does not run on template markup; frontmatter and scripts are covered by oxlint.
+      - The boundary library is not settled (see the schema library tool).
+      - >-
+        The older cast-scan script was trialled on 2 of 2 plants; a site's own shape check is unproven.
+      - "v1 evidence, not yet a source: A: 3 hits in one site, none in another"
+  - id: web.states.7
+    slug: types-from-server
+    since: 0.1.0
+    rule: >-
+      The page's API types and client are generated from the server's published contract (or a test proves
+      them equal), shapes never come from local code, and no hand-written client remains.
+    detail: >-
+      Generate the types from the server's types or from its OpenAPI spec, commit them, and
+      regenerate-and-diff in the check. Every service uses the generated output (client, gated query options,
+      mock handlers). Where a project hand-keeps types, a name-comparison script is the fallback. Which
+      generator per project is a parameter. Fallback script `drift.py`; the loop is `companion gen --check`.
+    level: package
+    why: >-
+      Today right only because people kept it so; a comparison trialled on 60 of 60 shapes found the one
+      planted difference.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. the generate-with-check loop of our CLI regenerates the API types (a Go type
+          generator, or openapi-typescript) and diffs them against the committed files. Plant: adding a field
+          to the Go struct without regenerating fails; hand-editing the generated type fails. Control: freshly
+          regenerated types pass
+    open:
+      - Generator versions in the source are unverified (one was not re-read).
+      - >-
+        The reference binding names one specific client generator and one mock library; they are choices for
+        the react part to name.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: right today only because people
+        kept it so
+  - id: web.states.8
+    slug: spec-lives-once
+    since: 0.1.0
+    rule: >-
+      API specs live once in the repository, pinned by a lock file and synced by one command; per-service
+      copies are deleted.
+    detail: A vendored shared file equals its source at the named version by hash.
+    level: package
+    why: A spec copied by hand into each service drifts from its origin without notice.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. the sync command's check compares each vendored spec with its source at the
+          version named in the lock file, by hash. Plant: editing a vendored spec copy fails the hash check; a
+          second copy of a spec in a service folder fails. Control: a spec that matches its locked version
+          passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.states.9
+    slug: page-reads-contract-fields
+    since: 0.1.0
+    rule: >-
+      The page reads only fields the contract names, and a field the server stopped sending fails a test.
+    detail: >-
+      For each field on the consumer list the kit serves the contract body with that field deleted and asserts
+      the page does not throw and shows a dash or an error state; the list comes from the contract, not the
+      author. The example field is `ramBytes`, read unguarded.
+    level: function
+    why: One site reads a bytes field unguarded and crashes when it is missing.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. a kit field-deletion test over the consumer field list. Plant: removing the
+          unguarded bytes field from the body crashes the page and fails. Control: a guarded page passes
+    open:
+      - Needs the consumer field list of the shared-shape rule.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+  - id: web.states.10
+    slug: reconnect-backoff
+    since: 0.1.0
+    rule: Reconnect has a bounded back-off with jitter, and a hidden tab asks nothing.
+    detail: >-
+      Hidden state is `document.hidden` with a `visibilitychange` event; fake timers via `page.clock`.
+    level: function
+    why: Both sites behave so today, unproven by test.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - static-data
+        reason: >-
+          The page reads one published document and writes nothing to a server: there is no live server, reconnect, write or request budget beyond the file reads.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          a fake-timer unit test of the client: successive reconnect delays follow bounded exponential
+          back-off with jitter within a stated range over N tries; with the page hidden and a visibility
+          change dispatched, no request is sent. Plant: a client retrying at a fixed 1 s fails the growth
+          assertion; one that polls while hidden fails. Control: a client with jittered growth that pauses
+          when hidden passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: web.states.11
+    slug: stale-kept-and-marked
+    since: 0.1.0
+    rule: >-
+      A failed refresh keeps the last good data marked stale with its age; disconnected is visible with a time
+      and a status region, never blank; and the page never fills a value the server answered as unknown or not
+      read.
+    detail: >-
+      The known unfailable spec is `hostile.spec.ts:72`; the abort is `route.abort()`. An unknown is drawn as
+      unknown with the server's reason; a dash with a reason (web.states.5) is the empty form, never a
+      stand-in for a value.
+    level: program
+    why: >-
+      One site tracks the link state and never draws it, and its end-to-end spec accepts either value, so it
+      cannot fail. A page that draws 0, off or a carried-forward value for an unread one turns the server's
+      honest answer into a false one.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-web
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a kit test serves one good read then aborts all following reads, and asserts the old content stays,
+          is marked stale with an age, and a `role=status` region names the disconnected time. Plant: a page
+          that blanks its region after the abort fails; the known unfailable spec ("accepts either value") is
+          the one to replace. Control: a page that keeps stale content with its age passes
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a kit test that serves a field as null with a reason and asserts the page shows the reason and no
+          number, switch state or earlier value. Plant: a page that draws 0 or off for a field answered null
+          with a reason fails. Control: a page that shows the unknown with its reason passes
+    relates:
+      - id: web.states.5
+        how: see
+  - id: web.states.12
+    slug: live-update-keeps-place
+    since: 0.1.0
+    rule: >-
+      A live update never moves what the reader is looking at: scroll, focus, open details and typed text
+      stay.
+    detail: Details element `<details>`; the kit check is `checkLiveKeepsPlace`.
+    level: program
+    why: One site does it correctly in an unshared module; others replace whole lists.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a kit check scrolls a list, opens a details element, focuses an input and types, triggers a live
+          update through the repository's trigger, and asserts the scroll offset, open state, focused element
+          and typed value are unchanged. Plant: a client that replaces the list with an innerHTML write resets
+          scroll and fails. Control: a keyed update passes
+    open:
+      - Needs a per-repository trigger.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: done in one site's module,
+        unshared
+  - id: web.states.13
+    slug: url-carries-place
+    since: 0.1.0
+    rule: >-
+      The URL carries the place (page, tab, filter and open detail), and Back closes a sheet without leaving
+      the app.
+    detail: >-
+      A journey per page changes the tab, filter or open detail, reloads, and asserts the same place; it then
+      presses Back and asserts the sheet closes. On a router stack the router's typed search parameters add a
+      type check (react.routing.3 for React). Template-stack helper: `URLSearchParams`.
+    level: program
+    why: A tab kept only in memory loses its place on reload.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a journey per page from the parameters file, in the shared kit. Plant: a tab kept only in memory
+          loses its place on reload and fails. Control: a tab held in the URL passes
+    relates:
+      - id: react.routing.3
+        how: see
+    open:
+      - No fault in our record; built because every rule binds from adoption.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C: marked inferred in the source
+        report
+  - id: web.states.14
+    slug: search-acts-without-button
+    since: 0.1.0
+    rule: >-
+      Search and filter act without a button, say how many match, can be cleared and survive a reload.
+    level: program
+    why: >-
+      Marked inferred in the source report; no fault in our record, so it rides on a journey that other rules
+      already earn.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a journey types in the filter and asserts results update with no button press, a count is announced
+          (`role=status`), a clear control empties it, and the filter survives a reload. Plant: a filter that
+          needs Enter fails; one with no count fails. Control: a live filter with a count and a clear control
+          passes
+    open:
+      - >-
+        Evidence D with no fault in record: listed as a rule on the strength of the 'every rule applies'
+        ruling.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.states.15
+    slug: derived-value-computed
+    since: 0.1.0
+    rule: A derived value is computed, not stored and synced.
+    detail: >-
+      On the component stack the lint of react.client-state.3 holds it; the template stack has no equivalent
+      lint and stays on the review question.
+    level: function
+    why: Stored derived state drifts from the value it was derived from.
+    kind: rule
+    strength: Review
+    status: proposed
+    review_question: Is this value stored and synced, or computed from what it depends on?
+    relates:
+      - id: react.client-state.3
+        how: see
+    open:
+      - >-
+        The source row is an instruction with a best-practice strength of Hard; the Hard strength now sits on
+        the React lint (react.client-state.3), and this generic rule is held by review.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D, practice"
+    note: >-
+      At the cross-part move the React-only lint check (tier 1) moved to react.client-state.3, and this rule's
+      strength went from Hard to Review because no generic check is left.
+  - id: web.states.16
+    slug: request-budget
+    since: 0.1.0
+    rule: >-
+      A page has a request budget, counted per page load and per journey, and fetches only what the user can
+      see and what is not fresh.
+    detail: >-
+      A counter on the browser's request event, grouped by URL path to ignore static assets, with the budget
+      per page in the parameters file; the check fails when over. No per-row fan-out for data the user cannot
+      see. Counter: `page.on("request")`.
+    level: program
+    why: Marginal build on the journey runner; no fault in our record.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - static-data
+        reason: >-
+          The page reads one published document and writes nothing to a server: there is no live server, reconnect, write or request budget beyond the file reads.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a request counter on the browser journey runner against a per-page budget. Plant: a page that fires
+          30 requests against a budget of 10 fails; a deduplicated page passes. Control: a page inside its
+          budget passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.states.17
+    slug: optimistic-write-undone
+    since: 0.1.0
+    rule: An optimistic write is undone when the request fails.
+    level: function
+    why: Zero optimistic handlers exist today; the rule is set ahead of the first one.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - static-data
+        reason: >-
+          The page reads one published document and writes nothing to a server: there is no live server, reconnect, write or request budget beyond the file reads.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a page-side test aborts the write request and asserts the optimistic change is rolled back. Plant:
+          an optimistic write left in place after an aborted request fails. Control: a write that rolls back
+          passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D (zero optimistic handlers today)
+    note: Applies where a door names the visitor. The Go half is in the daemon repository.
+  - id: web.states.18
+    slug: write-carries-version
+    since: 0.1.0
+    rule: >-
+      A write carries the version it read, and a conflict is a typed outcome distinct from not-found that the
+      page names.
+    level: function
+    why: >-
+      A stale write and a missing row both read as zero rows affected unless told apart.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - static-data
+        reason: >-
+          The page reads one published document and writes nothing to a server: there is no live server, reconnect, write or request budget beyond the file reads.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a two-writer test with one stale writer and a missing row: a write with no version fails, and the
+          stale write and the missing row give different typed outcomes, with the page showing which. Plant: a
+          stale write and a missing row both returning "0 rows affected" fails the distinct-outcome test; a
+          write with no version fails. Control: a stale write gives a typed conflict and a missing row gives
+          not-found
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D (a recorded fault)
+    note: >-
+      Applies where a door names the visitor; the handler half is in the daemon repository.
+  - id: web.states.19
+    slug: virtualisation-on-trigger
+    since: 0.1.0
+    rule: >-
+      No virtualisation library is added outside the list table's virtual mode, and that mode is added only
+      when a list mounts over about 500 rows or a profile misses a frame budget.
+    detail: It is not banned; it carries a re-entry trigger. Never in a canvas list lens.
+    level: package
+    why: >-
+      A heavy library not needed yet costs bytes and behaviour; the ruling kept it watched, not banned.
+    kind: rule
+    strength: Review
+    status: proposed
+    review_question: >-
+      Which trigger holds for adding a virtualisation library, a list over about 500 rows or a profile missing
+      its frame budget?
+    open:
+      - >-
+        No check proves the trigger; the dependency check can only show the library is present.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: practice (a recorded ruling)
+  - id: web.states.20
+    slug: local-first-on-trigger
+    since: 0.1.0
+    rule: >-
+      No local-first collection library is added until a stated trigger holds: a stable (final) release, a
+      stated offline need, a persister policy for collections, or a second screen live-joining two whole
+      collections.
+    detail: It is not banned. A prerelease major is added only as a labelled pilot.
+    level: package
+    why: A prerelease data library locks in an unstable API.
+    kind: instruction
+    strength: Review
+    status: proposed
+    review_question: Which of the four triggers holds for this local-first library?
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: practice (a recorded ruling)

@@ -1,0 +1,188 @@
+part: gates
+concern: own-rules
+order: 10
+title: Rules for the repo's own code
+summary: >-
+  Bans, structural patterns and generated-file checks written for a repo's own code. Bans name the replacement
+  and the owner, project domain rules are checks with plants, and a derived file is generated and checked for
+  drift.
+rules:
+  - id: gates.own-rules.1
+    slug: bans-name-the-owner
+    since: 0.1.0
+    rule: >-
+      A banned import or code pattern is a lint error whose message names what to use instead, and the ban
+      lists ship empty and are filled by later rules naming the owning package.
+    detail: >-
+      Built-in ban rules (restricted imports, restricted syntax, `no-console`, `n/no-process-env`, the
+      eslint-comments rules) and dependency or forbidden-call linters (depguard and forbidigo for Go) forbid a
+      named import or pattern outside its owner, each with a message that names what to use instead and the
+      home and fix. The import and syntax ban lists exist but ship empty; each later rule fills its part
+      naming the owning package in the message, so a ban doubles as a capability registry: each concern has
+      one importable owner and the alternatives are banned by name.
+    level: file
+    why: A ban without a message is satisfied by guessing the nearest bypass.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint `no-restricted-imports` and `no-restricted-syntax` lists in the shared preset, each entry
+          with a message naming the owner and the fix. Plant: A banned import fails with a message naming the
+          owning package. Control: The owner's own import passes.
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          depguard and forbidigo ban lists with messages naming the owner. Plant: A banned call outside the
+          owner fails with the message. Control: The owner's call passes.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+  - id: gates.own-rules.2
+    slug: domain-rules-are-checks
+    since: 0.1.0
+    rule: >-
+      Rules written for the repo's own code (custom lint rules, structural patterns, domain check scripts) are
+      checks, each with a plant and a measured error rate.
+    detail: >-
+      Examples that were five small rules in one source row: a call banned in one feature area, a UI primitive
+      banned outside its owner path, with a hand-built twin counted. Each is a lint or structural rule with a
+      planted violation and a clean control. Shape rules and generated depguard rows are kept with a planted
+      hit and measured false rates (gates.plants.14).
+    level: program
+    why: A domain rule written only as prose is not held.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: preset-rule
+        tier: "1"
+        note: >-
+          Custom lint rules and structural patterns in the shared preset or the repo's own rule folder,
+          registered in the rule table with a plant. Plant: Each rule's planted violation fails. Control: Each
+          rule's clean control passes.
+    relates:
+      - id: gates.plants.14
+        how: see
+    open:
+      - >-
+        The source row bundled five unrelated small rules; the examples here are their generic shapes.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      At the cross-part move the project-specific example, a banned toast import in the builder paths, was
+      merged into the private overlay's builder rule. The banned call in one feature area names no area in the
+      source, so it stays here as a generic example.
+  - id: gates.own-rules.3
+    slug: generated-not-edited
+    since: 0.1.0
+    rule: >-
+      Generated code is never edited by hand; regenerate it, and a check fails when the copy differs from a
+      fresh generation.
+    detail: >-
+      A generated file names its version or carries a banner and regenerating leaves no diff. A derived
+      artifact (a spec from a schema, types from a database, enums from a glossary, token output, route trees)
+      is generated and diffed. Shapes that cross a language boundary have one source.
+    level: file
+    why: A hand-edit is overwritten by the next regeneration, or worse, kept and drifts.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: gates-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. A generate-then-check step: regenerate in a temporary tree and diff against the
+          committed copy; the banner is required in the first line. Plant: A hand edit in a generated file
+          fails the drift check. Control: A freshly regenerated tree passes.
+  - id: gates.own-rules.4
+    slug: no-address-fallback
+    since: 0.1.0
+    rule: There is no literal service address or fallback beside the configured one.
+    detail: >-
+      Config is read in one package with a reader, a default and a doc row per key; a secret never comes from
+      a flag. Variables are declared in a typed schema.
+    level: file
+    why: >-
+      A hard-coded fallback address sends traffic to the wrong place when the configured one is missing.
+    kind: rule
+    strength: Hard
+    status: retired
+    replaced_by: code.config.1
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          A structural rule flagging a service address literal next to a configured address read. Plant: A
+          literal service address used as a fallback fails. Control: The configured address alone passes.
+    open:
+      - Taken from one bundled source row; belongs in code (config reading).
+      - belongs in code
+  - id: gates.own-rules.5
+    slug: no-secret-in-public-config
+    since: 0.1.0
+    rule: >-
+      Secret-shaped keys in public environment files fail, and no secret reaches the bundle.
+    detail: >-
+      Public environment files hold only public values; a variable whose name looks like a secret fails the
+      check.
+    level: file
+    why: A secret in a public file ships to every browser.
+    kind: rule
+    strength: Hard
+    status: retired
+    replaced_by: supply.secrets.3
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. A structural check over public environment files for secret-shaped key names.
+          Plant: A public env file with a key named like a token fails. Control: Public values only passes.
+    open:
+      - Taken from one bundled source row; belongs in supply (secrets).
+      - belongs in supply
+  - id: gates.own-rules.6
+    slug: gate-never-imports-its-subject
+    since: 0.1.0
+    rule: >-
+      A repo's own gate imports nothing from the code it judges, and reaches it only through a declared
+      internal export or the built binary.
+    detail: >-
+      A gate that needs facts from the code reads them through an export declared for gates (an internal entry
+      the package lists for that use) or by running the built program and reading its machine output.
+      Importing the package it judges is a finding: a fault in the subject then breaks or bends the gate, and
+      the gate passes whatever the subject's own code says. The import rule names the gate folder and the
+      internal exports it may reach.
+    level: package
+    why: >-
+      A gate that imports its subject dies with it when the subject breaks, and judges the subject with the
+      subject's own logic.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-gates
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-rule
+        tool: dependency-cruiser
+        tier: "1"
+        note: >-
+          an import rule (dependency-cruiser, eslint-plugin-boundaries or depguard) that lets the gate folder
+          import only the declared internal exports of the packages it judges. Plant: a gate importing a
+          judged package's main entry fails. Control: a gate importing the package's declared internal export,
+          or running the built binary, passes

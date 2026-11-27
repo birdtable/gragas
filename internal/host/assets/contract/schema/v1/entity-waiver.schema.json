@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-waiver.schema.json",
+  "title": "Waiver as a report counts it (entity, spec 16.6): never the path",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "slug",
+    "rule",
+    "kind",
+    "age_days",
+    "expires",
+    "owner_present"
+  ],
+  "properties": {
+    "slug": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0"
+    },
+    "rule": {
+      "$ref": "common.schema.json#/$defs/id",
+      "x-introduced": "1.0"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "path",
+        "kind",
+        "rule"
+      ],
+      "x-introduced": "1.0"
+    },
+    "age_days": {
+      "type": "integer",
+      "minimum": 0,
+      "x-introduced": "1.0"
+    },
+    "expires": {
+      "$ref": "common.schema.json#/$defs/date",
+      "x-introduced": "1.0"
+    },
+    "owner_present": {
+      "type": "boolean",
+      "x-introduced": "1.0"
+    }
+  }
+}

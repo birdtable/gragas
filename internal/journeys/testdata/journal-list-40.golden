@@ -1,0 +1,15 @@
+$ gragas journal list
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+gragas journal list
+Run  State        Command
+r1   done         gragas gen --apply
+r2   rolled back  gragas gen --apply
+r3   open         gragas gen --apply
+2 columns not shown: Files, Plan
+
+  done       3 runs listed, folder
+  ROOT
+--- stderr

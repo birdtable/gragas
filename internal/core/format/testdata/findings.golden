@@ -1,0 +1,18 @@
+## a clean control
+clean
+## a field written twice
+rulebook.yaml:3: name is written twice (first on line 2); keep one
+## yaml that does not parse
+rulebook.yaml:1: not readable YAML: yaml: line 1: did not find expected ',' or ']'
+## not a mapping
+rulebook.yaml:1: the file is not a mapping of fields
+## the structure file missing
+structure.yaml: the file is missing
+## a schema problem lands on its line
+rulebook.yaml:22: schema at governance/review_days: must be at least 1
+## a slug used twice
+structure.yaml:12: concern "errors" of part "go" is already used on line 10
+## a part alias that takes a slug in use
+structure.yaml:8: part "go" is already used on line 6; a slug names one thing
+## a part named like the engine's checks
+structure.yaml:6: part "gragas" is reserved: it is the first word of the engine's own check ids, such as gragas.validate.1, so a rule of that part could not be told from the engine's check

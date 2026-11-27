@@ -1,0 +1,196 @@
+part: service
+concern: cycle
+order: 14
+title: Services with containers in the development cycle
+summary: >-
+  What a service whose tests need a real database, queue or container adds to the moments of the development
+  cycle: one shared container per package started in the suite's setup with a database per test cloned from a
+  template, images pinned by digest and pulled before the lock, the integration tier as a member of push or
+  release, the cross-service tier at release that measures state, and the deploy as a release member run by
+  the hub. These lines add members to the core moments and never a moment of their own.
+rules:
+  - id: service.cycle.1
+    slug: one-container-per-package-and-a-database-per-test
+    since: 0.1.0
+    rule: >-
+      The suite starts one shared container per package in its global setup, and each test gets its own
+      database cloned from a migrated template, never a container per file or a migration per test.
+    detail: >-
+      tests.isolation.3 holds that heavy fixtures start once and are reached through a helper; this line gives
+      the shape for a service. The global setup starts the engine once, runs the migrations once into a
+      template, and each test clones the template into a database of its own. A container per file costs
+      seconds per file; a clone costs milliseconds. A bind timeout that never changes whatever the load means
+      the knob is not connected to the pool.
+    level: package
+    why: >-
+      Four files cost 19 seconds per container per file against 7 seconds shared, and a template clone took 68
+      to 136 milliseconds against 210 to 322 to migrate; a container per file inside a fixed 10 second bind
+      budget failed three tiers on the timeout.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: testcontainers-node
+        where: About
+        says: >-
+          Testcontainers is a library that supports tests, providing lightweight, throwaway instances of common
+          databases
+        backs: check
+    review_question: >-
+      How many containers does this package start per run, where does the migration run, and how does each
+      test get its database?
+    relates:
+      - id: tests.isolation.3
+        how: see
+      - id: tests.runners.5
+        how: see
+      - id: tests.doubles.2
+        how: see
+    open:
+      - >-
+        Planned check: the container count in the test member's report, one per package. No tool key is
+        bound yet.
+  - id: service.cycle.2
+    slug: images-by-digest-pulled-before-the-lock
+    since: 0.1.0
+    rule: >-
+      A container image the tests use is pinned by digest and pulled in the tools step, before the lock and
+      never inside the container's start call.
+    detail: >-
+      gates.command.24 holds that an image is a tool. A pull inside the start call runs under the test's bind
+      timeout and under the heavy-test lock, so a slow pull looks like a slow container and holds the slot
+      for the download. The tools step pulls by digest when the pin changes (gates.command.19), and the start
+      call finds the image present.
+    level: program
+    why: >-
+      A pull inside the start call in one fleet made a constant bind timeout fire on the network, and nobody
+      could tell the pull from the start.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: docker-cli-image-pull
+        where: Pull an image by digest
+        says: >-
+          When pulling an image by digest, you specify exactly which version of an image to pull.
+        backs: rule
+    review_question: >-
+      Where is this image's digest pinned, which step pulls it, and does any start call pull?
+    relates:
+      - id: gates.command.24
+        how: see
+      - id: gates.command.19
+        how: see
+      - id: supply.provenance.7
+        how: see
+    open:
+      - >-
+        Planned check: the tools pins file lists each image with its digest and the tools step pulls it. No
+        tool key is bound yet.
+  - id: service.cycle.3
+    slug: the-integration-tier-is-a-member
+    since: 0.1.0
+    rule: >-
+      The integration tier is a member of the push or the release tier, never a command outside every hook,
+      and a skipped database test prints as a skip and is counted, never a quiet pass.
+    detail: >-
+      gates.command.17 holds that a check belongs to the earliest moment where it fits the budget, and
+      gates.command.30 that a member which cannot run here prints SKIPPED. The integration tier that needs the
+      container runs at push where it fits and at release where it does not; it is a row of the members file
+      either way. A test that skips because the database is absent is a skip in the report, and red at land
+      (tests.admission.5).
+    level: program
+    why: >-
+      The integration tiers of eleven services in one fleet, 68 and 229 seconds in two of them, ran outside
+      every hook and nothing proved them; two packages' own gates skipped 24 and 15 database tests quietly.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+    review_question: >-
+      Which tier of this service holds the integration tests, and how many database tests did the last run
+      skip?
+    relates:
+      - id: gates.command.17
+        how: see
+      - id: gates.command.30
+        how: see
+      - id: tests.admission.5
+        how: see
+      - id: service.authz.2
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the integration member in push or release, and the report's
+        skip count for it. No tool key is bound yet.
+  - id: service.cycle.4
+    slug: the-cross-service-tier-measures-state
+    since: 0.1.0
+    rule: >-
+      At release a cross-service end-to-end tier proves what no unit suite can: it measures the state the
+      services hold, never the response alone, and marks the data it writes with a run marker.
+    detail: >-
+      A response that says accepted proves the request was read; the order, the row or the event it should
+      have produced is the thing to read back. Each run writes its marker into the data it makes, so the
+      tier finds its own rows and leaves the rest alone, and a teardown removes them (tests.journeys.6). The
+      tier is a release member with a net field (gates.command.30).
+    level: release
+    why: >-
+      One real order was lost in one fleet with every unit suite green, because nothing read the state after
+      the response.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+    review_question: >-
+      What state does this cross-service tier read back after each request, and how does it find the rows it
+      wrote?
+    relates:
+      - id: tests.journeys.6
+        how: see
+      - id: tests.journeys.5
+        how: see
+      - id: gates.command.30
+        how: see
+    open:
+      - >-
+        Planned check: the tier's report lists the state reads per journey and the marker. No tool key is
+        bound yet.
+  - id: service.cycle.5
+    slug: the-deploy-is-a-release-member-run-by-the-hub
+    since: 0.1.0
+    rule: >-
+      The deploy is a release member run by the hub after the tier, and a package that publishes has a publish
+      workflow that runs the push tier first.
+    detail: >-
+      supply.release.1 holds that a release runs the full gate first and that only the release workflow on
+      the tag publishes. This line places the deploy and the publish in the members file: the deploy is a
+      release member with an after edge to the tier, run by the hub (gates.command.31), and a publish is the
+      same shape. A package that publishes with no workflow publishes from a working checkout nobody proved.
+    level: release
+    why: >-
+      Six packages of one fleet publish with no workflow, and one service has no deploy on record.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+    review_question: >-
+      Is this service's deploy a release member with an after edge to the tier, who runs it, and does the
+      publish workflow run the push tier first?
+    relates:
+      - id: supply.release.1
+        how: see
+      - id: gates.command.31
+        how: see
+      - id: supply.workflows.5
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds the deploy member at release with its after edge, and the publish
+        workflow's first job is the push tier. No tool key is bound yet.

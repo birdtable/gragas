@@ -1,0 +1,7 @@
+$ gragas version --config /nowhere/settings.yaml
+--- stdout
+
+  not ready  --config names /nowhere/settings.yaml, which does not exist
+    leave out --config, or write the file
+--- stderr
+--- exit 4

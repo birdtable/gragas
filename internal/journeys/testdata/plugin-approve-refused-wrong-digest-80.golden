@@ -1,0 +1,11 @@
+$ gragas plugin approve lint-a@1.0.0 --digest <wrong> --apply
+--- exit 5
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    the digest given is not the installed bundle's: it is
+  <lint-a@1.0.0>, and
+  <wrong> was
+  given
+    gragas plugin approve lint-a@1.0.0
+--- stderr

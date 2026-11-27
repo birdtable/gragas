@@ -1,0 +1,23 @@
+{
+  "contract": "1.3",
+  "runs": [
+    {
+      "results": [],
+      "tool": {
+        "driver": {
+          "name": "gragas",
+          "rules": [
+            {
+              "id": "gragas.conflicts.1",
+              "shortDescription": {
+                "text": "The conflicts check: two rules bind one tool entry to different values, options or severity, so neither binding ships"
+              }
+            }
+          ],
+          "version": "1.2.3"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

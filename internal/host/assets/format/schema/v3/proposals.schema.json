@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "proposals.schema.json",
+  "title": "proposals/<slug>.yaml: one proposal an overlay carries to a parent (format v3)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "slug", "target", "state", "opened", "document"],
+  "properties": {
+    "format": {"$ref": "common.schema.json#/$defs/format"},
+    "slug": {"$ref": "common.schema.json#/$defs/slug"},
+    "target": {"$ref": "common.schema.json#/$defs/text", "description": "the rulebook whose prefix owns the rule, or the parent"},
+    "state": {"enum": ["open", "accepted", "declined", "withdrawn"]},
+    "link": {"$ref": "common.schema.json#/$defs/url", "description": "the pull request or issue that carries it"},
+    "opened": {"$ref": "common.schema.json#/$defs/date"},
+    "document": {"type": "object", "description": "the proposal as a contract document; its schema is the contract's (M1-16), not the format's"}
+  }
+}

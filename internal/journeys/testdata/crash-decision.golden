@@ -1,0 +1,34 @@
+$ gragas decision new --decision-slug small --title Small --text Keep it small. --rejected big: slow --apply
+--- before
+a7378c2c06875a3c26c08883fb1d663d593226832fc6ff7e40c62544adccfc71 language/go/rules/errors.yaml
+93d53f8940029b3e40a77be9c8d8df9c0c239c28bb88ad6136ebc7eb3d847ae1 presets/golangci-lint/settings.yml
+7d1543288bbbe5e0ef83911768156af6f901e0611bf851dce435757f72ea996b rulebook.yaml
+860f82f9bebaf053658f0d86939b59c005959ce62bfb361e7b8566bc6c3069ac structure.yaml
+--- after
+e04a68ffac06cfca8b497a62658a626601b1b7440f7c0b0f405a4bfe5f56620f decisions.yaml
+5033989b21a69834b879d74af16250e420843a70f5d43927f36decd87db772f1 history.jsonl
+a7378c2c06875a3c26c08883fb1d663d593226832fc6ff7e40c62544adccfc71 language/go/rules/errors.yaml
+93d53f8940029b3e40a77be9c8d8df9c0c239c28bb88ad6136ebc7eb3d847ae1 presets/golangci-lint/settings.yml
+7d1543288bbbe5e0ef83911768156af6f901e0611bf851dce435757f72ea996b rulebook.yaml
+860f82f9bebaf053658f0d86939b59c005959ce62bfb361e7b8566bc6c3069ac structure.yaml
+--- boundaries
+before-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+after-record
+after-record
+after-record

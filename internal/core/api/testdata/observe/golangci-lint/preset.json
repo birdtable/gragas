@@ -1,0 +1,6 @@
+[
+  {"binding": {"tool": "golangci-lint", "target": "source", "key": "errcheck", "severity": "error"}, "layer": "base", "decision": "errors"},
+  {"binding": {"tool": "golangci-lint", "target": "source", "key": "gosec", "severity": "error"}, "layer": "base"},
+  {"binding": {"tool": "golangci-lint", "target": "source", "key": "staticcheck", "severity": "error"}, "layer": "base", "excluded": {"overlay": "team", "decision": "no-static"}},
+  {"binding": {"tool": "golangci-lint", "target": "source", "key": "ineffassign", "severity": "error"}, "layer": "base", "excluded": {"overlay": "team", "decision": "no-ineff"}}
+]

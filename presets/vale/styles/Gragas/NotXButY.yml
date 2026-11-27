@@ -1,0 +1,10 @@
+# docs.voice.2: the not-X-but-Y form, in its two usual shapes. Each token is
+# one regular expression; Vale joins the items of raw into one, so tokens it is.
+extends: existence
+message: "The not-X-but-Y form '%s': state Y."
+level: error
+ignorecase: true
+nonword: true
+tokens:
+  - '\b(?:is|are|was|were|it''s|that''s|isn''t|aren''t) not (?:just |only |merely |simply )?[^.;:!?]{1,50}(?:,|;)? but\b'
+  - '\bnot (?:just|only|merely|simply) [^.;:!?]{1,50}(?:,|;) (?:it''s|it is|they''re|but)\b'

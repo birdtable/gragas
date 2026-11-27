@@ -1,0 +1,5 @@
+[
+  {"name":"an unknown field","patch":[{"op":"add","path":"/0/later","value":1}],"problem":"Additional properties are not allowed ('later' was unexpected)"},
+  {"name":"a word that is not one","patch":[{"op":"replace","path":"/0/words/0","value":"looser"}],"problem":"is not one of"},
+  {"name":"no words","patch":[{"op":"remove","path":"/0/words"}],"problem":"'words' is a required property"}
+]

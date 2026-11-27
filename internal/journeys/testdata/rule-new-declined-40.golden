@@ -1,0 +1,31 @@
+$ gragas rule new --concern go.errors --statement Return errors, do not panic. --strength must --own --decision-title Errors are returned --decision-text Panics hide failures from the caller.
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+What changes
+  new rule go.errors.3: must, proposed.
+  Standing: none before, proposed after
+  add source own-go-errors-3 (own
+  decision)
+  add decision decide-go-errors-3
+
+What is written where
+  language/go/rules/errors.yaml: adds
+  rule go.errors.3
+  sources.yaml: adds source
+  own-go-errors-3
+  decisions.yaml: adds decision
+  decide-go-errors-3
+  history.jsonl: appends one entry (new)
+This was a dry run and nothing was
+changed. Add --apply to make these
+changes.
+
+  declined   nothing was changed
+    gragas rule new --concern go.errors
+--decision-text 'Panics hide failures
+from the caller.' --decision-title
+'Errors are returned' --own --statement
+'Return errors, do not panic.'
+--strength must --apply
+--- stderr

@@ -1,0 +1,82 @@
+{
+  "contract": "1.3",
+  "releases": [
+    {
+      "bump": "major",
+      "date": "2026-09-30",
+      "entries": [
+        {
+          "change": "added",
+          "consumer_action": "Wrap every error a service returns with what was being done.",
+          "entity": "rule:go.errors.1",
+          "release": "1.0.0",
+          "remedy": "Wrap the error with fmt.Errorf and %w.",
+          "sentence": "A service wraps an error with what was being done."
+        },
+        {
+          "change": "added",
+          "entity": "rule:go.layout.1",
+          "release": "1.0.0",
+          "sentence": "The program lives under cmd and everything else under internal."
+        }
+      ],
+      "release_note": "The first release: one rule on trial and one rule in force.",
+      "version": "1.0.0"
+    },
+    {
+      "bump": "minor",
+      "date": "2026-10-31",
+      "entries": [
+        {
+          "change": "changed",
+          "consumer_action": "Expect the wrapcheck setting at error severity from now on.",
+          "diff": "https://example.com/fixture-base/compare/1.0.0...1.1.0",
+          "entity": "rule:go.errors.1",
+          "release": "1.1.0",
+          "sentence": "The rule leaves trial and is in force."
+        },
+        {
+          "change": "added",
+          "entity": "rule:base.naming.1",
+          "release": "1.1.0",
+          "sentence": "A thing is named for what it holds."
+        },
+        {
+          "change": "replaced",
+          "consumer_action": "Read base.naming.1 where you read base.naming.2.",
+          "entity": "rule:base.naming.2",
+          "release": "1.1.0",
+          "sentence": "The rule is retired in favour of base.naming.1."
+        }
+      ],
+      "version": "1.1.0"
+    },
+    {
+      "bump": "minor",
+      "date": "2026-11-07",
+      "entries": [
+        {
+          "change": "added",
+          "entity": "rule:go.errors.3",
+          "release": "1.2.0",
+          "sentence": "An error is checked before the value it came with, on trial until 2027-06-01."
+        },
+        {
+          "change": "added",
+          "entity": "rule:web.forms.1",
+          "release": "1.2.0",
+          "sentence": "An error shows beside the field it is about."
+        },
+        {
+          "change": "changed",
+          "entity": "term:gate",
+          "release": "1.2.0",
+          "sentence": "The gate's literal is now make check."
+        }
+      ],
+      "release_note": "A rule on trial, a rule for forms and a new literal for the gate.",
+      "version": "1.2.0"
+    }
+  ],
+  "rulebook": "fixture-base"
+}

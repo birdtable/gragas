@@ -1,0 +1,10 @@
+version: "2"
+linters:
+  enable:
+    - wrapcheck
+    - errorlint
+    - nilerr
+    - revive
+  settings:
+    wrapcheck:
+      ignoreSigs: [".Errorf("]

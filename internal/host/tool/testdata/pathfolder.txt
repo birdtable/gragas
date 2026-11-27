@@ -1,0 +1,12 @@
+# The PATH folders whose answer depends on the system: the word, a tab, the folder, a tab, the kept form.
+# none: left out on every system.
+# kept: kept as the third column where it is absolute, else left out.
+none	\bin
+none	\tools
+none	C:bin
+none	C:\Go\..\bin
+kept	C:\Go\bin	C:/Go/bin
+kept	\\host\share\bin	//host/share/bin
+kept	/work/a\b/bin	/work/a\b/bin
+none	/work/../bin
+kept	/work/bin	/work/bin

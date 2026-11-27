@@ -1,0 +1,38 @@
+format: 3
+part: service
+concern: health
+rules:
+  - id: service.health.1
+    statement: "A liveness check does not call a dependency and a readiness check does; a start test breaks a dependency and asserts liveness stays green while readiness changes."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The test is two-sided: it fails a liveness that checks the dependency and a readiness that does not. It applies only where a health or readiness route exists (a gateway check, a deploy check, a journey pre-check), because a function runtime has no liveness probe of its own. Whether the reference services expose such a route, and whether a load balancer reads it, was not checked."
+      pros:
+        - "A readiness probe that checks a shared dependency can fail on every instance at once, so a small slowdown removes the whole service. The tension is a thorough check against the harm of a false positive across a organisation. The known way round is a shallow readiness that checks nothing, which the second plant catches."
+    sources:
+      - ref: builders-library-health-checks
+        where: implementing health checks
+        backs: rule
+      - ref: breck-k8s-probes
+        where: readiness probe case
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 17 and section 23 item 5
+        backs: rule
+  - id: service.health.2
+    statement: "Every service is born with the same alarms on errors, throttles and latency, from one shared component."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The shared alarm component is held by the infrastructure part. In Go, a daemon serves one health document, signals readiness and logs with version and run id, and its work is bounded and supervised. There is no alerting on a failing health document for a deployed program yet."
+      pros:
+        - Alarms added by hand per service are missing in the service that fails.

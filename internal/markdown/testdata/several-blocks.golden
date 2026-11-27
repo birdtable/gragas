@@ -1,0 +1,9 @@
+heading 1 line 1 "Go errors" #go-errors
+heading 2 line 6 "Wrapping" #wrapping
+heading 2 line 15 "Wrapping" #wrapping-1
+paragraph lines 3-4 "Intro paragraph that\nruns two lines."
+paragraph lines 8-8 "A caller MUST wrap an error with context."
+block lines 10-13 info "gragas" closed true under #wrapping bytes 107-155 body 117-151 "id: go.errors.1\nrule: wrap errors\n"
+block lines 17-19 info "gragas" closed true under #wrapping-1 bytes 169-199 body 179-195 "id: go.errors.2\n"
+block lines 21-23 info "go" closed true under #wrapping-1 bytes 200-240 body 206-236 "fmt.Println(\"MUST not count\")\n"
+must line 8 under #wrapping "A caller MUST wrap an error with context."

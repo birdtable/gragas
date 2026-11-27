@@ -1,0 +1,22 @@
+version: 1
+plugins:
+  -
+    name: ast-grep
+    version: 1.1.0
+    source: local
+    digest: "sha256:c1eef2baae51c0db88d04b17280dbd312b439dd709e31dc268c85c9277079558"
+  -
+    name: eslint
+    version: 1.0.0
+    source: local
+    digest: "sha256:6f8e3468308b64fa7410875d173ef09f491fe09d66e222bed4ae84c419922627"
+  -
+    name: golangci-lint
+    version: 1.0.1
+    source: local
+    digest: "sha256:6a11c13105016f4ae034373c8d379a582d4bec94b3d3044a2484d930a0d1f923"
+  -
+    name: tsc
+    version: 1.0.0
+    source: local
+    digest: "sha256:86e424e3236bc6e5c27ad0247986bcaf3f25484c490e791994e1fc56eca4300f"

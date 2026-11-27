@@ -1,0 +1,24 @@
+format: 3
+part: postgres
+concern: engine
+rules:
+  - id: postgres.engine.1
+    statement: "Tests run on the engine version production runs; an in-process build of the engine over the real migrations counts as that engine when its major version matches production; a test of roles or connections runs a server build; a version below a stated floor or on a known-bad list fails; and a contract suite pins the behaviour the data layer relies on."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "An in-process build (for example PGlite) runs store tests and gates fast over the real migrations; it does not model roles, grants, connections or the superuser, so a test of those runs on a server build of the same major. The in-process major is read and compared like the container's. The container's server version equals the version declared in infrastructure and is compared with a floor file kept as data. The contract suite covers concurrent writers on one row, retry on conflict, ordering, time-zone handling and 64-bit integer width, and runs once per named engine. A container tag is never a floating one. Editing the known-bad list is a protected path."
+      pros:
+        - "An engine version is part of the contract, and a bug fixed in a later version is a fault carried until the move. A neighbouring engine's write-ahead-log bug stood for years, and a company using it saw corruption in its backup snapshots. Agents bump an image tag to make a build pass (inference)."
+    relations:
+      relates:
+        - store.schemas.5
+    sources:
+      - ref: jepsen-postgresql-12-3
+        backs: rule
+      - ref: p-03-data
+        where: "sections 2, 4, 7 and 24"
+        backs: rule
+      - ref: decision-65-postgres
+        backs: rule

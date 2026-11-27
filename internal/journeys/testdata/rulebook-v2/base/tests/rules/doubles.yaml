@@ -1,0 +1,343 @@
+part: tests
+concern: doubles
+order: 5
+title: Real engines, doubles and fixtures
+summary: >-
+  A managed store is tested against the real engine. A double stands only at an unmanaged edge, carries
+  literal recorded bytes and asserts no calls on queries; which dependency is managed is written once per repo
+  as data in a protected file. A test of an external program runs the real program on a fake account before it
+  uses recorded bytes. Fixtures are the server's own output, and tests use made-up names.
+rules:
+  - id: tests.doubles.1
+    slug: managed-store-real-engine
+    since: 0.1.0
+    rule: >-
+      A managed store (one our own services own) is tested against the real engine, not a fake.
+    level: package
+    why: >-
+      A fake of a store proves the fake. One of our repos has no mock library at all. The reference practice
+      starts a real database in one shared container (see the tool record).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapters 5 and 8
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          storage tests run against the real engine from one helper with its own temp folder
+          (tests.isolation.3), checked by the managed-dependency scan (tests.doubles.3). Plant: a hand double
+          of a store marked managed fails the scan. Control: a real-engine test passes
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          storage specs use the real engine started once in global setup (tests.isolation.3); the
+          managed-dependency scan flags a double of a managed one. Plant: a spec that replaces the store
+          client with a double fails. Control: a spec against the real engine passes
+    open:
+      - >-
+        Whether a SQLite file a sibling program also reads counts as managed stays open (the reference case).
+  - id: tests.doubles.2
+    slug: no-own-module-mocks
+    since: 0.1.0
+    rule: Tests do not mock our own modules, and no mock library is a dependency.
+    detail: >-
+      Mock libraries (gomock, testify mock, mockery and the like) are banned in go.mod and imports. In
+      TypeScript a module mock or global stub of a module in the repo is banned in test files by a
+      restricted-import or restricted-syntax rule. A fake stands only as in tests.doubles.4, small and written
+      by hand.
+    level: package
+    why: >-
+      Mocking our own code makes the test a copy of the implementation. Own measure: no mock library in any
+      repo today.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapter 5
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: depguard
+        tier: "1"
+        fix: never
+        note: >-
+          depguard ban of mock libraries in the shared lint config, over go.mod and imports. Plant: an import
+          of a mock library fails. Control: a hand-written fake passes
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          no-restricted-imports and no-restricted-syntax on module mock and global stub calls of paths inside
+          the repo, in test files. Plant: a module mock of one of our own packages fails. Control: a double of
+          an unmanaged external edge passes
+    relates:
+      - id: tests.doubles.4
+        how: see
+      - id: tests.doubles.3
+        how: see
+    open:
+      - >-
+        The TypeScript form bans mocks of named repository paths; the managed-or-unmanaged data file
+        (tests.doubles.3) covers dependencies a path list does not name.
+      - "v1 evidence, not yet a source: own measure (no mock library in any repo)"
+  - id: tests.doubles.3
+    slug: managed-or-unmanaged-data
+    since: 0.1.0
+    rule: >-
+      A repo keeps a file in a protected path marking each dependency managed or unmanaged; a double of a
+      managed one fails a scan, and a double of an unmanaged one uses literal recorded bytes and asserts no
+      calls on queries.
+    detail: >-
+      Managed means a database or queue our own services own; unmanaged means a third-party API. A double
+      stands only at an unmanaged edge, is small and hand-written, and carries literal recorded bytes. A call
+      assertion on a query (as opposed to a command) is wrong; whether it is wrong is a review question. The
+      file is a protected path, since marking a dependency unmanaged is the known way round. Recorded bytes
+      are the second choice: where the unmanaged program offers a fake account or a local server, the test
+      runs the real program against it (tests.doubles.5).
+    level: package
+    why: >-
+      Khorikov's line: mock only the edge you do not control, and do not assert on calls that are queries. The
+      file turns a ban of named paths into a check per dependency.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapters 5 and 8
+        backs: rule
+      - ref: decision-65-tests
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. data file per repo plus a scan for a double of a dependency marked managed. Plant:
+          a hand double of a dependency marked managed fails the scan. Control: a real-engine test passes
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep or restricted-syntax scan for a module mock of a path marked managed in the data file The
+          scan is an ast-grep search for vi.mock of a path marked managed; vi.stubGlobal is covered the same
+          way. Plant: a module mock of a managed dependency fails. Control: a mock of an unmanaged one with
+          literal recorded bytes passes
+    review_question: >-
+      Does this double assert on a query, and which dependency is it standing in for, managed or not?
+    relates:
+      - id: tests.doubles.5
+        how: see
+    open:
+      - >-
+        For TypeScript the mechanical form is config only (restricted imports); the query-assertion half stays
+        review.
+      - >-
+        A scan for hand doubles of managed dependencies is not built for Go; the mock-library ban is the rule
+        half.
+  - id: tests.doubles.4
+    slug: store-fake-injects-failure
+    since: 0.1.0
+    rule: >-
+      A fake of a store exists only to inject a failure the real engine cannot cheaply produce, a contract
+      test against the real adapter pins that failure, a fake serves its seeded rows and throws on any call it
+      was not seeded for, and no fake returns a constant.
+    detail: >-
+      A fake answers from the rows a test seeded into it; a call whose arguments match no seeded row throws
+      with the call it got, so a test that forgot to seed fails loudly instead of passing on a default. A fake
+      whose method returns the same value whatever it is asked is refused. One contract suite per fake runs
+      the same cases against the fake and the real adapter, and the failure the fake injects is one of those
+      cases.
+    level: package
+    why: >-
+      A fake that drifts from the engine hides the bug; a contract test per fake proves it against the real
+      one. A fake that answers an unseeded call with a default makes a test pass for a reason the author never
+      chose.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-tests
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          one contract suite per fake runs the same cases against the fake and the real adapter, including an
+          unseeded call that must throw on the fake. Plant: a fake that returns a result the real adapter
+          cannot fails the contract suite; a fake that returns a default for an unseeded call fails. Control:
+          a fake pinned by its contract suite that throws on an unseeded call passes
+    review_question: >-
+      Which failure does this store fake inject, which contract test pins it, and does it throw on a call it
+      was not seeded for?
+    open:
+      - >-
+        A scan that a fake has a contract test is proposed only; the review question holds it until then.
+  - id: tests.doubles.5
+    slug: fakes-from-the-contract
+    since: 0.1.0
+    rule: >-
+      Where a test needs an external program's behaviour it runs the real program against a fake account or
+      server, and only where no fake account exists does it use recorded bytes; tests and stories use fakes
+      generated from the contract, and hand-written network stubs are banned outside the generated folder.
+    detail: >-
+      The order of preference is fixed. First, the real external program, run against a fake account, a fake
+      model or a local server it can be pointed at. Second, only where the program offers no such account or
+      server, a double with literal recorded bytes at the unmanaged edge (tests.doubles.3), pinned by a
+      contract test where the engine allows one (tests.doubles.4). A hand-written stand-in for the program's
+      behaviour is never used. Generated mock handlers come from the spec, and a lint ban stops hand-written
+      network stubs and per-feature fake harnesses outside the generated folder. In Go the equivalent of a
+      generated fake is a small hand-written fake proved against the real one by a contract test
+      (tests.doubles.4).
+    level: package
+    why: >-
+      A hand-written stub encodes what the author thought the server said, and recorded bytes freeze what it
+      said once; the real program on a fake account says what it says today. Reference practice, one fake
+      source for the whole repo.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-tests
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint no-restricted-imports and no-restricted-syntax on network stub libraries outside the
+          generated mock folder (Biome form: `noRestrictedImports` with the same list and a GritQL plugin for
+          the stub calls). Plant: a hand-written network stub in a spec fails. Control: the generated handler
+          passes
+    review_question: >-
+      Does this test stand in for an external program that offers a fake account or server, and if so why is
+      the real program not run?
+    relates:
+      - id: tests.doubles.3
+        how: see
+      - id: tests.doubles.4
+        how: see
+    open:
+      - The Go side has no generated fakes; its equivalent is tests.doubles.4.
+      - >-
+        Whether a fake account exists is review until the repo lists its external programs with their test
+        accounts.
+  - id: tests.doubles.6
+    slug: fixtures-are-server-output
+    since: 0.1.0
+    rule: >-
+      Fixtures are the server's own output or held to its type in both directions, every enum member and
+      nullable field has a sample, each supported platform has its own generated example set held exactly, and
+      a test fails when an answer changes.
+    detail: >-
+      Fixtures come from the server side: its tests write golden JSON from the real encoder (an update flag
+      run only in the owning repo, `-update`), and a check (`companion fixtures --check`) regenerates in
+      memory and diffs (forward direction). In reverse, every golden path must be exercised by the demo world;
+      the check lists golden paths absent from it and fails on a rise (shrink-only). A schema walk over the
+      generated schema confirms a sample for every enum member and nullable field. A program that supports
+      more than one platform keeps one example set per platform, written by one command from that platform's
+      adapter or fake and held exactly; the answer for a feature a platform lacks is one shared body, not a
+      copy per platform.
+    level: function
+    why: >-
+      Fixtures generated from samples run the wrong direction: goldens are the handler's bytes and the schema
+      is a second check. Generators' defaults broke "null, never 0". Own bugs: 11, 6 and 6 faults across three
+      repos. A single example set hides what one platform answers differently.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-tests
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. fixtures check that regenerates the golden JSON in memory and diffs it; reverse
+          check that every golden path is exercised by the demo world, shrink-only; schema walk for a sample
+          of every enum member and nullable field; per platform, the examples command regenerates that
+          platform's set and diffs it. Plant: a hand-edited fixture that differs from the golden fails, a new
+          golden path absent from the demo world raises the count and fails, and a hand edit to one platform's
+          example set fails. Control: a fixture equal to the golden passes
+    open:
+      - >-
+        167 of 588 golden paths are absent from one repo's demo world today, so the shrink-only check needs a
+        baseline.
+      - The reverse direction is planned; the forward direction is held in two repos.
+  - id: tests.doubles.7
+    slug: made-up-names-only
+    since: 0.1.0
+    rule: >-
+      Fixtures, stories, docs, tests and shipped examples use made-up names only, for people, machines,
+      managed software, networks and addresses, checked against an explicit stand-in list.
+    detail: >-
+      Every name of a person, machine, container, image, network, domain or account in those paths is on a
+      committed stand-in list, and any other name in a name-shaped position fails. Addresses use the
+      documentation ranges (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24, 2001:db8::/32, the example
+      domains), never a real MAC or host. A second check compares every tracked file, commit message and
+      branch name with a roster of real names kept outside the repository or as hashes, never in clear text;
+      the check fails when the roster cannot be read, rather than passing on an empty list. In a public
+      repository every author and committer email is a no-reply address, refused at pre-push.
+    level: word
+    why: >-
+      Real names recurred in fixtures twice (own bugs), and a real host, address or person in a public file
+      cannot be taken back. A stand-in list catches the name nobody thought to put on a roster; the roster
+      catches the known ones in places the stand-in list does not cover.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: rfc-5737
+        backs: rule
+      - ref: rfc-3849
+        backs: rule
+      - ref: rfc-2606
+        backs: rule
+      - ref: decision-65-tests
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. a stand-in scan of fixtures, stories, docs, tests and shipped examples that fails
+          a name or address not on the committed stand-in list or outside the documentation ranges. Plant: a
+          fixture naming a host not on the stand-in list fails; an example config with a non-documentation
+          address or a real MAC fails. Control: a fixture using only listed stand-ins and documentation
+          addresses passes
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. companion scan of every tracked file, commit message and branch name against a
+          roster of real names kept outside the repo or hashed, failing when the roster cannot be read; the
+          alternative for the file half is the flagWords setting of the spell checker (cspell 10.4.0). Plant:
+          a fixture containing a name on the roster fails; a commit message with one fails; a run with the
+          roster missing fails. Control: made-up names pass
+      - binding: any
+        class: hook
+        tier: "2"
+        note: >-
+          the pre-push hook refuses a commit whose author or committer email is not a no-reply address, in a
+          repository marked public. Plant: a commit with a personal email in a public repository is refused at
+          pre-push. Control: a no-reply email passes
+    open:
+      - >-
+        The roster is not committed; the guard keeps hashes. A name on neither list in a free-text position is
+        not found.

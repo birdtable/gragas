@@ -1,0 +1,12 @@
+name: agents
+order: 470
+context: P
+ends: listing
+optin: true
+summary: "Write the files that tell coding agents the rules"
+examples:
+  - {line: "gragas agents", does: "list the files it wrote"}
+  - {line: "gragas agents --opt-in", does: "show the plan to turn the files on"}
+writes: ["the agent files"]
+exits: ["done", "declined"]
+json: agents

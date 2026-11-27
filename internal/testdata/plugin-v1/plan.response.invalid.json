@@ -1,0 +1,12 @@
+[
+  {"name":"an unknown field","patch":[{"op":"add","path":"/0/later","value":1}],"problem":"Additional properties are not allowed ('later' was unexpected)"},
+  {"name":"no final","patch":[{"op":"remove","path":"/0/final"}],"problem":"'final' is a required property"},
+  {"name":"a step that is neither run nor read","patch":[{"op":"replace","path":"/0/steps/1","value":{"kind":"shell"}}],"problem":"'glob' is a required property"},
+  {"name":"a run with no program","patch":[{"op":"remove","path":"/0/steps/0/program"}],"problem":"'program' is a required property"},
+  {"name":"a run with a field it does not name","patch":[{"op":"add","path":"/0/steps/0/env","value":["X=1"]}],"problem":"('env' was unexpected)"},
+  {"name":"a read with no glob","patch":[{"op":"remove","path":"/0/steps/1/glob"}],"problem":"'glob' is a required property"},
+  {"name":"a level below the floors","patch":[{"op":"replace","path":"/0/steps/0/level","value":"none"}],"problem":"'none' is not one of ['isolated', 'sandboxed']"},
+  {"name":"seventeen steps","patch":[{"op":"replace","path":"/1/steps","value":[{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"},{"kind":"read","glob":"rules/**/*.yml"}]}],"problem":"maxItems"},
+  {"name":"a read step with a field it does not name","patch":[{"op":"add","path":"/0/steps/1/root","value":"/"}],"problem":"Additional properties are not allowed ('root' was unexpected)"},
+  {"name":"a placed file with a field it does not name","patch":[{"op":"add","path":"/0/steps/0/place/0/mode","value":493}],"problem":"Additional properties are not allowed ('mode' was unexpected)"}
+]

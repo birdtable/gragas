@@ -1,0 +1,70 @@
+format: 3
+part: cli
+concern: exit
+rules:
+  - id: cli.exit.1
+    statement: "One documented exit-code table, tested against the code and the built binary, with the estate set 0 done, 1 failed or findings, 2 usage, 3 busy, 4 not ready, 5 refused, 6 declined, in every language; a refused result, a declined one and a failed one never share a code; and a command whose port the machine lacks says not on this machine with the port's name and exits 2."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no exit codes.
+    reasoning:
+      definition: "A test parses the documentation table and the exit constants and fails on any code, name or meaning that differs, and runs the built binary through the matrix for one refused, one failed and one missing-port path and compares the exit status. A refusal is a rule holding and a failure is a bug or an outage: an agent retries one and never the other, so they never share a code. A typed refusal or error maps to its code in one place, by its word or type, never by its message (go.errors.4). A program in another language holds the same seven through its own exit owner. Declined (6) is a plan that was shown, asked for a yes, and not applied because no yes was given, whether the answer was no, no answer or the end of the input: nothing changed and nothing went wrong, and a caller never runs it again unasked, which is why it has a code of its own and does not end done (0), where a script would believe the plan was applied. It is not refused (5), where a rule held against the request, and not failed (1), where the program broke; an agent never retries a declined plan unasked. Failed shares code 1 with findings and is told apart from it by the word and by the kind in the JSON document, so a gate fails on an engine failure while a reader still sees which of the two ended the run. Whether a run that only shows a plan and asks nothing ends done (0) or declined (6) is not set here. A program that never shows a plan never exits 6, yet its table names the code, so a script reads one table across the estate. The set 0 to 5 was ruled on 4 Nov and 6 was added on 9 Nov; no meaning of 0 to 5 moved. The change is applied in lockstep: one release of the shared module sets the failed and refused codes and binds the closing word refused to 5, with the programs' tests changed in the same tag; every document that maps refused to 1 changes in one commit; the test in each program is the gate that proves it."
+      pros:
+        - "Own measure. Today one program uses 0, 1, 2, 64, 69, 75 and 78; the shared module uses 0 to 4 with 1 for both refused and failed; three others use 1 for everything; one TypeScript program uses three codes with refusal and bad usage both 1."
+    relations:
+      relates:
+        - go.errors.4
+    sources:
+      - ref: decision-13
+        backs: rule
+      - ref: decision-16
+        backs: rule
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.exit.2
+    statement: "Exit codes are imported from the one leaf package that owns them and never declared elsewhere, and a daemon imports the leaf so it does not link the terminal look."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    reasoning:
+      definition: "Syntax-pattern rules flag a constant or variable named like an exit code with an integer literal, and an exit call with an integer literal argument, anywhere outside the owner package, on a shrink-only list (one file per entry). A test in the owner package asserts that the leaf's dependency list contains no terminal-library module. The owner package is the program's own exit leaf. Where a shared kit owns codes, the program imports them from it. Where the kit takes the program's table, the program's leaf is the owner and the kit only checks and draws. A daemon imports the leaf so it does not link the look."
+      pros:
+        - "The program's own exit leaf, `internal/exit`, owns the codes, so there is one place they can change, and the shared module does not re-export them."
+    sources:
+      - ref: decision-13
+        backs: rule
+  - id: cli.exit.3
+    statement: "--version prints the release tag and the commit stamped at build (a build with no tag says so), the toolchain version, and, for a client of a server, the server's version; version --json gives one JSON document with the same keys plus the API number for a program with an API."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no binary.
+    reasoning:
+      definition: "The tag comes from git describe stamped at build time; a build with no tag prints v0.0.0-<commit>. In Go the commit and toolchain are compared with the binary's build information (revision, modified flag, toolchain), built with VCS stamping; another language stamps the same fields at build. A client asks its server for the server's version and prints unknown with a reason when it cannot reach it (cli.output.9). The version line is printed once, also off a terminal, and never with the banner. The matrix runs both forms, asserts exit 0, a non-empty first line and a JSON document with the keys version, commit and toolchain (plus server and api where they apply), and compares them with what was stamped. A repo-check test demands that each program has a test calling the matrix, so a program cannot skip it. The health document of the daemon repeats the same fields (see the daemon part)."
+      pros:
+        - "Own measure: the four CLIs disagree on --version, and it fails in three of them. The version line is the first thing a person pastes into a bug report and the first thing a reader checks against a provider, so it carries the tag, the commit and the API number, the same shape in any language. This rule starts the matrix helper that the output, config, environment and signal rules reuse."
+    relations:
+      relates:
+        - cli.output.9
+    sources:
+      - ref: decision-65-cli
+        backs: rule

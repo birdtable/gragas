@@ -1,0 +1,506 @@
+[
+  {
+    "contract": "1.3",
+    "versions": {
+      "contract": "1.3",
+      "format": 3,
+      "engine": "0.4.0"
+    },
+    "release": {
+      "version": "1.2.0",
+      "bump": "minor",
+      "date": "2026-11-01",
+      "release_note": "Adds two rules about errors.",
+      "assets": [
+        {
+          "path": "rules.json",
+          "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "checker_code": [
+        {
+          "name": "wrapcheck-kit",
+          "publisher": "house",
+          "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ],
+      "format": 3,
+      "contract": "1.3",
+      "tested_set": {
+        "tools": [
+          {
+            "tool": "golangci-lint",
+            "version": "2.15.0"
+          }
+        ],
+        "plugins": [
+          {
+            "plugin": "wrapcheck",
+            "version": "2.9.0"
+          }
+        ],
+        "kits": [
+          {
+            "kit": "go-test",
+            "version": "1.0.0"
+          }
+        ],
+        "adapters": [
+          {
+            "adapter": "golangci-lint",
+            "version": "1.0.0"
+          }
+        ],
+        "minimum_engine": "0.4.0"
+      },
+      "health": {
+        "numbers": [
+          {
+            "name": "coverage",
+            "value": 0
+          },
+          {
+            "name": "proof",
+            "value": 0.1
+          },
+          {
+            "name": "owners",
+            "value": 0.2
+          },
+          {
+            "name": "reviews",
+            "value": 0.3
+          },
+          {
+            "name": "zero",
+            "value": 0.4
+          },
+          {
+            "name": "debt",
+            "value": 0.5
+          },
+          {
+            "name": "age",
+            "value": 0.6
+          }
+        ],
+        "resolved": false
+      },
+      "withdrawn": {
+        "date": "2026-11-05",
+        "reason": "A wrong pin."
+      }
+    },
+    "released": true,
+    "identity": {
+      "name": "house",
+      "version": "1.2.0",
+      "kind": "base",
+      "licences": {
+        "rules": "CC-BY-4.0",
+        "checker_code": "MIT",
+        "presets": "MIT"
+      },
+      "language": "en",
+      "docs_url": "https://rules.example.org",
+      "explorer_url": "https://explore.example.org",
+      "extends": {
+        "rulebook": "parent",
+        "version": "2.0.0",
+        "content_hash": "sha256:ab78351089603a19341bd2b875a5f7348d516b1d60335727c5e54c1e62131640"
+      },
+      "imports": [
+        {
+          "rulebook": "other",
+          "version": "1.0.0",
+          "parts": [
+            "go"
+          ],
+          "content_hash": "sha256:b77b6a5859c584ff1f1acf5fc4f59e3d19d9a213e8bcf5a944a130fb0b3fa6c2"
+        }
+      ],
+      "owners": [
+        "alex"
+      ],
+      "governance": {
+        "contribution": "proposals",
+        "decision_required": true,
+        "trial_releases": 1,
+        "review_days": 90
+      },
+      "format": 3
+    },
+    "structure": {
+      "layers": [
+        {
+          "slug": "language",
+          "name": "Language",
+          "order": 1
+        }
+      ],
+      "parts": [
+        {
+          "slug": "go",
+          "name": "Go",
+          "layer": "language",
+          "order": 1,
+          "guide": "go.md",
+          "owners": [
+            "alex"
+          ],
+          "aliases": [
+            "golang"
+          ],
+          "concerns": [
+            {
+              "slug": "errors",
+              "name": "Errors",
+              "order": 1
+            }
+          ]
+        }
+      ],
+      "kinds": [
+        {
+          "slug": "library",
+          "name": "Library",
+          "description": "Code others import."
+        }
+      ]
+    },
+    "terms": [
+      {
+        "slug": "digest",
+        "definition": "A hash of the bytes.",
+        "literal": "sha256",
+        "translations": []
+      }
+    ],
+    "rules": [
+      {
+        "id": "go.errors.1",
+        "aliases": [
+          "go.errors.7"
+        ],
+        "statement": "Wrap an error with the call that failed.",
+        "strength": "must",
+        "status": "active",
+        "standing": "enforced",
+        "scope": {
+          "parts": [
+            "go"
+          ],
+          "paths": [
+            "**/*.go"
+          ],
+          "kinds": [
+            "library"
+          ]
+        },
+        "exemptions": [
+          {
+            "path": "internal/gen/**",
+            "reason": "generated code"
+          }
+        ],
+        "reasoning": "A bare error loses where it came from.",
+        "pairs": [
+          {
+            "number": 1,
+            "target_type": "source"
+          }
+        ],
+        "owner": "alex",
+        "review_by": "2027-01-01",
+        "zero_by": "2027-06-01",
+        "relations": [
+          {
+            "kind": "refines",
+            "rule": "go.errors.2"
+          }
+        ],
+        "origin": "authored",
+        "sources": [
+          "effective-go"
+        ],
+        "bindings": [
+          "golangci-lint/wrapcheck"
+        ],
+        "translations": [
+          {
+            "entity": "go.errors.1",
+            "field": "statement",
+            "language": "sv",
+            "text": "Omslut ett fel med anropet som misslyckades.",
+            "authoritative_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "stale": false
+          }
+        ],
+        "replaced_by": "go.errors.9",
+        "anchor": "go-errors-1"
+      }
+    ],
+    "exclusions": [
+      {
+        "overlay": "team",
+        "rule": "go.errors.1",
+        "number": 1,
+        "decision": "no-wrap",
+        "who": "alex",
+        "when": "2026-10-01T10:00:00Z",
+        "lifted": {
+          "decision": "wrap-again",
+          "who": "alex",
+          "when": "2026-10-09T10:00:00Z"
+        }
+      }
+    ],
+    "bindings": [
+      {
+        "rule": "go.errors.1",
+        "tool": "golangci-lint",
+        "key": "wrapcheck",
+        "target_type": "source",
+        "value": true,
+        "options": {
+          "ignore": []
+        },
+        "severity": "error",
+        "rung": 1,
+        "run_point": "commit",
+        "remedy": "Wrap it.",
+        "pair": 1,
+        "pair_path": "pairs/go.errors.1/1",
+        "proof": {
+          "binding": "go.errors.1/golangci-lint/wrapcheck",
+          "tool_version": "2.15.0",
+          "result": "pass",
+          "run_level": "pair",
+          "adapter_version": "1.0.0",
+          "reason": "no pair"
+        },
+        "tightens": "go.errors.2"
+      }
+    ],
+    "adapters_used": [
+      {
+        "tool": "golangci-lint",
+        "adapter_version": "1.0.0"
+      }
+    ],
+    "presets": [
+      {
+        "tool": "golangci-lint",
+        "name": "default",
+        "release": "1.2.0",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "entries": 12,
+        "extends": [
+          {
+            "rulebook": "parent",
+            "version": "2.0.0"
+          }
+        ],
+        "licence": "MIT"
+      }
+    ],
+    "checker_code": [
+      {
+        "name": "wrapcheck-kit",
+        "publisher": "house",
+        "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "tool": "golangci-lint",
+        "tests_present": true,
+        "reviewed_by": [
+          "alex"
+        ],
+        "licence": "MIT",
+        "by_reference": false
+      }
+    ],
+    "proof_grid": [
+      {
+        "binding": "go.errors.1/golangci-lint/wrapcheck",
+        "tool_version": "2.15.0",
+        "result": "pass",
+        "run_level": "pair",
+        "adapter_version": "1.0.0",
+        "reason": "no pair"
+      }
+    ],
+    "coverage": {
+      "rules_to_bindings": [
+        "go.errors.1"
+      ],
+      "bindings_to_rules": [
+        "golangci-lint/wrapcheck"
+      ]
+    },
+    "conflicts": [
+      {
+        "kind": "conflict",
+        "entity": "go.errors.1",
+        "location": "bindings",
+        "message": "Two bindings set one key.",
+        "fix": "Choose one.",
+        "rule": "go.errors.1",
+        "refusal": false,
+        "notice": false
+      }
+    ],
+    "decisions": [
+      {
+        "slug": "no-wrap",
+        "title": "No wrap in tests",
+        "text": "Tests may return bare errors.",
+        "rejected": [
+          "wrap everywhere"
+        ],
+        "cites": {
+          "sources": [
+            "effective-go"
+          ],
+          "rules": [
+            "go.errors.1"
+          ],
+          "bindings": [
+            "golangci-lint/wrapcheck"
+          ]
+        },
+        "who": "alex",
+        "date": "2026-10-01",
+        "supersedes": "old-wrap",
+        "superseded_by": "wrap-again"
+      }
+    ],
+    "sources": [
+      {
+        "slug": "effective-go",
+        "kind": "guide",
+        "title": "Effective Go",
+        "locator": "https://go.dev/doc/effective_go",
+        "attribution": "The Go authors"
+      }
+    ],
+    "history": [
+      {
+        "number": 1,
+        "kind": "rule-added",
+        "entity": "go.errors.1",
+        "before": {},
+        "after": {
+          "status": "active"
+        },
+        "who": "alex",
+        "when": "2026-10-01T10:00:00Z",
+        "plan": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decision": "no-wrap"
+      }
+    ],
+    "changelog": [
+      {
+        "release": "1.2.0",
+        "entity": "go.errors.1",
+        "change": "added",
+        "sentence": "A new rule about wrapping errors.",
+        "consumer_action": "Run the check.",
+        "remedy": "Wrap the error.",
+        "diff": "https://example.org/diff"
+      }
+    ],
+    "tested_set": {
+      "tools": [
+        {
+          "tool": "golangci-lint",
+          "version": "2.15.0"
+        }
+      ],
+      "plugins": [
+        {
+          "plugin": "wrapcheck",
+          "version": "2.9.0"
+        }
+      ],
+      "kits": [
+        {
+          "kit": "go-test",
+          "version": "1.0.0"
+        }
+      ],
+      "adapters": [
+        {
+          "adapter": "golangci-lint",
+          "version": "1.0.0"
+        }
+      ],
+      "minimum_engine": "0.4.0"
+    },
+    "health": {
+      "numbers": [
+        {
+          "name": "coverage",
+          "value": 0
+        },
+        {
+          "name": "proof",
+          "value": 0.1
+        },
+        {
+          "name": "owners",
+          "value": 0.2
+        },
+        {
+          "name": "reviews",
+          "value": 0.3
+        },
+        {
+          "name": "zero",
+          "value": 0.4
+        },
+        {
+          "name": "debt",
+          "value": 0.5
+        },
+        {
+          "name": "age",
+          "value": 0.6
+        }
+      ],
+      "resolved": false
+    },
+    "rule_map": [
+      {
+        "rulebook": "parent",
+        "rows": [
+          {
+            "left": "go.errors.1",
+            "arrived": "go.errors.1",
+            "mark": "same",
+            "reason": "no change"
+          }
+        ]
+      }
+    ],
+    "rendering_manifest": [
+      {
+        "release": "1.2.0",
+        "target": "docs",
+        "renderings": [
+          {
+            "path": "go/errors.md",
+            "source_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "language": "en",
+            "omissions": [
+              {
+                "what": "a figure",
+                "who": "alex",
+                "when": "2026-11-01T10:00:00Z",
+                "plan": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

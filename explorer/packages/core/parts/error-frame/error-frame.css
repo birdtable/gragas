@@ -1,0 +1,20 @@
+[data-part="error-frame"] {
+  display: grid;
+  justify-items: start;
+  gap: var(--gr-space-2);
+  padding: var(--gr-space-4);
+  background: var(--gr-ground-surface);
+  border: 1px solid var(--gr-text-bad);
+  border-radius: var(--gr-radius-md);
+}
+
+[data-part="error-frame"] .gr-frame-title {
+  margin: 0;
+  color: var(--gr-text-bad);
+  font-weight: 600;
+}
+
+[data-part="error-frame"] .gr-frame-hint {
+  margin: 0;
+  color: var(--gr-text-prose);
+}

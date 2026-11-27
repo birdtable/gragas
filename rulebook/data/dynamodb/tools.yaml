@@ -1,0 +1,15 @@
+part: dynamodb
+tools:
+  - key: shared-dynamodb-toolkit
+    name: shared DynamoDB toolkit
+    role: >-
+      Our package for DynamoDB: the client, the key builders, conditional and versioned writes, and the read
+      helpers that check expiry. Every DynamoDB service uses it.
+    binding: ts
+    ships: the toolkit package and its conformance suite
+    state: chosen
+    why: >-
+      One write path is the only place conditions, versions and retries can be proved once.
+    open:
+      - >-
+        The conformance suite is to be built: concurrent unique creates, token retries and expiry reads.

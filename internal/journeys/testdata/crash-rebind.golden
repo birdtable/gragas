@@ -1,0 +1,58 @@
+$ gragas rebind go.errors.2 --tool golangci-lint --target source --key errorlint --to-key wrapcheck --decision wrap --apply
+--- before
+---------------------------------------------------------------- author/standin/1.0.0/plugin.wasm
+---------------------------------------------------------------- author/standin/1.0.0/plugin.yaml
+0913a9c9c33d905f681b4e6590e187031540cefefb68de5a8488340ca9d1bddd decisions.yaml
+daf92f8781c8829877c1dd12d27374af4315ed2dd1035ef790b9ff0eb450a518 history.jsonl
+762a3d55f14bce08a47e1c1b05ce2e731503bd1703c6bd785128e42bf55fa258 language/go/rules/errors.yaml
+---------------------------------------------------------------- plugins/lock.yaml
+---------------------------------------------------------------- plugins/standin/1.0.0/plugin.wasm
+---------------------------------------------------------------- plugins/standin/1.0.0/plugin.yaml
+93d53f8940029b3e40a77be9c8d8df9c0c239c28bb88ad6136ebc7eb3d847ae1 presets/golangci-lint/settings.yml
+3a86f0e795533e3331925550072696d0f895f33f349baadb2cb3cd64a869c090 presets/golangci-lint/standin.conf
+7d1543288bbbe5e0ef83911768156af6f901e0611bf851dce435757f72ea996b rulebook.yaml
+63ba30396f3132bcac2f0169a99cab4ff8ed1c4b5a8c8d5070f1cde3ce11afc1 sources.yaml
+860f82f9bebaf053658f0d86939b59c005959ce62bfb361e7b8566bc6c3069ac structure.yaml
+--- after
+---------------------------------------------------------------- author/standin/1.0.0/plugin.wasm
+---------------------------------------------------------------- author/standin/1.0.0/plugin.yaml
+0913a9c9c33d905f681b4e6590e187031540cefefb68de5a8488340ca9d1bddd decisions.yaml
+2b55e191f82e5e0cd1629fa9a4e72d19fc2f555261c37b5843a62a57fa17db46 history.jsonl
+92777587651dd585ec3a7d4d691b7c473f9d2e43b007a768eab6b098e3ba471f language/go/rules/errors.yaml
+---------------------------------------------------------------- plugins/lock.yaml
+---------------------------------------------------------------- plugins/standin/1.0.0/plugin.wasm
+---------------------------------------------------------------- plugins/standin/1.0.0/plugin.yaml
+93d53f8940029b3e40a77be9c8d8df9c0c239c28bb88ad6136ebc7eb3d847ae1 presets/golangci-lint/settings.yml
+7ef9cfe3da2c6ddf9ed1636a21f207dfa0dce707612022d85fea6aa839103bf5 presets/golangci-lint/standin.conf
+7d1543288bbbe5e0ef83911768156af6f901e0611bf851dce435757f72ea996b rulebook.yaml
+63ba30396f3132bcac2f0169a99cab4ff8ed1c4b5a8c8d5070f1cde3ce11afc1 sources.yaml
+860f82f9bebaf053658f0d86939b59c005959ce62bfb361e7b8566bc6c3069ac structure.yaml
+--- boundaries
+before-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+after-record
+after-record
+after-record

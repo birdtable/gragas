@@ -1,0 +1,20 @@
+format: 3
+part: go
+concern: errors
+rules:
+  - id: go.errors.1
+    statement: Wrap an error.
+    strength: must
+    status: proposed
+    origin: authored
+    owner: team-a
+  - id: go.errors.2
+    statement: Return an error, never panic.
+    strength: should
+    status: proposed
+    origin: authored
+  - id: go.errors.3
+    statement: Name a sentinel error with the prefix Err.
+    strength: may
+    status: proposed
+    origin: authored

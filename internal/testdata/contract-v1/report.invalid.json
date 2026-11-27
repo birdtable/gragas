@@ -1,0 +1,6 @@
+[
+  {"name": "an unknown field", "patch": [{"op":"add","path":"/0/remote","value":"git@host:x"}], "problem": "Additional properties are not allowed ('remote' was unexpected)"},
+  {"name": "a missing lock digest", "patch": [{"op":"remove","path":"/0/lock_digest"}], "problem": "'lock_digest' is a required property"},
+  {"name": "a waiver that carries its path", "patch": [{"op":"add","path":"/0/waivers/0/path","value":"a/b"}], "problem": "Additional properties are not allowed ('path' was unexpected)"},
+  {"name": "a wrong enum", "patch": [{"op":"replace","path":"/0/trust/signature","value":"maybe"}], "problem": "is not one of"}
+]

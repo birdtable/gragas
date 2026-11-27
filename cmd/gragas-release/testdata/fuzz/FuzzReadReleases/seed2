@@ -1,0 +1,2 @@
+go test fuzz v1
+string("[{\"id\":7,\"tag_name\":\"v1.2.3\",\"draft\":true,\"assets\":[]}]\n[{\"id\":8,\"tag_name\":\"v1.2.3\",\"draft\":true,\"assets\":[]}]\n")

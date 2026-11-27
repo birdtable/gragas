@@ -1,0 +1,13 @@
+$ gragas journal list
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+gragas journal list
+Run  State        Command             Files  Plan
+r1   done         gragas gen --apply  1      ba92826f120b
+r2   rolled back  gragas gen --apply  1      cd327d2913ec
+r3   open         gragas gen --apply  1      127b4fa6703a
+
+  done       3 runs listed, folder ROOT
+--- stderr

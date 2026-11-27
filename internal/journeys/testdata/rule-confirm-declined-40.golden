@@ -1,0 +1,22 @@
+$ gragas rule confirm go.errors.2
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+What changes
+  go.errors.2: confirmed by gragas rule
+  confirm on <day>, next review
+  <day> (30 days)
+
+What is written where
+  language/go/rules/errors.yaml: sets
+  review_by of go.errors.2
+  history.jsonl: appends one entry
+  (confirm)
+This was a dry run and nothing was
+changed. Add --apply to make these
+changes.
+
+  declined   nothing was changed
+    gragas rule confirm go.errors.2
+--apply
+--- stderr

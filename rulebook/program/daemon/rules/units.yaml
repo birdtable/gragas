@@ -1,0 +1,70 @@
+format: 3
+part: daemon
+concern: units
+rules:
+  - id: daemon.units.1
+    statement: "Service-manager files (plist, unit) are well formed, and each comes from a template."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      pros:
+        - "Practice; a malformed plist is silently ignored by the manager."
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+  - id: daemon.units.2
+    statement: "A daemon runs with the least identity that can reach what it serves, from one template per service manager, with a sandbox wherever the manager offers one, and its notes state the trust line."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "Least identity is chosen per platform, not assumed: a separate system account where the manager can give one (systemd DynamicUser= or User=), and on a single-user machine the owner's own account (a launchd LaunchAgent), never root, when a separate account would need more privilege to reach the owner's data than the owner already has. A daemon never runs as root to serve owner-level requests. Each supported manager has its own template; a manager added later adds a template and a golden, and the rule does not change. The notes name who may reach the daemon, what that caller gains, and which manager settings hold the line. The rendered templates are byte-compared to a golden; systemd-analyze verify and systemd-analyze security with a threshold run on Linux (the threshold makes the command exit non-zero above an exposure level, per a systemd commit; not run, no Linux box here); plutil -lint runs on macOS, and the plist names no UserName of root."
+      pros:
+        - "Practice; a daemon with more identity than it needs turns any bug into a compromise of that identity. On a laptop a separate account is more exposure, not less, so the principle is least identity with the trust line written down."
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.units.3
+    statement: "The unit template restarts the daemon on failure only, with a backoff and a stated limit set in each manager's own terms; an idle exit is a clean exit and is never restarted; a one-shot job is never placed where the manager reruns it at load or login; and the health document counts restarts."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "Under systemd: Restart=on-failure with RestartSec and StartLimitBurst plus StartLimitIntervalSec, never Restart=always, so a daemon that leaves after its idle time (daemon.lifecycle.5) stays down until its socket wakes it. Under launchd: KeepAlive with SuccessfulExit false and a ThrottleInterval, never a bare KeepAlive true for a job that exits on idle. A one-shot job (an update, a migration) has neither RunAtLoad nor KeepAlive and is not written to a folder the manager loads at login (under launchd, not in ~/Library/LaunchAgents); it is written in the program's state folder, started from there and removed when it ends, and doctor names one that is left. A manager added later states its own restart, backoff, limit and one-shot settings in the test table."
+      pros:
+        - "A daemon that dies and stays dead is an outage no one sees; the limit stops a crash loop. A restart on a clean idle exit keeps a process awake that should sleep, and a one-shot job left where the manager loads it reruns at every login."
+    relations:
+      relates:
+        - daemon.lifecycle.5
+        - daemon.resilience.1
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.units.4
+    statement: "Each state file has one writer; a privileged process writes only files it alone owns, in a folder no less privileged account can write; and a daemon that runs as a person passes only requests that give a process of that person nothing it did not already have."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "A test lists every state file with its one writer and its folder, and fails on a file with two writers or a privileged writer in a folder another account can write. A route or verb that would widen what a caller of the person's daemon can do (a passed write, a passed POST, a run of a command the caller could not run itself) is refused until a design rules it, and the route table marks each route as read or as ruled by a named design."
+      pros:
+        - "A root writer in a folder a person owns can be tricked by a link into writing anywhere, and a person's daemon that passes more than the person has is a privilege raise for anyone who reaches it."
+    relations:
+      relates:
+        - store.seams.4
+    sources:
+      - ref: decision-65-daemon
+        backs: rule

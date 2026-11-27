@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "gate/closure.txt as read: the external modules the shipped binary may link",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["entries"],
+  "properties": {
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["value"],
+        "properties": {
+          "value": {"type": "string", "pattern": "^[a-z0-9.-]+(/[A-Za-z0-9._~-]+)+$"}
+        }
+      }
+    }
+  }
+}

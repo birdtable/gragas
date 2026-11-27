@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-upstream-set.schema.json",
+  "title": "The flattened upstream set of one tool (entity)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "tool",
+    "sets",
+    "observed"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "x-introduced": "1.0",
+      "x-decides": "whether the file is read or ends not ready on a version newer than the engine reads"
+    },
+    "tool": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0",
+      "x-decides": "which tool's bindings the sets are counted under"
+    },
+    "sets": {
+      "type": "array",
+      "description": "the upstream presets, each with the entry keys it held at the pin",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "preset",
+          "entries"
+        ],
+        "properties": {
+          "preset": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0",
+            "x-decides": "which rung-0 binding adopts the set, by its key"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/text"
+            },
+            "x-introduced": "1.0",
+            "x-decides": "the entries the set explains"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "x-decides": "which upstream presets a rung-0 binding can adopt whole, and the entries each explains"
+    },
+    "observed": {
+      "type": "array",
+      "description": "every entry key the upstream config holds now",
+      "items": {
+        "$ref": "common.schema.json#/$defs/text"
+      },
+      "x-introduced": "1.0",
+      "x-decides": "which entries coverage counts, and which of them nothing explains"
+    }
+  }
+}

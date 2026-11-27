@@ -1,0 +1,13 @@
+gen
+reading rulebook/ in the project
+rule          status
+cli.look.5    active
+arch.ports.6  active
+  one
+  two
+a note
+This was a dry run and nothing was changed. Add --apply to
+make these changes.
+
+  > declined   nothing was changed
+    gragas gen --apply

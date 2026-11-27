@@ -1,0 +1,12 @@
+$ gragas resolve
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+layers, root first: example
+entry                              rule         layer    how
+golangci-lint config: errorlint    go.errors.1  example  set
+golangci-lint config: recommended  go.errors.2  example  set
+
+  done       2 entries in 1 layer
+--- stderr

@@ -1,0 +1,686 @@
+{
+  "$comment": "The golden table of the explorer formatter (web.content.2): one source. Each case is a kind, an input, a locale (and a stated zone for dates) and the exact string expected. The TypeScript test reads it, and the Go formatter runs the same file when it is built. Never copied.",
+  "now": "2026-11-16T16:00:00Z",
+  "cases": [
+    {
+      "kind": "number",
+      "input": 0,
+      "locale": "en-GB",
+      "expected": "0"
+    },
+    {
+      "kind": "number",
+      "input": 7,
+      "locale": "en-GB",
+      "expected": "7"
+    },
+    {
+      "kind": "number",
+      "input": 1234.5,
+      "locale": "en-GB",
+      "expected": "1,234.5"
+    },
+    {
+      "kind": "number",
+      "input": 1234.567,
+      "locale": "en-GB",
+      "expected": "1,234.57"
+    },
+    {
+      "kind": "number",
+      "input": 1000000,
+      "locale": "en-GB",
+      "expected": "1,000,000"
+    },
+    {
+      "kind": "number",
+      "input": -42.125,
+      "locale": "en-GB",
+      "expected": "-42.13"
+    },
+    {
+      "kind": "number",
+      "input": 0.004,
+      "locale": "en-GB",
+      "expected": "0"
+    },
+    {
+      "kind": "size",
+      "input": 0,
+      "locale": "en-GB",
+      "expected": "0 B"
+    },
+    {
+      "kind": "size",
+      "input": 999,
+      "locale": "en-GB",
+      "expected": "999 B"
+    },
+    {
+      "kind": "size",
+      "input": 1000,
+      "locale": "en-GB",
+      "expected": "1 kB"
+    },
+    {
+      "kind": "size",
+      "input": 1536,
+      "locale": "en-GB",
+      "expected": "1.5 kB"
+    },
+    {
+      "kind": "size",
+      "input": 999949,
+      "locale": "en-GB",
+      "expected": "999.9 kB"
+    },
+    {
+      "kind": "size",
+      "input": 999950,
+      "locale": "en-GB",
+      "expected": "1 MB"
+    },
+    {
+      "kind": "size",
+      "input": 1048576,
+      "locale": "en-GB",
+      "expected": "1 MB"
+    },
+    {
+      "kind": "size",
+      "input": 5500000000,
+      "locale": "en-GB",
+      "expected": "5.5 GB"
+    },
+    {
+      "kind": "size",
+      "input": 2000000000000,
+      "locale": "en-GB",
+      "expected": "2 TB"
+    },
+    {
+      "kind": "size",
+      "input": 5000000000000000,
+      "locale": "en-GB",
+      "expected": "5,000 TB"
+    },
+    {
+      "kind": "duration",
+      "input": 0,
+      "locale": "en-GB",
+      "expected": "0 ms"
+    },
+    {
+      "kind": "duration",
+      "input": 450,
+      "locale": "en-GB",
+      "expected": "450 ms"
+    },
+    {
+      "kind": "duration",
+      "input": 999,
+      "locale": "en-GB",
+      "expected": "999 ms"
+    },
+    {
+      "kind": "duration",
+      "input": 1000,
+      "locale": "en-GB",
+      "expected": "1 s"
+    },
+    {
+      "kind": "duration",
+      "input": 1500,
+      "locale": "en-GB",
+      "expected": "1 s"
+    },
+    {
+      "kind": "duration",
+      "input": 59999,
+      "locale": "en-GB",
+      "expected": "59 s"
+    },
+    {
+      "kind": "duration",
+      "input": 60000,
+      "locale": "en-GB",
+      "expected": "1 min"
+    },
+    {
+      "kind": "duration",
+      "input": 65000,
+      "locale": "en-GB",
+      "expected": "1 min 5 s"
+    },
+    {
+      "kind": "duration",
+      "input": 3725000,
+      "locale": "en-GB",
+      "expected": "1 h 2 min"
+    },
+    {
+      "kind": "duration",
+      "input": 90061000,
+      "locale": "en-GB",
+      "expected": "1 d 1 h"
+    },
+    {
+      "kind": "duration",
+      "input": 864000000,
+      "locale": "en-GB",
+      "expected": "10 d"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-16T15:59:30Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-GB",
+      "expected": "now"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-16T15:57:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-GB",
+      "expected": "3 minutes ago"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-16T13:30:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-GB",
+      "expected": "2 hours ago"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-15T15:00:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-GB",
+      "expected": "yesterday"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-09T16:00:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-GB",
+      "expected": "7 days ago"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-16T16:02:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-GB",
+      "expected": "in 2 minutes"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-19T16:00:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-GB",
+      "expected": "in 3 days"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-09-01T10:00:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-GB",
+      "expected": "1 Sep 2026"
+    },
+    {
+      "kind": "date",
+      "input": "2026-11-16T15:54:00Z",
+      "locale": "en-GB",
+      "zone": "UTC",
+      "expected": "16 Nov 2026"
+    },
+    {
+      "kind": "datetime",
+      "input": "2026-11-16T15:54:00Z",
+      "locale": "en-GB",
+      "zone": "UTC",
+      "expected": "16 Nov 2026, 15:54 UTC"
+    },
+    {
+      "kind": "date",
+      "input": "2026-11-16T23:30:00Z",
+      "locale": "en-GB",
+      "zone": "UTC",
+      "expected": "16 Nov 2026"
+    },
+    {
+      "kind": "datetime",
+      "input": "2026-11-16T23:30:00Z",
+      "locale": "en-GB",
+      "zone": "UTC",
+      "expected": "16 Nov 2026, 23:30 UTC"
+    },
+    {
+      "kind": "date",
+      "input": "2026-11-16T23:30:00Z",
+      "locale": "en-GB",
+      "zone": "Europe/London",
+      "expected": "16 Nov 2026"
+    },
+    {
+      "kind": "datetime",
+      "input": "2026-11-16T23:30:00Z",
+      "locale": "en-GB",
+      "zone": "Europe/London",
+      "expected": "16 Nov 2026, 23:30 Europe/London"
+    },
+    {
+      "kind": "date",
+      "input": "2026-07-01T23:30:00Z",
+      "locale": "en-GB",
+      "zone": "Europe/London",
+      "expected": "2 Jul 2026"
+    },
+    {
+      "kind": "datetime",
+      "input": "2026-07-01T23:30:00Z",
+      "locale": "en-GB",
+      "zone": "Europe/London",
+      "expected": "2 Jul 2026, 00:30 Europe/London"
+    },
+    {
+      "kind": "date",
+      "input": "2026-07-01T23:30:00Z",
+      "locale": "en-GB",
+      "zone": "America/New_York",
+      "expected": "1 Jul 2026"
+    },
+    {
+      "kind": "datetime",
+      "input": "2026-07-01T23:30:00Z",
+      "locale": "en-GB",
+      "zone": "America/New_York",
+      "expected": "1 Jul 2026, 19:30 America/New_York"
+    },
+    {
+      "kind": "list",
+      "input": [],
+      "locale": "en-GB",
+      "expected": ""
+    },
+    {
+      "kind": "list",
+      "input": ["a"],
+      "locale": "en-GB",
+      "expected": "a"
+    },
+    {
+      "kind": "list",
+      "input": ["a", "b"],
+      "locale": "en-GB",
+      "expected": "a and b"
+    },
+    {
+      "kind": "list",
+      "input": ["a", "b", "c"],
+      "locale": "en-GB",
+      "expected": "a, b and c"
+    },
+    {
+      "kind": "list",
+      "input": ["enforced", "reviewed", "planned", "advisory"],
+      "locale": "en-GB",
+      "expected": "enforced, reviewed, planned and advisory"
+    },
+    {
+      "kind": "number",
+      "input": 0,
+      "locale": "en-US",
+      "expected": "0"
+    },
+    {
+      "kind": "number",
+      "input": 7,
+      "locale": "en-US",
+      "expected": "7"
+    },
+    {
+      "kind": "number",
+      "input": 1234.5,
+      "locale": "en-US",
+      "expected": "1,234.5"
+    },
+    {
+      "kind": "number",
+      "input": 1234.567,
+      "locale": "en-US",
+      "expected": "1,234.57"
+    },
+    {
+      "kind": "number",
+      "input": 1000000,
+      "locale": "en-US",
+      "expected": "1,000,000"
+    },
+    {
+      "kind": "number",
+      "input": -42.125,
+      "locale": "en-US",
+      "expected": "-42.13"
+    },
+    {
+      "kind": "number",
+      "input": 0.004,
+      "locale": "en-US",
+      "expected": "0"
+    },
+    {
+      "kind": "size",
+      "input": 0,
+      "locale": "en-US",
+      "expected": "0 B"
+    },
+    {
+      "kind": "size",
+      "input": 999,
+      "locale": "en-US",
+      "expected": "999 B"
+    },
+    {
+      "kind": "size",
+      "input": 1000,
+      "locale": "en-US",
+      "expected": "1 kB"
+    },
+    {
+      "kind": "size",
+      "input": 1536,
+      "locale": "en-US",
+      "expected": "1.5 kB"
+    },
+    {
+      "kind": "size",
+      "input": 999949,
+      "locale": "en-US",
+      "expected": "999.9 kB"
+    },
+    {
+      "kind": "size",
+      "input": 999950,
+      "locale": "en-US",
+      "expected": "1 MB"
+    },
+    {
+      "kind": "size",
+      "input": 1048576,
+      "locale": "en-US",
+      "expected": "1 MB"
+    },
+    {
+      "kind": "size",
+      "input": 5500000000,
+      "locale": "en-US",
+      "expected": "5.5 GB"
+    },
+    {
+      "kind": "size",
+      "input": 2000000000000,
+      "locale": "en-US",
+      "expected": "2 TB"
+    },
+    {
+      "kind": "size",
+      "input": 5000000000000000,
+      "locale": "en-US",
+      "expected": "5,000 TB"
+    },
+    {
+      "kind": "duration",
+      "input": 0,
+      "locale": "en-US",
+      "expected": "0 ms"
+    },
+    {
+      "kind": "duration",
+      "input": 450,
+      "locale": "en-US",
+      "expected": "450 ms"
+    },
+    {
+      "kind": "duration",
+      "input": 999,
+      "locale": "en-US",
+      "expected": "999 ms"
+    },
+    {
+      "kind": "duration",
+      "input": 1000,
+      "locale": "en-US",
+      "expected": "1 s"
+    },
+    {
+      "kind": "duration",
+      "input": 1500,
+      "locale": "en-US",
+      "expected": "1 s"
+    },
+    {
+      "kind": "duration",
+      "input": 59999,
+      "locale": "en-US",
+      "expected": "59 s"
+    },
+    {
+      "kind": "duration",
+      "input": 60000,
+      "locale": "en-US",
+      "expected": "1 min"
+    },
+    {
+      "kind": "duration",
+      "input": 65000,
+      "locale": "en-US",
+      "expected": "1 min 5 s"
+    },
+    {
+      "kind": "duration",
+      "input": 3725000,
+      "locale": "en-US",
+      "expected": "1 h 2 min"
+    },
+    {
+      "kind": "duration",
+      "input": 90061000,
+      "locale": "en-US",
+      "expected": "1 d 1 h"
+    },
+    {
+      "kind": "duration",
+      "input": 864000000,
+      "locale": "en-US",
+      "expected": "10 d"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-16T15:59:30Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-US",
+      "expected": "now"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-16T15:57:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-US",
+      "expected": "3 minutes ago"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-16T13:30:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-US",
+      "expected": "2 hours ago"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-15T15:00:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-US",
+      "expected": "yesterday"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-09T16:00:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-US",
+      "expected": "7 days ago"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-16T16:02:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-US",
+      "expected": "in 2 minutes"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-11-19T16:00:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-US",
+      "expected": "in 3 days"
+    },
+    {
+      "kind": "relative",
+      "input": {
+        "at": "2026-09-01T10:00:00Z",
+        "now": "2026-11-16T16:00:00Z"
+      },
+      "locale": "en-US",
+      "expected": "Sep 1, 2026"
+    },
+    {
+      "kind": "date",
+      "input": "2026-11-16T15:54:00Z",
+      "locale": "en-US",
+      "zone": "UTC",
+      "expected": "Nov 16, 2026"
+    },
+    {
+      "kind": "datetime",
+      "input": "2026-11-16T15:54:00Z",
+      "locale": "en-US",
+      "zone": "UTC",
+      "expected": "Nov 16, 2026, 15:54 UTC"
+    },
+    {
+      "kind": "date",
+      "input": "2026-11-16T23:30:00Z",
+      "locale": "en-US",
+      "zone": "UTC",
+      "expected": "Nov 16, 2026"
+    },
+    {
+      "kind": "datetime",
+      "input": "2026-11-16T23:30:00Z",
+      "locale": "en-US",
+      "zone": "UTC",
+      "expected": "Nov 16, 2026, 23:30 UTC"
+    },
+    {
+      "kind": "date",
+      "input": "2026-11-16T23:30:00Z",
+      "locale": "en-US",
+      "zone": "Europe/London",
+      "expected": "Nov 16, 2026"
+    },
+    {
+      "kind": "datetime",
+      "input": "2026-11-16T23:30:00Z",
+      "locale": "en-US",
+      "zone": "Europe/London",
+      "expected": "Nov 16, 2026, 23:30 Europe/London"
+    },
+    {
+      "kind": "date",
+      "input": "2026-07-01T23:30:00Z",
+      "locale": "en-US",
+      "zone": "Europe/London",
+      "expected": "Jul 2, 2026"
+    },
+    {
+      "kind": "datetime",
+      "input": "2026-07-01T23:30:00Z",
+      "locale": "en-US",
+      "zone": "Europe/London",
+      "expected": "Jul 2, 2026, 00:30 Europe/London"
+    },
+    {
+      "kind": "date",
+      "input": "2026-07-01T23:30:00Z",
+      "locale": "en-US",
+      "zone": "America/New_York",
+      "expected": "Jul 1, 2026"
+    },
+    {
+      "kind": "datetime",
+      "input": "2026-07-01T23:30:00Z",
+      "locale": "en-US",
+      "zone": "America/New_York",
+      "expected": "Jul 1, 2026, 19:30 America/New_York"
+    },
+    {
+      "kind": "list",
+      "input": [],
+      "locale": "en-US",
+      "expected": ""
+    },
+    {
+      "kind": "list",
+      "input": ["a"],
+      "locale": "en-US",
+      "expected": "a"
+    },
+    {
+      "kind": "list",
+      "input": ["a", "b"],
+      "locale": "en-US",
+      "expected": "a and b"
+    },
+    {
+      "kind": "list",
+      "input": ["a", "b", "c"],
+      "locale": "en-US",
+      "expected": "a, b, and c"
+    },
+    {
+      "kind": "list",
+      "input": ["enforced", "reviewed", "planned", "advisory"],
+      "locale": "en-US",
+      "expected": "enforced, reviewed, planned, and advisory"
+    }
+  ]
+}

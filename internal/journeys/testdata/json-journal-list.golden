@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "root": "ROOT",
+  "torn": 0,
+  "runs": [
+    {
+      "run": "r1",
+      "command": "gragas gen --apply",
+      "plan": "sha256:ba92826f120b81a0a3972dde45f2b459cbde203d17c4ec5171d6b432649e6ab7",
+      "state": "done",
+      "started": 1779000000,
+      "ended": 1779000010,
+      "files": [
+        "a.txt"
+      ]
+    },
+    {
+      "run": "r2",
+      "command": "gragas gen --apply",
+      "plan": "sha256:cd327d2913ec7863f2cab4550cbb5dc760f84c4d0c707f6fa3935ae5a3cf9a12",
+      "state": "rolled back",
+      "started": 1779000100,
+      "ended": 1779000110,
+      "files": [
+        "b.txt"
+      ]
+    },
+    {
+      "run": "r3",
+      "command": "gragas gen --apply",
+      "plan": "sha256:127b4fa6703ad9bef5854789056e4866ed8551a1d3eb8cbbe7ebc8a4154ea461",
+      "state": "open",
+      "started": 1779000200,
+      "ended": null,
+      "files": [
+        "c.txt"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+name: waive
+order: 420
+context: P
+ends: plan
+summary: "Waive a rule for a path, with a reason and an end date"
+examples:
+  - {line: "gragas waive <id>", does: "show the plan"}
+  - {line: "gragas waive <id> --apply", does: "carry it out"}
+writes: [".gragas/waivers.yaml"]
+exits: ["done", "declined"]
+json: plan

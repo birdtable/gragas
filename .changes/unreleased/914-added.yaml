@@ -1,0 +1,6 @@
+kind: Added
+body: >-
+  **Releases are built with GoReleaser.** Each archive holds the binary, its licence and its notices;
+  two builds from two clean copies must be the same bytes, and every archive is unpacked and its
+  binary started before the release is published.
+time: 2026-11-15T23:21:02.12657+01:00

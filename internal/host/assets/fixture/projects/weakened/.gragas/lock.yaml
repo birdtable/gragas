@@ -1,0 +1,25 @@
+release:
+  version: 1.2.0
+  format: 3
+  contract: "1.0"
+bundle: sha256:5e4915b71698053fae199e180e40f6ba7107af855125064193e0b064c60d79e2
+presets:
+  golangci-lint: sha256:6ffe5f1a50b7cee1bf5a5e8d67da55c3d5175f2c9c4956f1ee4ec0063229f29f
+copied_presets:
+  - {path: .gragas/presets/stylelint/base.json, digest: sha256:1d2a243ea62be45b3643305e022ea8dfd5e2d1e68c2e0bac1aa9bfb4b83b8e78}
+checker_code:
+  - {name: wrapcheck-plugin, publisher: alex, digest: sha256:60c93c1ff6c2418b948cae5b127341e5d8e1738b6feeda31431f89bf230dbb62}
+adapters:
+  - {tool: golangci-lint, version: 1.0.0}
+opted_in:
+  folders: [.claude]
+  reviewer_format: review-md
+rendering_sums:
+  - {path: REVIEW.md, digest: sha256:2115891ed38a2b46e87d5919124bb64c06a25efd6b6d3fcde6c5a3c15a0f328e}
+yes:
+  - {who: alex, when: "2026-11-05T09:00:00Z", plan: sha256:67ace66d1c4b92a8ff54be2b85838a3c796a6567d980d1aecb5a9e6183d5b4a6, command: init}
+provenance:
+  from: none
+  to: 1.2.0
+  when: "2026-11-05T09:00:00Z"
+  map: preset diff

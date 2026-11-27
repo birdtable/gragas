@@ -1,0 +1,303 @@
+part: docs
+concern: freshness
+order: 5
+title: Typed, owned and dated docs
+summary: >-
+  The docs folder holds documents that are true now and records marked as records. Each doc carries its type,
+  status and version or date in one form the repo declares, a document that is not generated shows the date it
+  was written, a current fact appears only where a check holds it, a decision is never edited in place, and a
+  generated doc names the command that makes it.
+rules:
+  - id: docs.freshness.1
+    slug: typed-front-matter
+    since: 0.1.0
+    rule: >-
+      Every doc carries its type, status and version or as-of date, in typed front matter or in one fixed
+      header line or status paragraph, read by one schema, and indexes are generated from it, never written by
+      hand.
+    detail: >-
+      A repo declares one container for these fields: typed front matter, a fixed header line (Version, Status
+      and Ages-with), or a bold status paragraph that opens the doc. Whatever the container, one shared parser
+      reads it into the same fields and validates them against one JSON Schema; a doc with no type or status
+      fails, and a doc in a container other than the declared one fails. The sidebar or index (a table of
+      notes included) is generated from the folders and these fields, or checked against them by a test, never
+      kept by hand. Every doc has a named owner, in the fields or in one owners file.
+    level: file
+    why: >-
+      No pinned repo had front matter; without a type, a status and an owner nobody can tell a current record
+      from an old one or who keeps it true. The invariants are the rule; the container is the repo's choice,
+      so a repo that already writes a header line or a status paragraph is held to the same fields without a
+      rewrite.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. one shared docs check (companion docs) reads the declared container (front
+          matter, header line or status paragraph) into one record and validates it against one JSON Schema
+          with ajv; the index is regenerated and diffed. Plant: a doc with no type fails; a doc in an
+          undeclared container fails; a hand-edited index row fails. Control: a complete doc in the declared
+          container passes
+    open:
+      - >-
+        Note, 8 Nov 2026: the indexes this rule names and a repository still writes by hand (the decisions
+        index and the decisions section of the architecture document, the agent instruction file’s table of
+        documents, the list of rules not yet met) are this rule not yet applied, and the shared-files guide
+        lists them. Authored files also carry no digest chain (docs.freshness.8).
+      - "A remark front-matter plugin was rejected: last published in 2023."
+      - Applies to UI repositories only once their catalogue carries the row.
+    note: >-
+      Merges the Go row, the UI documentation row and the reference's typed-doc and owner rules.
+  - id: docs.freshness.2
+    slug: docs-folder-holds-true-now
+    since: 0.1.0
+    rule: >-
+      The docs/ folder holds typed documents that are true now and marked records, and working material such
+      as epics, handovers and run notes lives outside it.
+    detail: >-
+      Marked records are of three kinds, each typed so the docs check knows it is a record. A superseded
+      decision note stays, marked at its top with its successor, keeping its old sections and its rejected
+      alternatives with their reasons. A history log (what landed, when) is append-only and marked as history;
+      an edit to an earlier entry fails. Unadopted proposals live in one marked folder with an index and bind
+      nothing until a decision adopts them; nothing outside that folder cites a proposal as a rule. Nothing in
+      docs/ is deleted to retire it.
+    level: file
+    why: >-
+      Notes mixed into the docs folder read as current fact and go stale unseen. A record that is marked is
+      not that risk: deleting it loses the reasons behind the current design, and marking it keeps them
+      without letting them pass for current fact.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. the docs check fails a file under the docs folder that has no valid type, a
+          superseded note with no successor link at its top, an edit to an earlier entry of a history log, and
+          a citation of a proposal from outside its folder as binding. Plant: a handover note placed under the
+          docs folder fails; a history log with a changed earlier line fails; a superseded note with no
+          successor line fails. Control: the same note under the work folder passes; a marked superseded note
+          passes
+  - id: docs.freshness.3
+    slug: as-of-date
+    since: 0.1.0
+    rule: >-
+      A non-generated doc carries an as-of date and reads as a record of that day, a date-only change is
+      reported, and a superseded section carries a dated note naming the note that replaced it, which links
+      back.
+    detail: >-
+      A section that a later note replaces keeps its text; a dated line at its top names the replacing note,
+      and the replacing note links back to the section. A generated doc carries no as-of date
+      (docs.freshness.7).
+    level: file
+    why: >-
+      A date bumped with no content change makes an old claim look fresh, and a section replaced without a
+      note reads as current.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. a diff check in the docs check (a date-only change) fails an as-of change with no
+          other content change in the same file, and a section supersession note whose target does not link
+          back fails. Plant: a doc whose only change is its date fails; a superseded-section note naming a
+          note with no back link fails. Control: a date moved with its content passes
+    relates:
+      - id: docs.freshness.7
+        how: see
+    open:
+      - Proposed; the plant was not run.
+  - id: docs.freshness.4
+    slug: current-fact-only-where-checked
+    since: 0.1.0
+    rule: >-
+      A doc states a current fact only where a check holds it, and says what is built and what is only
+      designed.
+    detail: >-
+      Generated reference is regenerated and diffed in the gate, numbers come from a script, paths are links
+      that the link check follows, and every other doc is a dated record of the day it was written. A doc
+      never says to build to a design that is frozen or to a thing that is not built.
+    level: file
+    why: A product doc still said "Build to it today" for a frozen tree.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: docs-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          the gate regenerates each generated reference doc and fails on a diff. Plant: a generated reference
+          doc edited by hand fails. Control: a freshly generated doc passes
+    review_question: Does this doc say what is built and what is only designed?
+    open:
+      - >-
+        The built-against-designed clause is review; only the generated-reference part has a check.
+      - >-
+        v1 evidence, not yet a source: A (one product doc still said "Build to it today" for a frozen tree)
+  - id: docs.freshness.5
+    slug: decision-files-link-both-ways
+    since: 0.1.0
+    rule: >-
+      A decision is never edited in place: it is superseded by number, the superseding record names the old
+      one, the old one is marked, and the links point both ways.
+    detail: >-
+      A decision has a number that is never reused. A repo declares its container: one file per decision,
+      numbered decisions inside design notes, or entries in one append-only log amended by dated sub-entries.
+      In every container a reversal is a new decision that names the one it replaces, the old one gains a
+      superseded mark that names its successor, its text stays, and every cited decision number resolves.
+    level: file
+    why: >-
+      A decision that supersedes another without the back link leaves two live answers, and an edit in place
+      loses what was decided and why. The invariants are the rule; the container is the repo's choice.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. the docs check reads the declared container, fails a decision whose text changed
+          after it landed (other than its superseded mark), a supersession without the back mark, a reused
+          number and a cited number that does not resolve. Plant: a decision superseding another without the
+          back link fails; an edit to a landed decision's text fails. Control: a new decision with links in
+          both directions passes
+  - id: docs.freshness.6
+    slug: stubs-reported
+    since: 0.1.0
+    rule: >-
+      A stub, a placeholder return or a not-implemented body in shipped source is reported.
+    detail: >-
+      A syntax scan counts not-implemented throws, TODO returns and stub bodies. It is a report, not a gate.
+    level: file
+    why: A shipped stub looks like a feature.
+    kind: measure
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "2"
+        note: >-
+          ESLint no-restricted-syntax (Biome form is a GritQL plugin) on throw new Error("not implemented")
+          and TODO returns, as a report. Plant: a fixture stub is counted. Control: a real body is not counted
+    open:
+      - The false-positive rate is unknown.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+  - id: docs.freshness.7
+    slug: generated-docs-from-one-source
+    since: 0.1.0
+    rule: >-
+      A generated doc says so in its first lines with the command that makes it, the gate regenerates and
+      diffs it, and the help text and the doc for the same subject come from one source.
+    detail: >-
+      The source is the program's command registry (one declaration per command with its summary, the version
+      it arrived in, what a second run does and who may run it); help, help --json, the README's command
+      table, the MCP tool list, agent skill text and the generated guide are rendered from it. A generated
+      file opens with a line that says it is generated, by which command, and not to edit it. The gate runs
+      the command and fails on any difference. Prose about a command that is not generated links to the
+      generated part instead of restating it. There is one registry and help prints it; MCP tools and the
+      skill text are generated from it. Help is written once, the README's command table is generated from it,
+      and a test fails when they differ. A guide generated from lessons beside the code says not to edit it
+      here.
+    level: file
+    why: >-
+      A command described once and rendered everywhere cannot drift: the agent's skill, the tool list and the
+      README are the program's own words, not a second copy of them.
+    kind: rule
+    strength: Hard
+    status: later
+    when:
+      kinds:
+        - cli
+        - daemon
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. a shared generate-and-diff step in gragas that runs each generated doc's named
+          command and fails on a difference or on a generated file with no generator line. Plant: a hand edit
+          to the generated command table fails; a generated file with no generator line fails. Control: a
+          freshly generated doc passes
+    open:
+      - >-
+        Planned (R-15 sequencing): binds once the shared generator or test exists in gragas.
+    note: The command-registry rule itself is in the CLI part; this is its docs half.
+  - id: docs.freshness.8
+    slug: no-chain-in-authored-files
+    since: 0.1.0
+    rule: >-
+      No hand-written file carries a digest of the current state: a digest lives in the generated output, and
+      a change to the state adds a note with a reason.
+    detail: >-
+      A chain whose newest line must equal the digest of the current state is wrong for every change in
+      flight after any other lands, and the fix is a hand edit in a file nobody else should edit. The digest
+      moves into the generated listing's header; the reason moves into a note per change, a new file with the
+      date and at least a few words of why. The check is that when the listing's digest differs from the
+      base's, the change adds a note. What is lost is the chain's proof that every past listing was recorded;
+      the notes and the history give the same answer with one more command. Ratchets whose point is a hand
+      edit that can only lower a count are not chains and stay.
+    level: file
+    why: >-
+      Own measure: a file of this kind changed in 10 commits in three days, and every one appended a line to a
+      chain, so any two changes in flight conflicted and the second one's digest was wrong after the rebase.
+    kind: rule
+    strength: Hard
+    status: proposed
+    sources:
+      - ref: towncrier-fragments
+        backs: rule
+      - ref: changesets-fragments
+        says: >-
+          A change is one small file in a folder; the release step joins them.
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        fix: never
+        note: >-
+          the listing's check fails an authored file that holds a changes chain key and fails a changed
+          listing with no new note. Plant: a chain line appended by hand fails. Control: a note file added
+          with the regenerated listing passes
+    relates:
+      - id: docs.freshness.1
+        how: see
+    open:
+      - >-
+        Proposed until the listing check reads notes. That is step 8 of gragas#477 (surface notes replace the
+        digest chain); it has no tool key to bind to until then.

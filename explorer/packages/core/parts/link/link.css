@@ -1,0 +1,11 @@
+[data-part="link"] {
+  display: inline-flex;
+  align-items: center;
+  color: var(--gr-text-action);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+[data-part="link"]:hover {
+  text-decoration-thickness: 2px;
+}

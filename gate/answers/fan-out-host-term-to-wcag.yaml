@@ -1,0 +1,5 @@
+rule: arch.measures.1
+path: internal/host/term/palette.go
+fingerprint: 601eed506332abdc88deaba9dc4ec4a1dddcbed40115fdba1806c6b7acfc1fe6
+answer: keep
+reason: "internal/wcag is a leaf of the standard library alone that owns the WCAG contrast ratio: the terminal's readability check called a copy of the formula in palette.go, and the token generator in internal/dev/tokens needs the same one, so one leaf serves both and removes the copy; host/term gains an edge that reaches nothing of gragas's"

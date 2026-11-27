@@ -1,0 +1,48 @@
+$ gragas attention
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+overdue review-by (1)
+rule         fix
+go.errors.1  gragas rule confirm
+             go.errors.1
+1 column not shown: what is wrong
+
+missing source (2)
+rule         fix
+go.errors.1  gragas rule edit
+             go.errors.1 --cite <source
+             slug>
+go.errors.2  gragas rule edit
+             go.errors.2 --cite <source
+             slug>
+1 column not shown: what is wrong
+
+missing example pair (2)
+rule         fix
+go.errors.1  add good.* and bad.* under
+             pairs/go.errors.1/1/ and
+             list the pair in the rule
+go.errors.2  add good.* and bad.* under
+             pairs/go.errors.2/1/ and
+             list the pair in the rule
+1 column not shown: what is wrong
+
+missing decision (2)
+rule         fix
+go.errors.1  gragas rule promote
+             go.errors.1
+             --decision-title "..."
+             --decision-text "...", or
+             name one in its reasoning
+go.errors.2  gragas rule promote
+             go.errors.2
+             --decision-title "..."
+             --decision-text "...", or
+             name one in its reasoning
+1 column not shown: what is wrong
+override rate: no batches given
+
+  done       2 rules need attention, 7
+  items
+--- stderr

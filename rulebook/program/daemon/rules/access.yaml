@@ -1,0 +1,185 @@
+format: 3
+part: daemon
+concern: access
+rules:
+  - id: daemon.access.1
+    statement: "Only the expected callers can reach a daemon, and being local is never an identity: peer credentials or the gate's identity are checked on every request, never a header alone; each route and each state-changing command declares who may call it; every route and command passes one admission check; and a route or command with no entry fails."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+        reason: It serves nothing.
+    reasoning:
+      definition: "Socket permissions or loopback bound who can reach the daemon; they decide nothing about who the caller is. A loopback or container-bridge address is anybody. A command run on the machine builds the same identity value a route builds (a local principal from the peer credentials of its own process) and passes the same admission check, with no bypass for being on the machine. A request no source vouches for is refused (service.authz.8)."
+      pros:
+        - "Practice; a bridge address is anybody, and a local bypass is the door every later surface walks through. Written as a Go test in the kit or the store test helper; no separate program."
+    relations:
+      relates:
+        - service.authz.8
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.access.2
+    statement: "Every local HTTP server, in any language, listens on loopback by default, answers only expected Host names, checks Origin against an allow list, needs a custom header for a request that changes a cookie, sets strict cookie attributes, and refuses to listen wider without TLS and a login."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    reasoning:
+      definition: "A local server is any HTTP server that runs on a person's machine: a daemon, a CLI's serve command or a development tool, written in Go, TypeScript or a language added later. Strict cookie attributes are HttpOnly, Secure where TLS is on, SameSite=Strict and a Path. A wider listen address is refused at start unless TLS and an identity source are configured. Each language ships the same shared test; a new language adds its binding, the rule does not change."
+      pros:
+        - "Held in one program already; a browser DNS-rebinding run was not done. A local server is attacked the same way whatever language it is written in."
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.access.3
+    statement: "A state-changing request to a local server is accepted only from the server's own origin, not merely the same site, and a change a browser sends from anywhere else is refused."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    reasoning:
+      definition: "Same-site is not enough: every host under one private-network domain is one site on the Public Suffix List, so another device's page on that network would pass a same-site check. The check compares the full origin (scheme, host and port) with the server's own, and a request with Sec-Fetch-Site other than same-origin, or an Origin not its own, is refused. Applies to a local server in any language."
+      pros:
+        - "Three programs have a cross-site refusal; a same-site rule leaves a measured hole on a private network where every device shares one site."
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.access.4
+    statement: "A peer's identity is believed only from the gate's own connection, on every request, and a spoofed identity header is ignored; the identity value is built only in the door packages, and the core reads no request header or URL."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "A door is any way in: a route, a command, a watcher, a card. Each door builds the one identity value (who, what they may do, which door, the subject) and hands it to the core; the core decides from that value alone. An analyser over the core packages refuses any use of the request type, its headers or its URL."
+      pros:
+        - "Held in the shared door package. A core that reads a header can be steered by any caller who can set one, and one identity value is what keeps every later door under the same check."
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.access.5
+    statement: "Every http.Server sets ReadHeaderTimeout, ReadTimeout and IdleTimeout, every http.Client has a Timeout or a context deadline, request bodies pass through a size cap, and all of them are constructed by the shared web package; outbound hosts come from configuration, never from a request."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - no-http
+        reason: A program that builds no HTTP server or client has none to time out.
+    reasoning:
+      definition: "A fetch that follows a user-supplied address resolves and checks it first (server-side request forgery). forbidigo with type analysis bans the default client, the bare get and post calls and the bare listen call outside the shared web package; the security scanner's G112 and G114 are on (both verified firing on 5 Nov). The scanner did not flag a client with no timeout or a server with only a header timeout, so the other timeouts and the body cap are asserted by a test on the shared constructors."
+      pros:
+        - "A client with no timeout hangs a CLI too, so this applies to any program that builds an HTTP server or client. A construction analyzer was considered and not chosen: forbidigo on the type name also hits parameter and return types (verified false positive)."
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+  - id: daemon.access.6
+    statement: "A daemon that serves a page gets its security headers in one place, tested, and an embedded page uses html/template or the framework's escaping, never text/template for markup."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    exemptions:
+      - kinds:
+          - no-page
+        reason: A daemon with no page has no page to serve.
+    reasoning:
+      pros:
+        - "Practice; a daemon test reads the headers and a depguard ban covers the template package. It binds only a daemon that serves a page; no target does today, and a daemon that answers an API only declares so (daemon.lifecycle.3)."
+    relations:
+      relates:
+        - daemon.lifecycle.3
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.access.7
+    statement: "A daemon that holds another program's key exposes only a named list of fixed requests, each with its address and request fixed in code, never a pass-through proxy."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "A caller names a question from the list; it never supplies a path, host, method or header that reaches the other program. A new question is a new entry in code, reviewed. Values a caller may pass are typed and checked against the entry's own allow list."
+      pros:
+        - "A proxy that forwards a key forwards it to anything a caller can name, which turns a read key into whatever the other program's API allows."
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.access.8
+    statement: "Proposed, promoted when the design that introduces a privileged helper is approved: a privileged helper runs only a closed list of verbs with fixed absolute command lines, checks each value against a list it builds itself, uses no shell and an empty environment, arms each mutating verb, and has a planted hostile-caller test."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "The helper is its own binary with its own import closure. Each verb is an entry with a fixed absolute command line in a system-protected folder; a caller passes only values, and the helper checks each against a list it reads itself from the system, never one the caller sends. A mutating verb runs only when armed by the owner. Promotion: when the operator approves the privileged-helper part of the design named in evidence (its part 2), status becomes active, strength Hard, and the check is built; until then the rule binds nothing and is not reported as a gap."
+      pros:
+        - "A privileged helper is the one place a bug becomes root. The shape is ruled, but the design it encodes is still proposed, and a rule ahead of its own design is what the ruling on where rules come from warns against."
+    relations:
+      relates:
+        - cli.commands.27
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+      - ref: decision-47
+        backs: rule
+      - ref: decision-64
+        backs: rule
+  - id: daemon.access.9
+    statement: "A setting that decides whom a daemon believes has no default and is never detected, and a missing or unknown value opens no listener, believes nobody, and is named by doctor."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "The trust mode (which identity source a listener believes) is written by the owner. The daemon never infers it from the platform, the network or a running process. Start with the value missing or unknown logs the reason, opens no listener, and doctor prints the key and the allowed values."
+      pros:
+        - "A misconfigured daemon must refuse rather than believe everybody, and a detected mode changes when the machine changes, without anyone deciding."
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.access.10
+    statement: "A route the machine cannot serve is absent from the route index and answers 404 with one fixed reason to every caller, never 403; a route declares its methods and any other method answers 405 with Allow; and a GET writes no state beyond one declared cache."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "The route index and the 404s come from one table, so a capability the machine lacks is reported the same way to a caller who may and one who may not use it. Each refused method has a negative test. A GET may fill the one cache it declares; anything else it writes (a note, a counter, a last-seen time) is a defect, and only an operation that changes things records what a look observed. Errors follow service.errors.4: a non-2xx status with the JSON error body."
+      pros:
+        - "These are the places a reader has to guess, and a reader that guesses breaks. 404, not 403, keeps a capability list from leaking what a caller may not see; a GET that writes makes a look change what it looked at."
+    relations:
+      relates:
+        - service.errors.4
+        - service.contract.9
+    sources:
+      - ref: decision-65-daemon
+        backs: rule

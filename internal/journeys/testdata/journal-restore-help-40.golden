@@ -1,0 +1,42 @@
+$ gragas journal restore --help
+--- exit 0
+--- stdout
+
+  Prints one line for each file the run
+  changed: a cp of the
+  copy it kept, or an rm for a file it
+  made. It runs none of
+  them, and it takes no --apply: you
+  read the lines and paste
+  them. For PowerShell or cmd it prints
+  no line: it says each
+  step in words, as rm and cp are not
+  commands there. If a file
+  no longer holds what the run left, it
+  is refused and names
+  the runs that changed it since.
+
+    gragas journal restore <run>
+    gragas journal restore <run> --json
+
+  USAGE
+
+
+    gragas journal restore <run>
+    [--flags]
+
+
+  FLAGS
+
+    --accessible  Plain questions
+                  (ACCESSIBLE)
+    --config      The settings file
+                  (GRAGAS_CONFIG)
+    -h --help     Help for restore
+    --json        Answer in one JSON
+                  document
+    --no-color    No colour (NO_COLOR)
+    --plain       Print plainly: nothing
+                  moves
+
+--- stderr

@@ -1,0 +1,8 @@
+$ gragas conflicts
+--- exit 4
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  not ready  no rulebook.yaml here. conflicts lists a rulebook's conflicts
+    gragas init
+--- stderr

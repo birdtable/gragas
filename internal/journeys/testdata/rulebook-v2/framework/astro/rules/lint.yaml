@@ -1,0 +1,52 @@
+part: astro
+concern: lint
+order: 3
+title: Template lint
+summary: >-
+  Astro templates have their own lint holes, namely inline script attributes and style blocks, which the
+  JavaScript lint set does not reach.
+rules:
+  - id: astro.lint.1
+    slug: inline-script-and-style-lint
+    since: 0.1.0
+    rule: >-
+      In an Astro project the inline-script attribute is used only where exempt, and style blocks are linted.
+    detail: >-
+      (a) ESLint no-restricted-syntax on the `is:inline` attribute in `.astro` files, through the Astro
+      parser, with a path exemption list. (b) Stylelint with the HTML parser lints `<style>` blocks in
+      `.astro` files with the same rule set as other styles, so a colour literal there fails.
+    level: file
+    why: >-
+      Neither hole had a row in the stack list (evidence D). Under the generated script policy an unhashed
+      inline script fails loudly at run time, so the lint is a convenience as well as a net.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: astro-docs
+        where: template directives
+        backs: rule
+      - ref: decision-65-astro
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint no-restricted-syntax on the `is:inline` attribute in `.astro` (astro-eslint-parser) with a
+          path exemption list, and Stylelint with postcss-html for `<style>` blocks (ESLint-only: the Astro
+          parser has no Biome form). Plant: a `<script is:inline>` outside the exemption list fails; a hex
+          colour inside `<style>` in an `.astro` file fails. Control: a hashed module script and a token-based
+          style block pass
+    open:
+      - >-
+        The attribute selector fired only once written for the namespaced-name node kind; a selector on the
+        plain name matched nothing.
+      - The path-exemption list was not planted.
+      - >-
+        A donor's earlier text rule for the same hole was unproven (its own self cases did not run in its
+        gate).

@@ -1,0 +1,7 @@
+[
+  {"binding": {"tool": "tsc", "target": "source", "key": "strict", "value": true, "severity": "error"}, "layer": "base", "decision": "strict"},
+  {"binding": {"tool": "tsc", "target": "source", "key": "target", "value": "es2022", "severity": "error"}, "layer": "base"},
+  {"binding": {"tool": "tsc", "target": "source", "key": "noImplicitAny", "value": true, "severity": "error"}, "layer": "base"},
+  {"binding": {"tool": "tsc", "target": "source", "key": "skipLibCheck", "value": true, "severity": "error"}, "layer": "base"},
+  {"binding": {"tool": "tsc", "target": "source", "key": "noEmit", "value": true, "severity": "error"}, "layer": "base", "excluded": {"overlay": "team", "decision": "emit-here"}}
+]

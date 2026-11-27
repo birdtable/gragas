@@ -1,0 +1,168 @@
+format: 3
+part: ts
+concern: cycle
+rules:
+  - id: ts.cycle.1
+    statement: "At commit, the format check reads and never rewrites, and the lockfile is checked against the manifest."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The formatter runs in its check mode, lists the files that differ and exits non-zero; the fix is the same tool in write mode, run by the person. The lockfile member fails when the manifest and the lock disagree, which is the check the clean install makes before it installs anything. A hook that formats and restages is the opposite of a check (gates.command.28)."
+      pros:
+        - "Two commit hooks of one organisation ran the formatter in write mode and restaged; a stale install after a lockfile change gave 170 false lint errors and one refused landing."
+    relations:
+      relates:
+        - gates.command.28
+        - gates.hooks.3
+        - supply.install.1
+    sources:
+      - ref: prettier-cli
+        where: "--check"
+        says: "This will output a human-friendly message and a list of unformatted files, if any."
+        backs: check
+      - ref: npm-cli-ci
+        where: Description
+        says: "If dependencies in the package lock do not match those in package.json, npm ci will exit with an error, instead of updating the package lock."
+        backs: check
+  - id: ts.cycle.2
+    statement: "Typed lint is never a commit member: at commit the staged files are linted without type information, or not at all."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Lint rules that need type information build a program over the project before the first file is read, and that cost is the same for one staged file as for all of them. The commit moment is seconds (gates.command.17). Typed lint runs at push as its own member with its threads and cache (ts.cycle.5)."
+      pros:
+        - "One staged file cost 30 seconds of typed lint at commit in one organisation's main web application, 28 of its 31.4 second commit."
+    relations:
+      relates:
+        - gates.command.17
+        - ts.cycle.5
+    sources:
+      - ref: typescript-eslint-typed-linting
+        where: Typed Linting
+        says: "As a result, these rules are slower than traditional lint rules but are much more powerful."
+        backs: rule
+  - id: ts.cycle.3
+    statement: No installed dependency folder and no build output is tracked in git.
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The dependency folder is rebuilt from the lockfile and the build output from the source; tracking either makes every install or build a diff, hides the lockfile's job, and lets a hand edit to a built file reach the main branch. The ignore file names both, and a tracked file under either path fails."
+      pros:
+        - "One package of one organisation tracks 5,460 installed files."
+    relations:
+      relates:
+        - gates.own-rules.3
+    sources:
+      - ref: ts-reasons-stated
+        backs: rule
+  - id: ts.cycle.4
+    statement: "The clean install and the browser install run only when the lockfile or the pin changed, and the manifest's prepare step installs the hook and runs the framework's install step, so a fresh clone type checks."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "gates.command.19 holds that a tool is installed when its pin changes; for this stack the pin is the lockfile and the browser version. The prepare step is the one script the package manager runs on a local install with no arguments, so it is where the hook install and the framework's generate or install step belong; a framework whose types come from a generated file fails the type check on a fresh clone until that step has run (gates.command.21)."
+      pros:
+        - "Eight repositories of one organisation were red on a fresh clone because a framework install step was missing from the prepare script, and installs of 106 to 180 seconds sat in no budget."
+    relations:
+      relates:
+        - gates.command.19
+        - gates.command.21
+        - gates.command.24
+    sources:
+      - ref: npm-scripts
+        where: "Life Cycle Scripts, prepare"
+        says: Runs on local npm install without any arguments
+        backs: rule
+  - id: ts.cycle.5
+    statement: "At push the type check and the lint are their own members; the lint runs typed, on the pool's thread count, with its cache, in every tier."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The type check runs the compiler with no emit. The lint runs with type information, on as many threads as the pool gives (gates.command.25), with its cache in the same folder in every tier, so a warm push, land and release see the same speed. Each is a member, so a failure names one and both run beside the tests."
+      pros:
+        - "One organisation's lint took 394 seconds cold and single-threaded in one slot kind and 8.8 seconds warm with four threads, and was 65 percent of a 607 second push."
+    relations:
+      relates:
+        - gates.command.25
+        - gates.command.22
+        - ts.cycle.2
+    sources:
+      - ref: tsconfig-reference
+        where: noEmit
+        says: "Do not emit compiler output files like JavaScript source code, source-maps or declarations."
+        backs: check
+      - ref: eslint-cli
+        where: "--cache"
+        says: Store the info about processed files in order to only operate on the changed ones.
+        backs: check
+  - id: ts.cycle.6
+    statement: "No coverage instrumentation runs in a blocking tier; coverage runs at release or on demand."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Coverage transforms the source to count what ran, and that cost falls on every test of every push. tests.measures.5 holds that coverage is reported at the slowest tier and is never a threshold in the inner loop; this line places it: the release tier or an on-demand member (gates.command.26), never push or land."
+      pros:
+        - "One organisation's unit tests took 215 seconds with coverage against 166 to 190 seconds without, in a blocking tier."
+    relations:
+      relates:
+        - tests.measures.5
+        - gates.command.26
+    sources:
+      - ref: vitest-coverage-guide
+        where: Istanbul provider
+        says: coverage tracking works by transforming your source code to add instrumentation logic
+        backs: rule
+  - id: ts.cycle.7
+    statement: "A test that drives the project's own lint config shares one linter instance per file, built once in the file's setup."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Building a typed lint program inside a test body costs seconds per case. The file's setup builds the program once and the cases lint their samples against it (tests.runners.5). A case that needs another config says so and builds its own."
+      pros:
+        - "Seven of the ten slowest tests in one organisation's main web application built a typed lint program inside the test body."
+    relations:
+      relates:
+        - tests.runners.5
+    sources:
+      - ref: ts-reasons-stated
+        backs: rule
+  - id: ts.cycle.8
+    statement: A service test imports the handler chain once per file and resets only the setting a test changes.
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Re-importing the handler chain per test, or resetting every module between tests, rebuilds the service for each case. The file imports once, each test changes the one setting it is about and puts it back (tests.isolation.12 holds the list of tests that need isolation and why)."
+      pros:
+        - "Service suites of one organisation rebuilt their handler chain per test, and the tests were 126 of a 189 second push in one service."
+    relations:
+      relates:
+        - tests.runners.5
+        - tests.isolation.12
+    sources:
+      - ref: ts-reasons-stated
+        backs: rule
+  - id: ts.cycle.9
+    statement: "A unit test never makes a real network attempt: a stub client throws a marker error, so a call that escaped the fake fails fast and names itself."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A unit test that reaches the network waits out a connect timeout on a host with no route and passes by luck on one with. The client the code under test receives is a stub whose every method throws a named marker error; a test that needs a real answer is an integration member (service.cycle.3), not a unit test. web.testing.12 holds how the network is faked where it is faked; this line holds that a unit test is never on it."
+      pros:
+        - "Unit tests that reached for the network were among the slowest files in one organisation's services, and timed out at load."
+    relations:
+      relates:
+        - web.testing.12
+        - supply.install.2
+        - tests.measures.8
+    sources:
+      - ref: ts-reasons-stated
+        backs: rule

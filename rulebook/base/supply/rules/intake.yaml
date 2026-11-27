@@ -1,0 +1,120 @@
+format: 3
+part: supply
+concern: intake
+rules:
+  - id: supply.intake.1
+    statement: "Each concern has exactly one importable owner chosen in a data file, the alternatives are banned by name, and the failure message says what to import instead."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The owner is a module, a standard-library package or a shared package. The concern table is the rulebook's list of libraries: one owner per concern with the alternatives named, and every verdict in it is a candidate until ruled. The table is data validated by a schema that requires an owner and the alternatives. A direct dependency that is not in the table fails, and a banned name in source or in a manifest fails. Existing uses of a banned library are a list that only shrinks and never gains an entry. Until the data file exists, the rule for a project is an instruction, and the check reports not applicable with the count of entries (zero) rather than passing. The first entries of a web project's table follow its framework part. Example plant: left-pad as an unlisted name and lodash as a banned one. The allow-file is the shrink-only list of existing uses. Existing uses are suppressed into a suppressions file (eslint-suppressions.json, written with --suppress-rule) that never gains an entry. The build-time cap flag is --max-issues, set to 0. Examples of banned alternatives in a web table: react-hook-form (the form pick is TanStack Form), react-hotkeys-hook, react-i18next and react-intl; the full lists belong to the framework parts."
+      pros:
+        - "Without one owner per concern, each author picks a library and the build carries several for the same job. In the Go estate no repository had a ban list, and one would have failed the terminal-colour ban on day one; all 32 direct dependencies of the web estate hit no ban, so the cost of binding is low."
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 10
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: gomodguard_v2
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: supply.intake.2
+    statement: "Each shipped binary has a declared closure of the internal packages and external modules it may link, checked per binary by a test with a shrink-only allow list, and the count of linked modules only falls."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "For each binary the repository declares which internal packages and which external modules it may link, citing the concern each external module serves. A test lists each binary's real dependency closure (go list -deps for the binary's main package) and fails on any internal package or module outside that binary's list, so a helper or guest binary that links a host package fails even when the main binary may. The allow list only shrinks without a recorded exemption, and the count of linked modules per binary only falls. An empty allow file is refused with a distinct exit code, not read as a pass. The test runs in the local gate."
+      pros:
+        - "A module can be linked without anyone having chosen it. In the Go estate, direct requires ranged from 7 to 15 per repository and linked modules from 38 to 47, and no repository had an allow file. A count per repository hides a small binary that has grown the large one's dependencies, which is where a trust line breaks."
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+  - id: supply.intake.3
+    statement: "A new third-party module meets a bar: a permissive licence, a release or push in the last 12 months, more than one committer or a named organisation, and a module graph small enough to read."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The change that adds the module carries a row in the concern table, one sentence on what the standard library lacks, and the weight of the dependency. The facts are measured by script; the sentence is read by a reviewer."
+      pros:
+        - "A dependency chosen without facts is accepted on a name; the bar turns the choice into measurable items."
+  - id: supply.intake.4
+    statement: "A commit that adds a dependency to any manifest section is justified in its pull request and signed off by someone other than its author; a version bump of an existing dependency does not count."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Every manifest section counts: runtime, development, optional and peer dependencies. The signature is held by a stored verdict from a different identity on changes to the protected path list. The justification text is read by a reviewer."
+      pros:
+        - "Adding a dependency is the largest single change of supply-chain surface; one author should not make it alone."
+    sources:
+      - ref: decision-31
+        backs: rule
+  - id: supply.intake.5
+    statement: "The standard library comes before a new dependency or a home-made helper, before a part is written the change names the maintained tools surveyed and why none fits, and a part a maintained tool already does well is not rebuilt."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Order of preference: the standard library, then a maintained tool or library that does the job, then our own code. A change that adds a new part (a module, a command, a parser, a protocol client) names the maintained tools it looked at and the reason each was not used; \"none surveyed\" fails the review. Where a maintained program does the job, the program uses it through an adapter (arch.ports.6) and reads its machine output (arch.ports.20) rather than reimplementing it."
+      pros:
+        - "A dependency or a helper for something the standard library already does is weight with no gain, and a part rebuilt where a maintained tool exists is code we now maintain alone."
+    relations:
+      relates:
+        - arch.ports.6
+        - arch.ports.20
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+  - id: supply.intake.6
+    statement: "A new library is a row of the register of libraries, which names the job, what it replaces and the alternatives it bans, and it passes the supply-chain gate and logs the replaced use as debt with a date by which it is gone."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The register is rulebook/lang/go/libraries.yaml. One concern keeps one library: the row names its job, the library to call, where an import of it is allowed, the modules and hand-written code it replaces, and the ban for the alternatives (depguard imports, forbidigo patterns). A row that is chosen and bans something becomes a row of the Go preset; a row that needs a spike, or is conditional, does not. The places still using the replaced code are listed in the debt record with a zero-by date. The replaced use may be a hand-written copy object or vocabulary."
+      pros:
+        - A library added beside the old one doubles the code for a concern and leaves the old one to rot.
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 10
+        backs: rule
+  - id: supply.intake.7
+    statement: A dependency that does what the platform already does is on the ban list.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Advice-only plugins that report native replacements: @e18e/eslint-plugin and eslint-plugin-depend."
+      pros:
+        - "A package that repeats a built-in feature adds code, update work and attack surface for nothing."
+  - id: supply.intake.8
+    statement: "Every banned or watched library has a named re-entry trigger, and the ban list covers the library family, not only the member in use."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A trigger is a version, a stated need or a measured threshold."
+      pros:
+        - "A ban with no way back is either ignored or never revisited; a ban of one family member leaves the others open."
+  - id: supply.intake.9
+    statement: "A dependency's API is one that models write correctly without prompting."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - A library whose API models misuse costs repeated rework in agent-written code.
+  - id: supply.intake.10
+    statement: A test-only module is absent from the non-test build.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - A module linked only for tests that reaches the shipped build enlarges what ships.

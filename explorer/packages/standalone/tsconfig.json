@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.bundler.json",
+  "compilerOptions": {
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": ["node"],
+    "jsx": "react-jsx"
+  },
+  "include": [
+    "src",
+    "test",
+    "vitest.config.ts",
+    "vite.config.ts",
+    "page-plugin.ts"
+  ]
+}

@@ -1,0 +1,8 @@
+# Paths a Tree refuses to Read with ErrOutside, one a line (escapes \\ \n \t):
+# climbing, absolute, a doubled slash, and drive-style.
+../x
+rules/../../x
+/etc/passwd
+rules//a.yaml
+C:/x
+C:\\x

@@ -1,0 +1,31 @@
+format: 3
+part: aws
+concern: iam
+rules:
+  - id: aws.iam.1
+    statement: "No grant uses a wildcard action or a wildcard resource, and a gate that bans wildcards runs in every service."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The gate scans the infrastructure code and the rendered policies for a star in an action or resource position. Allow lists elsewhere (modules, callers) also name entries and a wildcard fails there. In Go, the CI token is read-only and scoped, the daemon callers are checked, and the sandbox comes from a template."
+      pros:
+        - A wildcard grant turns any compromise or bug in one function into access to everything the account holds.
+  - id: aws.iam.2
+    statement: "Event publishing, invoke and database-connect grants exist only on the declared path: publish only on the shared bus, invoke only through the one internal invoke grant, and runtime database connect only for the service own application role."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - "These three grants are how a unit reaches other services and the data; each must come from one declared place so a reader sees every door a unit has."
+    sources:
+      - ref: p-03-data
+        where: section 16
+        backs: rule

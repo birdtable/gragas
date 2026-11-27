@@ -1,0 +1,19 @@
+version: '3'
+tasks:
+  pre-commit:
+    cmds:
+      - test -z "$(gofmt -l .)"
+      - go mod tidy -diff
+  pre-push:
+    deps:
+      - vet
+    cmds:
+      - {cmd: go vet ./..., timeout: 5m}
+      - go build ./...
+      - {cmd: golangci-lint run, timeout: 10m}
+      - {cmd: gitleaks git, timeout: 5m}
+  full:
+    cmds:
+      - {cmd: gotestsum -- -count=1 ./..., timeout: 20m}
+      - {cmd: govulncheck ./..., timeout: 5m}
+      - {cmd: "gragas check & sleep 1", timeout: 2m}

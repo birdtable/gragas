@@ -1,0 +1,80 @@
+format: 3
+part: supply
+concern: workflows
+rules:
+  - id: supply.workflows.1
+    statement: "No workflow triggers itself: workflows run only when started (manual dispatch or a call from another workflow), or on a tag push for a release, never on a schedule, a push to a branch or a pull request."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The gate runs locally: make check and the pre-push hook (gates.hooks.1) are the only gate on a push, and no workflow repeats it on push or pull request. A release workflow runs on a release tag push or by dispatch, has a dry-run option and one verify file per export, and the first publish of a package is only from the workflow. A check too slow for the hook runs in the release workflow (gates.hooks.4). The check is parse-based: it normalises the on key (a scalar, an inline list, a quoted key and a map all count) to a set of events and allows only dispatch, call and push with tags. A check in the ast-grep style passed three of five cheap restructurings and was rejected; the parse-based check passed six of six. The same check runs on Go and web repositories. A conftest policy is the alternative form. Cases the check covers: on: push: branches (the push.branches key) fails while push.tags passes. A run step with -count=N above 1 is denied. The audit named dangerous-triggers covers only pull_request_target, workflow_run and issue_comment, so it does not cover trigger sets."
+      pros:
+        - "Hosted minutes on every push are refused: the tag is the release and the local gate is the gate. Neither the workflow linter nor the security audit checks the trigger set, so a push trigger went unseen."
+    relations:
+      relates:
+        - gates.hooks.1
+        - gates.hooks.4
+    sources:
+      - ref: decision-14
+        backs: rule
+      - ref: decision-34
+        backs: rule
+      - ref: decision-65-supply
+        backs: rule
+      - ref: operator-points
+        backs: rule
+  - id: supply.workflows.2
+    statement: "Workflow files pass a workflow linter and a security audit, and every action is pinned to a commit."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "Injected faults in workflow files were found by the linter and the audit in a planted trial: three of three. One repository had two high audit findings for a token with no permission input."
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule
+  - id: supply.workflows.3
+    statement: A CI token is read-only and scoped to the repositories it needs.
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - library
+        reason: A library with no CI token has nothing to scope.
+    reasoning:
+      definition: "Each workflow declares read-only permissions at the top. One release token covered the whole owner, and the ruling leaves it as it is, recorded as an exception with a stored verdict and an expiry tied to the shared tooling work; the release box keeps its pending mark. The permissions: key is declared at the top of each workflow."
+      pros:
+        - A token that can write to every repository turns a compromised job into a compromise of the estate.
+    sources:
+      - ref: decision-21
+        backs: rule
+  - id: supply.workflows.4
+    statement: "Every shell script is linted and is found by its first line, not by its file extension."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The finder looks past the .sh name, which hid shell scripts from the extension glob."
+      pros:
+        - "A glob on the shell extension showed one repository clean while blind to 29 files; there were 46 extensionless shell scripts against 40 tracked ones with the extension."
+  - id: supply.workflows.5
+    statement: "A project has no workflow that gates a push: its workflows are the release workflow on a tag and workflows started by hand, and any of them that runs gate members runs the one gate command the hook runs, plus only the members moved there for time."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The gate is make check (or the repo's one gate command), run by the pre-push hook. A workflow never holds its own list of gate steps: the release workflow runs the gate command, then the members too slow for the hook (gates.hooks.4), such as fuzzing and race tests, then builds and publishes. A dispatch workflow that checks a tree runs the same gate command. Where a shared workflow exists, a project workflow calls it rather than copying its steps. No workflow is triggered by a push to a branch or a pull request (supply.workflows.1)."
+      pros:
+        - "Hosted minutes on every push are refused, and a workflow with its own gate steps drifts from the gate the hook runs, so the release can pass a tree the hook would refuse."
+    relations:
+      relates:
+        - gates.hooks.4
+        - supply.workflows.1
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+      - ref: operator-points
+        backs: rule

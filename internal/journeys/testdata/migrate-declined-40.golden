@@ -1,0 +1,53 @@
+$ gragas migrate --name demo --owner team-a
+--- exit 6
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+what is carried over
+  carried: 2 rules, 1 binding, 1 source,
+  1 guide, 2 kinds
+  facet no-identity became a kind
+  strengths: Hard to must, 1 rule;
+  Answered, Session and Record to
+  should, 1 rule; Lens and Review to
+  may, 0 rules; the parked file keeps
+  each word folded with another
+  parked: 8 lines in parked.yaml, each
+  value with no field in the format, by
+  rule id, then field; no program reads
+  it
+  not carried: source a-poster: the kind
+  poster has no kind at format 3
+  not carried: id arch.gone.1: the lock
+  holds it and no rule does, so no rule
+  can keep it as an alias
+  the history records 2 statement
+  digests: the prose lint holds each
+  migrated rule until its statement
+  changes
+  0 prose findings for validate to list
+  on the result, to reword by hand
+
+checked before any write
+  the result was read back through the
+  loader, with the statement digests the
+  conversion built: counts equal, no
+  finding but the prose lint's
+  2 migrated rules held from the prose
+  lint until their statement changes
+
+what is written where
+  replace base/arch/rules/layers.yaml
+  replace sources.yaml
+  make rulebook.yaml
+  make structure.yaml
+  make parked.yaml
+  append to history.jsonl
+This was a dry run and nothing was
+changed. Add --apply to make these
+changes.
+
+  declined   nothing was changed
+    gragas migrate --name demo --owner
+team-a --apply
+--- stderr

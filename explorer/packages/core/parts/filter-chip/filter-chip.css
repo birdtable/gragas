@@ -1,0 +1,34 @@
+[data-part="filter-chip"] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gr-space-1);
+  padding-left: var(--gr-space-3);
+  background: var(--gr-ground-surface);
+  border: 1px solid var(--gr-control-border);
+  border-radius: var(--gr-radius-full);
+}
+
+.gr-chip-name {
+  color: var(--gr-text-muted);
+}
+
+.gr-chip-name::after {
+  content: ":";
+}
+
+.gr-chip-value {
+  color: var(--gr-text-ink);
+  font-weight: 600;
+}
+
+.gr-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--gr-text-action);
+  background: transparent;
+  border: 0;
+  border-radius: var(--gr-radius-full);
+  cursor: pointer;
+}

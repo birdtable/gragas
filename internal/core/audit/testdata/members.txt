@@ -1,0 +1,79 @@
+# One tier member a line, for two judges: the audit package holds CannotFail to
+# it, and internal/cannotfail_task_test.go runs each through the pinned go-task
+# (3.54.0) and holds its exit status to it. A line is the verdict, whether the
+# task sets pipefail (p, or - for no), and the member, written with false, true
+# and echo in place of the tools so that a failure is certain.
+#
+#   green    go-task exits 0: the member cannot fail, and CannotFail names a form
+#   red      go-task exits other than 0: CannotFail finds nothing and nothing unjudged
+#   unjudged a statement whose status the check cannot place and nothing else
+#            settles that the member fails: CannotFail names no form and says it
+#            did not read it, whatever go-task does with it (not held to go-task)
+#
+# Narrowed on purpose: only the named forms are read, and every
+# other statement that is not a plain command is unjudged, one row for each
+# spelling dropped (combined flags, several options, "--" and positional words,
+# "exit 00", an && list ending in a command that cannot fail, an option set again
+# after a failing statement).
+#
+# {root} stands for a folder the test makes, expanded before the member is read
+# or run; the rest of the path is written with slashes.
+#
+# A member is one line; ";" stands where a newline would. A guard whose test is
+# false (`[ -z x ] && exit 1 || true`) exits 0 for a reason the text cannot give,
+# so it is not here: only its failing twin is.
+green - false || true
+green - false || :
+green - false || echo ok
+green - false || exit 0
+green - false | cat
+green - false | tee {root}/sink
+green - set -n; false
+green - set +e; false; true
+green - exit 0
+green - true; exit 0
+green - true; false || true
+green - false || true; true
+green - false || true; false || true
+red p false | cat
+red p false | tee {root}/sink
+red - false; exit 0
+red - false || true; false
+red - P=x; [ -n "$P" ] || exit 0; false
+red - set +e; false
+red - set -e; false
+red - false; true
+red - false || false
+unjudged - false && true || true
+red - [ -n x ] && exit 1 || true
+green - false || echo failed >&2
+unjudged - false && true; true
+red - set +e; exit 1; true
+red - set -o pipefail; false | cat
+unjudged - if ! false; then echo failed; fi
+unjudged - false || echo failed > out.log
+unjudged - ! false; true
+unjudged - set -euo pipefail; false | cat
+unjudged - set -eo pipefail; false | cat
+unjudged - set -o errexit -o pipefail; false | cat
+red - set +e; false || exit 1; true
+red - set +e; false || exit 1; echo done
+red - set -- -n; false
+red - set -- +e; false; true
+unjudged - set +e; false; set -e
+unjudged - set +e; false; set -o pipefail
+red - exit 1
+unjudged - exit 00
+unjudged - set +e; set x -e; false; true
+unjudged - set x +e; false
+unjudged - set x -n; false
+unjudged - set - +e; false; true
+unjudged - set -u; true
+unjudged - set -ne; false
+unjudged - set +ex; false
+unjudged - (exit 1) || true
+green - exit 1 | cat || true
+unjudged - (exit 1) && true; true
+unjudged - set -o "$X"; true
+unjudged - set $FLAGS; false
+unjudged - set ''; true

@@ -1,0 +1,17 @@
+$ gragas contract validate nokind.json
+--- exit 2
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  bundle
+  report
+  changelog
+  sarif
+  plan
+  proposal
+  grid
+
+  usage      the kind of nokind.json cannot be told from its fields; name it
+  with --as. The kinds are listed above
+    gragas contract validate nokind.json --as bundle
+--- stderr

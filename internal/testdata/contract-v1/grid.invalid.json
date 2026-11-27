@@ -1,0 +1,13 @@
+[
+  {"name": "an unknown field", "patch": [{"op":"add","path":"/0/cells/0/extra","value":1}], "problem": "Additional properties are not allowed ('extra' was unexpected)"},
+  {"name": "a cell with no result", "patch": [{"op":"remove","path":"/0/cells/0/result"}], "problem": "'result' is a required property"},
+  {"name": "a wrong run level", "patch": [{"op":"replace","path":"/0/cells/0/run_level","value":"host"}], "problem": "is not one of"},
+  {"name": "a reason the contract does not give", "patch": [{"op":"replace","path":"/0/cells/1/reason","value":"sandbox gone"}], "problem": "is not one of"},
+  {"name": "a rung-6 cell marked pass", "patch": [{"op":"replace","path":"/0/cells/2/result","value":"pass"}], "problem": "is not one of"},
+  {"name": "a rung-6 cell marked fail", "patch": [{"op":"replace","path":"/0/cells/2/result","value":"fail"}], "problem": "is not one of"},
+  {"name": "a reviewed cell below rung 6", "patch": [{"op":"replace","path":"/0/cells/2/rung","value":3}], "problem": "value must be 6"},
+  {"name": "an inputs digest that is not a digest", "patch": [{"op":"add","path":"/0/cells/0/inputs","value":"sha256:ABC"}], "problem": "does not match"},
+  {"name": "a tool that is not text", "patch": [{"op":"add","path":"/0/cells/0/tool","value":7}], "problem": "is not of type"},
+  {"name": "a tested set of the wrong shape", "patch": [{"op":"add","path":"/0/tested_set","value":{"tools": "lint"}}], "problem": "is not of type"},
+  {"name": "a cell with no binding", "patch": [{"op":"remove","path":"/0/cells/0/binding"}], "problem": "'binding' is a required property"}
+]

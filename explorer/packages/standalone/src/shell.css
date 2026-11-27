@@ -1,0 +1,100 @@
+/* The page the shell paints: the ground and ink from the tokens,
+   a header, the banners, the one main and the footer. dvh, never 100vh. */
+body {
+  margin: 0;
+  color: var(--gr-text-ink);
+  background: var(--gr-ground-page);
+  font-family: var(--gr-font-sans);
+}
+
+[data-shell] {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  min-height: 100dvh;
+}
+
+[data-shell] header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--gr-space-4);
+  padding: var(--gr-space-3) var(--gr-space-4);
+  background: var(--gr-ground-surface);
+  border-bottom: 1px solid var(--gr-control-border);
+}
+
+[data-shell] .gr-name {
+  margin: 0;
+  font-weight: 600;
+}
+
+[data-shell] nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gr-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-shell] nav a {
+  display: inline-flex;
+  align-items: center;
+  min-width: 24px;
+  min-height: 24px;
+  padding: var(--gr-space-1) var(--gr-space-2);
+  color: var(--gr-text-action);
+}
+
+[data-shell] nav a[aria-current="page"] {
+  color: var(--gr-text-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+[data-shell] main {
+  padding: var(--gr-space-4);
+}
+
+[data-shell] main:focus,
+[data-shell] main h1:focus {
+  outline: none;
+}
+
+[data-shell] main h1:focus-visible {
+  outline: 2px solid var(--gr-focus);
+  outline-offset: 2px;
+}
+
+[data-shell] footer {
+  padding: var(--gr-space-3) var(--gr-space-4);
+  color: var(--gr-text-muted);
+  border-top: 1px solid var(--gr-control-border);
+}
+
+[data-shell] :is(a, button):focus-visible {
+  outline: 2px solid var(--gr-focus);
+  outline-offset: 2px;
+}
+
+/* The skip control is out of sight until it has focus. */
+.gr-skip {
+  position: absolute;
+  left: var(--gr-space-2);
+  top: -100dvh;
+  padding: var(--gr-space-2) var(--gr-space-3);
+  color: var(--gr-text-ink);
+  background: var(--gr-ground-surface);
+}
+
+.gr-skip:focus {
+  top: var(--gr-space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-shell] * {
+    scroll-behavior: auto;
+    transition: none;
+    animation: none;
+  }
+}

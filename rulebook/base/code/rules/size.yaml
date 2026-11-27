@@ -1,0 +1,168 @@
+format: 3
+part: code
+concern: size
+rules:
+  - id: code.size.1
+    statement: "Files over a per-type line limit are reported without failing, and the count of files over a far larger limit is held from rising."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The reported lines (code 300, component 400, stylesheet 800) are guesses, and so is the gated tail of 1000 lines. A file over the report line prints; a file past the tail line fails when it is not in the committed baseline (one file per entry, shrink-only). Generated files, golden test data and end-to-end files are on a declared exclusion list. The donor's rule gated at 300 lines (counting non-blank, non-comment lines) with a shrink-only per-file override list that ships empty; our ruling demoted the 300 line to a report because no harm is shown and a ratchet with no partner rewards the cheap split. Splitting a file past the tail is free, which is why only the tail gates. The other side of this rule, a file split too far (a too-small split, which no instrument covers), is read through code.size.6."
+      pros:
+        - "A size ratchet failed once in the estate (a file grew from 400 to 3,000 lines and still counted as one violation), so a one-sided count is known to be gamed. Over 300 lines: 62 files (11.4%) in one repo, 96 (26.0%) in another, 36, 44, 37 and 8 in the others; the standard library has 25.9% over 300 and 8.3% over 800. Over 1000: 5, 8, 4, 1 and 0."
+    relations:
+      relates:
+        - code.size.6
+    sources:
+      - ref: ousterhout-aposd
+        where: chapter 9
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 5.8
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.3
+        backs: rule
+  - id: code.size.2
+    statement: "Functions over 50 lines are shown as a measure beside the count of tiny single-use helpers, read per change, so a fall in length with a rise in helpers reads as no progress."
+    strength: should
+    status: active
+    origin: migrated
+    exemptions:
+      - paths:
+          - "**/*_test.go"
+          - "**/*.test.*"
+          - "**/*.spec.*"
+        reason: "test bodies are long by design; the donor's cap does not apply to tests"
+    reasoning:
+      definition: "A helper is any function of 20 lines or fewer, exported or not, with exactly one referrer by call or value. The count covers exported helpers and function values, because counting private call sites alone is beaten for free by exporting the helper, calling it from a dead branch or putting it in a table. A function over 100 lines is reported and fails nothing: length cannot tell a nest from a flat table, and cognitive complexity already holds every nest. 50, 100 and 20 are guesses. A function over 50 lines grows only after the change says why. The donor's rule failed a function at 50 lines (not applied to tests); that demotion is the ruling here. The review question beside it is whether the new function can be understood without opening its caller."
+      pros:
+        - "Nine commits in one repo say they extract a helper to get under a limit, so the limit drives extraction. Over 50 lines: 3.1%, 3.7% and 7.9% of functions in three repos, 7.6% in the standard library; helper counts are 1311, 1056 (331 exported), 514, 415 and 401. In a sample of 24, about 4 were merge candidates."
+    sources:
+      - ref: ousterhout-aposd
+        where: chapters 4 and 9
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 5.8
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 5.14
+        backs: rule
+  - id: code.size.3
+    statement: "The count of functions with cognitive complexity over 20 only falls, and a fall paired with a rise in the helper count prints as no progress."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - paths:
+          - "**/*_test.go"
+          - "**/*.test.*"
+          - "**/*.spec.*"
+        reason: tests are off in the tool configuration
+    reasoning:
+      definition: "The line of 20 is inherited, not measured, and is one line for Go and the web stack; the donor's line was 15 and is not used. The ratchet reads the pair per change: a fall in this count with a rise in the helper count of code.size.2 in the same change prints as no progress, so the baseline can lower only if the helper count did not rise. The count of over-limit functions is a per-function baseline, one file per function. A lint runner's new-from-merge-base setting flags every touched line of an old over-limit function, so the count ratchet is preferred. Existing debt in the web stack sits in the linter's bulk suppression file, which is the shrink-only baseline. Tests are off."
+      pros:
+        - "At 20 with tests off: 94 functions in one repo, 91 in another, 48 and 33 in two more; 0 over 30 where the config holds 30. In a hand sample about 2 of 4 hits were worth splitting. A 160-line nest scores 143 and fires; a 159-line flat table scores 0; splitting a nest into two methods that share state still fires on both. Nine commits extract a helper to get under the limit."
+    relations:
+      relates:
+        - code.size.2
+    sources:
+      - ref: ousterhout-aposd
+        where: chapter 18
+        backs: rule
+      - ref: decision-41
+        backs: rule
+      - ref: p-01-core-programming
+        where: section 6
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 5.6
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: gocognit
+        severity: error
+        rung: 0
+        run_point: land
+  - id: code.size.4
+    statement: "Functions with many parameters take a struct or options object, and the parameter count only falls."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The Go limit is 6 for new code with the receiver not counted (a guess; no Go source gives one, and the revive default is 8); the web limit is 4, with a shrink-only baseline for existing debt. The cure the rule wants is the one that passes. The donor's cap was 3 parameters per function. The cheap cure is a variadic any, which the port rules catch at ports only."
+      pros:
+        - A long parameter list hides a missing type and makes every caller depend on the order. In the web stack 67 functions in one repo exceeded the limit of 4.
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: revive
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: code.size.5
+    statement: "Size and complexity are watched as a trend and a hotspot list (churn times lines), reported and not gated, with a declared exclusion list and a window by release or ticket, never by days."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A hotspot report uses a declared exclusion list that takes generated files, registers, golden test data and end-to-end files, and states its window and its unit: by release, train or ticket, never by days, because agent commit rates inflate churn and make time windows meaningless (118 commits a day on one repo). After a squash the unit changes little, and splitting a hot file drops it off the list, so a file that leaves it has not shown it got better. A hot file carries a per-file trend (lines and indentation depth over its commits) before and after a refactor, so a fix is checked against history. A ratchet is used only where a number reaches zero in practice, such as files over 1000 lines not rising (code.size.1; one repo's numeric per-file file-baseline already does it). A size distribution (the 90th percentile) is reported as a trend. A diff size (a diff-size ceiling paired with a rework count) is reported beside post-land rework per ticket wherever a small-change rule exists, from the delivery record, with no limit."
+      pros:
+        - "The top tenth of files by churn times lines took 46.4% of later fix touches in one repo and 30.2% in another, against 9.9% for a random tenth; lines alone gave 34.8 and 36.9, so the product is no better than its parts. A rerun did not reproduce the 46.4: the top tenth took 31.1, 30.7 and 25.9 against 9.8 random, and lines alone beat the product in two repos. Commit and ticket units share 18 to 20 of the top 20. Raw churn lists fill with generated files. The delivery stability findings with AI use are explained by larger changes."
+    relations:
+      relates:
+        - code.size.1
+        - arch.measures.3
+    sources:
+      - ref: tornhill-code-crime-scene
+        where: chapters 2 to 6 and 14
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 7.2 item 1
+        backs: rule
+      - ref: b-02-code-as-a-crime-scene
+        where: section 9 items 1 to 5
+        backs: rule
+  - id: code.size.6
+    statement: "A merge-candidate report lists modules with one importer that change with it, near-duplicate modules, ports with one implementation and private functions with one call site; it is report only."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A root or command module imports everything by construction, so it does not count as the one importer. Near-duplicates are found by token clones (renaming every exported name beats a name match for free). Interfaces with one implementation are listed when no second is named. No floor is set: a single call site is often right and floors misfire. A new merge candidate blocks until the change merges it or says why not. It is read beside code.size.2."
+      pros:
+        - "Every size rule pushes towards splitting and nothing reported the opposite. Across six repos 93 packages had one importer, 33 changed with it, 31 of those on a command root, 2 left to read; a clone finder found about 9 clone pairs in one repo in 0.9 s."
+    relations:
+      relates:
+        - code.size.2
+    sources:
+      - ref: ford-sathp
+        where: chapters 5 and 7
+        backs: rule
+      - ref: ousterhout-aposd
+        where: chapter 9
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 7.1
+        backs: rule
+      - ref: p-08-splitting
+        where: section 18
+        backs: rule
+  - id: code.size.7
+    statement: "Types are listed by method count, with no limit, so a god object that is under every file-size line is visible."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A small analyser counts methods per type, leaving out fakes. Grouping methods by the fields they use does not do this: it flags fakes and data records, a mutex used in every method hides it, and it missed a 49-method server. A type whose method count rises above its baseline blocks until answered."
+      pros:
+        - "The types with the most methods were 49 (a server), 35 (a config) and 33 (a call type). Field cohesion tried flagged 49 hits across six repos, of which 1 to 2 of 12 in one repo were plausibly true."
+    sources:
+      - ref: p-01-core-programming
+        where: section 20
+        backs: rule
+      - ref: p-01-core-programming
+        where: five-list item 4
+        backs: rule

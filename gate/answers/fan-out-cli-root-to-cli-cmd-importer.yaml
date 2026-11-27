@@ -1,0 +1,5 @@
+rule: arch.measures.1
+path: internal/cli/root/registry_data.go
+fingerprint: 803a33276f84840db5f10420cabc4ae8b3ecebed7acdc3c81fdaeaeba4718dad
+answer: keep
+reason: "the root joins the import command package as it joins every command package below internal/cli/cmd, through the one generated join file, so a new command is a new folder and no shared line; the package draws only through the session the root hands it, and the root implements its one write over the rule form it already has; the folder is importer because import is a Go keyword. Read again when the package import set gained internal/cli/cmd/importer, which has its own answer; this edge is used as answered above, so still true."

@@ -1,0 +1,51 @@
+format: 3
+part: postgres
+concern: queries
+rules:
+  - id: postgres.queries.1
+    statement: "Query types are generated from the program's one data model, which is the single source of every shape; the live schema is checked against the model, never the model against the live schema; and SQL is built with a typed query builder so every table and column is checked at compile time."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The model is declared once, in one schema library, and generates the table types, the DDL, the JSON Schema and the API and tool contracts; no second schema library owns a shape. The gate regenerates every derived file from the model and fails on a diff, and compares the schema after replaying every migration with the DDL the model generates (postgres.migrations.1). Types are never generated from the live database. A new derived shape (a new contract kind) is one more generator from the same model."
+      pros:
+        - "A query written as a string fails at run time on a renamed column; types from the model fail the build instead. One model that generates every other shape is the strongest guard against a type, a table and a contract drifting apart over years, and a source chosen once cannot be argued about per change."
+    relations:
+      relates:
+        - postgres.migrations.1
+    sources:
+      - ref: decision-65-postgres
+        backs: rule
+  - id: postgres.queries.2
+    statement: "Parser behaviour (how the client reads 64-bit integers, times and decimals) is tested against a real Postgres, and generated query output is ignored by the formatter."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A parser configured against a mock reads the wrong width in production; generated output rewritten by the formatter fails the no-diff regeneration check."
+    relations:
+      relates:
+        - store.schemas.4
+  - id: postgres.queries.3
+    statement: "Status guards derive from the transition table through one builder, with no hand-written status condition."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - A hand-written WHERE on a status drifts from the transition table the moment a transition is added.
+  - id: postgres.queries.4
+    statement: "There is one error envelope, and storage errors (the SQLSTATE codes) are mapped to it in one place."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Local error tables are banned, and a test shows that no raw database message reaches the response."
+      pros:
+        - A storage error that reaches the response raw leaks the schema and gives callers a different shape per route.
+    sources:
+      - ref: p-03-data
+        where: section 24
+        backs: rule

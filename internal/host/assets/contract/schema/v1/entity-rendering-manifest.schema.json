@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-rendering-manifest.schema.json",
+  "title": "Rendering manifest of a release and target (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "release",
+    "target",
+    "renderings"
+  ],
+  "properties": {
+    "release": {
+      "$ref": "common.schema.json#/$defs/semver",
+      "x-introduced": "1.0"
+    },
+    "target": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "renderings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "source_hash",
+          "language"
+        ],
+        "properties": {
+          "path": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "source_hash": {
+            "$ref": "common.schema.json#/$defs/digest",
+            "x-introduced": "1.0"
+          },
+          "language": {
+            "$ref": "common.schema.json#/$defs/language",
+            "x-introduced": "1.0"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "rule",
+                "standing"
+              ],
+              "properties": {
+                "rule": {
+                  "$ref": "common.schema.json#/$defs/id",
+                  "x-introduced": "1.1"
+                },
+                "standing": {
+                  "$ref": "common.schema.json#/$defs/standing",
+                  "x-introduced": "1.1"
+                }
+              }
+            },
+            "description": "the standing each rule had when the rendering was written, to compare with its standing now; one row per rule",
+            "x-introduced": "1.1",
+            "default": []
+          },
+          "omissions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "what",
+                "who",
+                "when",
+                "plan"
+              ],
+              "properties": {
+                "what": {
+                  "$ref": "common.schema.json#/$defs/text",
+                  "x-introduced": "1.0"
+                },
+                "who": {
+                  "$ref": "common.schema.json#/$defs/text",
+                  "x-introduced": "1.0"
+                },
+                "when": {
+                  "$ref": "common.schema.json#/$defs/timestamp",
+                  "x-introduced": "1.0"
+                },
+                "plan": {
+                  "$ref": "common.schema.json#/$defs/digest",
+                  "x-introduced": "1.0"
+                }
+              }
+            },
+            "x-introduced": "1.0",
+            "default": []
+          }
+        }
+      },
+      "x-introduced": "1.0"
+    }
+  }
+}

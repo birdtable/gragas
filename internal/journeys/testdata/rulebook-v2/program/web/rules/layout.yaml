@@ -1,0 +1,219 @@
+part: web
+concern: layout
+order: 5
+title: Layout, widths, engines and pictures
+summary: >-
+  Pages hold at every width from phone to desktop, in every supported engine, with no overflow and with
+  pictures that do not shift the page.
+rules:
+  - id: web.layout.1
+    slug: no-horizontal-scroll
+    since: 0.1.0
+    rule: >-
+      There is no horizontal page scroll at 390 px or 320 px, in every state and both themes; nothing passes
+      its box, and a wide table scrolls in its own named, focusable box that says how many rows it holds.
+    detail: >-
+      390 px is the operator's width and 320 px is the WCAG reflow width. The shared check, run at both widths
+      in both colour schemes and every forced state, asserts `scrollWidth <= clientWidth` on the document and
+      that no element's rectangle passes its container. A wide table sits in a focusable named scroll box with
+      a row count (axe `scrollable-region-focusable` plus a label check). The same check is the test helper
+      for "no horizontal overflow at 390".
+    level: program
+    why: >-
+      The heaviest layout fault: 27 of 144. One site's phone table ran 352 px past the edge.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the shared Playwright kit's `checkOverflow` plus axe
+          `scrollable-region-focusable` and a label check. Plant: a table 352 px wide in a 390 px page with no
+          scroll box fails. Control: the same table in a focusable scroll box passes
+    open:
+      - >-
+        Trialled on Chromium only: it failed a 700 px table and passed the scroll-box control.
+      - The journeys of two sites assert parts of this and are unproven as a rule.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A, heaviest: 27 of 144
+  - id: web.layout.2
+    slug: long-text-tested
+    since: 0.1.0
+    rule: >-
+      Text that may be long is tested at length, at the narrowest width, in every state.
+    detail: >-
+      The overflow check runs with a long-text fixture: a generator producing 300-character words and unbroken
+      strings for each text field of the catalogue, in every state at 320 and 390 px, and asserts no element
+      overflows its box or the viewport.
+    level: program
+    why: One site had an overflow check and no state held a long question.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the kit's `checkOverflow` run with the long-text fixture generator. Plant: a
+          card that clips a 300-character title fails. Control: one that wraps passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+    note: >-
+      Related to the pseudo-locale story rule in the testing concern, which lengthens words by translation
+      instead of by fixture.
+  - id: web.layout.3
+    slug: no-layout-shift
+    since: 0.1.0
+    rule: >-
+      No box moves after first paint by more than 8 px, and cumulative layout shift is 0.1 or less.
+    detail: >-
+      The check sums the browser's layout-shift entries to 0.1 or less, and also diffs the bounding box of
+      every landmark between first paint and settle, failing above 8 px. A report from a performance audit is
+      kept as a report only. Observer: `PerformanceObserver`.
+    level: program
+    why: >-
+      Named 14 Oct and still failing on a PC 4 Nov. The layout-shift observer failed a 200 px late insert and
+      did not fail an 80 px one (about 0.09), which is why the 8 px box check exists.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the kit's `checkShift`, a performance observer on layout-shift entries plus
+          the landmark box diff. Plant: a shell that inserts a banner above content after load fails. Control:
+          a reserved-height banner passes
+    open:
+      - >-
+        Layout-shift entries exist in Chromium only; WebKit has none, so the box diff carries the second
+        engine.
+      - >-
+        Whether a shift is acceptable stays judgement; timing-dependent on one site's shell.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: still failing on a PC
+  - id: web.layout.4
+    slug: breakpoints-are-tokens
+    since: 0.1.0
+    rule: >-
+      Breakpoints are three named token values, and layout is never keyed on a pointer media feature.
+    detail: >-
+      Media queries on width use only the token breakpoints as literals generated from the token source (a CSS
+      variable cannot be used inside a media query); `pointer`, `hover` and `any-pointer` features are banned,
+      and utility-class arbitrary breakpoint variants and pointer-coarse variants are banned. Utility bans:
+      `min-[…]`, `max-[…]` variants and `pointer-coarse:` via `no-restricted-classes`; width features
+      include `max-width`.
+    level: file
+    why: >-
+      One site uses 6 distinct widths and another 4 by one count (8 and 6 by another instrument); the
+      direction is the same, and no fault is traced to the difference.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          Stylelint 17 core `media-feature-name-value-allowed-list` for width features, with the breakpoints
+          generated from the token source, `media-feature-name-disallowed-list` for `pointer`, `hover` and
+          `any-pointer`, and a class ban on arbitrary min and max variants and pointer-coarse. Plant: `@media
+          (min-width: 777px)` and `@media (pointer: coarse)` fail; `(min-width: 40rem)` from the list passes;
+          `(width >= 50rem)` fails. Control: a media query using a token width passes
+    open:
+      - >-
+        The width literal list must include the range syntax or ban it, as the plant shows.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D: 6 and 4 widths by one count, 8
+        and 6 by another
+  - id: web.layout.5
+    slug: target-size
+    since: 0.1.0
+    rule: Every pointer target is at least 24 by 24 CSS px, and 44 by 44 on touch.
+    detail: >-
+      Axe `target-size` (24 px, WCAG 2.5.8, tag `wcag22aa`) runs on every page state, plus the kit's target
+      check on a touch project (`hasTouch: true`) measures each interactive element's box at 44 by 44. The
+      sizes are tokens: a minimum target and a touch target. The engine is `axe-core` 4.14.
+    level: program
+    why: >-
+      Tap targets are most of the 10 accessibility cases of 144; a select under 44 px in WebKit recurred.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: wcag-22
+        where: success criterion 2.5.8
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          axe `target-size` under the `wcag22aa` tag plus the kit's `checkTargets` on a touch project. Plant:
+          a 30 px icon button on the touch project fails. Control: a 44 px button passes
+    open:
+      - "v1 evidence, not yet a source: A and B"
+  - id: web.layout.6
+    slug: press-does-not-move
+    since: 0.1.0
+    rule: A pointer or touch press does not move or scale the thing pressed.
+    detail: >-
+      For each interactive element the check reads its bounding box, presses it (mouse down; or a held tap on
+      a touch project), reads the box again with the active style applied, and fails on any size or position
+      change. A colour-only active state passes. The check scrolls the element into view first, otherwise the
+      press never reaches it and the plant passes for the wrong reason. Check `checkPressStable`:
+      `mouse.down()` or `touchscreen.tap`, `:active`; plant `transform: scale(.98)`.
+    level: function
+    why: >-
+      One case in our record; the source criterion said no check exists, and a mechanical one was built.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          the kit's press-stability check. Plant: a button with a scale transform on its active state fails.
+          Control: a colour-only active state passes
+    open:
+      - >-
+        The source row was marked an instruction with a review-lens question; the mechanical check was proved
+        on a trial and kept as a rule.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A: one case"
+  - id: web.layout.7
+    slug: viewport-height-units
+    since: 0.1.0
+    rule: >-
+      Viewport height survives browser chrome: `dvh`, never `100vh` or the full-screen height class, and the
+      safe-area insets are honoured.
+    detail: >-
+      Stylelint bans `100vh` in height, min-height and max-height; the utility-class lint bans the
+      screen-height class and arbitrary `vh` heights (the dynamic form stays). A grep of fixed-position rules
+      without `env(safe-area-inset-*)` is review. Regexes: `/100vh/` on height properties; classes
+      `^(min-|max-)?h-screen$` and `h-\[.*vh\]` via `no-restricted-classes`.
+    level: file
+    why: One site has 0 uses of either unit and another 11.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: apple-hig
+        where: viewport height rule
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          Stylelint `declaration-property-value-disallowed-list` for 100vh on height properties, and the
+          utility lint's restricted-class rule for h-screen and arbitrary vh heights. Plant: `height: 100vh`
+          and `h-screen` fail. Control: `100dvh` and `h-dvh` pass
+    open:
+      - >-
+        The utility-class form uses the same plugin as the theme rule and was not separately planted.
+      - "Half holds: safe-area is review."

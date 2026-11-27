@@ -1,0 +1,254 @@
+part: gates
+concern: protection
+order: 8
+title: Protecting the gate
+summary: >-
+  A gate that the change under judgement can weaken is not a gate. Weakening a gate needs a non-author: a
+  different session with a stored verdict tied to the content. Gate paths are named in one list, an agent
+  cannot widen a rule in the change it judges, and the reviewer condition never skips a path.
+rules:
+  - id: gates.protection.1
+    slug: weakening-needs-a-non-author
+    since: 0.1.0
+    rule: >-
+      Weakening a gate needs a non-author: a different session with a stored verdict tied to the content that
+      names the weakening in words, checked at land.
+    detail: >-
+      Every agent pushes as one identity, so a trailer proves nothing: "non-author" means a different session
+      with a stored verdict, content-hashed, which names the weakening in words. A named person signs only a
+      short list: gate config, protected paths and new dependencies (decision 31). The change records its
+      reason. Weakening means raising a ceiling, removing a check, turning error to warn or off, narrowing
+      where a rule applies, or deleting a plant. A change to a sensitive path (infrastructure and permissions,
+      migrations, gate config, shared packages, the applies-to data) or a new dependency needs sign-off by
+      someone other than the author. The trailer form (a `Gate-Change:` line naming a reviewer and a reason,
+      checked by a `commit-msg` hook job) remains the record of the reason and the first, cheap check; the
+      stored verdict is the one the land check relies on. The known way round is starting a second session to
+      rubber-stamp, so the verdict must name the weakening in words and the list stays short enough for a
+      person to sample.
+    level: process
+    why: >-
+      No Gate-Change trailer exists in any of seven Go repos (0, verified), and nothing stores such a verdict.
+      A sign-off passed as a land argument stops a missing and a self sign-off but not a land-runner who names
+      someone falsely. This row rests on decision 31 (4 November).
+    kind: rule
+    strength: Hard
+    status: retired
+    note: >-
+      Retired with gragas#907. A weakened gate needs no second party's stored verdict in a repo that its owner
+      runs: the owner reviews and merges (gates.land.1), and no verdict is stored.
+    sources:
+      - ref: decision-31
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 9.2
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The land check hashes the diff of staged paths on the gate-path list and requires
+          a stored verdict file for that hash from a session id different from the diff author; a short list
+          also needs the person's signature. Plant: A gate-file diff with no verdict is refused; a verdict
+          written by the authoring session is refused. Control: An edit under a verdict from a different
+          session passes.
+      - binding: any
+        class: hook
+        tier: "1"
+        note: >-
+          A commit-message hook job requiring a `Gate-Change:` line with a reason and a named non-author when
+          a staged path is gate config. Plant: A commit touching gate config with no trailer is refused.
+          Control: With a trailer naming a reviewer it passes.
+    relates:
+      - id: gates.protection.2
+        how: see
+      - id: gates.protection.3
+        how: see
+      - id: gates.protection.4
+        how: see
+    open:
+      - >-
+        Independence depends on the delivery tool exposing the session identity (every agent pushes as one
+        identity). If the verdict is written by the authoring session itself, the check proves presence only.
+        Not designed here.
+      - >-
+        The stored-verdict check says state unsure for that reason; the trailer check is only a cheap first
+        line, and the trailer is text an agent can type.
+      - >-
+        At the reference team, the reviewer condition skips any path with no reviewer; see gates.protection.4.
+    note: >-
+      Merges the second-reader rule, the sensitive-path sign-off rule, the Gate-Change trailer rows (config,
+      sensitive path, record the reason), the non-author rule of both sources and the gate-change kinds (see
+      tools). The one-list part is gates.protection.2 and the agent-side deny is gates.protection.3.
+  - id: gates.protection.2
+    slug: one-list-of-gate-paths
+    since: 0.1.0
+    rule: >-
+      Gate paths are named in one list, and the land check requires a stored second-party verdict for any
+      staged path on that list.
+    detail: >-
+      The list (a committed file) holds lint config, suppression files, hooks, dependency-boundary config, the
+      compiler config, the package registry config, the agent instruction file and the other gate files; the
+      list itself and test oracles, goldens and protected fixtures are on it (gates.protection.3). A
+      commit-message job checks staged paths against the one list, and the same job runs in the land hook.
+      Domain-edge additions are named in the trailer, and the deny list covers the bypass class only. Message
+      catalogues carry no trailer. Other sensitive paths (shared modules, state schema, infrastructure) are
+      not yet on the list on the Go and UI sides.
+    level: process
+    why: 0 mentions in any repo today, no grammar and no list (V-90).
+    kind: rule
+    strength: Hard
+    status: retired
+    note: >-
+      Retired with gragas#907. No list of gate paths is kept to protect: a repo that its owner runs holds no
+      approval and no path list, and a change to a gate is reviewed like any other change (gates.land.1).
+    sources:
+      - ref: decision-31
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. A committed list of gate paths read by the commit-message job and the land check;
+          a tier 0 hook refuses an agent write to those paths. Plant: Edit the lint config in a branch with no
+          verdict; refused. Control: An edit under a verdict passes.
+    relates:
+      - id: gates.protection.3
+        how: see
+    open:
+      - >-
+        Which other sensitive paths (shared modules, state schema, infrastructure and permissions) join the
+        list is not decided; the sources list them but only gate paths are listed on our side.
+  - id: gates.protection.3
+    slug: agent-cannot-widen-in-own-change
+    since: 0.1.0
+    rule: >-
+      An agent cannot widen a rule, plant, baseline, threshold, selector map or ban list in the change it
+      judges; test oracles, goldens, protected fixtures and the protected-path list itself are on the
+      protected list, which takes a path, a folder or a pattern with one * segment.
+    detail: >-
+      A pattern such as a command folder's testdata with one * for the command name protects every feature's
+      golden without a line per feature, and a verdict covers the one feature's files it was given for: a
+      rebase that leaves those files byte-identical keeps the verdict valid, so another feature landing first
+      does not cost it. The * stands for one path segment and never crosses a slash, and the pattern grammar
+      is held by the list's schema test.
+      The shared package and its lock are not writable by the agent that consumes them, in the same change.
+      The agent-side deny is a committed settings rule and an OS-level write deny, which makes the
+      stored-verdict flow the only way in. A trailer alone proves nothing, and one GitHub identity means no
+      branch protection or CODEOWNERS: the land check is the only holder.
+    level: process
+    why: >-
+      One web repo's own check runs but its reviewer condition skips any path with no reviewer, and its
+      scripts folder has none (V-65). Three reports asked for this with no row in the first merge.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-31
+        backs: rule
+    checks:
+      - binding: any
+        class: hook
+        tier: "0"
+        note: >-
+          Committed agent settings deny writes to the protected-path list, with an OS-level write deny for the
+          shared package and its lock. Plant: An agent write to a protected path is refused. Control: A write
+          to an unprotected path passes.
+    open:
+      - The sandbox runtime deny is a candidate, not chosen.
+      - >-
+        The pattern form of the protected list is built in step 4 of gragas#444 (the pattern in the protect
+        code and one more case in the list's schema test); until then the list names whole folders.
+  - id: gates.protection.4
+    slug: reviewer-condition-never-skips
+    since: 0.1.0
+    rule: >-
+      A review condition never skips a protected path, including one with no named reviewer.
+    detail: >-
+      A path on the protected list with no named reviewer fails the condition instead of being skipped.
+    level: process
+    why: >-
+      At one reference team the reviewer condition skipped any path with no reviewer, and its scripts folder
+      had none (V-65).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. The land condition fails when a protected path has no reviewer entry. Plant: A
+          protected path with no reviewer entry fails. Control: A path with a reviewer passes.
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+  - id: gates.protection.5
+    slug: landing-regenerates-generated-conflicts
+    since: 0.1.0
+    rule: >-
+      When a candidate conflicts only in files a generator owns, landing regenerates them and continues; a
+      conflict in any hand-written file goes back to the builder.
+    detail: >-
+      A file is generator-owned when a generator in the repository's own tools writes it and gen --check holds
+      it, and the landing step reads that list from the base revision, never from the candidate. When every
+      conflicting path is on it, landing takes the base side, runs the generators, commits the result as the
+      landing step's own commit, and runs the checks again; nothing is merged as text. One hand-written path
+      among the conflicts returns the whole candidate to its builder, with the paths named. The regenerated
+      files are never reviewed by hand, because the generator and its check are what a reviewer approved.
+      The list of generated paths is read from the base revision's generators, built from the base, so a
+      candidate cannot add a path to the list that judges it. A regenerate never changes a hand-written file:
+      if running the generators would alter any path they do not own, the landing fails and the candidate
+      returns to its builder. The regenerated tree is a new tree and gets the full proof: nothing is served
+      from either side's stamp, and the generated-file check and the tier run on the result. A generated path
+      that is also protected keeps needing a verdict on the regenerated bytes; landing never writes a verdict,
+      and if the base holds none for those bytes the landing fails with the need and the digest.
+    level: process
+    why: >-
+      The fleet's run log of 8 Nov 2026 (trains 2 and 2b) shows each landing sending the waiting candidates
+      back through a rebase, a full check run and sometimes a new verdict. A conflict in a generated file is
+      the part of that cost with no judgement in it: the fix is the command that wrote the file, and a builder
+      adds nothing by running it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    sources:
+      - ref: kubectl-verify-docs
+        says: >-
+          Committed generated documents are held by a script that regenerates and compares.
+        backs: rule
+      - ref: kubernetes-verify-codegen
+        says: >-
+          Committed generated files are held by a script that fails when they are out of date.
+        backs: rule
+      - ref: git-gitattributes
+        says: >-
+          A merge driver is defined in the clone's own configuration, never in the repository, and the
+          union merge leaves added lines in an order the user must verify.
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        fix: never
+        note: >-
+          a landing test with a fixture repository: two candidates that add a package each conflict in the
+          generated join; landing regenerates it and passes. Plant: a candidate that conflicts in a generated
+          file and also in a hand-written file is landed without being sent back, or its generated file is
+          merged as text, and the test fails. Control: the same pair with only the generated file in conflict
+          lands, and the one with a hand-written conflict returns to its builder
+    relates:
+      - id: gates.protection.3
+        how: see
+      - id: arch.structure.9
+        how: see
+    open:
+      - >-
+        Proposed until the landing step regenerates. The work is in the lander's merged-tree check (task
+        landing; scripts/land went with gragas#912): it has to read the generator
+        list from the base, regenerate, and a fixture has to hold it. It comes from a ruling
+        and has no step in gragas#444, whose nine steps hold no landing-regenerates step. It is filed as
+        gragas#464; this rule is the engine side of it.

@@ -1,0 +1,156 @@
+format: 3
+part: tests
+concern: admission
+rules:
+  - id: tests.admission.1
+    statement: "Every new or changed test passes a machine-run admission ladder at land: it builds, passes in file order, passes under several shuffle seeds, fails against a break the tool chooses, stays inside its budget and passes a bounded repeat."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The land step selects new and changed test functions only. Seeds are separate runs, because a count flag with one shuffle seed reuses one order for every repeat. The break is a mutant in the changed lines chosen by the tool, not the author (comparisons, logic, constants, returns, removed statements); a change with no mutant site prints n/a, and the n/a share is reported as the third result, since n/a is otherwise a free pass. A browser journey takes a break written for its claim, not a mutant. The bounded repeat is the one exception to no test twice on a tree (tests.selection.7): one step of the one proof, able only to fail. Its bound, the seeds and the kill count are not set; any number would be a guess. Surviving mutants on changed lines in core logic and shared parts are reported. A test that mirrors the code passes the ladder, so review keeps that question. The browser-journey break is hand-written for its claim. The time limit is the per-package budget of the shared preset."
+      pros:
+        - "Measured elsewhere: a published study admitted generated tests only if they built, passed repeatedly and added coverage, and about three in four built, 57 percent passed reliably and 25 percent added coverage; a scorer was tampered with in 39 of 128 agent runs (older models). Own bugs: 4 of 15 test drives in one organisation pass could not turn a test red."
+    relations:
+      relates:
+        - tests.selection.7
+    sources:
+      - ref: decision-32
+        backs: rule
+      - ref: p-07-testing
+        where: "sections 7.4, 8.4, 10.2"
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.5
+        backs: rule
+  - id: tests.admission.2
+    statement: "A test with no assertion, or only tautological ones, is refused, a test that loops over cases, files or items asserts the loop ran at least once with a planted empty case, every guard has a test that sees it refuse, and each test carries one line on what breaks for a person when it fails."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A tautology is a literal condition (a log, a literal truth), a comparison of an expression with itself or an equality check of a value with itself, never any constant: a test comparing named constants across packages is a real drift test. The check follows helpers that take the test handle, contract packages and table function values to find an assertion. A single trivial assertion passes this row and the ladder's mutant break catches it (tests.admission.1). A loop over cases, files or items found at run time (a directory listing, a glob, a parsed list) asserts its count is above zero, and the suite holds a plant that feeds it an empty set and must fail. A guard is any code that refuses (a check, a validator, a permission test, a gate rule); each has a test that drives it to refuse and asserts the refusal. The cost line is one comment above the test, in the words of the person who loses when it fails, not a restatement of its name. No test is disabled, focused or commented out (tests.admission.5). How each language writes the shape (helpers, table names) lives in its language part."
+      pros:
+        - "Agents are the likeliest authors of weak assertions, and an empty loop is the second way a suite goes vacuous: it asserts nothing and passes. A guard with no negative test is an opinion. The cost line says what the signature cannot: why the test exists. Trial on the Go side of the assertion check: 11 hits in 5,767 tests, 0 to 1 true; the false ones trace to contract suites, table values, helper processes and skip-only tests. Low yield, kept because it costs nothing."
+    relations:
+      relates:
+        - tests.admission.1
+        - tests.admission.5
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapter 1.3
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.5
+        backs: rule
+      - ref: decision-65-tests
+        backs: rule
+  - id: tests.admission.3
+    statement: "A test can fail: its author shows it red against a deliberate break, and mutation efficacy on the diff in core logic and shared parts does not fall."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Mutation testing runs on shared code and core logic, on the diff only, with the threshold set in the tool's config file (a flag on the command line alone does not gate). The subjects of property-test laws are mutation tested. A program can repeat the break (a drive runner). Property tests also get an anti-vacuity check (tests.generated.3)."
+      pros:
+        - "Own bugs: 4 of 15 test drives in one organisation pass could not go red. One run on the Go side: 86.1 percent on the selector package (not re-run)."
+    relations:
+      relates:
+        - tests.generated.3
+    sources:
+      - ref: p-09-agentic-development
+        where: section 4
+        backs: rule
+  - id: tests.admission.4
+    statement: "A test's expected value is a literal, the spec, a recorded sample of the real server or a generator with a stated invariant, never the code under test."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "An analyser flags an assertion whose expected value is computed by calling the function under test or a copy of its expression, and a change that edits code and its expected literal together is flagged first for the reader (nothing sees output pasted in as a literal). Only the trivial form is mechanical. Tests are independent of the code they check: daemon samples, not mocks the agent also wrote."
+      pros:
+        - "A test written against its own implementation verifies nothing (Khorikov); an agent will paste the code's own output in as the literal. Full independence cannot be checked, the cheap detectable form can."
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapters 1 and 4
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.5
+        backs: rule
+  - id: tests.admission.5
+    statement: "In the default tiers a skipped, focused, disabled or commented-out test fails the gate, and a test whose precondition is unmet reports not measured, never a pass; an opt-in tier skips with the exact command that runs it and fails when asked to run without what it needs."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Default tiers are the ones the gate runs on every push and release. There a skip call, a focus mark, a disabled test or a commented-out test fails; a test that cannot run because a precondition is missing (a tool, a permission, a platform) reports the precondition as not measured in the verdict, and an empty list of cases is not a pass (tests.selection.8). An opt-in tier (real machines, root, a privileged container) is declared in the gate config with the command that runs it; when it is not asked for, each of its tests skips with that exact command in the skip message, and when it is asked for and its precondition is missing it fails, never skips. The skip count of the default tiers is zero; an existing repo that starts above zero holds a shrink-only count until it reaches zero. In Go the count is taken over t.Skip calls in _test.go files."
+      pros:
+        - "A skip in a default tier is a test that silently stopped existing. Skips per test in our repos, raw and including environment skips: 102 of 1,645, 74 of 1,731, 68 of 1,020, 38 of 1,301, 25 of 271, 13 of 465."
+    relations:
+      relates:
+        - tests.selection.8
+    sources:
+      - ref: decision-65-tests
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: forbidigo
+        severity: error
+        rung: 0
+        run_point: land
+  - id: tests.admission.6
+    statement: "A test edited in the same change as the code it judges is flagged to the reader with a reason line, not refused; a removed assertion, an added skip, a focused test and a loosened literal are listed first."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A real behaviour change also edits its tests, so the flag is for the reader. A changed oracle, golden or fixture on the protected list needs a non-author."
+      pros:
+        - "Weakening a test is the cheapest way for an agent to get green; a diff scan makes it visible. The scan with the same list serves Go and TypeScript."
+    sources:
+      - ref: p-09-agentic-development
+        where: sections 5.5 and 6.3
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 7.2
+        backs: rule
+  - id: tests.admission.7
+    statement: "Tests changed in commits marked refactor or move, and surviving mutants on changed lines, are reported."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A refactor that keeps behaviour leaves tests green; tests that fail on such a commit were testing the implementation."
+  - id: tests.admission.8
+    statement: "A change that alters behaviour (a command, flag, exit code or UI behaviour) adds or updates a test, or says why not."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A person-found fault becomes a planted check; nothing asks every behaviour change to carry a test."
+  - id: tests.admission.9
+    statement: "A boolean switch (an exported flag, a boolean config key or a build constant) is tested for the value it does not ship, or carries a reasoned and ticketed exemption."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The rule covers an exported top-level boolean flag, which needs a spec or story naming the value it does not ship."
+      pros:
+        - A switch only ever exercised in its default state is dead code on one side.
+    sources:
+      - ref: decision-27
+        backs: rule
+  - id: tests.admission.10
+    statement: "A test name is a claim in plain English, and a table test names every case."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "Names are how a failure is read; a naming claim cannot be machine judged, only the presence of a case name can."
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule

@@ -1,0 +1,28 @@
+format: 3
+part: aws
+concern: resources
+rules:
+  - id: aws.resources.1
+    statement: State-bearing resources are retained on delete.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "A resource that holds data that cannot be rebuilt (a database, a bucket with content, a queue holding work) carries a retain-on-delete policy so removing the stack does not remove the data. In Go, a store says whether it can be rebuilt, and state that cannot be rebuilt is append-only and kept; removal keeps user state."
+      pros:
+        - "Deleting a stack that owns data deletes the data; one command removes it with no recovery."
+  - id: aws.resources.2
+    statement: "Every storage bucket blocks public access (all four flags) and is encrypted at rest, set by the shared component, with no component option that can turn either off."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, a secret is written with its final mode in a private folder and peer credentials are checked. Hosting posture for a static site (public access, encryption at rest) is a gap with no row yet."
+      pros:
+        - "A public or unencrypted bucket is a data leak by default; removing the choice removes the mistake."

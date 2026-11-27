@@ -1,0 +1,264 @@
+format: 3
+part: service
+concern: authz
+rules:
+  - id: service.authz.1
+    statement: "Every route declares who may call it and with which permission; a permission follows one grammar of three parts (owner.subject.action) written in the casing the program declares, with owner names reserved; a machine declares only permissions for subjects it has, so a grant naming an undeclared permission is refused; and a route with no entry fails."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+    reasoning:
+      definition: "The declaration names the auth mode and the permission. Each part of a permission is in the program's declared casing (service.contract.10); the rulebook names no default. The subject part may come from config (a named folder, a named device), and only subjects present on this machine are declared, so no grant can name an absent path. An owner name is reserved to the program that owns it. A new subject kind is one more entry in the declaration; the grammar does not change. In Go, each daemon route declares its allowed callers."
+      pros:
+        - "A route with no declaration is open by omission; the gap is invisible until someone calls it. One grammar is what makes permissions readable by a stranger in year five, and a grant for a subject the machine lacks is a grant that waits for a path to appear."
+    relations:
+      relates:
+        - service.contract.10
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.authz.2
+    statement: The access catalogue (every route and the permission it needs) is regenerated from code and diffed against the committed copy in the gate.
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The step is regenerate-and-diff. In Go, the command and route tree is generated to a file and compared so drift fails; the kit listing is generated per tag and diffed."
+      pros:
+        - "A catalogue kept by hand drifts from the routes, and access reviews then read a list that is wrong."
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+  - id: service.authz.3
+    statement: "The acting identity is never taken from the request body or a verb's input; a system actor names the job it runs as; and a bare system actor with no subject fails."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+    reasoning:
+      definition: "The identity comes from the verified credential or the run context only. A write made by the system (a scheduled job, a migration, a consumer) records its actor as the system with the job as subject, so every change can be traced to what made it. In Go, the caller is known from peer credentials or a secret, never from a payload or header."
+      pros:
+        - "An identity named in a body is whatever the caller says it is, and a write by an unnamed system actor cannot be traced to the job that made it."
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.authz.4
+    statement: "Where a door names the visitor, the server refuses what the page hides."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    exemptions:
+      - kinds:
+          - service
+          - anonymous-visitors
+        reason: a door that does not identify a visitor has no hidden control to refuse
+    reasoning:
+      definition: "A route-list test: the daemon writes the list of routes from its contract (not hand-kept); a shared helper requests every route as a visitor with no grant and asserts 401 or 403 (or the designed denial) for each gated route; the count of routes tested equals the count in the contract. The page repository holds the front-end half."
+      pros:
+        - "A control hidden in the page and not checked on the server is a suggestion; anyone can call the route directly."
+    sources:
+      - ref: decision-19
+        backs: rule
+  - id: service.authz.5
+    statement: Field visibility is applied only through one shared owner module.
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "One shared package performs permission checks, scope enforcement and field filtering, as plain functions and as middleware. In Go, redaction and secret handling of output goes through one owner and a secret is never printed."
+      pros:
+        - "Field filtering written per route is forgotten per route; a field leaks from the route that missed it."
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+  - id: service.authz.6
+    statement: Permission mappings point only at live (active) definitions.
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, every reference in a rule or doc resolves and a vocabulary is declared once."
+      pros:
+        - "A mapping to a retired permission grants nothing or, worse, something else."
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+  - id: service.authz.7
+    statement: "A service keeps no accounts, passwords or login page of its own and is never an OpenID Connect client; no code verifies credentials by hand or calls the identity service on every request; and token signing exists only at the identity owner."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+    reasoning:
+      definition: "Identity comes from the gate in front of the service (service.authz.15). A user table with a password column, a login route, a session-cookie issuer or an OpenID Connect client library outside the identity owner is banned. Token verification code (key sets, signature checks) and symmetric-key signing are banned outside the identity owner. In Go, no home-made credential checks outside the one owner, and the security linter runs."
+      pros:
+        - "A service with its own login is a second identity system to patch forever. Hand-rolled verification is where algorithm and expiry mistakes come from, and a per-request call to the identity service makes it a point of failure for all traffic."
+    relations:
+      relates:
+        - service.authz.15
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.authz.8
+    statement: "The access catalogue passes one shared conformance test, and a request no source vouches for is refused on every route, reads and static files included, with no guest answer; a service without a catalogue refuses everything."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+    reasoning:
+      definition: "Deny by default covers reads as well as writes: a GET, a list, a health detail beyond liveness, and a served folder are refused without an identity. The refusal is 403 with no hint of what exists. Only routes the catalogue marks public, each with a written reason and never a writing route, answer without an identity. In Go, a shared check fails closed when a required declaration is missing."
+      pros:
+        - "A missing catalogue that is read as nothing to check turns every route into an open one, and an open read is how a system leaks what it would refuse to change."
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.authz.9
+    statement: Only the identity owner touches the identity provider.
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, only one package touches an external identity or credential store."
+      pros:
+        - Every service that talks to the identity provider can change its users and credentials.
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+  - id: service.authz.10
+    statement: "The identity provider drift-prone settings are pinned in code: app clients set their auth flows explicitly and the user pool keeps its schema attributes ignored on change."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      pros:
+        - "Provider settings that the console or the provider edits drift, and the next deploy either reverts them or breaks sign-in."
+  - id: service.authz.11
+    statement: The cross-origin allow-list builder cannot emit a wildcard origin or a privileged header.
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "In Go, a daemon that serves a page is reachable only by expected callers, loopback or socket."
+      pros:
+        - A wildcard origin or a privileged header in the allow list lets any site act as the caller.
+  - id: service.authz.12
+    statement: "A change that adds a route, a caller class, an internal-plane grant or an outbound target answers three questions in the change: what is newly reachable, by whom, and what would an attacker try first."
+    strength: may
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "It applies at boundary changes only. The paths on the gate-config list (infrastructure and IAM, migrations, gate config, shared packages) are a ready trigger."
+      pros:
+        - "A route can declare its permission correctly and still make an internal path reachable from a new public one. Argued, not measured: a short question list per story in place of a full threat model, because a full model per story is too heavy to keep up. No case from the reference estate."
+    sources:
+      - ref: tarandach-coles-threat-modeling
+        where: "ch. 5 (continuous threat modeling, the leading-questions table)"
+        backs: rule
+  - id: service.authz.13
+    statement: "A token a program issues is stored only as a hash and shown once, and a secret that must be kept as a row is encrypted under a key that comes from the environment, never from the same store."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+    reasoning:
+      definition: "The plain token is returned once at issue and never again; lookup is by hash. A secret the program must use later (a connector's key) is encrypted before it is written, and the key is read from the environment or a key file named by path, so a copy of the store alone reveals nothing. A new kind of secret takes the same path."
+      pros:
+        - "A token readable from a database dump is a live credential in every backup; hashing and encryption close that leak in every program that holds one."
+    relations:
+      relates:
+        - cli.config.4
+        - supply.secrets.2
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.authz.14
+    statement: "A list read returns only the items the caller may read, an empty list when there are none; a single item the caller may not read answers as not found; and a writing route whose answer reveals state also requires the read permission for that state, with a refusal that reveals nothing."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+    reasoning:
+      definition: "A list is never refused with 403 for holding items the caller may not see; it is cut. An item the caller may not read is not said to exist. An action needs the read permission as well as the act permission; act without read gets the bare refusal with no detail."
+      pros:
+        - "A 403 on one item tells the caller it exists, and an action answer that carries state leaks what the read permission would have hidden."
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.authz.15
+    statement: "An identity source gives a person and role names only, never permissions; there is one source per server, believed only on its own socket and on no other listener; each program maps roles to its own permissions in its own file; a request carrying an identity header twice is refused; and a program never forwards identity or permissions to another tool or keeps another tool's catalogue."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+    reasoning:
+      definition: "A source is pluggable (the private network's login, a trusted proxy's headers, a local fallback file); a new source is one adapter. Identity headers from a proxy are believed only on the socket that proxy reaches. A duplicated identity header answers 400. Each tool reads the gate itself, so each decision has one home."
+      pros:
+        - "A forwarded permission is a decision with two homes, and a header believed on any listener can be set by anyone who reaches another one."
+    sources:
+      - ref: decision-65-service
+        backs: rule
+  - id: service.authz.16
+    statement: "Acts reserved to a person are an explicit list granted to no agent or system actor, pinned by a test, and every change to who may do what appends who, when, the command, the reason and the lines changed to a history only the privileged writer can write."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+        - daemon
+    reasoning:
+      definition: "The person-only list names permissions in the program's grammar (service.authz.1). A grant of a listed permission to an agent or system actor is refused at write time and at load. The permissions file is written whole by one command under a lock with a revision; the history is append-only and owned by the privileged account (root on a machine, the identity owner in a service). A new act joins the list by one entry."
+      pros:
+        - "In an estate where agents hold tokens, the person-only list is the rule that matters most, and a permission change no one can trace cannot be reviewed."
+    relations:
+      relates:
+        - service.authz.1
+    sources:
+      - ref: decision-65-service
+        backs: rule

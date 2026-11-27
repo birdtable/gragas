@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "document-plan.schema.json",
+  "title": "A plan as a document (spec 15.3)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "plan"
+  ],
+  "properties": {
+    "contract": {
+      "$ref": "common.schema.json#/$defs/contract",
+      "x-introduced": "1.0",
+      "x-decides": "which contract version's schema reads the document, and whether it is read or ends not ready on a newer major"
+    },
+    "plan": {
+      "$ref": "entity-plan.schema.json",
+      "x-introduced": "1.0"
+    }
+  }
+}

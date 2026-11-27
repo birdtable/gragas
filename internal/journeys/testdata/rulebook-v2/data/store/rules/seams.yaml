@@ -1,0 +1,287 @@
+part: store
+concern: seams
+order: 1
+title: Store seams and ownership
+summary: >-
+  How code meets a store, whatever the engine. Entry code never touches a store and calls a typed function of
+  the store's one package; the seam is declared by its consumer in domain words; a store is opened in one
+  place; who writes each store and who owns each schema number is on record; and a store says whether it can
+  be rebuilt.
+rules:
+  - id: store.seams.1
+    slug: entry-code-never-touches-a-store
+    since: 0.1.0
+    rule: >-
+      The entry layer (command, handler, daemon route) never opens, reads or writes a store directly and never
+      imports a storage client; it calls a typed function of the store's one package.
+    detail: >-
+      A repository test lists packages that import the database package, the driver or a storage client, or
+      write to state paths, against an allow list that only shrinks. Engine parts bind this rule for their
+      client: the DynamoDB part forbids the SDK outside the store layer, the Postgres part the database
+      client.
+    level: package
+    why: >-
+      When entry code reaches the store directly, key building, conditions, retries and error mapping are
+      re-implemented in each entry. One Go repository already held that only its index package imports the
+      database package.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ford-sathp
+        backs: rule
+      - ref: p-03-data
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tool: golangci-lint
+        tier: "2"
+        note: >-
+          a repository test (a shared imports helper) listing packages that import the database package, the
+          driver or write state paths, against a shrink-only allow list; depguard as the shared form. Plant: a
+          handler importing the database package fails. Control: the store package importing it passes
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint no-restricted-imports on storage client packages outside the store layer. Plant: a handler
+          importing a storage client fails. Control: the store layer importing it passes
+    relates:
+      - id: dynamodb.writes.1
+        how: see
+    open:
+      - "v1 evidence, not yet a source: own measure (read; no failure seen)"
+    note: >-
+      The engine-specific versions are dynamodb.writes.1 and the Postgres client import rule; this is the
+      general rule they bind.
+  - id: store.seams.2
+    slug: port-agnostic-at-intent
+    since: 0.1.0
+    rule: >-
+      A store port is agnostic at the level of intent, not of engine: the consumer declares it, narrow, with
+      domain verbs, domain values and typed failures, and states its guarantee; an atomic act is one named
+      method.
+    detail: >-
+      The adapter uses every strength of the engine inside the method. Rule data names the store ports, and on
+      those a type check bans the generic verbs Get, Put, Exec, Query and Do, SQL string parameters, untyped
+      maps and the database package's types, and finds Begin, Tx, Commit and Rollback in method names. Off a
+      store port those verbs mean nothing (6 of 8 hits in a trial were process or guest verbs). A type-based
+      scan of core exported signatures resolves the underlying type, and a type parameter is not an untyped
+      value. A report lists core functions that take a port and also branch. Error-text matching is a report
+      only: it had no true hit in 10 and is beaten for free by copying the text into a variable. The review
+      asks: name one capability of this engine the port forbids the core to use; name the second engine and
+      where it is written down; are these domain verbs or storage verbs; what does the port say about failure.
+      Example of a banned port method: Exec(sql: string, ...args). Typed failures are named values such as
+      not-found and version-mismatch.
+    level: package
+    why: >-
+      A generic query method keeps the driver out of the core but carries the engine's shape. The evidence
+      strains the ruling: seams earn their keep through testability far more than through swapping engines.
+      SQL detection is weak because a struct field holding SQL passes.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-03-data
+        where: section 24
+        backs: rule
+      - ref: p-01-core-programming
+        where: section 18
+        backs: rule
+    checks:
+      - binding: go
+        class: analyzer
+        tier: "1"
+        note: >-
+          v1 class our-plugin. a go/analysis analyser in the companion module over interfaces listed as store
+          ports in rule data (generic method names, string parameters named like sql, untyped maps and any,
+          the database package's types, Begin/Tx/Commit/Rollback method names) and over core packages'
+          exported signatures. Plant: a port with Exec(sql string, args ...any), BeginTx, or a method
+          returning sql.Rows fires; a core function taking map[string]any fires while the same in an adapter
+          passes. Control: ReserveName(name, owner) passes
+      - binding: ts
+        class: preset-rule
+        tier: "2"
+        note: >-
+          a type check over the port files banning generic verbs, a SQL string parameter, an untyped record on
+          a port surface, and a method that takes a transaction handle. Plant: a port with exec(sql, ...args)
+          fails. Control: reserveName(name, owner) passes
+    review_question: >-
+      Would a second engine have to invent a meaning for any method here, and which one? Name one capability
+      of this engine the port forbids the core to use.
+    open:
+      - >-
+        This rests on an operator ruling, not on a finding; the evidence is that seams earn their keep through
+        testability.
+      - >-
+        The scan's known way round is renaming exec to apply and passing the SQL in a struct, so the review
+        question stays.
+      - Four of the review questions stay review.
+      - >-
+        v1 evidence, not yet a source: operator; the plants were run in a trial and a scope fix
+        recorded
+    note: >-
+      Held by the analyser (Go), a type check (web) and the review question for what no scan sees.
+  - id: store.seams.3
+    slug: store-opened-in-one-place
+    since: 0.1.0
+    rule: >-
+      A store is opened in one place that sets its modes and error mapping, and a test reads them back.
+    detail: >-
+      For an embedded file store the modes are write-ahead log, a bounded busy timeout, foreign keys on as the
+      connection default, immediate write transactions and one writer connection. Turning foreign keys off is
+      banned outside the one rebuild runner, DSN strings included. A busy failure is typed (store.seams.2) and
+      a store with a manual checkpoint says why. A store that cannot be rebuilt sets the full-sync
+      pragmas unconditionally and the read-back asserts them. What a caller does on busy is a review question. Opening a store
+      outside the store package is counted and is zero. The pragmas for full sync are fullfsync and
+      checkpoint_fullfsync. The literal scan matches foreign_keys=OFF and the DSN forms foreign_keys(OFF) and
+      foreign_keys(ON), by regex foreign_keys\s*(=|\()\s*(0|off), firing on OFF and silent on ON.
+    level: function
+    why: >-
+      One Go program lacked the immediate transaction mode and error classification. Through the pure-Go
+      driver both full-sync pragmas read 0, unlike the command-line client, and no repository set them; the
+      clause binds no store yet because an unrebuildable store is a plain file (store.seams.6).
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        facets:
+          - no-embedded-store
+        reason: It opens no store.
+    sources:
+      - ref: p-03-data
+        where: sections 2, 3, 4 and 6
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 1
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "2"
+        note: >-
+          forbidigo on sql.Open outside the store package, a pragma read-back test, an ast-grep rule on string
+          literals matching foreign keys off, and a full-sync read-back test. Plant: a DSN with foreign
+          keys off outside the runner fails; an unrebuildable store opened without full sync fails
+          the read-back. Control: foreign keys on and the runner pass; a rebuildable store passes
+    relates:
+      - id: store.seams.2
+        how: see
+      - id: store.seams.6
+        how: see
+    open:
+      - >-
+        A DSN built from pieces defeats the literal match; the read-back test is the backstop.
+      - >-
+        Two consumers with different needs, so the open-store code is not to be extracted into a shared
+        module.
+      - >-
+        This is written for an embedded file store; the relational-server counterpart is the Postgres
+        connection rule.
+  - id: store.seams.4
+    slug: store-writers-recorded
+    since: 0.1.0
+    rule: >-
+      Who writes each persisted store, and which programs a flow includes, are recorded as data and a tool
+      walks the list.
+    detail: >-
+      A list file per program is compared with writers found by a scan. It is a measure until the list exists,
+      then a gate: an unlisted store opening fails.
+    level: program
+    why: Without a list, a store has writers nobody knows about. No list exists today.
+    kind: measure
+    strength: Record
+    status: active
+    unless:
+      - kinds:
+          - library
+        facets:
+          - no-store
+        reason: Nothing is persisted.
+    sources:
+      - ref: ford-sathp
+        where: ch. 9 assigning data ownership and ch. 11
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class our-cli. a list file per program compared with writers found by a scan (report only until
+          the list exists)
+    review_question: Does each program's list of store writers match the writers a scan finds?
+    open:
+      - The list format and scan are proposed; no list exists.
+      - >-
+        v1 evidence, not yet a source: own measure; a research report on service boundaries
+  - id: store.seams.5
+    slug: schema-number-lives-once
+    since: 0.1.0
+    rule: >-
+      A schema number lives once per program; a program that reads another's schema pins the number it
+      understands in its adapter and refuses a higher one with a typed error, never by probing help text or
+      guessing from a field.
+    detail: >-
+      The scan greps a struct field matching Schema\s+int\s+ with a json:"schema" tag (regex
+      Schema\s+int\s+`[^`]*json:"schema), silent on a field such as Name string with json:"name". The help
+      probe is a call of the other program with --help in non-test code. The silent control is the field Name
+      string json:"name".
+    level: package
+    why: >-
+      Eight to 19 files per program held a schema number. One program probed another's help text to learn its
+      schema, which is the known positive for the probe scan.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-config
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          an ast-grep rule on struct fields carrying a schema integer outside the one schema package with a
+          shrink-only count, and a scan for a help probe in non-test code. Plant: a Schema int field added to
+          a second struct raises the count and fails. Control: a field in the one schema package passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+      - "v1 reference, not yet a source: research report on cross-program schemas (R-04)"
+  - id: store.seams.6
+    slug: store-says-if-rebuildable
+    since: 0.1.0
+    rule: >-
+      A store says in its package comment whether it can be rebuilt, its durability setting and who runs a
+      checkpoint; a store that cannot be rebuilt is a plain, versioned, append-only file.
+    level: package
+    why: >-
+      The choice of how to hold data depends on whether it can be re-derived, and without a stated answer
+      backups and durability are guesses.
+    kind: rule
+    strength: Lens
+    status: active
+    sources:
+      - ref: p-03-data
+        where: section 4
+        backs: rule
+    checks: []
+    review_question: >-
+      Does this store's package comment state whether it can be rebuilt, its durability setting and who runs a
+      checkpoint, and is it true?
+    relates:
+      - id: store.recovery.1
+        how: see
+    open:
+      - "v1 evidence, not yet a source: instruction"
+    note: >-
+      A rebuildable store may be a database; an unrebuildable one is a plain file by this rule (and then
+      store.recovery.1 applies). v1 review check (review is not a v2 check class): a package-comment presence
+      check (go/doc) as the floor, with the content read by a model

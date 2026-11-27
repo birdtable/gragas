@@ -1,0 +1,14 @@
+[
+  {
+    "ok": {
+      "entries": []
+    }
+  },
+  {
+    "error": {
+      "code": "refused",
+      "message": "the config loads code",
+      "path": "/config/0"
+    }
+  }
+]

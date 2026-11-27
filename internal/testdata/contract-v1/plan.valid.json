@@ -1,0 +1,46 @@
+[
+  {
+    "contract": "1.3",
+    "plan": {
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "command": "upgrade",
+      "changes": [
+        {
+          "entity": "go.errors.1",
+          "standing_before": "enforced",
+          "standing_after": "planned",
+          "what": "binding changed"
+        }
+      ],
+      "consumer_actions": [
+        "Run the check."
+      ],
+      "writes": [
+        {
+          "path": ".gragas/pin.yaml",
+          "what": "the pin moves to 1.2.0"
+        }
+      ],
+      "rekeyed": [
+        {
+          "entity": "waiver",
+          "slug": "old-code",
+          "state": "re-keyed"
+        }
+      ],
+      "renderings": [
+        {
+          "path": "AGENTS.md",
+          "what": "agent file"
+        }
+      ],
+      "checker_code": [
+        {
+          "name": "wrapcheck-kit",
+          "diff": "https://example.org/diff"
+        }
+      ],
+      "question": "Carry it out?"
+    }
+  }
+]

@@ -1,0 +1,22 @@
+format: 3
+part: react
+concern: config
+rules:
+  - id: react.config.1
+    statement: "A variable a page reads is declared in a typed schema module, environment access outside that module fails, and only `VITE_`-prefixed names reach the bundle."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The same `no-restricted-syntax` rule as web.delivery.8 on `import.meta.env` member access outside the typed schema module; the bundler (Vite) exposes only `VITE_` names, which is the framework side. The outcome scan of the built output (`dist/`) is the no-secret-in-bundle rule of the web part."
+      pros:
+        - "The React twin of the template-stack rule. `VITE_` and `import.meta.env` had 0 hits in the catalogue, so the rule is held for the absence."
+    relations:
+      relates:
+        - web.delivery.8
+    sources:
+      - ref: decision-65-react
+        backs: rule

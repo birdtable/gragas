@@ -1,0 +1,128 @@
+format: 3
+part: tests
+concern: generated
+rules:
+  - id: tests.generated.1
+    statement: A parser of input the program did not write has a fuzz target with seeds checked in.
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Every parser package listed in rule data has a fuzz function and a checked-in seed folder. Long fuzz runs sit at the slow tier: the changed parser packages on every tag, all of them at least every third tag. The presence check looks for a func Fuzz function and a testdata/fuzz folder in each listed parser package; whether a stateable invariant exists for pure logic is the review half (tests.generated.2)."
+      pros:
+        - "Practice with fuzz targets already in the repos: 25 in one, 2 and 1 in two others."
+    relations:
+      relates:
+        - tests.generated.2
+    sources:
+      - ref: p-07-testing
+        where: section 4.9
+        backs: rule
+      - ref: decision-27
+        backs: rule
+  - id: tests.generated.2
+    statement: "Pure logic with a stateable invariant (a formatter, a parser, a pure domain function) has a property test that generates its inputs."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A property-based test generates the inputs; fuzz targets for parsers are tests.generated.1."
+      pros:
+        - "Generated inputs find the case the author did not write; a property is the stated invariant. The web catalogue has no row for pure UI logic such as formatters and parsers; the rule fits them."
+    relations:
+      relates:
+        - tests.generated.1
+    sources:
+      - ref: decision-27
+        backs: rule
+  - id: tests.generated.3
+    statement: A property test file ends with an anti-vacuity test that shows the generator can produce a failing input.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A property over an empty or constant generator passes forever; the last test in the file proves the generator reaches the interesting inputs."
+    relations:
+      relates:
+        - tests.admission.3
+  - id: tests.generated.4
+    statement: "Each deployed API (a daemon's routes, a service's endpoints) is fuzzed against its own contract, and its responses are checked against the contract."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+        - service
+    reasoning:
+      definition: "Requests are generated from the API spec and responses checked against it; the running service answers what its spec says. In our programs help and JSON are golden and the command tree is diffed with the last tag, but a daemon's answers are not yet checked against a description."
+      pros:
+        - "A page or client consumes the contract; only the server can prove it holds. The web side does not own this check."
+  - id: tests.generated.5
+    statement: "Output a person reads is held by a golden file, and the gate compares without writing; a golden a machine reads fails on any change, and one a person reads is approved by a person."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "git diff --exit-code on golden files after the compare run; the golden helper never writes in gate mode."
+      pros:
+        - "Own measure: one repo's goldens-check target; the shared golden helper is used by nobody outside the shared UI test package today."
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapter 4.1.3
+        backs: rule
+  - id: tests.generated.6
+    statement: "Long fuzz runs happen on demand, for a new parser in the pull request that adds it, and never as a blocker of a push, a land or a release."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The seeds checked in under tests.generated.1 run as ordinary tests in every tier, in seconds. The long run, which mutates the seeds for minutes, runs when the owner asks for it, or when the hub asks the owner first, and a pull request that adds a parser asks for one run of it in its description. A long run that finds a crash adds the failing input to the seeds in the same change as the fix. Fuzz is not a release gate: a release does not wait for it and does not fail for the lack of it."
+      pros:
+        - "A fuzz run of 14 minutes 38 seconds found two bugs in 260 commits, both while a parser was new; at the release it cost more than every other member together and found nothing."
+    relations:
+      relates:
+        - tests.generated.1
+        - gates.hooks.4
+    sources:
+      - ref: go-fuzzing
+        where: "Glossary, seed corpus"
+        says: "These entries are run by default with go test, whether fuzzing or not."
+        backs: rule
+  - id: tests.generated.7
+    statement: "A size or depth cap on a parser is proved by the smallest input that crosses it, never by a large input, and an allocation or alias proof shrinks to the smallest size that still proves the cap."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "tests.generated.1 holds that a parser of untrusted input has a fuzz target with seeds. This rule holds how its caps are tested. A test that feeds a large input proves the cap at a cost of seconds and under the race detector of tens; the input one byte over the cap proves the same thing in milliseconds. A proof that an alias bomb or a deep nest is refused is shrunk the same way. The seeds run in every tier and the long fuzz run is on demand (tests.generated.6)."
+      pros:
+        - "One project's alias-bomb proof took 23 seconds under the race detector and about 1 second once shrunk to the smallest input that crosses the cap."
+    relations:
+      relates:
+        - tests.generated.1
+        - tests.generated.6
+        - tests.measures.11
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+  - id: tests.generated.8
+    statement: "Every parser of input the program did not write has a fuzz target with its seeds checked in, or is on a named exemption list that gives its reason, and the seeds run in every tier."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The program parses input it did not write when it reads config, a rulebook, a tool's output or a file a person edits. Each such parser has a fuzz function and a checked-in seed folder (tests.generated.1). A parser that cannot have a target, such as one that only wraps a library's own fuzzed parser, is named on a list in the project, one line each with its reason, and the list only shrinks. The seeds run as ordinary tests in the push tier and every tier above it; the long fuzz run stays on demand (tests.generated.6); the caps of a parser are proved by tests.generated.7."
+      pros:
+        - "Fuzz found 2 bugs in 260 commits of one project, both while a parser was new; a parser with no target and no named reason is one nobody decided to leave unfuzzed."
+    relations:
+      relates:
+        - tests.generated.1
+        - tests.generated.6
+        - tests.generated.7
+    sources:
+      - ref: go-fuzzing
+        where: "Glossary, seed corpus"
+        says: "These entries are run by default with go test, whether fuzzing or not."
+        backs: rule

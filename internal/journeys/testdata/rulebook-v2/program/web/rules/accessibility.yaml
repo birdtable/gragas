@@ -1,0 +1,512 @@
+part: web
+concern: accessibility
+order: 6
+title: Accessibility
+summary: >-
+  Keyboard, focus, contrast, names, motion and zoom: what a page must give every person, checked by tools
+  where a tool can see it.
+rules:
+  - id: web.accessibility.1
+    slug: axe-finds-nothing-new
+    since: 0.1.0
+    rule: >-
+      The accessibility engine finds nothing new on any page state, in light and dark, at 1440 and 390 px,
+      against a shrink-only known list, and an incomplete result is a finding; every story also passes it as
+      an error in both themes.
+    detail: >-
+      The engine runs through the shared kit on every page state and every story. Violations are compared with
+      a known-list file that can only shrink: an entry removed after a fix cannot be re-added. The engine's
+      package licence is file-level copyleft, and using it unmodified is allowed.
+    level: program
+    why: >-
+      The donor's story gate found 523 of 1,241 stories (42 percent) failing. In our sites it found 3 rules on
+      one page; one site's ratchet holds 8 written-in violations and another site's result is a null on a
+      shell, not a zero.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. `@axe-core/playwright` through the kit on every page state at both widths and
+          schemes, compared with a shrink-only known-list file; the story runner with the accessibility test
+          set to error. Plant: a new page state with an unlabelled input fails; a known-list entry removed
+          after a fix cannot be re-added. Control: a page with a labelled input passes
+    open:
+      - >-
+        The engine failed the violation page on landmark and heading rules until the control had a main
+        element and an h1; the label rule accepts a non-empty placeholder, so a placeholder-only input is not
+        a plant.
+      - One site's result is a null on a shell, not a zero.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: 42 percent of the donor's
+        stories; 3 rules on one page of ours
+  - id: web.accessibility.2
+    slug: built-html-valid
+    since: 0.1.0
+    rule: Built HTML is valid and names every control.
+    detail: >-
+      The HTML validator's recommended set runs over the built output (template stacks) or over the rendered
+      DOM (client-rendered stacks); the check lists every control without a name. Applied to built `dist`
+      HTML; plant `<input>` with no label.
+    level: program
+    why: The validator caught 11 of 32 planted faults, none uniquely.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "3"
+        note: >-
+          html-validate `html-validate:recommended` over built HTML, or over `page.content()` for
+          client-rendered apps. Plant: an input with no label and an id used twice fail. Control: the
+          corrected page passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C: 11 of 32 plants, no unique catch
+  - id: web.accessibility.3
+    slug: heading-outline
+    since: 0.1.0
+    rule: Headings form an outline with no skipped level.
+    level: program
+    why: >-
+      Neither the HTML validator nor the template lint caught a skipped level in the trial.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "3"
+        note: >-
+          axe `heading-order` and `page-has-heading-one` in the accessibility run, plus html-validate
+          `heading-level` on built HTML. Plant: a page jumping from h1 to h3 fails. Control: a page with
+          consecutive levels passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: web.accessibility.4
+    slug: status-not-by-colour-alone
+    since: 0.1.0
+    rule: "Status is never carried by colour alone: the status part requires a text label."
+    detail: >-
+      A required label prop makes omission a type error; status classes and status colour tokens are banned on
+      elements outside the part; the kit asserts every status-marked element has non-empty text. The terminal
+      form of the rule is the strip test of the terminal-look part. Banned classes: `status-*`, `.is-ok`,
+      `.is-bad`; plant `<span class="status-bad"></span>`; check `checkStatus`.
+    level: file
+    why: No tool caught the planted colour-only status in the trial (the one miss of 32).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          the status part's required label prop, `no-restricted-syntax` banning status classes and status
+          colour tokens outside the part, and the kit's status check on `[data-status]` text. Plant: a span
+          with a status-bad class and no text outside the status part fails. Control: the status part with a
+          label passes
+    open:
+      - >-
+        No tool caught the planted case, so this is a different mechanism (a shape ban plus a required prop)
+        not yet shown to work.
+      - >-
+        Half holds: it stops the known pattern; a colour-only cue in a new component class is not seen.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: B: the one miss of 32
+  - id: web.accessibility.5
+    slug: reduced-motion
+    since: 0.1.0
+    rule: Under reduced motion nothing non-essential moves.
+    detail: >-
+      With reduced motion emulated, the page must hold no running animation except elements marked essential;
+      transitions longer than 0.01 s on computed styles are listed. This is our rule and not a conformance
+      floor, because the matching WCAG criterion is level AAA. Check `checkReducedMotion`:
+      `page.emulateMedia` with `reducedMotion: "reduce"`, `document.getAnimations()`, marker `data-essential`,
+      plant `animation: spin`.
+    level: program
+    why: >-
+      No fault in our record; held on the operator's ruling that every rule binds from adoption.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: wcag-22
+        where: 2.3.3 (AAA)
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          the kit's reduced-motion check reads the running animations after emulating reduced motion. Plant: a
+          spinner with a running animation under reduce fails. Control: the same spinner marked essential
+          passes
+    open:
+      - >-
+        Trialled on Chromium only: it failed a running spinner and passed once the page neutralised it.
+  - id: web.accessibility.6
+    slug: text-grows-without-loss
+    since: 0.1.0
+    rule: >-
+      Text grows without loss: no clipping when spacing is raised, and zoom is not disabled.
+    detail: >-
+      The kit injects the WCAG 1.4.12 override (line height 1.5, letter spacing 0.12em, word spacing 0.16em,
+      paragraph spacing 2em) and asserts no text is clipped (an element with hidden overflow whose text is
+      taller than its box); it zooms to 200 percent through a 640 CSS px viewport; axe `meta-viewport` flags
+      disabled zoom. Check `checkTextSpacing`; override values `line-height: 1.5`, `letter-spacing`,
+      `word-spacing`; clip test `overflow: hidden` with `scrollHeight > clientHeight`; zoom 200%.
+    level: program
+    why: v1 gave no reason beyond its evidence grade, Evidence B.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: wcag-22
+        where: 1.4.12 text spacing
+        backs: rule
+      - ref: wcag-22
+        where: 1.4.4 resize text
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the kit's text-spacing check plus axe `meta-viewport`. Plant: a button label
+          that clips at the raised spacing fails; `user-scalable=no` fails the engine. Control: a label that
+          wraps at raised spacing passes
+  - id: web.accessibility.7
+    slug: meaning-has-a-reader
+    since: 0.1.0
+    rule: >-
+      Meaning has a named reader: alt text, reading order and headings are checked, and a screen-reader pass
+      is recorded each release.
+    detail: >-
+      A release record `a11y-pass.json` holds the named person, date, version and tools used, valid against a
+      schema. The tag refuses without it. The pass itself (what the alt text means, the order, a screen-reader
+      walk) is a person's.
+    level: release
+    why: >-
+      A vendor skill raised its pass rate from 12 to 86 percent where "pass" meant automated checks only; no
+      report of ours has run a screen reader.
+    kind: rule
+    strength: Record
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class record. the release tag check requires a valid `a11y-pass.json`. Plant: a tag with no
+          record file fails the presence check. Control: a tag with a valid record passes
+    review_question: Who walked this release with a screen reader, and where is the record?
+    open:
+      - >-
+        Proposal: split into a record that exists for the tag (a trivial rule) and the pass (review). A
+        presence check alone does not make the row a rule, so it stays Record until promoted.
+      - No report has run a screen reader.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: B"
+  - id: web.accessibility.8
+    slug: template-a11y-lint
+    since: 0.1.0
+    rule: >-
+      Templates carry no image without alt text, role mismatch, click without a key, positive tabindex, empty
+      link, untitled iframe or autofocus.
+    detail: >-
+      Template stack: the plugin's strict jsx-a11y set (it cannot see inside a component). Component stack:
+      the same rules on JSX, held by react.lint.3. The built-output checks (valid HTML, the accessibility
+      engine) cover what a template rule cannot. The lint covers key-less click handlers on `.astro` templates
+      and, through the React rule, on `.tsx`.
+    level: file
+    why: >-
+      Eight of 32 planted faults were caught in 0.35 s; all six template plants fired in both stacks.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          `eslint-plugin-astro` `flat/jsx-a11y-strict` for templates; the component form is react.lint.3.
+          Plant: an alt-less image, click without key, empty anchor, untitled iframe, autofocus and positive
+          tabindex each fail in a template (and in a component under react.lint.3). Control: the clean control
+          passes
+    relates:
+      - id: react.lint.3
+        how: see
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C: 8 of 32 plants in 0.35 s
+  - id: web.accessibility.9
+    slug: names-have-a-floor
+    since: 0.1.0
+    rule: >-
+      Names have a floor: no file name as alt text, no "click here", error text tied to its field, no nested
+      interactive element, and visible labels.
+    detail: >-
+      Through the accessibility tree every control has a non-empty name that is not a file name or "click
+      here"; axe `label`, `button-name`, `link-name` and `nested-interactive`; error text is tied to its field
+      with `aria-describedby`. An icon-only control keeps an accessible name. Check `checkNames` via
+      `page.accessibility.snapshot` or `ariaSnapshot`; plant `alt="IMG_0043.png"` (file-name alt).
+    level: program
+    why: >-
+      The check ran on 96 twins and 32 plants; its false-positive rate on real code is unknown. Above the
+      floor it is judgement.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the kit's names check over the accessibility tree plus the axe rules above.
+          Plant: a link named "here" fails; an image with `alt="IMG_0043.png"` fails. Control: a descriptively
+          named link passes
+    open:
+      - False-positive rate on real code is unknown.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: web.accessibility.10
+    slug: silent-change-announced
+    since: 0.1.0
+    rule: >-
+      A change that does not move focus is announced, and an actionable or error notice never auto-dismisses.
+    detail: >-
+      After such a change a live region (`role=status`, `role=alert` or `aria-live`) must contain new text
+      within a stated time. The notice part's timer prop is typed to forbid auto-dismiss on actionable and
+      error variants. A `setTimeout` hiding a node in feature code is advice. Check `checkSilentUpdate`; live
+      regions `role=status|alert`; `no-restricted-syntax` on timers hiding nodes is advice.
+    level: program
+    why: Held on the every-rule-binds ruling.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the kit's silent-update check plus the notice part's typed timer prop. Plant:
+          a toast that appears silently fails; an error notice with an auto-dismiss timer fails the type
+          check. Control: a toast in a live region passes
+    open:
+      - Timing is judgement. The notice part is planned.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+    note: >-
+      The one-toast-system rule in the parts concern states the same no-auto-dismiss clause for the notify
+      wrapper.
+  - id: web.accessibility.11
+    slug: dialog-contract
+    since: 0.1.0
+    rule: >-
+      An overlay keeps the dialog contract: focus goes in, stays in and comes back, Escape closes, and the
+      overlay is modal to assistive technology.
+    detail: >-
+      Template stack: a native `<dialog>`, and a lint banning `role="dialog"` on a div. Component stack: the
+      primitive library's dialog, with its lint in react.components.2. Both primitive libraries tried render a
+      div dialog, which is why the native-element rule belongs to the template stack only. Plant `<div
+      role="dialog">`; `role="dialog"` ban via `no-restricted-syntax`; check `checkDialog`.
+    level: program
+    why: >-
+      One site's legend popover takes no focus and the kit's "focus did not return" line there is a false
+      positive.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the kit's dialog check on every overlay, plus the per-stack lint above. Plant:
+          a div dialog that does not return focus fails the check; `<div role="dialog">` in a template fails
+          the lint. Control: a native dialog passes
+    relates:
+      - id: react.components.2
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A"
+  - id: web.accessibility.12
+    slug: click-has-key
+    since: 0.1.0
+    rule: Anything with a click handler can take focus and has a key.
+    detail: >-
+      The kit finds every element with a click handler and checks it is focusable and activates on Enter and
+      Space; the static net is the template lint's click-events-have-key-events and
+      no-static-element-interactions rules. Check `checkClickKeyboard` finds handlers with
+      `getEventListeners`.
+    level: program
+    why: Run on WebKit too.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the kit's click-keyboard check plus the lint rules above. Plant: a div with a
+          click handler and no tabindex fails. Control: a button passes
+    open:
+      - Trialled on Chromium only.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: web.accessibility.13
+    slug: keyboard-operable
+    since: 0.1.0
+    rule: >-
+      Every control is reachable and operable by keyboard in reading order with no trap at any stop, with one
+      focus ring token on focus-visible that is never hidden behind a sticky bar.
+    detail: >-
+      The kit tabs through the page and asserts every control is reached in document order, no trap, and the
+      focused element is not covered by a sticky bar (the element at its centre is itself). The style rules
+      (no bare `outline: none`) are in the tokens concern. Whether the order makes sense is review. Style net:
+      `declaration-property-value-disallowed-list` for `outline: none|0`, ring token on `:focus-visible`;
+      check `checkKeyboard` with `elementFromPoint`; axe `focus-order-semantics` is best-practice only.
+    level: program
+    why: >-
+      The kit had two defects the trial found: a false failure on a page with no controls, and a trap on the
+      first stop that passed; the extension fixes both.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the kit's keyboard check (extended), plus a single focus-ring token and the
+          outline rule of the styling concern. Plant: a modal that traps on the first stop fails; a focus ring
+          hidden behind a sticky header fails. Control: a page whose controls are all reached in order passes
+    review_question: Does the reading order make sense?
+    open:
+      - "Half holds: reading order sense is review."
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: B"
+  - id: web.accessibility.14
+    slug: contrast-every-state
+    since: 0.1.0
+    rule: Contrast also holds in every reachable state.
+    detail: >-
+      The engine runs after each forced state of the six-states rule; the token contrast test is the earlier
+      net.
+    level: program
+    why: A test on the ready state passed (0 failures) while the error state failed (1).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the accessibility run after each forced state of the six-states check. Plant:
+          error text on a pale pink ground below 4.5 to 1 fails in the error state. Control: error text above
+          4.5 to 1 passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C: the token check found it before
+        any page used the pair
+    note: Depends on the forced states of the six-states rule.
+  - id: web.accessibility.15
+    slug: control-contrast
+    since: 0.1.0
+    rule: Control borders and state graphics reach 3 to 1.
+    detail: >-
+      The kit computes the border or fill colour of each control and the focus ring against the ground at 3 to
+      1 (colour maths shared with the token contrast test); the text contrast rule covers text only. Engine
+      rule `color-contrast` covers text only; check `checkControlContrast`.
+    level: program
+    why: One site's case C5; held on the every-rule-binds ruling.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: wcag-22
+        where: 1.4.11 non-text contrast
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the kit's control-contrast check. Plant: a 2 to 1 input border fails. Control:
+          a 3 to 1 border passes
+  - id: web.accessibility.16
+    slug: plant-corpus-caught
+    since: 0.1.0
+    rule: >-
+      The declared accessibility stack catches every plant of the shared corpus, and a rule with no catcher is
+      listed as an instruction.
+    detail: >-
+      A matrix runs 32 plants with fixed twins; a plant caught by no tool is listed as an instruction and the
+      list can only fall. It runs once per kit change. Matrix script `matrix.mjs`.
+    level: program
+    why: The corpus is the author's own, so the shape of the check is the finding.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          the matrix script over the shared plant corpus. Plant: removing the heading-order rule leaves the
+          heading plant uncaught and fails. Control: the full stack passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: web.accessibility.17
+    slug: apca-reported-not-gated
+    since: 0.1.0
+    rule: APCA lightness contrast is printed beside the ratio and never gated.
+    detail: The APCA package is `apca-w3`.
+    level: package
+    why: >-
+      WCAG 3's algorithm is undecided; a dark muted role measured 5.80 to 1 and Lc 41.8.
+    kind: rule
+    strength: Record
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          v1 class shared-code. the contrast test of the tokens package prints Lc beside the ratio and returns
+          no exit status for it. Plant: a test fails if the report omits APCA, and a check fails if anything
+          gates on it. Control: a report that prints Lc and gates only on the ratio passes
+    review_question: Does the contrast report print APCA beside the ratio, and does any gate use it?
+    open:
+      - >-
+        The APCA package carries a non-standard licence (last published 2022); read it before shipping, or
+        compute APCA with the colour library if it supports it (to be checked). Licence question for the
+        standards owner.
+      - >-
+        The source verdict is best-practice; the report-only nature makes the plant a presence check.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: web.accessibility.18
+    slug: lighthouse-report-only
+    since: 0.1.0
+    rule: >-
+      A Lighthouse run is a report and never a gate on score; only its byte assertion is a floor.
+    detail: It runs in the release tier and its JSON is saved with the tag.
+    level: release
+    why: One image with no alt text scored 0.84, so a score gate would pass a real fault.
+    kind: measure
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "4"
+        note: >-
+          a config check refuses a Lighthouse score assertion. Plant: a config asserting a Lighthouse score
+          fails the check. Control: a report-only config passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: C: one alt-less image scored 0.84

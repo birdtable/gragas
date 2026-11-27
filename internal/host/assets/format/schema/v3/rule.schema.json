@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rule.schema.json",
+  "title": "One rule, in the YAML form and in the Markdown block (format v3)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "statement", "strength", "status", "origin"],
+  "properties": {
+    "id": {"$ref": "common.schema.json#/$defs/id"},
+    "aliases": {"$ref": "common.schema.json#/$defs/ids", "description": "ids the rule had before it was renumbered"},
+    "statement": {"$ref": "common.schema.json#/$defs/text", "description": "one sentence in the imperative"},
+    "strength": {"$ref": "common.schema.json#/$defs/strength"},
+    "status": {"$ref": "common.schema.json#/$defs/status"},
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "parts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "common.schema.json#/$defs/part"}},
+        "paths": {"$ref": "common.schema.json#/$defs/paths"},
+        "kinds": {"$ref": "common.schema.json#/$defs/kinds"}
+      },
+      "description": "where the rule applies; a field given must hold and an absent field holds"
+    },
+    "exemptions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reason"],
+        "anyOf": [{"required": ["paths"]}, {"required": ["kinds"]}],
+        "properties": {
+          "paths": {"$ref": "common.schema.json#/$defs/paths"},
+          "kinds": {"$ref": "common.schema.json#/$defs/kinds"},
+          "reason": {"$ref": "common.schema.json#/$defs/text"}
+        }
+      },
+      "description": "scope exceptions by path or kind, each with a reason"
+    },
+    "reasoning": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "definition": {"$ref": "common.schema.json#/$defs/text"},
+        "pros": {"type": "array", "minItems": 1, "items": {"$ref": "common.schema.json#/$defs/text"}},
+        "cons": {"type": "array", "minItems": 1, "items": {"$ref": "common.schema.json#/$defs/text"}},
+        "decision": {"$ref": "common.schema.json#/$defs/slug", "description": "the decision that settles the rule"}
+      }
+    },
+    "pairs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["number", "target"],
+        "properties": {
+          "number": {"type": "integer", "minimum": 1, "description": "the pair's folder, pairs/<rule id>/<number>/"},
+          "target": {"$ref": "common.schema.json#/$defs/targetType"}
+        }
+      }
+    },
+    "owner": {"$ref": "common.schema.json#/$defs/text"},
+    "review_by": {"$ref": "common.schema.json#/$defs/date", "description": "an active rule carries one"},
+    "zero_by": {"$ref": "common.schema.json#/$defs/date", "description": "optional, for a planned rule"},
+    "relations": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "relates": {"$ref": "common.schema.json#/$defs/ids"},
+        "conflicts": {"$ref": "common.schema.json#/$defs/ids"},
+        "depends": {"$ref": "common.schema.json#/$defs/ids"},
+        "covers": {"$ref": "common.schema.json#/$defs/ids"}
+      }
+    },
+    "origin": {"$ref": "common.schema.json#/$defs/origin"},
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ref", "backs"],
+        "properties": {
+          "ref": {"$ref": "common.schema.json#/$defs/slug", "description": "a slug in sources.yaml"},
+          "where": {"$ref": "common.schema.json#/$defs/text", "description": "the place inside the source"},
+          "says": {"type": "string", "minLength": 3, "pattern": "^\\s*\\S+(\\s+\\S+){0,39}\\s*$", "description": "what the source says there, at most 40 words"},
+          "backs": {"enum": ["rule", "threshold", "check"]}
+        }
+      }
+    },
+    "bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/binding"}
+    },
+    "replaced_by": {"$ref": "common.schema.json#/$defs/id"}
+  },
+  "$defs": {
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool", "target", "key", "severity", "rung", "run_point"],
+      "properties": {
+        "tool": {"$ref": "common.schema.json#/$defs/slug"},
+        "target": {"$ref": "common.schema.json#/$defs/targetType"},
+        "key": {"$ref": "common.schema.json#/$defs/text", "description": "the tool's entry; at rung 6 the review question"},
+        "value": {"description": "the entry's value; at rung 6 when the question applies"},
+        "options": {"type": "object"},
+        "severity": {"$ref": "common.schema.json#/$defs/severity"},
+        "rung": {"$ref": "common.schema.json#/$defs/rung"},
+        "run_point": {"$ref": "common.schema.json#/$defs/runPoint"},
+        "remedy": {"$ref": "common.schema.json#/$defs/text", "description": "the tool's fixer, named, never run"},
+        "pair": {"type": "integer", "minimum": 1, "description": "the number of the pair that proves the binding"},
+        "pair_path": {"$ref": "common.schema.json#/$defs/text", "description": "the path the pair stands at in the fixture it is run in"},
+        "tightens": {"$ref": "common.schema.json#/$defs/id", "description": "in an overlay or an importer, the parent's or imported rule this binding tightens"},
+        "checker": {"$ref": "common.schema.json#/$defs/slug", "description": "the name of the rulebook's checker-code declaration, checkers/<name>/, the binding's entry comes from"}
+      }
+    }
+  }
+}

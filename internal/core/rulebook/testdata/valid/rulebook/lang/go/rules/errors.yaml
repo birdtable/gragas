@@ -1,0 +1,31 @@
+part: go
+concern: errors
+title: Errors
+summary: "Errors are wrapped with context and handled once — never swallowed."
+rules:
+  - id: go.errors.1
+    slug: wrap-with-context
+    since: 0.1.0
+    rule: "An error is wrapped with %w and says what was being done."
+    why: "A bare error names no step; «context» is what a reader needs."
+    kind: rule
+    strength: Record
+    level: function
+    status: active
+    sources:
+      - ref: decision-1
+        backs: rule
+      - ref: other-lint-rule
+        backs: rule
+        covers: stricter
+    promoted:
+      "on": "2026-01-02"
+      trial: the wrap count held for a month
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: layer-test
+        key: settings.wrapcheck
+        tier: "2"
+        fix: auto
+        note: "wrapcheck. Plant: a bare return of an error fails."

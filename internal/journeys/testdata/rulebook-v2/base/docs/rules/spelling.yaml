@@ -1,0 +1,104 @@
+part: docs
+concern: spelling
+order: 2
+title: Spelling and word lists
+summary: >-
+  Words on screen, in docs and in comments are spelled right against a project word list that sits on one
+  shared base, in one chosen spelling variant.
+rules:
+  - id: docs.spelling.1
+    slug: spell-check-docs-and-comments
+    since: 0.1.0
+    rule: >-
+      Words on screen, in docs and in comments are spelled right against a project word list.
+    detail: >-
+      The spell check runs over source, docs, comments and strings, with a project dictionary for product
+      terms. It runs on staged files at the first tier and on all files at the second. Its reach over docs and
+      comments is set in its file globs. The first run on an untuned repository is noise: tune the dictionary
+      once and it is then a rule with no ratchet.
+    level: word
+    why: >-
+      Untuned runs found 1,457 and 1,909 unknown words in two repos; a misspelt word in a docs page or a
+      comment costs trust and defeats search.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-03-data
+        where: on shared vocabulary
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "1"
+        note: >-
+          cspell 10.4.0 over source, docs and comments with a project dictionary file; words for product
+          terms; tier 1 on staged files and tier 2 on all. Plant: a misspelt word in a comment, a template and
+          a markdown file fails. Control: a word on the project list passes
+    open:
+      - The reach over docs and comments is planned, not run as a gate.
+      - No Go rule checks prose spelling today; this check is the gap-filler.
+      - "v1 evidence, not yet a source: C (1,457 and 1,909 unknown words, untuned)"
+    note: >-
+      Merges the spell-check clause of the retired-word row with the screen-text spelling row and the shared
+      spelling base.
+  - id: docs.spelling.2
+    slug: one-spelling-variant
+    since: 0.1.0
+    rule: >-
+      The project picks one spelling variant, British English, and a check holds it in paths, parameters,
+      docs, comments and text on screen.
+    detail: >-
+      Substitution rules turn an American spelling into the chosen one (for example color into colour). The
+      variant applies to code names the program owns, event detail-types, docs and comments alike.
+    level: word
+    why: >-
+      Mixed variants make names fail to match (cancelled against canceled) and search miss.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-03-data
+        where: on shared vocabulary
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "1"
+        note: >-
+          typos with the en-gb locale, which flags American spellings, run on markdown, HTML and Astro files; the
+          spell check word list for code and comments. Plant: a line with "color" fails. Control: a clean
+          British sentence passes
+    relates:
+      - id: docs.voice.1
+        how: see
+      - id: docs.voice.2
+        how: see
+    note: >-
+      The voice rules (docs.voice.1 and docs.voice.2) carry the rest of the writing style.
+  - id: docs.spelling.3
+    slug: word-list-imports-shared-base
+    since: 0.1.0
+    rule: >-
+      A repository's spelling file imports the shared spelling base and adds only its own words.
+    detail: >-
+      The shared base sets English, allows compound words, and carries the ignore paths and a few common
+      project words. A check fails a repository whose spelling file does not import the base and keep the
+      import. The shared base and the shared markdown configuration ship from one place.
+    level: file
+    why: >-
+      A repo that copies the base instead of importing it drifts from every other repo.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          a check that the repository's spelling file imports the shared spelling base (a part of the
+          check-reexports command). Plant: a spelling file with no import of the base fails. Control: a
+          spelling file that imports the base passes
+    open:
+      - Applies to Go repositories only once a spell check for them exists.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

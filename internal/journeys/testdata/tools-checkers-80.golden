@@ -1,0 +1,28 @@
+$ gragas tools
+--- exit 4
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+eslint, not tested, no plugin
+entry                     held by
+source: no-throw-literal  go.errors.1
+
+golangci-lint, not tested, no plugin
+entry              held by
+source: errorlint  go.errors.1, go.errors.2
+source: nilerr     go.errors.2
+
+stylelint, not tested, no plugin
+entry                         held by
+source: color-no-invalid-hex  go.errors.2
+
+checker code, declared by name and publisher
+artifact         tool           publisher  of
+errwrap-plugin   golangci-lint  team-a     example
+shared-analyzer  golangci-lint  sam        shared-go, by reference
+no preset entries read: 0 unexplained (coverage lists them)
+
+  not ready  3 tools, 4 entries, 2 rules held; no plugin is installed for
+  eslint, golangci-lint, stylelint, so no check reads their configs
+    gragas plugin add <folder>
+--- stderr

@@ -1,0 +1,178 @@
+What changes
+add source handler-guide (guide, https://example.org/handlers@v1.2.0)
+add decision imported-handler-guide-v1-2-0
+draft go.style.2: should, proposed, from #handler-guide line 1
+draft go.style.3: must, proposed, from #logging line 7
+draft go.style.4: must, proposed, from #logging line 8
+draft go.style.5: should, proposed, from #logging line 9
+draft go.style.6: must, proposed, from #errors line 13
+draft go.style.7: must, proposed, from #errors line 14
+draft go.style.8: must, proposed, from #retries line 18
+draft go.style.9: may, proposed, from #retries line 19
+draft go.style.10: must, proposed, from #timeouts line 23
+draft go.style.11: must, proposed, from #timeouts line 24
+draft go.style.12: must, proposed, from #naming line 28
+draft go.style.13: must, proposed, from #naming line 29
+to do: go.style.2: the heading carries no strength word; set the rule and its strength
+to do: go.style.11: the line carries MUST and SHOULD; keep one strength
+What is written where
+rulebook/language/go/rules/errors.yaml: adds 12 rule(s)
+rulebook/sources.yaml: adds source handler-guide
+rulebook/decisions.yaml: adds decision imported-handler-guide-v1-2-0
+rulebook/history.jsonl: appends 12 entries (import)
+--- source:handler-guide
+slug: handler-guide
+kind: guide
+title: Handler guide
+locator: "https://example.org/handlers@v1.2.0"
+attribution: The handlers team
+--- decision:imported-handler-guide-v1-2-0
+slug: imported-handler-guide-v1-2-0
+title: Imported from Handler guide at v1.2.0
+text: The rules were drafted from the guide at its tag and cite it by section.
+who: "Ada <ada@example.org>"
+date: "2026-11-08"
+--- rule:go.style.2
+id: go.style.2
+statement: "Handler guide"
+strength: should
+status: proposed
+origin: imported
+reasoning:
+  decision: imported-handler-guide-v1-2-0
+sources:
+  - ref: handler-guide
+    where: "#handler-guide"
+    backs: rule
+--- rule:go.style.3
+id: go.style.3
+statement: "Handlers MUST log once per request."
+strength: must
+status: proposed
+origin: imported
+reasoning:
+  decision: imported-handler-guide-v1-2-0
+sources:
+  - ref: handler-guide
+    where: "#logging"
+    backs: rule
+--- rule:go.style.4
+id: go.style.4
+statement: "Handlers MUST NOT log secrets."
+strength: must
+status: proposed
+origin: imported
+reasoning:
+  decision: imported-handler-guide-v1-2-0
+sources:
+  - ref: handler-guide
+    where: "#logging"
+    backs: rule
+--- rule:go.style.5
+id: go.style.5
+statement: "Handlers SHOULD log at the edge."
+strength: should
+status: proposed
+origin: imported
+reasoning:
+  decision: imported-handler-guide-v1-2-0
+sources:
+  - ref: handler-guide
+    where: "#logging"
+    backs: rule
+--- rule:go.style.6
+id: go.style.6
+statement: "An error MUST be wrapped with context."
+strength: must
+status: proposed
+origin: imported
+reasoning:
+  decision: imported-handler-guide-v1-2-0
+sources:
+  - ref: handler-guide
+    where: "#errors"
+    backs: rule
+--- rule:go.style.7
+id: go.style.7
+statement: "An error MUST be handled once."
+strength: must
+status: proposed
+origin: imported
+reasoning:
+  decision: imported-handler-guide-v1-2-0
+sources:
+  - ref: handler-guide
+    where: "#errors"
+    backs: rule
+--- rule:go.style.8
+id: go.style.8
+statement: "A retry MUST be bounded."
+strength: must
+status: proposed
+origin: imported
+reasoning:
+  decision: imported-handler-guide-v1-2-0
+sources:
+  - ref: handler-guide
+    where: "#retries"
+    backs: rule
+--- rule:go.style.9
+id: go.style.9
+statement: "A retry MAY use jitter."
+strength: may
+status: proposed
+origin: imported
+reasoning:
+  decision: imported-handler-guide-v1-2-0
+sources:
+  - ref: handler-guide
+    where: "#retries"
+    backs: rule
+--- rule:go.style.10
+id: go.style.10
+statement: "Every call MUST carry a deadline."
+strength: must
+status: proposed
+origin: imported
+reasoning:
+  decision: imported-handler-guide-v1-2-0
+sources:
+  - ref: handler-guide
+    where: "#timeouts"
+    backs: rule
+--- rule:go.style.11
+id: go.style.11
+statement: "A deadline MUST come from the caller and SHOULD be short."
+strength: must
+status: proposed
+origin: imported
+reasoning:
+  decision: imported-handler-guide-v1-2-0
+sources:
+  - ref: handler-guide
+    where: "#timeouts"
+    backs: rule
+--- rule:go.style.12
+id: go.style.12
+statement: "Exported names MUST NOT stutter."
+strength: must
+status: proposed
+origin: imported
+reasoning:
+  decision: imported-handler-guide-v1-2-0
+sources:
+  - ref: handler-guide
+    where: "#naming"
+    backs: rule
+--- rule:go.style.13
+id: go.style.13
+statement: "Test names MUST say the case."
+strength: must
+status: proposed
+origin: imported
+reasoning:
+  decision: imported-handler-guide-v1-2-0
+sources:
+  - ref: handler-guide
+    where: "#naming"
+    backs: rule

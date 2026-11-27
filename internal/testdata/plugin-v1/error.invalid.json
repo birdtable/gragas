@@ -1,0 +1,6 @@
+[
+  {"name":"an unknown field","patch":[{"op":"add","path":"/1/stack","value":"x"}],"problem":"Additional properties are not allowed ('stack' was unexpected)"},
+  {"name":"a code that is not one","patch":[{"op":"replace","path":"/0/code","value":"fatal"}],"problem":"is not one of"},
+  {"name":"an empty message","patch":[{"op":"replace","path":"/0/message","value":""}],"problem":"should be non-empty"},
+  {"name":"no message","patch":[{"op":"remove","path":"/1/message"}],"problem":"'message' is a required property"}
+]

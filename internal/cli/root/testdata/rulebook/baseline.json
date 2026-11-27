@@ -1,0 +1,14 @@
+{
+ "about": "The fixture's baselines.",
+ "baselines": {
+  "rules-without-source": 1,
+  "hard-rules-without-check": 0,
+  "checks-unresolved": 3,
+  "relates-unknown": 0,
+  "checks-without-test": 2,
+  "checks-without-fix": 3,
+  "enforced-without-examples": 1,
+  "measures-not-one-fact": 0,
+  "advisory-with-checks": 0
+ }
+}

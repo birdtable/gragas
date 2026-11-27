@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "checker.schema.json",
+  "title": "One checker-code declaration: checkers/<name>/checker.yaml (format v3)",
+  "description": "A declaration makes an artifact of checker code known by name and publisher, so a consumer's tools load nothing the rulebook did not declare (S23, S3). It is no trust: nothing reads, loads or runs the code, and the digest is the release's. What the schema cannot say without a conditional, the reader holds on the parsed document: the name equal to the folder, and an own artifact's tests",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "name", "tool", "publisher"],
+  "properties": {
+    "format": {"$ref": "common.schema.json#/$defs/format"},
+    "name": {"$ref": "common.schema.json#/$defs/slug", "description": "the artifact's name, equal to its folder under checkers/"},
+    "tool": {"$ref": "common.schema.json#/$defs/slug", "description": "the tool whose plugin, analyzer, pattern rule or policy the artifact is"},
+    "publisher": {"$ref": "common.schema.json#/$defs/text", "description": "who publishes the artifact"},
+    "tests": {"$ref": "#/$defs/relative", "description": "the artifact's own tests, relative to its folder; the rulebook's own artifact has them"},
+    "licence": {"$ref": "common.schema.json#/$defs/text", "description": "the artifact's licence"},
+    "from": {"$ref": "common.schema.json#/$defs/slug", "description": "the rulebook name of the import whose artifact this declares by reference; absent for the rulebook's own"}
+  },
+  "$defs": {
+    "relative": {
+      "type": "string",
+      "pattern": "^\\.{0,2}[A-Za-z0-9_-][A-Za-z0-9._-]*(/\\.{0,2}[A-Za-z0-9_-][A-Za-z0-9._-]*)*$",
+      "description": "a slash-separated path below the artifact's folder: no leading slash, no drive, no backslash, no step that is . or .."
+    }
+  }
+}

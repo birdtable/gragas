@@ -1,0 +1,54 @@
+{
+  "name": "@gragas/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The explorer's core package: the data client and selectors, the message module, the formatter, the markup funnel and the parts so far; the other modules land with their tickets.",
+  "engines": {
+    "node": "24.22.1"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./parts": "./parts/index.ts",
+    "./views": "./views/index.ts",
+    "./views/attention": "./views/attention/index.ts",
+    "./views/changelog": "./views/changelog/index.ts",
+    "./views/coverage": "./views/coverage/index.ts",
+    "./views/health": "./views/health/index.ts",
+    "./views/relations": "./views/relations/index.ts",
+    "./views/rulebooks": "./views/rulebooks/index.ts",
+    "./views/rule": "./views/rule/index.ts",
+    "./views/standing": "./views/standing/index.ts",
+    "./views/terms": "./views/terms/index.ts",
+    "./views/tools": "./views/tools/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit --composite false --incremental false --listFiles -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@base-ui/react": "1.9.0",
+    "@gragas/contract": "workspace:*",
+    "@gragas/tokens": "workspace:*",
+    "@tanstack/react-query": "5.107.1",
+    "@types/react": "19.3.0",
+    "dompurify": "3.4.17",
+    "markdown-it": "14.3.3",
+    "minisearch": "7.2.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@storybook/react-vite": "10.6.6",
+    "@types/markdown-it": "14.1.2",
+    "@types/node": "24.19.2",
+    "@types/react-dom": "19.3.0",
+    "@types/trusted-types": "2.0.7",
+    "axe-core": "4.14.0",
+    "msw": "3.0.4",
+    "storybook": "10.6.6",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

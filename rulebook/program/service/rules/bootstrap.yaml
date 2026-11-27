@@ -1,0 +1,92 @@
+format: 3
+part: service
+concern: bootstrap
+rules:
+  - id: service.bootstrap.1
+    statement: "Every service entry point is built by one shared bootstrap, and the plumbing libraries it wraps are imported only inside it."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The bootstrap runs a fixed sequence for every entry: contract validation, authentication context, logging with a correlation id, secrets, and the error envelope, in that order. A service writes only its own business code. The shared bootstrap is the one place a plumbing library (request middleware, logger, validator) is imported; a direct import anywhere else fails. The same shape holds in Go: each program is assembled by one shared run helper and its plumbing packages are imported only there."
+      pros:
+        - "Many entries each wiring their own plumbing gave as many pipelines as services, each missing a different step. One owner means a step is fixed once for all."
+    sources:
+      - ref: p-03-data
+        where: section 16
+        backs: rule
+  - id: service.bootstrap.2
+    statement: "No service keeps a local copy of a shared plumbing step or handler factory, and the count of copies only falls."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "A step copied into a second repository moves to the shared module, and the number of copies is counted and may not rise. This covers handler factories and each plumbing step written again by hand (validation, auth context, logging, error mapping)."
+      pros:
+        - Copies drift. The reference estate counted dozens of hand-copied plumbing steps beside a shared package that was meant to replace them.
+  - id: service.bootstrap.3
+    statement: "No service writes its own data-layer plumbing: error tables, certificate bundles, integer parsers, outboxes or key builders."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "Store opening, error mapping, number parsing and key building each have one owner in the shared data toolkit. A service that needs one imports it."
+      pros:
+        - Each service writing its own database error table or integer parser repeats the same bugs in a different place.
+  - id: service.bootstrap.4
+    statement: "Every route unit has the same closed set of files: handler, contract and schema."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "A route folder holds exactly the handler, its contract declaration and its schema, so a new route has a fixed shape and a generator can find all three. In Go, programs sit under one commands folder with the rest under an internal folder, so a new command has a fixed home."
+      pros:
+        - A route missing its contract or schema is invisible to the generated API description and the access catalogue.
+  - id: service.bootstrap.5
+    statement: "A route contract may use only a closed set of keys (path, query, body, headers); any other key fails."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The closed set is checked by the contract builder and by a lint, so a misnamed key (for example params) cannot silently drop validation. In Go, command and config declarations refuse unknown keys and the command tree is compared with a stored file."
+      pros:
+        - "An unknown key in a contract is ignored by the validator, so the input it was meant to constrain goes unchecked."
+  - id: service.bootstrap.6
+    statement: "Request steps run in a pinned order, so a request without authentication never reaches the handler."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "The bootstrap fixes the order of steps (origin check, authentication, authorisation, validation, handler, error mapping) and no step can be reordered or skipped by a service. In Go, a daemon checks the caller on every request before any handler, and its steps are bounded."
+      pros:
+        - An authentication step placed after validation or business code lets an unauthenticated request touch the handler.
+  - id: service.bootstrap.7
+    statement: "The exposure mode of the entry origin check is an explicit code argument from the deployment tier, never ambient configuration."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - service
+    reasoning:
+      definition: "A public entry passes enforce; an internal entry passes the disabled mode explicitly. No environment variable selects the mode. In Go, a daemon states its reach (socket, loopback, tailnet) as a code argument, and the peer check is never a header alone."
+      pros:
+        - "A mode read from the environment can be switched off by a configuration slip, opening a public entry without anyone changing code."

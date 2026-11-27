@@ -1,0 +1,43 @@
+format: 3
+part: docs
+concern: spelling
+rules:
+  - id: docs.spelling.1
+    statement: "Words on screen, in docs and in comments are spelled right against a project word list."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The spell check runs over source, docs, comments and strings, with a project dictionary for product terms. It runs on staged files at the first tier and on all files at the second. Its reach over docs and comments is set in its file globs. The first run on an untuned repository is noise: tune the dictionary once and it is then a rule with no ratchet."
+      pros:
+        - "Untuned runs found 1,457 and 1,909 unknown words in two repos; a misspelt word in a docs page or a comment costs trust and defeats search."
+    sources:
+      - ref: p-03-data
+        where: on shared vocabulary
+        backs: rule
+  - id: docs.spelling.2
+    statement: "The project picks one spelling variant, British English, and a check holds it in paths, parameters, docs, comments and text on screen."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Substitution rules turn an American spelling into the chosen one (for example color into colour). The variant applies to code names the program owns, event detail-types, docs and comments alike."
+      pros:
+        - Mixed variants make names fail to match (cancelled against canceled) and search miss.
+    relations:
+      relates:
+        - docs.voice.1
+        - docs.voice.2
+    sources:
+      - ref: p-03-data
+        where: on shared vocabulary
+        backs: rule
+  - id: docs.spelling.3
+    statement: "A repository's spelling file imports the shared spelling base and adds only its own words."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The shared base sets English, allows compound words, and carries the ignore paths and a few common project words. A check fails a repository whose spelling file does not import the base and keep the import. The shared base and the shared markdown configuration ship from one place."
+      pros:
+        - A repo that copies the base instead of importing it drifts from every other repo.

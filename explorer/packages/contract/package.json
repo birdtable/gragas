@@ -1,0 +1,46 @@
+{
+  "name": "@gragas/contract",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The contract's types and zod schemas, generated from the schemas by gragas-generate, and the hand-written layer beside them (ids, closed unions, parse, the field list); the generated files are never edited.",
+  "engines": {
+    "node": "24.22.1"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/main.d.ts",
+      "default": "./dist/main.js"
+    },
+    "./fixtures": {
+      "types": "./dist/fixtures/index.d.ts",
+      "default": "./dist/fixtures/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "!dist/fixtures"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit --composite false --incremental false --listFiles -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.fixtures.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "msw": "3.0.4",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/main.d.ts",
+        "default": "./dist/main.js"
+      }
+    }
+  }
+}

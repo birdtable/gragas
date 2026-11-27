@@ -1,0 +1,20 @@
+part: aws
+tools:
+  - key: ast-grep-rules-over-the-infrastructure-code
+    name: "infrastructure policy checks: ast-grep rules over the infrastructure code"
+    role: >-
+      The category of checks over infrastructure definitions: grants, identity names and retention of shared
+      resources. The pick is ast-grep rules over the infrastructure code; a policy pack of the infrastructure
+      tool is a candidate if it accepts one.
+    binding: ts
+    ships: the shared infrastructure rule set
+    state: chosen
+    why: >-
+      Rules read the code that declares the resources, so the check runs before deploy.
+    lost:
+      - name: infrastructure tool policy pack
+        why: A candidate if the tool accepts one; not yet tried.
+    open:
+      - >-
+        In Go, unit files come from a template with an identity and sandbox, and workflows are linted and
+        pinned; the CI token is read-only.

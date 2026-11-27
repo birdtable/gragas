@@ -1,0 +1,18 @@
+$ gragas check
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+reading rulebook/ in .
+
+  error gate/exemptions.yaml:5: expired expired on 2020-01-02: retire it or
+  renew it with a reason
+  error gate/exemptions.yaml:6: retired is unused: arch.layers.3 is not an
+  active rule of the rulebook
+  error gate/exemptions.yaml:8: exemption twice is listed twice
+  error gate/exemptions.yaml:9: lost-exit: its exit docs/gone.md is a file that
+  does not exist
+
+  findings   4 problems in the rulebook and gate/exemptions.yaml: fix them in
+  the YAML named above, then run `gragas check`
+    gragas check
+--- stderr
+warning: the names check is skipped: GRAGAS_NAMES_FILE is not set

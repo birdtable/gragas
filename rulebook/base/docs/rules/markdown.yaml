@@ -1,0 +1,16 @@
+format: 3
+part: docs
+concern: markdown
+rules:
+  - id: docs.markdown.1
+    statement: "Markdown structure (headings, lists, code fences) follows one shipped lint configuration."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "All default rules are on except four, line length is off, and duplicate headings are checked among siblings only. The configuration is exported from one shared place and a repository does not carry its own copy. A project's own docs, including UI projects, follow the same configuration."
+      pros:
+        - "The default rules gave 62,000 findings on a first run (80 percent of them line length), so the configuration is the work. No repo had a doc linter configuration or front matter."
+    relations:
+      relates:
+        - docs.freshness.1

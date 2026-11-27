@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-proposal.schema.json",
+  "title": "Proposal (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "slug",
+    "target",
+    "change",
+    "state",
+    "opened"
+  ],
+  "properties": {
+    "slug": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0"
+    },
+    "target": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "anatomy"
+      ],
+      "properties": {
+        "anatomy": {
+          "$ref": "common.schema.json#/$defs/text",
+          "x-introduced": "1.0"
+        },
+        "pair": {
+          "$ref": "common.schema.json#/$defs/textOrEmpty",
+          "x-introduced": "1.0",
+          "default": ""
+        },
+        "binding": {
+          "$ref": "common.schema.json#/$defs/textOrEmpty",
+          "x-introduced": "1.0",
+          "default": ""
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "x-introduced": "1.0",
+          "default": []
+        }
+      },
+      "x-introduced": "1.0"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "text"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "waiver-pattern",
+              "incident-example",
+              "agent-miss"
+            ],
+            "x-introduced": "1.0"
+          },
+          "text": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "open",
+        "accepted",
+        "declined",
+        "withdrawn"
+      ],
+      "x-introduced": "1.0"
+    },
+    "link": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/url"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    },
+    "opened": {
+      "$ref": "common.schema.json#/$defs/date",
+      "x-introduced": "1.0"
+    }
+  }
+}

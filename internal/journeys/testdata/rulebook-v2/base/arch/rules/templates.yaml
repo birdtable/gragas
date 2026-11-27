@@ -1,0 +1,158 @@
+part: arch
+concern: templates
+order: 6
+title: Templates and scaffolds
+summary: >-
+  A new unit starts from a template or generator that already has the shape the gate accepts, and later
+  template changes reach existing projects. The template records its version, asks few questions and knows
+  which files the repository owns.
+rules:
+  - id: arch.templates.1
+    slug: template-per-kind-records-version
+    since: 0.1.0
+    rule: >-
+      A template per kind lays down configs, scripts and gates, records its answers and version in a file, and
+      a deleted synced file fails the sync check.
+    detail: >-
+      One template exists per kind of project. The sync tool writes the version and the source hash to a lock
+      file, so a later update can replay it and so a vendored copy shows where it came from. The tool is one
+      Go command in the same binary as the checks, not an external template engine.
+    level: program
+    why: >-
+      A template that does not record its version cannot be updated, and a project that has drifted from it
+      cannot be told apart from one that chose to.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-3
+        backs: rule
+      - ref: decision-4
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. companion sync lays down configs, scripts and gates per kind and writes the
+          version and the source hash to a lock file; sync --check compares. Plant: a synced file deleted
+          makes sync --check fail. Control: an untouched synced tree passes
+    open:
+      - >-
+        Copier is proven for the backend and not for the web; it is a host dependency and was not chosen.
+        Copier, Projen, cruft and template repositories were considered.
+  - id: arch.templates.2
+    slug: new-units-come-from-a-generator
+    since: 0.1.0
+    rule: >-
+      A new program, command, package, page, part or surface comes from a generator or golden example, and the
+      gate accepts what it writes.
+    detail: >-
+      The generator scaffolds the folder, entry files, registry entry and test stubs, and one reference
+      program is the first file an agent opens. The gate is a self-check that runs the generator into a
+      temporary copy of the repository and then the lint, type check and layer rule over the result, which
+      must pass. Hand-made files are allowed as long as they pass. A hyphenated name is a fixed plant.
+      Come-from-a-generator cannot be forced; the mechanism proves only that the generator's output passes. In
+      Go a scaffold creates a new program, command or package with a thin main and a gate-clean layout.
+    level: program
+    why: >-
+      A page generator failed one repo's own gate on a hyphenated page name. There is no Go scaffold or
+      reference program, and an agent copying an old program copies its faults.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-09-agentic-development
+        where: section 7.2
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. companion new <page|part|surface> writes from the golden page; a self-check runs
+          the generator into a temp copy and runs lint, type check and the layer rule over it. Plant:
+          generating a page named my-page must produce a tree that passes every gate; a generator edit that
+          breaks the layer rule fails the self-check. Control: the generated tree passes every gate
+      - binding: go
+        class: test-kit
+        tier: "3"
+        note: >-
+          a test runs the scaffold in a temporary folder and the full gate on its output; the scaffold is a
+          shared template in the shared kit. Plant: a template with a deliberate layer break fails the gate.
+          Control: a clean template passes
+    open:
+      - >-
+        A hand-written page that also passes is allowed; the web generator has been tried on one page only,
+        and no Go scaffold or reference program exists. The first-file rule for the web side is a separate row
+        owned by the agents part.
+      - >-
+        v1 evidence, not yet a source: C (the generator failed its own gate on a hyphenated name); practice
+        for Go
+  - id: arch.templates.3
+    slug: installer-asks-three-questions
+    since: 0.1.0
+    rule: >-
+      The template installer asks exactly three questions (name, version range of the shared package, runtime
+      major) and has no yes or no switches for optional file groups.
+    detail: >-
+      Optional file groups are separate kinds, not switches, so two projects of one kind have the same shape.
+      In the ruled Go form the questions become the kind pack and a module path.
+    level: program
+    why: Each switch doubles the number of shapes a gate must accept.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test of the installer's question list fails when it holds other than three questions or a boolean
+          switch. Plant: a fourth question or a yes or no switch added to the installer fails. Control: the
+          three questions pass
+    relates:
+      - id: arch.templates.1
+        how: see
+    open:
+      - >-
+        The installer is the sync tool of arch.templates.1; the original described a different engine, and the
+        question list may change with the kind pack.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: arch.templates.4
+    slug: owned-files-written-once
+    since: 0.1.0
+    rule: >-
+      On template update, files the repository owns are written once and left alone, managed files are
+      rewritten, and a test checks that no byte-equal file is on the skip list.
+    detail: >-
+      The sync tool rewrites managed files and leaves repo-owned local fields; copies that must differ are
+      listed as independent (arch.shared.5). A byte-equal file on the skip list is a managed file that was
+      never updated.
+    level: program
+    why: >-
+      An update that overwrites owned files is not used, and one that skips managed files drifts.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test that no byte-equal file is on the skip list, and that an update leaves an owned file's bytes
+          unchanged. Plant: a managed file placed on the skip list fails; an update that rewrites an owned
+          file fails. Control: an update that rewrites managed files only passes
+    relates:
+      - id: arch.shared.5
+        how: see
+    open:
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "gate/shared.yaml: the shared capabilities, their owners and the primitives only the owner reaches (arch.shared.8)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["shared"],
+  "properties": {
+    "removed": {
+      "type": "array",
+      "description": "rows the base held that this file no longer does (removed or renamed), each on a decision record the base does not hold",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "decision", "why"],
+        "properties": {
+          "capability": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+          "decision": {"$ref": "#/$defs/decision"},
+          "why": {"type": "string", "minLength": 8}
+        }
+      }
+    },
+    "shared": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "owner", "export", "status", "since"],
+        "properties": {
+          "capability": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+          "owner": {"type": "string", "pattern": "^(internal|cmd)(/[a-z0-9][a-z0-9._-]*)+$"},
+          "export": {"$ref": "#/$defs/export"},
+          "shared": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["package", "export"],
+            "properties": {
+              "package": {"type": "string", "pattern": "^github\\.com/birdtable/go-(console|files|run)(/[a-z0-9][a-z0-9._-]*)*$"},
+              "export": {"$ref": "#/$defs/export"}
+            }
+          },
+          "primitives": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "minProperties": 1,
+              "maxProperties": 1,
+              "properties": {
+                "call": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*)*\\.[A-Z][A-Za-z0-9]*$"},
+                "import": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*)*$"}
+              }
+            }
+          },
+          "allow": {
+            "type": "array",
+            "description": "packages beside the owner that may reach the primitives, each with its why; shrink-only (gate/baselines.yaml, shared-allowances)",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["package", "why"],
+              "properties": {
+                "package": {"type": "string", "pattern": "^(internal|cmd)(/[a-z0-9][a-z0-9._-]*)+$"},
+                "why": {"type": "string", "minLength": 8},
+                "decision": {"$ref": "#/$defs/decision"}
+              }
+            }
+          },
+          "tests": {
+            "type": "object",
+            "description": "a reprieve for test files: the bans do not reach a file that ends in _test.go until what ends it; a stop-gap with an end, not a permission",
+            "additionalProperties": false,
+            "required": ["spared", "until"],
+            "properties": {
+              "spared": {"type": "string", "minLength": 8, "description": "why test files are spared"},
+              "until": {"type": "string", "pattern": "^[a-z][^#]*$", "description": "what ends the reprieve, in plain words that name no issue by its number"},
+              "decision": {"$ref": "#/$defs/decision"}
+            }
+          },
+          "status": {"enum": ["local", "shared", "later"]},
+          "until": {"type": "string", "pattern": "^[a-z][^#]*$", "description": "what turns a later row on, in plain words that name no issue by its number; a later row names it, and no other row has one"},
+          "decision": {"$ref": "#/$defs/decision"},
+          "since": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"}
+        },
+        "allOf": [
+          {"if": {"properties": {"status": {"const": "shared"}}}, "then": {"required": ["shared"]}},
+          {"if": {"properties": {"status": {"const": "later"}}}, "then": {"required": ["until"]}, "else": {"properties": {"until": false}}}
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "decision": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9-]*$", "description": "a record (docs/reasons/<decision>.md by that exact name) a widening against the base stands on; the check refuses a widening that names none, or one the base already holds"},
+    "export": {"type": "string", "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)?$"}
+  }
+}

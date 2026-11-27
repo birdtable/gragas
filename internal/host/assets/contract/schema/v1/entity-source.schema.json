@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-source.schema.json",
+  "title": "Source (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "slug",
+    "kind",
+    "title"
+  ],
+  "properties": {
+    "slug": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "guide",
+        "study",
+        "incident",
+        "decision record",
+        "vendor document",
+        "own decision"
+      ],
+      "x-introduced": "1.0"
+    },
+    "title": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "locator": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "attribution": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    }
+  }
+}

@@ -1,0 +1,57 @@
+$ gragas attention
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+every rule is proposed, so the whole book is listed, grouped
+by what is missing
+
+missing source (3)
+rule         what is wrong       fix
+go.errors.1  it cites no source  gragas rule edit
+                                 go.errors.1 --cite <source
+                                 slug>
+go.errors.2  it cites no source  gragas rule edit
+                                 go.errors.2 --cite <source
+                                 slug>
+go.errors.3  it cites no source  gragas rule edit
+                                 go.errors.3 --cite <source
+                                 slug>
+
+missing example pair (2)
+rule         what is wrong           fix
+go.errors.1  it has no example pair  add good.* and bad.*
+                                     under
+                                     pairs/go.errors.1/1/
+                                     and list the pair in
+                                     the rule
+go.errors.2  it has no example pair  add good.* and bad.*
+                                     under
+                                     pairs/go.errors.2/1/
+                                     and list the pair in
+                                     the rule
+
+missing decision (3)
+rule         fix
+go.errors.1  gragas rule promote go.errors.1
+             --decision-title "..." --decision-text "...",
+             or name one in its reasoning
+go.errors.2  gragas rule promote go.errors.2
+             --decision-title "..." --decision-text "...",
+             or name one in its reasoning
+go.errors.3  gragas rule promote go.errors.3
+             --decision-title "..." --decision-text "...",
+             or name one in its reasoning
+1 column not shown: what is wrong
+
+owner missing (2)
+rule         what is wrong          fix
+go.errors.2  nobody answers for it  gragas rule edit
+                                    go.errors.2 --rule-owner
+                                    <name>
+go.errors.3  nobody answers for it  gragas rule edit
+                                    go.errors.3 --rule-owner
+                                    <name>
+override rate: no batches given
+
+  done       3 rules need attention, 10 items
+--- stderr

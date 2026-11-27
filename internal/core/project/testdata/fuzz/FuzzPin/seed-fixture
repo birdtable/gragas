@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("rulebook: fixture-base\nversion: 1.2.0\nsource: https://example.com/fixture-base.git\nkinds: [service]\nparts: [base, go, web]\nkey: SHA256:IO3hwopf6CEo8MIkiWWZ/yfXqJ/prEGFU6WEg0el+wA\n")

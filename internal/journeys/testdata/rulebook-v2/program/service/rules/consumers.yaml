@@ -1,0 +1,319 @@
+part: service
+concern: consumers
+order: 5
+title: Event consumers
+summary: >-
+  A consumer deduplicates, tolerates redelivery and unknown fields, releases what it opened, reports failure
+  per item, and sends failed work to a dead-letter path that is redriven with care.
+rules:
+  - id: service.consumers.1
+    slug: consumers-deduplicate-atomically
+    since: 0.1.0
+    rule: Consumers deduplicate atomically and tolerate redelivery.
+    detail: >-
+      The processing key is written in the same transaction as the mutation. In Go, a command is safe to run
+      twice and a torn last line is ended before append.
+    level: function
+    why: >-
+      Delivery is at least once: a consumer that cannot take the same message twice does its work twice.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          the shared consumer wrapper writes the processing key in the mutation transaction, proven by the
+          shared twice-helper delivering each message twice. Plant: a consumer that sends a call on each
+          delivery fails the twice test. Control: a consumer using the wrapper passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test running each command twice and a torn-line append test. Plant: a command that duplicates its
+          effect on a second run fails. Control: an idempotent command passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      The same shared twice-helper is the check of replay-and-conflict in the contract concern.
+  - id: service.consumers.2
+    slug: dedupe-key-outlives-return
+    since: 0.1.0
+    rule: >-
+      The lifetime of a processing key (the record that stops a consumer doing the work twice) is at least the
+      longest time a message can return: dead-letter retention, a redrive, a replay from an archive.
+    detail: >-
+      The key lifetime is a named constant and a test asserts it is at least the longest configured redelivery
+      path. The key table is the consumer processing-key table. Where the store expires keys, expiry must not
+      be the authority on whether a key still counts, because the store deletes an item only some time after
+      its stamp (the book says up to about two days; verify against current documentation).
+    level: deploy
+    why: >-
+      If the key expires first, the second delivery is a first delivery again. Perfect deduplication needs an
+      unbounded lookup, so in practice it is a bounded window kept with expiry, sized to the application
+      sensitivity to duplicates.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: bellemare-bedm
+        where: ch. 7 (guarding against duplicates)
+        backs: rule
+      - ref: debrie-dynamodb-book
+        where: advanced concepts (TTL)
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          a test that reads the key lifetime constant and the dead-letter retention and redrive window in the
+          same infrastructure and fails when the lifetime is shorter. Plant: a key lifetime shorter than the
+          dead-letter retention fails. Control: a lifetime at least as long passes
+    review_question: How long can this message come back, and how long is its key kept?
+    open:
+      - The expiry delay of the store is quoted from a book and not verified.
+      - "With agents: they pick a lifetime that looks tidy (inference)."
+  - id: service.consumers.3
+    slug: subscription-has-dead-letter-redrive
+    since: 0.1.0
+    rule: Every subscription has a dead-letter path with redrive.
+    detail: In Go, queues are bounded, but there is no park-and-redrive of failed work yet.
+    level: deploy
+    why: >-
+      A message that fails for good with nowhere to go either blocks the queue or is lost.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          an infrastructure scan failing a subscription or queue consumer with no dead-letter queue and
+          redrive policy. Plant: a subscription with no dead-letter target fails. Control: one with a queue
+          and a redrive policy passes
+    open:
+      - In a daemon the park-and-redrive of failed work is a gap with no row yet.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.consumers.4
+    slug: park-with-reason-redrive-filtered
+    since: 0.1.0
+    rule: >-
+      Work that fails for good goes to a dead-letter queue with a reason, and a redrive filters by what can
+      still resolve (the target still exists, the state has not moved on) and does not blindly replay.
+    level: process
+    why: >-
+      A dead-letter queue is a snapshot with no expiry: a message that failed for good days ago acts on state
+      that has since changed, and a blind redrive replays that stale intent. Silent retry forever is the
+      default an agent writes.
+    kind: rule
+    strength: Review
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 7 (dead-letter channel
+        backs: rule
+    review_question: >-
+      Where does this work go when it fails for good, and what stops a redrive acting on a stale state?
+    open:
+      - >-
+        No plant: a seeded redrive tool that replays a message for a deleted resource must be flagged.
+    note: >-
+      Extends subscription-has-dead-letter-redrive and the permanent-versus-transient rule, which say nothing
+      about a stale message at redrive.
+  - id: service.consumers.5
+    slug: release-resources-in-finally
+    since: 0.1.0
+    rule: >-
+      Non-request entry points release their resources (connection pools, handles) in finally.
+    detail: >-
+      In Go, every goroutine has an owner that stops it and signals stop cleanly, and typed errors exist only
+      where a caller branches.
+    level: function
+    why: >-
+      An entry that leaks a pool on the failure path exhausts connections when the runtime reuses the process.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule requiring the non-request wrapper to call closePools() in a finally block. Plant: a
+          wrapper that closes pools only on the success path fails. Control: a close inside finally passes
+      - binding: go
+        class: preset-rule
+        tier: "2"
+        note: >-
+          goleak in tests and a rule that each goroutine started has a stop owner. Plant: a goroutine without
+          a stop path fails. Control: an owned goroutine passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.consumers.6
+    slug: permanent-ack-transient-throw
+    since: 0.1.0
+    rule: >-
+      A non-request entry point acknowledges a permanent refusal and throws a transient failure to the
+      dead-letter path.
+    level: function
+    why: >-
+      Retrying a message that can never succeed wastes the queue; acknowledging one that would have succeeded
+      loses it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          a wrapper test that a validation refusal returns without throwing and a downstream timeout throws.
+          Plant: a wrapper that throws on a permanent refusal fails. Control: a wrapper that acknowledges it
+          passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      In Go, a failed read names its cause through a code table and a transient one is retried with back-off.
+  - id: service.consumers.7
+    slug: batch-fails-by-item
+    since: 0.1.0
+    rule: >-
+      A queue-triggered consumer reports failure per item, so one bad message does not return the whole batch,
+      and its batch size times its worst item time stays inside the function timeout.
+    detail: >-
+      The worst-case item time is a stated figure and a guess until measured. Where the platform offers to
+      halve the batch on failure, that does not replace the per-item report.
+    level: function
+    why: >-
+      A throw from a handler holding a batch can fail every item, and the others are redelivered: harmless
+      with deduplication but wasteful, and it hides which message is bad. A batch the function cannot finish
+      in time fails as a whole and will fail again unless the time or the batch size changes.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: bellemare-bedm
+        where: >-
+          ch. 9 (batch event-processing parameters; commit offsets only after processing has completed)
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: G
+        note: >-
+          wrapper test: a batch with one poison message returns only that item as failed; a test asserting
+          batch size times a stated worst-case item time is under the function timeout. Plant: a wrapper that
+          throws on the first bad item fails. Control: a wrapper reporting the one failed item passes
+    open:
+      - >-
+        Per-item failure reporting for queue-triggered functions is a platform feature known and not verified
+        here.
+      - "With agents: holds (inference)."
+    note: >-
+      Extends permanent-ack-transient-throw. Related to the function timeout rules in the Lambda part.
+  - id: service.consumers.8
+    slug: tolerant-reader
+    since: 0.1.0
+    rule: >-
+      A consumer parses an event with a reader that ignores unknown fields; a file written by a person (a
+      config, a catalogue) refuses unknown keys.
+    detail: >-
+      The test is who wrote it: a typo at a keyboard must be seen, and a newer peer must not break an older
+      one. A strict object type in a schema library rejects an extra field, which is a quiet way for an
+      additive producer change to break an old consumer.
+    level: function
+    why: >-
+      Strictness at a person keyboard catches typos; strictness at a peer breaks independent release.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: bellemare-bedm
+        where: ch. 3 (schema evolution)
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          a consumer test feeding each registered schema plus one extra field that must pass, and a config
+          test feeding an unknown key that must fail. Plant: a consumer whose parser is strict fails on the
+          extra field; a config that ignores an unknown key fails its test. Control: a tolerant event reader
+          and a strict config reader pass
+    open:
+      - >-
+        With agents: an agent may mark a peer message as config; the way round is visible in the choice of
+        parser (inference).
+    note: >-
+      Beside the rule that an unknown query key from a client is a 400, which is correct for a client request.
+  - id: service.consumers.9
+    slug: late-and-replayed-events
+    since: 0.1.0
+    rule: >-
+      The catalogue entry of each event family states a policy for late and out-of-order events as a business
+      decision, and each consumer states what a replay does to its side effects (an email resent, a
+      marketplace call repeated).
+    level: release
+    why: >-
+      A strategy for late events is a business choice (drop, wait, or accept for a grace period): some events
+      must be handled wherever they land and others may be discarded. A replay is something every consumer
+      must expect, because events can be reread from a past point.
+    kind: rule
+    strength: Review
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: bellemare-bedm
+        where: ch. 6 (out-of-order and late-arriving events; handling late events)
+        backs: rule
+      - ref: bellemare-bedm
+        where: ch. 7
+        backs: rule
+      - ref: bellemare-bedm
+        where: ch. 16 (reprocessing)
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          catalogue schema test requiring a lateness policy field and a replay note per family. Plant: a
+          catalogue entry with no policy field fails the catalogue test. Control: an entry with both passes
+    review_question: What happens to an event that arrives a week late? What does a replay resend?
+    open:
+      - The archive and replay behaviour of the bus was not verified.
+      - >-
+        An agent cannot infer a business policy, so the question goes to a person (inference).
+    note: >-
+      Extends consumers-deduplicate-atomically, which says nothing about an event that arrives a week late or
+      after its successor.

@@ -1,0 +1,24 @@
+$ gragas term new --slug header --term-definition The name a request carries. --literal X-Request-Id
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+What changes
+  new term header: The name a request
+  carries.
+  header stands for X-Request-Id, which
+  the names check lets a statement use
+  through {header}
+
+What is written where
+  terms.yaml: adds term header
+  history.jsonl: appends one entry (new)
+This was a dry run and nothing was
+changed. Add --apply to make these
+changes.
+
+  declined   nothing was changed
+    gragas term new --literal
+X-Request-Id --slug header
+--term-definition 'The name a request
+carries.' --apply
+--- stderr

@@ -1,0 +1,21 @@
+$ gragas rule retire go.errors.2 --decision-title It no longer holds --decision-text The rule says what the code stopped doing.
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+What changes
+  go.errors.2: proposed, then retired. The rule stays in its file
+  add decision decide-retire-go-errors-2
+
+Consumer actions
+  projects that bind go.errors.2 are told it is retired, with no rule to move to
+
+What is written where
+  language/go/rules/errors.yaml: sets status of go.errors.2
+  decisions.yaml: adds decision decide-retire-go-errors-2
+  history.jsonl: appends one entry (retire)
+This was a dry run and nothing was changed. Add --apply to make these changes.
+
+  declined   nothing was changed
+    gragas rule retire go.errors.2 --decision-text 'The rule says what the code
+stopped doing.' --decision-title 'It no longer holds' --apply
+--- stderr

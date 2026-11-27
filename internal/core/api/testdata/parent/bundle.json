@@ -1,0 +1,145 @@
+{
+  "bindings": [
+    {
+      "rule": "std.errors.1",
+      "tool": "golangci-lint",
+      "key": "wrapcheck",
+      "target_type": "source",
+      "value": true,
+      "severity": "warning",
+      "rung": 1,
+      "run_point": "commit"
+    },
+    {
+      "rule": "std.errors.4",
+      "tool": "golangci-lint",
+      "key": "errorlint",
+      "target_type": "source",
+      "value": true,
+      "severity": "error",
+      "rung": 1,
+      "run_point": "commit"
+    }
+  ],
+  "changelog": [],
+  "contract": "1.3",
+  "decisions": [],
+  "health": {
+    "numbers": [
+      {
+        "name": "a",
+        "value": 0
+      },
+      {
+        "name": "a",
+        "value": 0
+      },
+      {
+        "name": "a",
+        "value": 0
+      },
+      {
+        "name": "a",
+        "value": 0
+      },
+      {
+        "name": "a",
+        "value": 0
+      },
+      {
+        "name": "a",
+        "value": 0
+      },
+      {
+        "name": "a",
+        "value": 0
+      }
+    ]
+  },
+  "history": [],
+  "identity": {
+    "format": 1,
+    "governance": {
+      "contribution": "open",
+      "decision_required": false,
+      "review_days": 1,
+      "trial_releases": 0
+    },
+    "kind": "base",
+    "language": "en",
+    "licences": {
+      "rules": "CC-BY-4.0"
+    },
+    "name": "fixture-parent",
+    "owners": [
+      "alex"
+    ],
+    "version": "0.9.0"
+  },
+  "release": {
+    "bump": "minor",
+    "contract": "1.3",
+    "date": "2026-08-20",
+    "format": 1,
+    "version": "0.9.0"
+  },
+  "released": true,
+  "rules": [
+    {
+      "id": "std.errors.1",
+      "statement": "Return an error; do not stop the program.",
+      "strength": "must",
+      "status": "active",
+      "standing": "planned",
+      "origin": "authored"
+    },
+    {
+      "id": "std.errors.2",
+      "statement": "Name the operation that failed in the message.",
+      "strength": "should",
+      "status": "active",
+      "standing": "planned",
+      "origin": "authored"
+    },
+    {
+      "id": "std.errors.3",
+      "statement": "Wrap an error with the call that failed.",
+      "strength": "should",
+      "status": "active",
+      "standing": "planned",
+      "origin": "authored"
+    },
+    {
+      "id": "std.errors.4",
+      "statement": "Check every error a call returns.",
+      "strength": "must",
+      "status": "active",
+      "standing": "planned",
+      "origin": "authored"
+    },
+    {
+      "id": "std.errors.5",
+      "statement": "Log an error where it is handled, once.",
+      "strength": "should",
+      "status": "retired",
+      "standing": "retired",
+      "origin": "authored"
+    }
+  ],
+  "sources": [],
+  "structure": {
+    "kinds": [],
+    "layers": [],
+    "parts": []
+  },
+  "terms": [],
+  "tested_set": {
+    "minimum_engine": "0.0.0",
+    "tools": []
+  },
+  "versions": {
+    "contract": "1.3",
+    "engine": "0.9.0",
+    "format": 1
+  }
+}

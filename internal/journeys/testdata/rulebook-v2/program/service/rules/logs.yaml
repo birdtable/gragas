@@ -1,0 +1,173 @@
+part: service
+concern: logs
+order: 10
+title: Structured logs
+summary: >-
+  Logs are structured JSON from one logger owner, carry a correlation id, never hold secrets or bodies, and
+  are the source of metric filters that match real lines.
+rules:
+  - id: service.logs.1
+    slug: structured-logs-with-correlation
+    since: 0.1.0
+    rule: >-
+      There is no raw console output; logs are structured JSON, bare (no extra wrapper), and carry a
+      correlation id and an event number on every line; and the set of top-level log field names is a
+      committed contract compared with a real emitted line in the gate.
+    detail: >-
+      The field-name contract is a committed list of the top-level keys a line may carry. The gate runs the
+      program, captures a real line and fails when a key is added, removed or renamed without the list
+      changing in the same change. In Go, a daemon logs with slog, every line carries a version and run id,
+      level and time, and there is no log.Fatal outside main.
+    level: function
+    why: >-
+      Unstructured lines cannot be searched or joined across services, and a line without a correlation id
+      cannot be placed in a request. A log field renamed by accident breaks every dashboard and metric filter
+      silently.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: decision-65-service
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint no-console and an ast-grep rule failing a log call outside the shared logger. Plant:
+          console.log in a service file fails. Control: a call through the shared logger passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          forbidigo on log.Print and fmt.Print and log.Fatal outside main, and a test that the slog handler
+          adds version and run id. Plant: a fmt.Println in a daemon fails. Control: a slog call passes
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a snapshot test that captures a real emitted line and compares its top-level keys with the committed
+          field list. Plant: a renamed top-level field with the list unchanged fails. Control: a line whose
+          keys equal the list passes
+  - id: service.logs.2
+    slug: secrets-redacted-no-body-logging
+    since: 0.1.0
+    rule: >-
+      The logger redacts secret keys and never logs request or response bodies, and redaction is proved by
+      planting a value in each redacted field and reading the real emitted line.
+    detail: >-
+      The redacted keys are one configured list (for example authorization, token, secret, key, password,
+      cookie). The proof drives the real logger and output, not a mock, with a canary value in every listed
+      key, and fails when the canary appears. A key added to the list is proved by the same test. In Go, a
+      secret is never printed and no secret reaches the log.
+    level: function
+    why: >-
+      Logs are copied to more places than the data they come from, and a secret or a body in them outlives
+      every other control.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: decision-65-service
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tool: ast-grep
+        tier: "2"
+        note: >-
+          a logger test that plants a canary in every redacted key, reads the real emitted line and asserts
+          redaction, and an ast-grep rule failing a log call that passes a body object. Plant: a log line
+          holding a token value fails. Control: a redacted key passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that no secret value is printed by the slog handler. Plant: a logged secret fails. Control: a
+          redacted value passes
+  - id: service.logs.3
+    slug: rejections-logged-at-warn
+    since: 0.1.0
+    rule: >-
+      A request the service rejects (validation failure, refused permission) is logged at warn, not error.
+    level: function
+    why: A client mistake logged at error floods the alarms meant for service faults.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          a bootstrap test rejecting a request and asserting the log level is warn. Plant: a rejection logged
+          at error fails. Control: a warn line passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.logs.4
+    slug: one-logger-owner
+    since: 0.1.0
+    rule: >-
+      No logger is constructed outside the runtime package; one owner creates the logger.
+    detail: In Go, one slog handler with version and run id, level and time.
+    level: package
+    why: A second logger gives a second format and misses the redaction.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule failing a pino( call or a new Logger construction outside the runtime package. Plant:
+          a pino or logger construction in a service fails. Control: the runtime package constructing the
+          logger passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          depguard rule allowing slog handler construction in the one logging package only. Plant: a second
+          handler construction fails. Control: the owner passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.logs.5
+    slug: metric-filter-matches-real-line
+    since: 0.1.0
+    rule: Each log metric filter matches a log line the code really emits.
+    detail: In Go, every claim in a rule resolves to a file or command that exists.
+    level: deploy
+    why: >-
+      A filter written against a line that is never emitted counts nothing, and the alarm on it never fires.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a test extracting each metric filter pattern from the infrastructure code and asserting a log call
+          in source emits a matching line. Plant: a filter whose pattern matches no emitted line fails.
+          Control: a filter matching an emitted line passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

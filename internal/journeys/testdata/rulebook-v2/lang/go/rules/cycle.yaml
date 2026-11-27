@@ -1,0 +1,172 @@
+part: go
+concern: cycle
+order: 6
+title: Go in the development cycle
+summary: >-
+  What a Go project adds to the moments of the development cycle: format and tidy as diffs at commit, the
+  parallel-test linters, the build settings in the stamp key, and the module graph fetched for every platform.
+  The core moments and their rules are the tests and gates parts; these lines add members and never a moment.
+rules:
+  - id: go.cycle.1
+    slug: format-and-tidy-as-diffs
+    since: 0.1.0
+    rule: >-
+      At commit, gofmt and go mod tidy run as diffs that list what differs and never rewrite the tree.
+    detail: >-
+      The format member runs gofmt with the list flag and fails on any file named; the tidy member runs go mod
+      tidy with the diff flag and fails on any output. Neither writes, so both run beside the other members
+      (gates.command.28) and inside the commit hook's seconds (gates.command.17). The fix is the same command
+      in write mode, run by the person, not by the hook.
+    level: program
+    why: >-
+      A commit hook that rewrites files and restages them is the opposite of a check, and two hooks of one fleet
+      did exactly that; a tidy that writes in the hook races the members beside it.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: go-cmd-gofmt
+        where: the -l flag
+        says: >-
+          If a file's formatting is different from gofmt's, print its name to standard output.
+        backs: check
+      - ref: go-modules-reference
+        where: go mod tidy
+        says: >-
+          The -diff flag causes go mod tidy not to modify go.mod or go.sum but instead print the necessary changes
+          as a unified diff.
+        backs: check
+    review_question: >-
+      Do the format and tidy members of this commit tier list differences and exit non-zero, or do they write?
+    relates:
+      - id: gates.command.28
+        how: see
+      - id: gates.hooks.3
+        how: see
+      - id: supply.install.11
+        how: see
+    open:
+      - >-
+        The tidy member runs (make tidy, tests in cmd/gragas-dev/tidy_test.go), but no check row names it: a
+        check that binds no preset tool key counts in checks-unresolved, checks-without-fix and, on this
+        instruction, advisory-with-checks, and each baseline may only fall. tools/ is held to go.mod and go.sum in
+        full, because the installer puts tools/go.sum back as committed after it primes the module cache (gragas#767). The format half
+        has no check either.
+  - id: go.cycle.2
+    slug: parallel-test-linters-with-a-stated-reason
+    since: 0.1.0
+    rule: >-
+      The push lint runs vet and the shared lint preset with the parallel-test linters on, and a test that runs
+      alone carries a serial comment that names the process state it needs.
+    detail: >-
+      tests.runners.4 holds that a test is parallel by default and a serial one says why. This line names the
+      tools that hold it in Go: the linter that reports a test without a parallel call, and the one that
+      reports a parallel call in the wrong place. The stated reason is a comment of the form `// serial:` with
+      the state the test needs, and the linter's own disable comment is not the reason. A test that only needs
+      a variable for a child process sets it on the child's environment and stays parallel.
+    level: package
+    why: >-
+      Four of five projects in one fleet had zero parallel tests, and one project's 152 serial tests took 136
+      seconds on about one CPU; the linter finds the missing call before the tier report does.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: golangci-lint-linters
+        where: paralleltest; tparallel
+        says: >-
+          Detects missing usage of t.Parallel() method in your Go test. ... Tparallel detects inappropriate usage of
+          t.Parallel() method in your Go test codes.
+        backs: check
+    review_question: >-
+      Are the two parallel-test linters on in this project's lint preset, and does each serial test carry a
+      serial comment naming its state?
+    relates:
+      - id: tests.runners.4
+        how: see
+      - id: gates.command.22
+        how: see
+    open:
+      - >-
+        Planned check: the shared lint preset enables both linters; the preset does not yet, and the binding
+        waits for it. Plant: a test file with no parallel call and no serial comment fails. Control: the same
+        file with the comment passes.
+  - id: go.cycle.3
+    slug: build-settings-in-the-stamp-key
+    since: 0.1.0
+    rule: >-
+      The stamp key holds the Go build settings that change a verdict, the flags variable, the cgo switch, the
+      experiment variable and the toolchain, and a run inside a workspace file gets no key.
+    detail: >-
+      gates.land.15 holds that a stamp is keyed to the exact tree, its settings and its tools. For Go the
+      settings are GOFLAGS, CGO_ENABLED, GOEXPERIMENT and the toolchain version, read from the go tool, not
+      from the shell. A workspace file changes which module code a build sees without changing the tree, so a
+      run under one is not keyed: it runs, and nothing is stamped or served.
+    level: program
+    why: >-
+      A stamp that ignores a build setting serves a green for a build nobody ran; a workspace can point a build
+      at a sibling checkout the tree does not hold.
+    kind: instruction
+    strength: Lens
+    status: retired
+    note: >-
+      Retired with gragas#907. There is no stamp and no key for it to hold the Go build settings: the tiers
+      run every time, so the settings are read from the environment of the run itself.
+    sources:
+      - ref: go-cmd-go
+        where: Environment variables, GOFLAGS
+        says: >-
+          A space-separated list of -flag=value settings to apply to go commands by default
+        backs: rule
+      - ref: go-modules-reference
+        where: Workspaces
+        says: >-
+          If GOWORK is set to off, the command will be in a single-module context.
+        backs: rule
+    review_question: >-
+      Which build settings are in this stamp's key, are they read from the go tool, and what does the runner do
+      under a workspace file?
+    relates:
+      - id: gates.land.15
+        how: see
+      - id: gates.land.11
+        how: see
+    open:
+      - >-
+        Planned check: the runner's report lists the key's fields and a test changes each setting and sees a
+        new key. No tool key is bound yet; the shared runner is the work of gragas#642.
+  - id: go.cycle.4
+    slug: module-graph-for-every-platform
+    since: 0.1.0
+    rule: >-
+      The tools step fetches the whole module graph, so a fresh clone builds, and cross-compiles once for one
+      other system as a smoke, with the network blocked.
+    detail: >-
+      gates.command.21 holds that a fresh clone passes after the documented setup, and supply.install.2 that
+      the build runs with the network blocked after the install. A cross-compile for another system pulls
+      modules the first never needed; the tools step downloads them once and the one cross-compile smoke runs
+      offline. It is a smoke that no code of one system crept into the product, not a build per shipped
+      system. One run that primed the cache is not setup.
+    level: program
+    why: >-
+      A second machine's first push was red on a module graph that only an earlier run had fetched.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+    review_question: >-
+      Does the tools step download the whole module graph, and does the one cross-compile smoke run with the
+      network blocked?
+    relates:
+      - id: gates.command.21
+        how: see
+      - id: supply.install.2
+        how: see
+      - id: supply.release.7
+        how: see
+    open:
+      - >-
+        Planned check: the cross-compile member runs under the network block on a fresh clone in the tier's
+        own test. No tool key is bound yet.

@@ -1,0 +1,13 @@
+$ gragas version --json
+--- stdout
+{
+  "contract": "1.3",
+  "version": "v1.2.3",
+  "tag": "v1.2.3",
+  "commit": "abc1234",
+  "go": "go<version>",
+  "target": "<target>",
+  "format": 3
+}
+--- stderr
+--- exit 0

@@ -1,0 +1,6 @@
+[
+  {"name":"both ok and error","patch":[{"op":"add","path":"/0/error","value":{"code":"bug","message":"x"}}],"problem":"oneOf"},
+  {"name":"neither","patch":[{"op":"replace","path":"/0","value":{}}],"problem":"'ok' is a required property"},
+  {"name":"an unknown field","patch":[{"op":"add","path":"/1/later","value":1}],"problem":"Additional properties are not allowed ('later' was unexpected)"},
+  {"name":"an ok that is not an object","patch":[{"op":"replace","path":"/0/ok","value":[]}],"problem":"is not of type 'object'"}
+]

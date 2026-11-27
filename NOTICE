@@ -1,0 +1,9 @@
+gragas
+Copyright 2026 The gragas Authors
+
+gragas is licensed under the Apache License, Version 2.0; the text is in LICENSE.
+
+Each binary that ships bundles third-party code. Its libraries, each with its
+licence text and any NOTICE it ships, are listed in notices/, one file per
+binary, compared by the licences member of the full tier
+(`task full`).

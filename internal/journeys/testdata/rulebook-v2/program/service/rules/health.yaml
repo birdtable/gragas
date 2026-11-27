@@ -1,0 +1,86 @@
+part: service
+concern: health
+order: 12
+title: Health and alarms
+summary: >-
+  A service says whether it is alive and whether it is ready, and every service has the same alarms from day
+  one.
+rules:
+  - id: service.health.1
+    slug: liveness-shallow-readiness-deep
+    since: 0.1.0
+    rule: >-
+      A liveness check does not call a dependency and a readiness check does; a start test breaks a dependency
+      and asserts liveness stays green while readiness changes.
+    detail: >-
+      The test is two-sided: it fails a liveness that checks the dependency and a readiness that does not. It
+      applies only where a health or readiness route exists (a gateway check, a deploy check, a journey
+      pre-check), because a function runtime has no liveness probe of its own. Whether the reference services
+      expose such a route, and whether a load balancer reads it, was not checked.
+    level: program
+    why: >-
+      A readiness probe that checks a shared dependency can fail on every instance at once, so a small
+      slowdown removes the whole service. The tension is a thorough check against the harm of a false positive
+      across a fleet. The known way round is a shallow readiness that checks nothing, which the second plant
+      catches.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: builders-library-health-checks
+        where: implementing health checks
+        backs: rule
+      - ref: breck-k8s-probes
+        where: readiness probe case
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 17 and section 23 item 5
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a start test with a broken dependency: liveness stays green, readiness turns. Plant: a liveness
+          handler that checks the dependency fails the test; a readiness handler that ignores it fails too.
+          Control: a liveness that ignores the dependency and a readiness that reports it passes
+    open:
+      - >-
+        Whether the services expose a health route at all was not checked; this is inference.
+    note: >-
+      Beyond born-with-same-alarms, which says what alarms each service has and not what a health route may
+      check.
+  - id: service.health.2
+    slug: born-with-same-alarms
+    since: 0.1.0
+    rule: >-
+      Every service is born with the same alarms on errors, throttles and latency, from one shared component.
+    detail: >-
+      The shared alarm component is held by the infrastructure part. In Go, a daemon serves one health
+      document, signals readiness and logs with version and run id, and its work is bounded and supervised.
+      There is no alerting on a failing health document for a deployed program yet.
+    level: deploy
+    why: Alarms added by hand per service are missing in the service that fails.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          an infrastructure scan failing a service stack that does not use the shared alarm component. Plant:
+          a service stack without the shared alarms fails. Control: a stack using the component passes
+    open:
+      - >-
+        In Go, alerting on failing health for a deployed program is a gap with no row yet.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      The component itself is the rule of the SST part (alarms); this rule is the service obligation to use
+      it. They would be held by one check.

@@ -1,0 +1,15 @@
+$ gragas term edit gate --literal gate run
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+What changes
+  gate: the literal goes from make check to gate run
+
+What is written where
+  terms.yaml: sets literal of gate
+  history.jsonl: appends one entry (edit)
+This was a dry run and nothing was changed. Add --apply to make these changes.
+
+  declined   nothing was changed
+    gragas term edit gate --literal 'gate run' --apply
+--- stderr

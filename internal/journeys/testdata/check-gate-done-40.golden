@@ -1,0 +1,32 @@
+$ gragas check
+--- exit 0
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+Notices
+  names check: the names check did not
+  run: no names list was given; set the
+  names-file key or GRAGAS_NAMES_FILE
+
+Not available yet
+  link findings: entry conflicts,
+  coverage and the zero-by budgets:
+  check does not take them yet
+  proof marks: check does not take them
+  yet
+  the version bump's size: check does
+  not take it yet
+  checker code without tests: check does
+  not take it yet
+  a pin behind its parent's or import's
+  release: it needs the fetched release
+  review-by overdue: it comes with
+  attention's kinds
+  trial findings against a release: no
+  release tag was read, so no trial is
+  judged: fetch the tags with git fetch
+  --tags, then run check again
+
+  done       0 findings, 0 gate findings
+  against base, 1 commit, 0 release tags
+--- stderr

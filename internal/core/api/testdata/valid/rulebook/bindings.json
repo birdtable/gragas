@@ -1,0 +1,25 @@
+{
+ "generated_by": "gragas gen",
+ "bindings": {
+  "arch.layers.1": [
+   {
+    "binding": "go",
+    "class": "preset-rule",
+    "tool": "layer-test",
+    "key": "layercheck",
+    "tier": "1",
+    "fix": "never"
+   }
+  ],
+  "go.errors.1": [
+   {
+    "binding": "go",
+    "class": "preset-rule",
+    "tool": "layer-test",
+    "key": "settings.wrapcheck",
+    "tier": "2",
+    "fix": "auto"
+   }
+  ]
+ }
+}

@@ -1,0 +1,31 @@
+[data-part="list-table"] table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+[data-part="list-table"] caption {
+  padding-bottom: var(--gr-space-2);
+  text-align: left;
+  color: var(--gr-text-muted);
+}
+
+[data-part="list-table"] :is(th, td) {
+  padding: var(--gr-space-2) var(--gr-space-3);
+  text-align: left;
+  border-bottom: 1px solid var(--gr-control-border);
+}
+
+[data-part="list-table"] th {
+  color: var(--gr-text-ink);
+  font-weight: 600;
+}
+
+[data-part="list-table"] td {
+  color: var(--gr-text-prose);
+}
+
+[data-part="list-table"] :is(th, td)[data-numeric] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

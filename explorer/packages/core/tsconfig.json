@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.bundler.json",
+  "compilerOptions": {
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": ["trusted-types", "node"],
+    "jsx": "react-jsx"
+  },
+  "include": [
+    "index.ts",
+    "data",
+    "selectors",
+    "messages",
+    "formatter",
+    "markup",
+    "parts",
+    ".storybook/*.ts",
+    "views",
+    "test"
+  ]
+}

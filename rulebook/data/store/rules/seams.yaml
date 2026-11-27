@@ -1,0 +1,108 @@
+format: 3
+part: store
+concern: seams
+rules:
+  - id: store.seams.1
+    statement: "The entry layer (command, handler, daemon route) never opens, reads or writes a store directly and never imports a storage client; it calls a typed function of the store's one package."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A repository test lists packages that import the database package, the driver or a storage client, or write to state paths, against an allow list that only shrinks. Engine parts bind this rule for their client: the DynamoDB part forbids the SDK outside the store layer, the Postgres part the database client."
+      pros:
+        - "When entry code reaches the store directly, key building, conditions, retries and error mapping are re-implemented in each entry. One Go repository already held that only its index package imports the database package."
+    relations:
+      relates:
+        - dynamodb.writes.1
+    sources:
+      - ref: ford-sathp
+        backs: rule
+      - ref: p-03-data
+        backs: rule
+  - id: store.seams.2
+    statement: "A store port is agnostic at the level of intent, not of engine: the consumer declares it, narrow, with domain verbs, domain values and typed failures, and states its guarantee; an atomic act is one named method."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The adapter uses every strength of the engine inside the method. Rule data names the store ports, and on those a type check bans the generic verbs Get, Put, Exec, Query and Do, SQL string parameters, untyped maps and the database package's types, and finds Begin, Tx, Commit and Rollback in method names. Off a store port those verbs mean nothing (6 of 8 hits in a trial were process or guest verbs). A type-based scan of core exported signatures resolves the underlying type, and a type parameter is not an untyped value. A report lists core functions that take a port and also branch. Error-text matching is a report only: it had no true hit in 10 and is beaten for free by copying the text into a variable. The review asks: name one capability of this engine the port forbids the core to use; name the second engine and where it is written down; are these domain verbs or storage verbs; what does the port say about failure. Example of a banned port method: Exec(sql: string, ...args). Typed failures are named values such as not-found and version-mismatch."
+      pros:
+        - "A generic query method keeps the driver out of the core but carries the engine's shape. The evidence strains the ruling: seams earn their keep through testability far more than through swapping engines. SQL detection is weak because a struct field holding SQL passes."
+    sources:
+      - ref: p-03-data
+        where: section 24
+        backs: rule
+      - ref: p-01-core-programming
+        where: section 18
+        backs: rule
+  - id: store.seams.3
+    statement: "A store is opened in one place that sets its modes and error mapping, and a test reads them back."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - library
+          - no-embedded-store
+        reason: It opens no store.
+    reasoning:
+      definition: "For an embedded file store the modes are write-ahead log, a bounded busy timeout, foreign keys on as the connection default, immediate write transactions and one writer connection. Turning foreign keys off is banned outside the one rebuild runner, DSN strings included. A busy failure is typed (store.seams.2) and a store with a manual checkpoint says why. A store that cannot be rebuilt sets the full-sync pragmas unconditionally and the read-back asserts them. What a caller does on busy is a review question. Opening a store outside the store package is counted and is zero. The pragmas for full sync are fullfsync and checkpoint_fullfsync. The literal scan matches foreign_keys=OFF and the DSN forms foreign_keys(OFF) and foreign_keys(ON), by regex foreign_keys\\s*(=|\\()\\s*(0|off), firing on OFF and silent on ON."
+      pros:
+        - "One Go program lacked the immediate transaction mode and error classification. Through the pure-Go driver both full-sync pragmas read 0, unlike the command-line client, and no repository set them; the clause binds no store yet because an unrebuildable store is a plain file (store.seams.6)."
+    relations:
+      relates:
+        - store.seams.2
+        - store.seams.6
+    sources:
+      - ref: p-03-data
+        where: "sections 2, 3, 4 and 6"
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 1
+        backs: rule
+  - id: store.seams.4
+    statement: "Who writes each persisted store, and which programs a flow includes, are recorded as data and a tool walks the list."
+    strength: should
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - library
+          - no-store
+        reason: Nothing is persisted.
+    reasoning:
+      definition: "A list file per program is compared with writers found by a scan. It is a measure until the list exists, then a gate: an unlisted store opening fails."
+      pros:
+        - "Without a list, a store has writers nobody knows about. No list exists today."
+    sources:
+      - ref: ford-sathp
+        where: ch. 9 assigning data ownership and ch. 11
+        backs: rule
+  - id: store.seams.5
+    statement: "A schema number lives once per program; a program that reads another's schema pins the number it understands in its adapter and refuses a higher one with a typed error, never by probing help text or guessing from a field."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The scan greps a struct field matching Schema\\s+int\\s+ with a json:\"schema\" tag (regex Schema\\s+int\\s+`[^`]*json:\"schema), silent on a field such as Name string with json:\"name\". The help probe is a call of the other program with --help in non-test code. The silent control is the field Name string json:\"name\"."
+      pros:
+        - "Eight to 19 files per program held a schema number. One program probed another's help text to learn its schema, which is the known positive for the probe scan."
+  - id: store.seams.6
+    statement: "A store says in its package comment whether it can be rebuilt, its durability setting and who runs a checkpoint; a store that cannot be rebuilt is a plain, versioned, append-only file."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - "The choice of how to hold data depends on whether it can be re-derived, and without a stated answer backups and durability are guesses."
+    relations:
+      relates:
+        - store.recovery.1
+    sources:
+      - ref: p-03-data
+        where: section 4
+        backs: rule

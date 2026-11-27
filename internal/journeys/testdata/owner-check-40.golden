@@ -1,0 +1,37 @@
+$ gragas check
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+reading rulebook/ in .
+
+part
+Architecture and boundaries
+Code health
+Tests
+Gates and enforcement
+Supply chain and release
+Docs and vocabulary
+Agents and review
+Go
+TypeScript
+Python
+CLI
+Daemon
+Backend service
+Web front end
+Static pages and docs-only repositories
+React
+Astro
+Liquid themes
+Data, any store
+Postgres
+DynamoDB
+AWS
+AWS Lambda
+SST
+3 columns not shown: entries, enforced, tools
+
+  done       1,132 entries in 165 files,
+  and no problem
+--- stderr
+warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
+--- exit 0

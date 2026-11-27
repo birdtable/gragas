@@ -1,0 +1,20 @@
+package term
+
+import (
+	"github.com/spf13/cobra"
+
+	"github.com/birdtable/gragas/internal/cli/kit"
+	"github.com/birdtable/gragas/internal/model"
+)
+
+// restoreCmd is gragas term restore. It is a stub that refuses until it is built.
+func restoreCmd(s kit.Session) *cobra.Command {
+	return &cobra.Command{
+		Use:   "restore",
+		Short: "Fill in: what term restore does",
+		Args:  cobra.NoArgs,
+		RunE: func(*cobra.Command, []string) error {
+			return s.Exit(s.End(kit.Ending{Word: model.Refused, What: "term restore is not built yet and it changed nothing", Next: "gragas help"}))
+		},
+	}
+}

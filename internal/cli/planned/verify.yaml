@@ -1,0 +1,10 @@
+name: verify
+order: 240
+context: P
+ends: report
+summary: "Prove that the tools hold the rules this project took"
+examples:
+  - {line: "gragas verify", does: "run the pairs and report"}
+  - {line: "gragas verify --json", does: "as one JSON document"}
+exits: ["done", "findings", "not ready"]
+json: report

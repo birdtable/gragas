@@ -1,0 +1,11 @@
+name: report
+order: 460
+context: P
+ends: report
+summary: "Write the report of the last check"
+examples:
+  - {line: "gragas report", does: "show it"}
+  - {line: "gragas report --apply", does: "write it"}
+writes: [".gragas/report.json"]
+exits: ["done", "not ready"]
+json: report

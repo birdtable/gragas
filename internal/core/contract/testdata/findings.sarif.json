@@ -1,0 +1,92 @@
+{
+  "contract": "1.3",
+  "runs": [
+    {
+      "results": [
+        {
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rulebook/parts.yaml"
+                },
+                "region": {
+                  "startLine": 12
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "the part has no layer"
+          },
+          "properties": {
+            "gragas": {
+              "fix": "give it a layer"
+            }
+          },
+          "ruleId": "gragas.validate.1"
+        },
+        {
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rulebook/rules.yaml"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "the file is empty"
+          },
+          "ruleId": "gragas.validate.1"
+        },
+        {
+          "message": {
+            "text": "the rulebook has no rules"
+          },
+          "ruleId": "gragas.validate.1"
+        },
+        {
+          "level": "note",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "rulebook/rules.yaml"
+                },
+                "region": {
+                  "startLine": 3
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "the rule is deprecated"
+          },
+          "properties": {
+            "gragas": {
+              "notice": true
+            }
+          },
+          "ruleId": "gragas.validate.1"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "gragas",
+          "rules": [
+            {
+              "id": "gragas.validate.1",
+              "shortDescription": {
+                "text": "the rulebook validates"
+              }
+            }
+          ],
+          "version": "1.2.3"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

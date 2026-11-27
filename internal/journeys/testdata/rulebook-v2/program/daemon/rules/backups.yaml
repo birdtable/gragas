@@ -1,0 +1,59 @@
+part: daemon
+concern: backups
+order: 10
+title: Backups of managed data
+summary: >-
+  Data a program manages that cannot be fetched again is backed up on a schedule through a tool behind an
+  interface, with a record of the last good copy and a check that restores a sample and compares it.
+rules:
+  - id: daemon.backups.1
+    slug: scheduled-backup-behind-interface
+    since: 0.1.0
+    rule: >-
+      Data a program manages that cannot be fetched again has a scheduled backup through a tool behind an
+      interface (copy, list, restore, check), a record of the last good copy, and a check that restores a
+      sample and compares it.
+    detail: >-
+      The program lists which of its data can be fetched again (an image, a package, a cache) and which
+      cannot; the second list is backed up. The interface has one adapter per backup tool, and a tool added
+      later is one adapter. The record names the copy, its time and its check result, and status reports its
+      age. The check restores a sample into a fresh folder (cli.commands.28) and compares it byte for byte; a
+      failed check is a bad event. The schedule rides a run the manager already makes where it can
+      (daemon.lifecycle.5).
+    level: program
+    why: >-
+      A backup nobody has restored is a hope, not a backup; the record of the last good copy is what tells a
+      person how much they would lose today.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+        - service
+    unless:
+      - facets:
+          - rebuildable-stores
+        reason: Data that can be fetched again needs no backup.
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test against a fake backup tool asserting the scheduled run copies each listed path, writes the
+          last-good record, and that the check restores a sample and fails on a planted difference. Plant: a
+          check that reports good without restoring fails, and a corrupted sample that passes the check fails.
+          Control: a check that restores and compares passes
+    relates:
+      - id: cli.commands.28
+        how: see
+      - id: daemon.lifecycle.5
+        how: see
+      - id: store.recovery.1
+        how: see
+    note: >-
+      store.recovery.1 holds the restore drill for every store; this rule adds the schedule, the interface and
+      the record.

@@ -1,0 +1,11 @@
+{"rules": {
+  "eqeqeq": [2, {"null": "ignore"}],
+  "no-console": [2],
+  "no-debugger": [1],
+  "no-alert": [0],
+  "no-restricted-globals": [2, {"names": ["event"]}],
+  "no-shadow": [2, {"allow": ["done", "cb"]}],
+  "no-new-func": [2],
+  "curly": [2],
+  "no-var": [2]
+}}

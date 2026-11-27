@@ -1,0 +1,96 @@
+format: 3
+part: web
+concern: forms
+rules:
+  - id: web.forms.1
+    statement: "Field markup is the design system's form field: every field has a visible label, the right input type and linked hints; an invalid field shows a linked message beside it and a summary, and what was typed stays."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Axe `label`, `aria-valid-attr-value` and `autocomplete-valid` run on every form page. The field part has a required label prop (omitting it is a type error) and linked hint and error ids; a form summary lists the errors. A journey submits invalid data and asserts each message is linked by `aria-describedby`, the summary lists them and the typed values remain. With no form the check prints \"not applicable: 0 inputs\" with the count. Record pages keep the record mode of the field. Counted element `<form>`; summary part `FormSummary`."
+      pros:
+        - "No form exists to measure in either site (evidence D); the two source rules differ on where focus goes after submit."
+  - id: web.forms.2
+    statement: "On submit, focus moves to the first invalid control or to the summary."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Which of the two is a project parameter; the source reports disagree and the choice is open. Assertion on `document.activeElement`."
+      pros:
+        - "v1 gave no reason beyond its evidence grade, Evidence B."
+  - id: web.forms.3
+    statement: There is one form pattern and one server-to-field error mapping per project.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Template stack: native `<form>` and `FormData`, with a manifest ban on every form library. Component stack: one form library, whose import ban and field-error setter ban are react.client-state.2. A server 400 problem response maps to form and field errors through one helper that maps each field code to a message key; the server's message is not rendered, and no field error is set outside the mapping module."
+      pros:
+        - With no form in either site the check is vacuous until the detector sees one.
+    relations:
+      relates:
+        - react.client-state.2
+  - id: web.forms.4
+    statement: "Forms validate with schema validators, and schema messages are message keys, never string literals."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The schema is the one validation source for a form; how a form library parses schema output in its submit handler is the React form, react.client-state.2."
+      pros:
+        - A validator that carries its own sentence escapes the message catalogue and the locale.
+    relations:
+      relates:
+        - react.client-state.2
+  - id: web.forms.5
+    statement: "Unsaved changes are not lost silently: leaving a dirty form or graph shows a confirm through the shared confirm part, and the confirm is safe to deep-link."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A journey per form types into a field and then follows a link or presses Back; it asserts a confirm (a before-unload dialog) or an in-app block. The number of forms with a journey equals the form count from the detector. Dialog event `page.on(\"dialog\")` for `beforeunload`; the in-app block on a router stack is the router's blocker (react.routing.8 for React)."
+      pros:
+        - One visual builder in the reference lacked a guard entirely.
+    relations:
+      relates:
+        - react.routing.8
+  - id: web.forms.6
+    statement: "A destructive action asks first, in words naming the outcome, with the safe choice focused; a reversible one offers undo."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The button part exposes no danger variant in its public props; only the confirm dialog may render one (the variant lives in an internal module), so a danger button elsewhere is a type error. A journey asserts the dialog opens with focus on the safe choice and its text contains the outcome noun from the action's data, and an undo control exists for reversible actions. The count of danger controls is printed; zero is \"not applicable: 0 inputs\". Plant: `<Button variant=\"danger\">`; the type-level restriction applies; asserted on `document.activeElement` in `ConfirmDialog`."
+      pros:
+        - One site has three confirm classes (evidence D).
+  - id: web.forms.7
+    statement: "A copy button says it copied and says when it could not; a link that opens elsewhere says so; a link label is a word, never \"here\"."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "`no-restricted-properties` on the clipboard API outside the copy part; an ambiguous-link-text rule bans \"here\" and \"click here\"; a no-target-blank rule plus a visually hidden \"opens in a new tab\" text check for links that open elsewhere. A clipboard journey allows and denies the permission and asserts \"Copied\" and \"Could not copy\" appear. The count of copy buttons and new-tab links is printed; zero is \"not applicable: 0 inputs\". Plant `<a href=\"/x\">here</a>`; permission via `context.grantPermissions`; part `CopyButton`; html-validate `no-target-blank` on the template stack (the component-stack lint names are in react.lint.3); hidden text is visually-hidden."
+      pros:
+        - "v1 gave no reason beyond its evidence grade, Evidence C."
+    relations:
+      relates:
+        - react.lint.3
+  - id: web.forms.8
+    statement: "The gate reports the count of form elements and form-library imports, and the first non-zero count turns the forms rules on: a repository with a form and no configured forms check fails."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "No separate detector is built: each form check computes its own input count (form elements found by the syntax tree, and form-library imports) and returns \"not applicable: 0 inputs\" with the count; the runner summary prints the counts; with a count above zero and a binding check not configured or with no plant, the gate fails. Counted `<form` elements found by the syntax tree in `.astro` and `.tsx`. The counted element is `<form>`."
+      pros:
+        - "The exemptions table says the forms rows bind on the first form, and nothing watched for it."
+  - id: web.forms.9
+    statement: "A record page is read-first with an edit toggle: editable cells use the record mode of the field, immutable cells are read cells, all inside section cards; the form field is for data-entry forms."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - A record changed only by an explicit step is safe to look at and hard to alter by accident.

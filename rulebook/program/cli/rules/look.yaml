@@ -1,0 +1,149 @@
+format: 3
+part: cli
+concern: look
+rules:
+  - id: cli.look.1
+    statement: "Every CLI that ships to users, in whatever language it is written, takes its look from one shared module by version; exactly one module of the program writes to the terminal or reads from it; and a program holds no copy of a module file."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "The rule binds the programs that ship to users: a program a user installs and runs. A tool that only the repo's own gate or build runs is not bound, and none is named here. The seam is the same in every language: one render module is the CLI's only writer to stdout and stderr and its only reader of the terminal (raw mode, size, stdin as a terminal). Go: a depguard rule allows only the shared terminal module (and a program's cli/ui package that wraps it) to import x/term, go-isatty, fatih/color and termenv; the Charm libraries are not banned: the shared module owns its prebuilt components, and a product may import Charm directly and build its own, so the rule asks for one look, not for one importer of Charm; a repo-check lists which packages hold which adapters; a repo-check test compares every program file with the module's file list at the version in go.mod and fails on the same name at 0.8 similarity or more. TypeScript: an import rule allows the terminal and process-stdout modules only in the render module."
+      pros:
+        - "Own measure; held in one repo with a plant, planned for the others. The rule describes a seam, not a library, so it holds the same in TypeScript. depguard is GPL-3.0 and runs inside golangci-lint as a tool, so there is no linking concern."
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: depguard
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: cli.look.2
+    statement: "One token file is the source of every terminal colour, and every text colour is contrast-tested."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "The contrast test is contrast_test.go, generated from the token list."
+      pros:
+        - "The contrast test is held in the module and all four copies but covers 4 of 9 colours, so a colour can be added with no contrast entry."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.look.3
+    statement: "Counts and sizes go through the shared module's helpers."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "The module helpers are Count and Bytes, replacing literals such as %d/%d, %d B, %.1f GB and %d%%."
+      pros:
+        - "Hand-typed count and size formats drift; planned scan."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.look.4
+    statement: "No colour literal or escape string outside the shared module, and no size or spacing literal in Go outside the generated file."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "An AST test over string literals fails on any ESC byte in the three spellings or a hex colour literal outside the module and the generated file; forbidigo bans the style-constructor calls that take a raw size or spacing (padding, margin, width) outside the module. Size and spacing literals are caught only through the banned constructors."
+      pros:
+        - "The AST test fired on both escape spellings and passed with the escape only in the module. gocritic's rule engine did not load rules in three attempts."
+  - id: cli.look.5
+    statement: "The closing words are a closed set of eight (done, findings, failed, usage, busy, not ready, refused, declined), built with their next line by constructors only."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - Constructors only make the closed set a compile fact.
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.look.6
+    statement: "A dry run ends with one footer naming the flag, then the ending."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "The AST helper flags the literal \"dry run.\" and the old footer forms outside the module (18 sites); one footer function writes the footer with the flag name and the ending. The function does not exist yet (fix A5)."
+      pros:
+        - "Hand-typed footers drift; related to the command rule that a dry run ends by naming the apply command (cli.commands.1)."
+    relations:
+      relates:
+        - cli.commands.1
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.look.7
+    statement: "Tables keep their columns, a long cell wraps, a dropped column is marked, and piped output has no rules."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - The current table drops and cuts a column at 40 columns (fix A6).
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.look.8
+    statement: "Each component has plain and role-tagged goldens at three widths, and goldens cannot be rewritten in the gate."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "The update flag refuses to run when the gate variable is set, and golden folders are on the protected-path list. A coverage assertion fails a component with only a plain golden."
+      pros:
+        - "Eleven plain goldens are held; the tagged ones are planned."
+    relations:
+      relates:
+        - tests.generated.5
+  - id: cli.look.9
+    statement: "Glyphs are typographic, no emoji."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: The allow-list of typographic runes inside the emoji ranges is short and kept beside the helper.
+      pros:
+        - "Planned range scan, not run."
+  - id: cli.look.10
+    statement: "Terminal use with a screen reader is held by a named person, recorded at release."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "No tool can do the use; only the record of it can be checked."

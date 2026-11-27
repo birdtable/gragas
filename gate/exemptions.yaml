@@ -1,0 +1,132 @@
+# One format for every exception: the rule, where it holds, why, the artifact
+# whose landing retires it, an owner and an expiry (gates.exemptions.2,
+# gates.exemptions.4; A45). The gate fails an expired row, and a row for a rule
+# that is not an active rule of the rulebook, since that exception is unused.
+# These are the recorded waivers of A42, each until its trigger lands.
+exemptions:
+  - id: cli-look-5
+    rule: cli.look.5
+    path: internal/host/term/
+    reason: "the kit's ending takes gragas's eight (ui.Endings, go-console v0.6.0), but Session.End prints every word but done on stderr where cli.output.7 puts it on stdout (the kit's ui.EndingsOnStdout, in v0.15.1 and so in the v0.17.0 pin, is the switch still to make), and gives a refusal or a failure with no line to type the command's help as its line, so host/term draws each of the eight from the kit's own helpers (A62)"
+    exit: rule-source/amendments#34
+    owner: engine-gate
+    expires: "2027-03-31"
+  - id: react-routing-7
+    rule: react.routing.7
+    path: explorer/
+    reason: "no sign-in exists, so a deep link has nothing to survive; the rule waits for the no-identity facet"
+    exit: birdtable/gragas#171
+    owner: engine-gate
+    expires: "2027-06-30"
+  - id: arch-ports-18
+    rule: arch.ports.18
+    path: .
+    reason: "there is no server to publish a capability list; the rule waits for the no-http facet"
+    exit: birdtable/gragas#171
+    owner: engine-gate
+    expires: "2027-06-30"
+  - id: web-delivery-11
+    rule: web.delivery.11
+    path: explorer/
+    reason: "the explorer has no address of its own, so no one listens for it; the rule waits for the static-data facet"
+    exit: birdtable/gragas#171
+    owner: engine-gate
+    expires: "2027-06-30"
+  - id: react-client-state-2
+    rule: react.client-state.2
+    path: explorer/
+    reason: "the explorer has filter controls bound to the URL and no form element; web.forms.8's count reopens it"
+    exit: birdtable/gragas#265
+    owner: engine-gate
+    expires: "2027-06-30"
+  - id: cli-environment-8-yes
+    rule: cli.environment.8
+    path: cmd/gragas
+    reason: "the one yes/no question gragas asks is apply, and off a terminal --apply is the answer; a --yes beside it would be a second name for one act"
+    exit: birdtable/gragas#252
+    owner: engine-gate
+    expires: "2027-06-30"
+  - id: arch-ports-2-legacy-rulebook
+    rule: arch.ports.2
+    path: internal/core/rulebook/
+    reason: "the legacy rulebook package names golangci-lint's standard linters in its code; the package goes whole, and the data moves to an adapter"
+    exit: birdtable/gragas#266
+    owner: engine-gate
+    expires: "2027-06-30"
+  - id: pages-cycle-3-boards
+    rule: pages.cycle.3
+    path: docs/explorer-boards/
+    reason: "the boards' shots are review aids and not baselines (web.testing.9), and no browser run holds a rendered golden, a narrow-width overflow property or the accessibility engine over the pages; the sweeps the exit names give each page its run"
+    exit: birdtable/gragas#313
+    owner: engine-gate
+    expires: "2027-06-30"
+  - id: self-gates-command-1-build-linux-amd64
+    rule: gates.command.1
+    path: Taskfile.yml
+    reason: "the push has no build member for linux/amd64; gragas check finds it in gragas (docs/self-check.md)"
+    exit: birdtable/gragas#1376
+    owner: gate
+    expires: "2027-06-30"
+  - id: self-gates-command-1-build-linux-arm64
+    rule: gates.command.1
+    path: Taskfile.yml
+    reason: "the push has no build member for linux/arm64; gragas check finds it in gragas (docs/self-check.md)"
+    exit: birdtable/gragas#1376
+    owner: gate
+    expires: "2027-06-30"
+  - id: self-gates-command-1-build-darwin-arm64
+    rule: gates.command.1
+    path: Taskfile.yml
+    reason: "the push has no build member for darwin/arm64; gragas check finds it in gragas (docs/self-check.md)"
+    exit: birdtable/gragas#1376
+    owner: gate
+    expires: "2027-06-30"
+  - id: self-gates-command-1-build-windows-amd64
+    rule: gates.command.1
+    path: Taskfile.yml
+    reason: "the push has no build member for windows/amd64; gragas check finds it in gragas (docs/self-check.md)"
+    exit: birdtable/gragas#1376
+    owner: gate
+    expires: "2027-06-30"
+  - id: self-gates-command-1-build-freebsd-amd64
+    rule: gates.command.1
+    path: Taskfile.yml
+    reason: "the push has no build member for freebsd/amd64; gragas check finds it in gragas (docs/self-check.md)"
+    exit: birdtable/gragas#1376
+    owner: gate
+    expires: "2027-06-30"
+  - id: self-go-cycle-2-lint-linux-amd64
+    rule: go.cycle.2
+    path: Taskfile.yml
+    reason: "the push has no lint member for linux/amd64; gragas check finds it in gragas (docs/self-check.md)"
+    exit: birdtable/gragas#1377
+    owner: gate
+    expires: "2027-06-30"
+  - id: self-go-cycle-2-lint-linux-arm64
+    rule: go.cycle.2
+    path: Taskfile.yml
+    reason: "the push has no lint member for linux/arm64; gragas check finds it in gragas (docs/self-check.md)"
+    exit: birdtable/gragas#1377
+    owner: gate
+    expires: "2027-06-30"
+  - id: self-go-cycle-2-lint-darwin-arm64
+    rule: go.cycle.2
+    path: Taskfile.yml
+    reason: "the push has no lint member for darwin/arm64; gragas check finds it in gragas (docs/self-check.md)"
+    exit: birdtable/gragas#1377
+    owner: gate
+    expires: "2027-06-30"
+  - id: self-go-cycle-2-lint-windows-amd64
+    rule: go.cycle.2
+    path: Taskfile.yml
+    reason: "the push has no lint member for windows/amd64; gragas check finds it in gragas (docs/self-check.md)"
+    exit: birdtable/gragas#1377
+    owner: gate
+    expires: "2027-06-30"
+  - id: self-go-cycle-2-lint-freebsd-amd64
+    rule: go.cycle.2
+    path: Taskfile.yml
+    reason: "the push has no lint member for freebsd/amd64; gragas check finds it in gragas (docs/self-check.md)"
+    exit: birdtable/gragas#1377
+    owner: gate
+    expires: "2027-06-30"

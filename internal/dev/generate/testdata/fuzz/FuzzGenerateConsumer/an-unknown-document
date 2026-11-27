@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"consumer\":\"x\",\"reads\":[{\"document\":\"nothing\",\"fields\":[\"a.b\"]}]}")

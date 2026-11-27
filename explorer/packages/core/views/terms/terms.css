@@ -1,0 +1,72 @@
+[data-view="terms"] {
+  display: grid;
+  gap: var(--gr-space-4);
+}
+
+.gr-terms-question {
+  margin: 0;
+  color: var(--gr-text-muted);
+}
+
+.gr-terms-switch,
+.gr-terms-list,
+.gr-terms-translations,
+.gr-terms-used {
+  display: grid;
+  gap: var(--gr-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gr-terms-switch,
+.gr-terms-used {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.gr-terms-switch [aria-current="true"] {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+[data-part="terms-term"] {
+  display: grid;
+  gap: var(--gr-space-2);
+  padding: var(--gr-space-3);
+  border: 1px solid var(--gr-control-border);
+  border-radius: var(--gr-radius-md);
+}
+
+[data-part="terms-term"] h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.gr-terms-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
+  gap: var(--gr-space-2) var(--gr-space-4);
+  margin: 0;
+}
+
+.gr-terms-fields dt {
+  color: var(--gr-text-muted);
+}
+
+.gr-terms-fields dd,
+.gr-terms-fields p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.gr-terms-mark {
+  color: var(--gr-text-muted);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 40rem) {
+  .gr-terms-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

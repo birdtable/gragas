@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "run": "r1",
+  "root": "ROOT",
+  "files": [
+    {
+      "path": "a.txt",
+      "op": "restore",
+      "from": "$STATE/ROOT.copies/r1/18b7cb099a9ea3f50ba899b5ba81e0d377a5f3b16f8f6eeb8b3e58cd4692b993",
+      "digest": "sha256:cba06b5736faf67e54b07b561eae94395e774c517a7d910a54369e1263ccfbd4"
+    }
+  ],
+  "moved": [],
+  "damaged": [],
+  "lines": [
+    "cp -- $STATE/ROOT.copies/r1/18b7cb099a9ea3f50ba899b5ba81e0d377a5f3b16f8f6eeb8b3e58cd4692b993 a.txt"
+  ]
+}

@@ -1,0 +1,40 @@
+# gitleaks' own rules, and two it has no rule for: an assigned password, key or
+# token, and a docker login's auth. Taskfile.yml's secrets-scan reads it first,
+# and .gitleaks-key.toml second.
+#
+# One allow-list of ours, and no other: the scan reads only what git
+# tracks, so build output git ignores is never read and needs none. useDefault still
+# brings the default config's global path allow-list, which no key here can drop;
+# the second pass is the private-key rule with none.
+#
+# The one: the golangci-lint plugin's recorded entries list holds linter names
+# as {"key":"<linter>"}, and generic-api-key reads the long one, exhaustruct_v5,
+# as a key. It holds only where all three are so: that rule, a plugin's recorded
+# response.json, and that one name, written out. A value is named, never a shape,
+# since a key can have a linter's shape. Another name the rule reads is red, and
+# comes here in a change the gate's reviewer reads. It is the file's last block,
+# and internal holds it so.
+title = "gragas"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "assigned-secret-value"
+description = "A password, API key, secret or token written into a file as a quoted value of 12 or more characters"
+regex = '''(?i)\b(?:password|passwd|api_?key|secret|token)\s*[:=]\s*["'][^"'\s]{12,}["']'''
+keywords = ["password", "passwd", "api_key", "apikey", "secret", "token"]
+
+[[rules]]
+id = "docker-login-auth"
+description = "A docker login's auth, base64 of the user and the password, as config.json keeps it"
+regex = '''"auth"\s*:\s*"[A-Za-z0-9+/=]{16,}"'''
+keywords = ["\"auth\""]
+
+[[allowlists]]
+description = "A pinned plugin's recorded linter names, read as generic API keys (gragas#2340)"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''^plugins/[a-z0-9]+(?:-[a-z0-9]+)*/[0-9]+\.[0-9]+\.[0-9]+/testdata/cases/[^/]+/response\.json$''']
+regexes = ['''^key":"exhaustruct_v5"$''']

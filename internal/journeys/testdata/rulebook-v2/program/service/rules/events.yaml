@@ -1,0 +1,242 @@
+part: service
+concern: events
+order: 4
+title: Event definitions
+summary: >-
+  An event is one fact with one definition, owned by its emitter: named by one pattern, wrapped in a base
+  envelope, validated before it leaves, and listed in a catalogue that names its owner and who may subscribe.
+rules:
+  - id: service.events.1
+    slug: payload-defined-once
+    since: 0.1.0
+    rule: >-
+      Every event payload is defined once, by the service that emits it, in a shared package with its schema
+      committed beside it; consumers import the type or map it into their own words at their edge.
+    detail: >-
+      The package holds the schema for every event and the committed schema file is generated from it. A
+      service defines the name and fields of its own events only; a consumer never declares a second copy. In
+      Go, journal and message shapes are versioned in the shared module and its surface is listed, and a shape
+      that crosses a boundary has one source.
+    level: type
+    why: >-
+      Two definitions of one event drift, and the break shows up in a consumer in production.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: service-reasons-stated
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test failing an event schema declared outside the shared events package, and a diff of the
+          committed schema file against the regenerated one. Plant: an event schema declared inside a service
+          fails; a committed schema file that differs from the generated one fails. Control: an event imported
+          from the shared package passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a surface listing test over the shared message package and a duplicate-shape scan. Plant: a second
+          declaration of a boundary shape fails. Control: one shared shape passes
+  - id: service.events.2
+    slug: event-name-pattern
+    since: 0.1.0
+    rule: >-
+      Event names (the detail-type of the event) follow one pattern: domain, entity, action and version,
+      lowercase and dot-separated.
+    level: word
+    why: >-
+      A name that varies in shape cannot be matched by a rule or a subscription filter and hides the version.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          a catalogue test matching every registered event name against the pattern, and that an active family
+          has a catalogue entry naming an owner. Plant: a name with capitals or without a version fails.
+          Control: a conforming name passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that journal and event names are one closed set in one pattern. Plant: a name outside the set
+          fails. Control: a conforming name passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.events.3
+    slug: publish-only-owned-families
+    since: 0.1.0
+    rule: A service publishes only the event families it owns.
+    detail: In Go, each piece of shared state has one writer and one owner.
+    level: package
+    why: >-
+      Two publishers of one family make the schema owner ambiguous and break the consumers who trust it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a catalogue-driven scan failing a publish call whose event family names another owner. Plant: a
+          service publishing a family owned by another fails. Control: publishing its own family passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.events.4
+    slug: payload-extends-envelope
+    since: 0.1.0
+    rule: >-
+      Every event payload extends a base envelope with schema version, event id and actor, and its fields use
+      the casing the program declares (service.contract.10).
+    detail: >-
+      The rulebook names no default casing; the key-casing lint reads the program's declaration and a program
+      with none fails. In Go, versioned files and JSON carry a version inside and journal lines are one write.
+    level: type
+    why: >-
+      Without a common envelope a consumer cannot deduplicate by id, route by version or attribute the actor.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: decision-65-service
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          a type test that every registered payload schema extends the envelope schema, and a lint on key
+          casing against the declared casing. Plant: a payload without an event id fails. Control: a payload
+          extending the envelope passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that every versioned file and message carries a version field. Plant: a message without a
+          version fails. Control: a versioned message passes
+    relates:
+      - id: service.contract.10
+        how: see
+  - id: service.events.5
+    slug: validate-before-publish
+    since: 0.1.0
+    rule: An event is validated against its schema before it is published.
+    detail: >-
+      In Go, an effect is not run until its record is written and input is parsed at the edge.
+    level: function
+    why: >-
+      An invalid event on the bus breaks every consumer; a failure at the source is cheaper.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          the funnel publish function parses the payload with the registered schema and a unit test that an
+          invalid payload throws. Plant: publishing a payload missing a required field fails. Control: a valid
+          payload publishes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      The outbox rule outbox-holds-public-contract adds validation inside the transaction, before the commit.
+  - id: service.events.6
+    slug: one-fact-from-consumers
+    since: 0.1.0
+    rule: >-
+      A new event family states its prospective consumers and which of them needs each field before its schema
+      is fixed, and carries one fact: no type field that selects between meanings, and no event whose only job
+      is to tell another team to do something.
+    detail: >-
+      The event carries the full result of that action, not a copy of the whole entity, so consumers need not
+      call back. The residual risk is a discriminator inside the payload and an event used as a command.
+    level: type
+    why: >-
+      One engagement event grew a nullable field per type until no consumer could tell what it meant. The two
+      cautions reconcile as: avoid events as semaphores or signals, and also avoid thin signals that force a
+      call back.
+    kind: instruction
+    strength: Review
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: bellemare-bedm
+        where: >-
+          ch. 3 (designing events: single definition, narrowest types, single purpose, size, prospective
+          consumers, semaphores)
+        backs: rule
+    review_question: >-
+      Does this family carry one fact, and does any consumer need a field to know what happened? Which
+      consumer needs each field?
+    open:
+      - >-
+        No plant: a seeded schema with a type field and a nullable field only for one type must be flagged.
+      - >-
+        With agents: they copy the whole entity into the event because it is the shortest path (inference).
+    note: >-
+      Extends event-name-pattern and payload-extends-envelope: names already separate families, so the
+      residual is a discriminator inside the payload.
+  - id: service.events.7
+    slug: catalogue-metadata
+    since: 0.1.0
+    rule: >-
+      Each event family catalogue entry names its owner, whether it carries personal or financial data,
+      whether it is public or internal to its domain, and its status (active or deprecated, with a sunset); a
+      subscription to an internal family by another domain fails.
+    detail: >-
+      A report of families with no subscriber (orphans) is a measure beside it. The catalogue schema requires
+      the fields and a scan of subscriptions in the infrastructure checks them against the visibility field.
+    level: release
+    why: >-
+      Open internal streams let consumers couple to a producer internal model. Argued from the tagging of
+      streams with owner, data class and deprecation, and restricted access to personal-data streams.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: bellemare-bedm
+        where: >-
+          ch. 14 (event stream metadata tagging; discovering orphaned streams and microservices)
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          catalogue schema test requiring the four fields, plus a scan of subscriptions in the infrastructure
+          against the visibility field. Plant: a subscription to an internal family from another domain fails;
+          an entry with no data class fails. Control: a public family subscription passes
+    open:
+      - "With agents: holds (inference)."
+    note: >-
+      Extends event-name-pattern: that test fails an active family with no entry naming an owner; the other
+      three fields are new. publish-only-owned-families stops a service publishing another family but nothing
+      stopped it subscribing to another internal one.

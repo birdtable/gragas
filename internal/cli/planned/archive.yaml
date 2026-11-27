@@ -1,0 +1,11 @@
+name: archive
+order: 300
+context: R
+ends: plan
+summary: "Archive a rulebook and name its successor"
+examples:
+  - {line: "gragas archive", does: "show the plan"}
+  - {line: "gragas archive --apply", does: "carry it out"}
+writes: ["rulebook.yaml", "history.jsonl"]
+exits: ["done", "declined"]
+json: plan

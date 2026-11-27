@@ -1,0 +1,158 @@
+part: service
+concern: evolution
+order: 6
+title: Event evolution
+summary: >-
+  A released event schema changes by the program's declared reader mode: breaking changes get a new version,
+  compatibility is stated per family and checked in both directions, and an old family is retired against a
+  date.
+rules:
+  - id: service.evolution.1
+    slug: breaking-change-new-version
+    since: 0.1.0
+    rule: >-
+      A breaking payload change gets a new version of the event name (the detail-type), and schemas are diffed
+      against the last release.
+    detail: >-
+      In Go, a versioned file says what it does with older and newer versions, and a breaking change fails the
+      release.
+    level: release
+    why: >-
+      Consumers deployed against the old shape break silently when a field they read is removed or changes
+      meaning.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "2"
+        note: >-
+          the schema diff step against the last release failing a change to a live family without a new
+          version name. Plant: removing a required field from a live family fails. Control: an additive
+          optional field passes
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a test that a versioned file declares its handling of older and newer and a breaking change fails
+          the release check. Plant: a breaking change without a version bump fails. Control: an additive
+          change passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: service.evolution.2
+    slug: compatibility-by-reader-mode
+    since: 0.1.0
+    rule: >-
+      Event compatibility follows the program's declared reader mode (service.contract.2). With independent
+      readers each event family states its compatibility mode, full by default, a loosening is a recorded
+      exit, and consumer tests are fed fixtures from every released version of the family schema. With owned
+      readers a breaking event change raises the family's version and moves every known consumer in the same
+      change.
+    detail: >-
+      Independent readers: the schema-diff step reads a compatibility field from the catalogue and tests the
+      matching directions (old consumers read new events and new consumers read old events); a consumer test
+      iterates the committed schema history. The backward direction matters for replay, for a redriven message
+      in a dead-letter queue, and for a consumer deployed before its producer. Plain JSON has no built-in
+      rules for full compatibility, so the check has to live in the diff tool. Owned readers: the gate fails a
+      breaking change whose version did not rise or whose known consumers were not changed in the same change,
+      and no fixture of a retired version is kept.
+    level: release
+    why: >-
+      Loosening later is easy and tightening is hard, so a publisher to readers it cannot change starts at
+      full. An owner of every reader moves them together, and keeping old shapes for readers that no longer
+      exist is where bugs live.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+        - daemon
+    sources:
+      - ref: bellemare-bedm
+        where: ch. 3 (full-featured schema evolution)
+        backs: rule
+      - ref: bellemare-bedm
+        where: >-
+          ch. 15 (testing schema evolution and compatibility; creating mock events using schemas)
+        backs: rule
+      - ref: decision-65-service
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          schema diff reading the reader mode and, for independent readers, the family's compatibility field
+          and the matching directions, plus a consumer test iterating the committed schema history; for owned
+          readers, a check that a breaking change raised the version and touched every listed consumer. Plant:
+          independent readers: removing a required field from a live family fails, and adding a required field
+          without a default fails the backward direction; owned readers: a breaking change with the version
+          unchanged fails. Control: an additive optional field passes both directions; an owned-reader break
+          with the version raised and every consumer moved passes
+    relates:
+      - id: service.contract.2
+        how: see
+    open:
+      - Tier 2 or 3 depending on where the history fixtures live.
+      - >-
+        With agents: holds, because agents change producers and consumers at a high rate (inference).
+    note: Extends breaking-change-new-version, which says breaking without a direction.
+  - id: service.evolution.3
+    slug: breaking-change-migration-clock
+    since: 0.1.0
+    rule: >-
+      With independent readers a breaking change creates a new family, the old one is marked deprecated in the
+      catalogue with a sunset date, the producer writes both during the migration, and the gate fails an old
+      family past its date. With owned readers dual writing and sunset windows are an exception that needs a
+      recorded reason, and a retired path or name is removed in the change that replaces it, with a test
+      asserting it is gone.
+    detail: >-
+      Independent readers: a catalogue field status and sunset exist; a subscription to a deprecated family
+      needs a recorded exit; the gate fails a deprecated family past its sunset. The sunset length is a guess
+      and not a measurement. Owned readers: there is no old-and-new fallback, no field marked going and no
+      grow-only promise; the replacing change deletes the old name, and a test asserts the old path, field or
+      family no longer exists.
+    level: release
+    why: >-
+      Without a date the migration never finishes and near-duplicate families run on, and new services
+      subscribe to the old one. Where the owner deploys every reader, a second stream is a compatibility layer
+      with no reader to serve.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+        - daemon
+    sources:
+      - ref: bellemare-bedm
+        where: ch. 3 (breaking schema changes)
+        backs: rule
+      - ref: bellemare-bedm
+        where: ch. 16 (breaking schema changes; eventual migration via two event streams)
+        backs: rule
+      - ref: decision-65-service
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          catalogue gate reading the reader mode: for independent readers it fails a deprecated family past
+          its sunset and a new subscription to a deprecated family without a recorded exit; for owned readers
+          it fails a dual write with no recorded reason and a replaced name with no gone-test. Plant:
+          independent readers: a live family with a field removed and no new family fails, a deprecated family
+          past its sunset fails, a new service subscribing to a deprecated family fails; owned readers: an old
+          name kept beside its replacement fails. Control: an independent-reader family within its sunset
+          passes; an owned-reader replacement that deletes the old name with a test passes
+    open:
+      - >-
+        An additive field that changes meaning passes the diff and needs a human reader (inference).
+    note: >-
+      Extends breaking-change-new-version: that names the version and diffs the schema; the migration and its
+      end date were missing.

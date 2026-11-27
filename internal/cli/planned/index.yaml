@@ -1,0 +1,10 @@
+name: index
+order: 320
+context: B
+ends: listing
+summary: "List the rulebooks the index knows"
+examples:
+  - {line: "gragas index", does: "list them"}
+  - {line: "gragas index --json", does: "as one JSON document"}
+exits: ["done"]
+json: index

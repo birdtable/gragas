@@ -1,0 +1,6 @@
+go test fuzz v1
+string("rules:\n  - id: a.b.1\n    reasoning: {pros: [x]}\n")
+string("a.b.1")
+string("reasoning.pros")
+string("")
+string("ref: a")

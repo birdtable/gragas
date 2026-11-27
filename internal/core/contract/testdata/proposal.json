@@ -1,0 +1,12 @@
+{
+  "contract": "1.3",
+  "proposal": {
+    "change": {
+      "anatomy": "example"
+    },
+    "opened": "2000-01-01",
+    "slug": "example",
+    "state": "open",
+    "target": "example"
+  }
+}

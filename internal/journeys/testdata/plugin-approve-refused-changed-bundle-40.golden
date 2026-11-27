@@ -1,0 +1,12 @@
+$ gragas plugin approve lint-b@1.0.0
+--- exit 5
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    the plugin's digest is not
+  the manifest's: lint-b 1.0.0 reads as
+  sha256:0c781efa13b0c034ff643e1dcc2ef87b3c202d58b04bc2f412ccc1393000bb73,
+  and its lock holds
+  <lint-b@1.0.0>
+    gragas plugin list
+--- stderr

@@ -1,0 +1,334 @@
+{
+  "schema": 1,
+  "source": "the working tree",
+  "file": "history.jsonl",
+  "total": 31,
+  "next": 31,
+  "entries": [
+    {
+      "number": 1,
+      "previous": null,
+      "kind": "propose",
+      "entity": "rule:go.errors.1",
+      "before": null,
+      "after": {
+        "status": "proposed"
+      },
+      "who": "ada",
+      "when": "2026-03-01T09:00:00Z",
+      "plan": "sha256:0000000000000000000000000000000000000000000000009e3779b97f4a7c15",
+      "decision": null
+    },
+    {
+      "number": 2,
+      "previous": "sha256:3b7e377183f3d28561a80f30b31ef5079ee334749807d0760db6900cba5943e8",
+      "kind": "promote",
+      "entity": "rule:go.errors.1",
+      "before": {
+        "status": "proposed"
+      },
+      "after": {
+        "status": "trial"
+      },
+      "who": "ada",
+      "when": "2026-03-01T10:00:00Z",
+      "plan": "sha256:0000000000000000000000000000000000000000000000003c6ef372fe94f82a",
+      "decision": "start-small"
+    },
+    {
+      "number": 4,
+      "previous": "sha256:1477ead0931f8240e86b3ae92537f37150fd6f4c00e055c1ee1b14ac179fba80",
+      "kind": "promote",
+      "entity": "rule:go.errors.1",
+      "before": {
+        "status": "trial"
+      },
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2027-03-01"
+      },
+      "who": "ada",
+      "when": "2026-03-04T09:00:00Z",
+      "plan": "sha256:00000000000000000000000000000000000000000000000078dde6e5fd29f054",
+      "decision": "ship-it"
+    },
+    {
+      "number": 6,
+      "previous": "sha256:ef1b96d36c1ecf92b60bb941c925f6ff9f162527997c37f2cb27c9ef10315df0",
+      "kind": "renumber",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2027-03-01"
+      },
+      "who": "ada",
+      "when": "2026-03-08T10:00:00Z",
+      "plan": "sha256:000000000000000000000000000000000000000000000000b54cda58fbbee87e",
+      "decision": "renumber-go-errors"
+    },
+    {
+      "number": 7,
+      "previous": "sha256:6f54c38c7de716b3261a1ad26846a925f6570b540fecf8d289bb78abe6862687",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2027-09-01"
+      },
+      "who": "ada",
+      "when": "2026-03-09T12:00:00Z",
+      "plan": "sha256:000000000000000000000000000000000000000000000000538454127b096493",
+      "decision": null
+    },
+    {
+      "number": 8,
+      "previous": "sha256:3971795c5f9a2355cf852c3c15a3c7597a3785b3fa83b14bd3e7c228ff074d99",
+      "kind": "edit",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2027-12-01"
+      },
+      "who": "ada",
+      "when": "2026-03-10T14:00:00Z",
+      "plan": "sha256:0000000000000000000000000000000000000000000000008ff34785799e5cbd",
+      "decision": null
+    },
+    {
+      "number": 10,
+      "previous": "sha256:26f3c51329609cd5d51dda50d7e9a1ee6e8aba23e2b1dad61dffc8cba59ad9c6",
+      "kind": "retire",
+      "entity": "rule:go.errors.2",
+      "before": {
+        "status": "active"
+      },
+      "after": {
+        "status": "retired"
+      },
+      "who": "ada",
+      "when": "2026-03-13T16:00:00Z",
+      "plan": "sha256:000000000000000000000000000000000000000000000000cc623af8783354e7",
+      "decision": "drop-it"
+    },
+    {
+      "number": 11,
+      "previous": "sha256:48dd0e935065780d13b9e27e5b8a9f7ad44c3917b51a9663586d9e1cade72373",
+      "kind": "restore",
+      "entity": "rule:go.errors.2",
+      "before": {
+        "status": "retired"
+      },
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-01-01"
+      },
+      "who": "ada",
+      "when": "2026-03-14T09:00:00Z",
+      "plan": "sha256:0000000000000000000000000000000000000000000000006a99b4b1f77dd0fc",
+      "decision": "it-was-needed"
+    },
+    {
+      "number": 13,
+      "previous": "sha256:7b4eb877915818533b6faabab4817d601b2a4d2d9a61ce5d2e3e5ce77505024f",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-02-01"
+      },
+      "who": "grace",
+      "when": "2026-03-20T14:00:00Z",
+      "plan": "sha256:000000000000000000000000000000000000000000000000a708a824f612c926",
+      "decision": null
+    },
+    {
+      "number": 14,
+      "previous": "sha256:f6a88b42655ea16fede72529f470610a610767edf2fa9c7b2d399875131c5fd3",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-03-01"
+      },
+      "who": "ada",
+      "when": "2026-03-21T15:00:00Z",
+      "plan": "sha256:000000000000000000000000000000000000000000000000454021de755d453b",
+      "decision": null
+    },
+    {
+      "number": 16,
+      "previous": "sha256:07fb885cd235416fd54738130704c0112f26f9168d4728aa7d9d5f64253557a3",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-05-01"
+      },
+      "who": "ada",
+      "when": "2026-03-22T09:00:00Z",
+      "plan": "sha256:00000000000000000000000000000000000000000000000081af155173f23d65",
+      "decision": null
+    },
+    {
+      "number": 17,
+      "previous": "sha256:6433ab9eb01aaef761201b525312425c17f0120578ea7adeda8e040bdf48bc95",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-06-01"
+      },
+      "who": "grace",
+      "when": "2026-03-22T10:00:00Z",
+      "plan": "sha256:0000000000000000000000000000000000000000000000001fe68f0af33cb97a",
+      "decision": null
+    },
+    {
+      "number": 19,
+      "previous": "sha256:b22b73cba1d3f81316c2e4e77620ee4a13553e8af53488dcc960c2ec14dd2ef4",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-08-01"
+      },
+      "who": "grace",
+      "when": "2026-03-23T12:00:00Z",
+      "plan": "sha256:0000000000000000000000000000000000000000000000005c55827df1d1b1a4",
+      "decision": null
+    },
+    {
+      "number": 20,
+      "previous": "sha256:774f16a00609d797f9ea41811113ec76a448e3fa98879ab89213e27b52beca70",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-09-01"
+      },
+      "who": "ada",
+      "when": "2026-03-24T13:00:00Z",
+      "plan": "sha256:000000000000000000000000000000000000000000000000fa8cfc37711c2db9",
+      "decision": null
+    },
+    {
+      "number": 22,
+      "previous": "sha256:7d7c699e1918b005bc38c003d334de7a1917b6d3b9c73f5697f4a3c6cd2b2cfd",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-11-01"
+      },
+      "who": "ada",
+      "when": "2026-03-25T15:00:00Z",
+      "plan": "sha256:00000000000000000000000000000000000000000000000036fbefaa6fb125e3",
+      "decision": null
+    },
+    {
+      "number": 23,
+      "previous": "sha256:bfaaed679e970c22cff77a8ee9744987bf6022a5bfa98292ec0daff2d4c733ed",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-12-01"
+      },
+      "who": "grace",
+      "when": "2026-03-25T16:00:00Z",
+      "plan": "sha256:000000000000000000000000000000000000000000000000d5336963eefba1f8",
+      "decision": null
+    },
+    {
+      "number": 25,
+      "previous": "sha256:e45bcc446beeff32d87627245f7d99a57b32dcafc1b952474779259fa61c2b1b",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-02-01"
+      },
+      "who": "grace",
+      "when": "2026-03-26T10:00:00Z",
+      "plan": "sha256:00000000000000000000000000000000000000000000000011a25cd6ed909a22",
+      "decision": null
+    },
+    {
+      "number": 26,
+      "previous": "sha256:0b7e4842137c03ea5a5a7c972f94cecbb54598adfedc30aee124c3e3f47a59fc",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-03-01"
+      },
+      "who": "ada",
+      "when": "2026-03-27T11:00:00Z",
+      "plan": "sha256:000000000000000000000000000000000000000000000000afd9d6906cdb1637",
+      "decision": null
+    },
+    {
+      "number": 28,
+      "previous": "sha256:7b971ba730717576ab6a4a938643fdb7030ba2ed9953ce691449497614ee4743",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-05-01"
+      },
+      "who": "ada",
+      "when": "2026-03-28T13:00:00Z",
+      "plan": "sha256:000000000000000000000000000000000000000000000000ec48ca036b700e61",
+      "decision": null
+    },
+    {
+      "number": 29,
+      "previous": "sha256:d7a68d9cedce83f6337111cc323d3a127e0e0ecbc79d49ec3de0546e74f58a1a",
+      "kind": "confirm",
+      "entity": "rule:go.errors.2",
+      "before": null,
+      "after": {
+        "status": "active",
+        "owner": "team-a",
+        "review_by": "2028-06-01"
+      },
+      "who": "grace",
+      "when": "2026-03-28T14:00:00Z",
+      "plan": "sha256:0000000000000000000000000000000000000000000000008a8043bceaba8a76",
+      "decision": null
+    }
+  ],
+  "skipped": [],
+  "findings": [],
+  "notes": []
+}

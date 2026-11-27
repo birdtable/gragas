@@ -1,0 +1,11 @@
+[
+  {
+    "contract": "1.3",
+    "cells": [
+      {"binding": "go.errors.1/golangci-lint/wrapcheck", "tool_version": "2.1.0", "result": "pass", "rung": 3, "run_level": "pair", "adapter_version": "1.0.0", "inputs": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "tool": "golangci-lint"},
+      {"binding": "base.targets.1/sqlfluff/one-change", "tool_version": "none", "result": "not run", "rung": 2, "run_level": "fixture", "reason": "no pair"},
+      {"binding": "base.review.1/review/read", "tool_version": "none", "result": "reviewed", "rung": 6, "run_level": "fixture"}
+    ],
+    "tested_set": {"tools": [{"tool": "golangci-lint", "version": "2.1.0"}], "minimum_engine": "1.0.0"}
+  }
+]

@@ -1,0 +1,38 @@
+$ gragas undo --entry 1 --apply
+--- before
+9a9a915a872b2b538cb9032296bee8c66dcd02b8c2365434750aca1c143b13ac decisions.yaml
+6b77f4adb3355469d3c85c611bdc0d84f52d2ae705b6eb53b6361fa60155c026 history.jsonl
+e09ad7f0f8e17346dde639539bd4fba7fc1eb6651556ccffb50cee1b40907d9c language/go/rules/errors.yaml
+93d53f8940029b3e40a77be9c8d8df9c0c239c28bb88ad6136ebc7eb3d847ae1 presets/golangci-lint/settings.yml
+7d1543288bbbe5e0ef83911768156af6f901e0611bf851dce435757f72ea996b rulebook.yaml
+63ba30396f3132bcac2f0169a99cab4ff8ed1c4b5a8c8d5070f1cde3ce11afc1 sources.yaml
+860f82f9bebaf053658f0d86939b59c005959ce62bfb361e7b8566bc6c3069ac structure.yaml
+--- after
+9a9a915a872b2b538cb9032296bee8c66dcd02b8c2365434750aca1c143b13ac decisions.yaml
+b4dee103ee1cccbeb3040f6fc515fd895025e80bf3b97e3d3d86e2be503ded33 history.jsonl
+bbde63be015099743f3b2513bacf2e507a14aa39ee4a8a5b152a84f9c35fb251 language/go/rules/errors.yaml
+93d53f8940029b3e40a77be9c8d8df9c0c239c28bb88ad6136ebc7eb3d847ae1 presets/golangci-lint/settings.yml
+7d1543288bbbe5e0ef83911768156af6f901e0611bf851dce435757f72ea996b rulebook.yaml
+63ba30396f3132bcac2f0169a99cab4ff8ed1c4b5a8c8d5070f1cde3ce11afc1 sources.yaml
+860f82f9bebaf053658f0d86939b59c005959ce62bfb361e7b8566bc6c3069ac structure.yaml
+--- boundaries
+before-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+after-record
+after-record
+after-record

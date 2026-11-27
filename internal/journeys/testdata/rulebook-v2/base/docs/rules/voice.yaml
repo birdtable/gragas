@@ -1,0 +1,144 @@
+part: docs
+concern: voice
+order: 3
+title: Voice
+summary: >-
+  How the product writes: the point comes first, punctuation is plain, headings are in sentence case and
+  spelling follows the chosen variant. Docs and text the program prints are two registers: printed text is
+  plain fact with no aside. A number claims no more than its source. Punctuation and the filler list are
+  checks; tone and order are instructions.
+rules:
+  - id: docs.voice.1
+    slug: plain-punctuation-and-headings
+    since: 0.1.0
+    rule: >-
+      No em dash in any tracked file, no semicolon in text a program prints, and headings are in sentence
+      case; docs may use the semicolon.
+    detail: >-
+      The em dash scan reads every tracked text file, code and data included; a repo's own rule format uses
+      another separator. The semicolon scan reads the strings a program prints (messages, help, errors, status
+      rows), not docs and not code syntax. The heading scan reads markdown, HTML and .astro files. Words kept
+      in data files are exported as text for the scan to read. In source strings a lint rule rejects string
+      literals that contain an em dash, and a printed-string literal that contains a semicolon. ESLint form:
+      `no-restricted-syntax` on such literals. Biome form: a GritQL plugin on the same literals.
+    level: word
+    why: >-
+      Punctuation style is checkable and drifts without a check; evidence D. An em dash is the mark that most
+      often survives from generated text, and a semicolon in a terminal line splits one fact into two
+      half-sentences.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-03-data
+        where: on shared vocabulary
+        backs: rule
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "1"
+        note: >-
+          a plain scan for the em dash over every tracked text file. Plant: a line with an em dash in a doc
+          and in a data file fail; a doc with a semicolon passes. Control: a clean sentence passes
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "1"
+        note: >-
+          ESLint no-restricted-syntax (Biome form: a GritQL plugin) on string literals that contain an em
+          dash, and on printed-string literals that contain a semicolon. Plant: a source string with an em
+          dash fails; a printed message with a semicolon fails. Control: a string without either passes
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          the golden test of printed output fails a line with an em dash or a semicolon. Plant: a golden line
+          with a semicolon fails. Control: a golden with plain punctuation passes
+    open:
+      - >-
+        The semicolon rule did not fire in Astro files when tried; the em dash and spelling rules did.
+      - Planned scan; the plant was not run as a gate.
+      - >-
+        A repo whose own rule format uses the em dash as a separator changes its format (decision 65).
+      - >-
+        Sentence-case headings have no check: the prose-style checker that held them was dropped from the
+        register, and whether one comes back is the operator's decision.
+    note: Split from the voice row, which bundled punctuation, spelling and tone.
+  - id: docs.voice.2
+    slug: point-first-tone
+    since: 0.1.0
+    rule: >-
+      Written output puts the point first and is honest about what it knows, text the program prints carries
+      no joke, aside or personality and a status row is a fact, not a sentence, and a check refuses a
+      filler-word list and the not-X-but-Y form in docs and printed text.
+    detail: >-
+      There are two registers. Docs may be warm and may joke. Text the program prints (help, errors, status
+      rows, prompts) is plain fact: no joke, aside, exclamation or first person, and a status row is a value
+      with its label. A repo keeps one list of refused filler words and phrases in its style config, and the
+      check also refuses the not-X-but-Y construction. Point-first order and honesty stay with the reader.
+    level: word
+    why: >-
+      Printed text is read in a hurry and parsed by scripts, so personality there is noise; the filler
+      patterns are the ones a model reaches for and a reader stops trusting. Tone, honesty and order cannot be
+      checked by a pattern, so a reader or a model lens judges them.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "1"
+        note: >-
+          Vale 3.26.0 with the vale preset (presets/vale): an existence rule for the repo's filler list and one
+          for the not-X-but-Y form, over docs and the exported printed strings. Plant: a doc line with a listed
+          filler word fails; a doc line in the not-X-but-Y form fails. Control: a plain sentence passes, and
+          with a rule removed its plant passes
+    open:
+      - >-
+        Vale 3.26.0 is pinned in tools.yaml on darwin, linux and windows (gragas#1119), and task tools
+        places it in .tools/bin, but no gate runs the preset's test yet: that test and the gate's member are
+        gragas#1097, so this check names no tool key and the rule's check stays planned. The preset was run
+        with Vale 3.26.0 by hand: both plants fail and the control passes.
+    review_question: >-
+      Does the text lead with its point, does it say only what is true of the code today, and does any printed
+      line carry an aside?
+    relates:
+      - id: docs.voice.1
+        how: see
+      - id: docs.spelling.2
+        how: see
+    note: >-
+      The other half of the voice row; the punctuation half is docs.voice.1 and the spelling half
+      docs.spelling.2.
+  - id: docs.voice.3
+    slug: numbers-carry-their-source
+    since: 0.1.0
+    rule: >-
+      A measured figure in a doc carries its date, the machine and whose measurement it is, a claim about
+      outside behaviour cites a source and what it says, and a doc that generalises from one machine says so.
+    detail: >-
+      No figure claims more precision than its source: a source in whole units gives no decimal, an estimate
+      is marked as one (≈), and a remainder the doc cannot explain is its own row, never spread over the rest.
+      A doc says what it can and cannot promise. Generated figures carry the same three facts from the
+      generator.
+    level: word
+    why: >-
+      A number without its date and machine reads as a property of the product when it is one reading on one
+      day, and a figure with more decimals than its source is a claim nobody measured.
+    kind: rule
+    strength: Review
+    status: active
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+    review_question: >-
+      Does each figure in this doc say when, on what machine and by whom it was measured, and does it claim
+      more precision than its source?
+    open:
+      - >-
+        No pattern check yet; a scan for a number with a unit and no date nearby would be a candidate.

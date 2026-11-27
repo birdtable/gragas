@@ -1,0 +1,63 @@
+format: 3
+part: dynamodb
+concern: writes
+rules:
+  - id: dynamodb.writes.1
+    statement: "Entry code such as a handler never imports the DynamoDB SDK; only the store layer does."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "When handlers call the SDK directly, key building, conditions and retries are re-implemented in each one."
+  - id: dynamodb.writes.2
+    statement: An action unit holds one storage command and imports no repository or sibling action.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - One command per action keeps each storage effect testable on its own and stops actions composing each other into hidden transactions.
+  - id: dynamodb.writes.3
+    statement: "Aggregate writes go only through the shared write toolkit's versioned write functions; deletes are allowed only in allow-listed short-lived actions; audit tables are append-only."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Every service that uses DynamoDB writes aggregates through the toolkit, which owns the version check and the conditional write. A delete outside the allow list fails. An audit table, such as a record of sign-in events, accepts inserts only. The toolkit has a conformance suite that every release runs."
+      pros:
+        - "One write path is the only place where conditions, versions and retries can be proved once and trusted everywhere."
+  - id: dynamodb.writes.4
+    statement: "Every insert-if-absent and every read-modify-write uses a condition expression in the same call; uniqueness beyond the primary key is kept by a guard item written in the same transaction; a retried transactional write carries a client token."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Check-then-write is the case this rule exists for, written in one conditional call instead of a read followed by a write."
+      pros:
+        - "Uniqueness and association checks written as read-then-write are broken by races. A transactional write with a client token is idempotent for a window, so a retry does not write twice."
+    sources:
+      - ref: bailis-feral-concurrency-control
+        backs: rule
+      - ref: debrie-dynamodb-book
+        where: uniqueness with conditions and transactions
+        backs: rule
+      - ref: aws-dynamodb-docs
+        where: transactions and client tokens
+        backs: rule
+      - ref: p-03-data
+        where: sections 13 and 17
+        backs: rule
+  - id: dynamodb.writes.5
+    statement: "Where an item carries a time-to-live attribute, every read that must not see an expired item checks the attribute itself."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The table's deletion of expired items is cleanup, never the moment of expiry."
+      pros:
+        - "Expired items are deleted only eventually, typically within about two days, so a session or processing-key table that trusts deletion honours an expired token for that long."
+    sources:
+      - ref: debrie-dynamodb-book
+        where: "advanced concepts: time-to-live, and the session-store example"
+        backs: rule

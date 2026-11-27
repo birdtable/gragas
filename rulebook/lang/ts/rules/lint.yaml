@@ -1,0 +1,75 @@
+format: 3
+part: ts
+concern: lint
+rules:
+  - id: ts.lint.1
+    statement: "Type-aware correctness rules run as errors where they are cheap: no floating promise, no misused promise and no unsafe-any flow."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The set is the strict type-checked preset: `no-floating-promises`, `no-misused-promises`, the `no-unsafe-*` family, and no needless conditions. A background task is awaited or handled. The fast tool (oxlint with its type-aware backend) runs at tier 2 on `.ts`, `.tsx` and `.astro` frontmatter and scripts; the typed ESLint run is not used below the land tier. Tests are linted without type information (see ts.lint-config.5). Biome form: `noFloatingPromises` and `noMisusedPromises` (Biome's type-aware rules) at error. The `no-unsafe-*` family is ESLint-only: Biome has no form and a GritQL pattern cannot see types, so a Biome project records the gap."
+      pros:
+        - "A promise that is neither awaited nor handled fails silently and out of order. Typed ESLint costs 3.3 to 4.4 times the untyped run (donor measure); oxlint took 0.6 CPU seconds for the same 3,633 files."
+    relations:
+      relates:
+        - ts.lint-config.5
+    sources:
+      - ref: typescript-eslint-docs
+        where: strict-type-checked
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.lint.2
+    statement: "Type-only imports are free across layers, and type imports are written explicitly so the exemption is checkable."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The layer rule allows `import type` across any layer (the plugin reads `importKind`), and `consistent-type-imports` makes a type-only import explicit, so a value import across layers fails while the same name as a type passes. Biome form: `useImportType` at error makes the type import explicit; the layer half is held by the boundary checker of the architecture part, a separate check that reads the import kind."
+      pros:
+        - "A type creates no run-time dependency, so a layer rule that forbids it forbids nothing real and invites workarounds."
+    sources:
+      - ref: typescript-handbook
+        where: import type
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.lint.3
+    statement: "The lint engine is a project parameter (Biome or ESLint), there is one config, and every rule in it is an error, never a warning, for whichever engine is chosen."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The project declares its engine once; a second lint engine in the same project fails. The shared config for the declared engine sets each rule at error level and ships as one versioned unit. For Biome that is one `biome.json` with every enabled rule at `error` and the formatter in the same file; for ESLint it is one strict flat config with its plugin set. A rule is either at error or off and recorded on the off-list with a reason; `warn` (Biome or ESLint) and Biome's `info` level are refused. Every lint rule in this part names its Biome form (a built-in rule, a GritQL plugin or a separate check) or says it is ESLint-only; an ESLint-only rule binds only where the engine is ESLint, and a Biome project holds the same intent through the named form or records the gap. A new engine is added by naming its form on each rule, never by rewriting the rules."
+      pros:
+        - "A warning is read by nobody; the gate must fail on it. The rules that matter (every rule at error, a plant per rule, type-aware checks) are engine-free, so tying the part to one engine would make the next engine change a rewrite."
+    sources:
+      - ref: eslint-docs
+        where: configuring rules
+        backs: rule
+      - ref: biome-docs
+        where: configure rules
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+  - id: ts.lint.4
+    statement: "Schema declarations pass the schema library's lint rules: no any-schema, no unknown-schema, strict objects, no throw inside a refinement and no schema built inside a function."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The plugin for the schema library's current major version runs as errors: `no-any-schema`, `no-unknown-schema`, `prefer-strict-object`, `no-throw-in-refine` and `no-function-scoped-schema`. Biome form: one GritQL plugin per rule (an any or unknown schema, a non-strict object, a throw inside a refinement, a schema built inside a function), registered in the one Biome config at error."
+      pros:
+        - "A loose schema parses everything and checks nothing, which defeats the parse-at-the-edge rule."
+    sources:
+      - ref: zod-docs
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule

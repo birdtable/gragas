@@ -1,0 +1,72 @@
+part: sst
+concern: deploy
+order: 1
+title: Tool pin and deploy guard
+summary: >-
+  The infrastructure tool is pinned to one exact version, and every deploy goes through one guard that refuses
+  to destroy state.
+rules:
+  - id: sst.deploy.1
+    slug: sst-exact-pinned
+    since: 0.1.0
+    rule: >-
+      The infrastructure tool and its shared components package are exact-pinned to one version across the
+      repository, and no local-path link (file: or link: protocols) reaches the main branch.
+    detail: >-
+      One version of the tool is in use. A local-path dependency is for experiments and fails at land. The
+      same holds for the build tool in Go: tools pinned once and no replace directive or workspace file in a
+      committed tree. A no-local-link rule is also supply hygiene.
+    level: package
+    why: >-
+      A range or a local link makes the deployed infrastructure depend on something the repository does not
+      hold.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          a check over package manifests failing a version range on the tool and its components package, a
+          second version in the lockfile, and any dependency with a local-path protocol. Plant: a manifest
+          with a caret range on the tool fails; a link: dependency fails. Control: an exact version passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      Related to the supply-chain pin rules; kept here because the pin is for the infrastructure tool.
+  - id: sst.deploy.2
+    slug: deploy-through-guard
+    since: 0.1.0
+    rule: >-
+      Services deploy only through one deploy guard, and the land check fails on the deletion or replacement
+      of a state-bearing resource.
+    detail: >-
+      The guard reads the plan and refuses a plan that deletes or replaces a database, bucket, queue or
+      identity resource without a recorded exit. In Go, an upgrade is by rename, the previous binary is kept,
+      and it is put back by itself when the new one does not answer healthy.
+    level: release
+    why: >-
+      A replacement of a stateful resource is a deletion with a new name; the plan shows it, and only a guard
+      stops it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          v1 class shared-code. the shared deploy guard run in the land step on the plan output, failing on
+          delete or replace of state-bearing resources. Plant: a plan that replaces a table fails. Control: a
+          plan that only updates a function passes
+    open:
+      - >-
+        A deploy path that bypasses the guard (a direct deploy command) is not yet caught.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

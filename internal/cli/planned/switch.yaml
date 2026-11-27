@@ -1,0 +1,11 @@
+name: switch
+order: 450
+context: P
+ends: plan
+summary: "Switch a project to another rulebook"
+examples:
+  - {line: "gragas switch <rulebook>", does: "show the plan"}
+  - {line: "gragas switch <rulebook> --apply", does: "carry it out"}
+writes: [".gragas/pin.yaml", ".gragas/lock.yaml"]
+exits: ["done", "declined", "refused"]
+json: plan

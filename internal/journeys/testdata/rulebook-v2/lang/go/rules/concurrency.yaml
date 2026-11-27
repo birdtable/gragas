@@ -1,0 +1,278 @@
+part: go
+concern: concurrency
+order: 4
+title: Goroutines, locks, context and signals
+summary: >-
+  Code is sequential by default and a goroutine needs a measured reason. Goroutines have an owner that waits
+  for them and stops them, locks are released on every path, the root context lives only at the edge, an
+  interrupt, and SIGTERM where the system sends one, stop a program cleanly, and a package that starts goroutines is tested with the race detector and a leak
+  check.
+rules:
+  - id: go.concurrency.1
+    slug: context-only-at-the-edge
+    since: 0.1.0
+    rule: >-
+      context.Background and context.TODO are used only at the edge, in main and tests, and their count
+      elsewhere only falls.
+    detail: >-
+      contextcheck and noctx cover the missing-propagation class beside the ban on the root contexts.
+    level: function
+    why: >-
+      Own measure: uses outside main today: 70, 64, 47, 38, 14 and 6 across six repos. A root context deep in
+      the code cannot be cancelled.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: forbidigo
+        tier: "1"
+        fix: never
+        note: >-
+          golangci-lint forbidigo with type analysis on the two calls, exclusion rules for cmd main files and
+          test files, existing hits in a shrink-only list; contextcheck and noctx for missing propagation
+          forbidigo runs with analyze-types: true. Plant: context.Background() in an internal store package
+          fails. Control: the same call in cmd main is not reported
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: contextcheck
+        tier: "1"
+        fix: never
+        note: Held by the golangci preset, whose comment on contextcheck names this rule.
+    open:
+      - The two propagation linters were priced at 27 and 10 hits.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+  - id: go.concurrency.2
+    slug: goroutine-has-an-owner
+    since: 0.1.0
+    rule: Every goroutine has an owner that waits for it and stops it.
+    detail: >-
+      A bare go statement outside an allow list of owner helpers (a run group, an error group, a wait-group
+      go) is a finding on a shrink-only list; vet's wait-group check and the revive data-race and wait-group
+      rules are on. A package with a go statement has a leak check in its tests (go.concurrency.6). Whether
+      the owner stops it on cancel stays review.
+    level: function
+    why: >-
+      Own bugs: 5 of 60 sampled concurrency bugs. Bare go statements in non-test code today: 10, 13, 2, 33, 6
+      and 3, 67 sites to put on the shrink-only list; no error group anywhere.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: revive
+        tier: "2"
+        fix: auto
+        note: >-
+          ast-grep rule on go statements outside the owner-helper allow list with a shrink-only list, plus go
+          vet waitgroup and the revive concurrency rules The revive rules are datarace, waitgroup-by-value and
+          forbidden-call-in-wg-go; the leak library is uber-go/goleak v1.3.0 (MIT, 24 Oct 2023). Plant: go
+          func(){ for { } }() in a package fires, and a test leaving it running fails the leak check. Control:
+          errgroup.Go with Wait passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: govet
+        tier: "2"
+        fix: auto
+        note: Held by the golangci preset, whose comment on govet names this rule.
+    review_question: Who waits for this goroutine, and what stops it on cancel?
+    relates:
+      - id: go.concurrency.6
+        how: see
+    open:
+      - Correct shutdown order is review.
+      - goleak was last tagged in 2023; alive but slow.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: own bugs (5 of 60)
+  - id: go.concurrency.3
+    slug: locks-released-on-every-path
+    since: 0.1.0
+    rule: >-
+      Locks are released on every path, and each piece of shared state has one writer and one owner.
+    detail: >-
+      A lock is held briefly and what it guards is written beside it. The flow-aware linter reports a mutex
+      locked and not unlocked on some path; a brief critical section with an explicit unlock passes. One
+      writer and one owner per piece of state, and the comment naming what a lock guards, stay review.
+    level: function
+    why: >-
+      Own bugs: 5 of 60 concurrency bugs, half of the row. 0 real hits today in six repos, so adoption is
+      free.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tier: R
+        note: >-
+          goconcurrencylint rule GCL1001 (a mutex locked and not unlocked on some path), with its wait-group
+          rule left off. Plant: a method returning early between Lock and Unlock reports GCL1001. Control: a
+          method with an explicit Unlock and one with defer pass
+    review_question: Who is the one writer of this state, and what does this lock guard?
+    open:
+      - >-
+        A lock-without-defer syntax rule was tried first and rejected: 9 of 9 sampled hits were deliberate
+        short critical sections (122 hits in six clones).
+      - >-
+        The rule is Hard and active, and its check row names no tool key, so its standing is planned, derived
+        until a key resolves (the shared module's issue 635). Searched 12 Nov 2026: the pinned golangci-lint
+        2.15.0 lists no linter for a lock taken and not released (help linters names none); go vet copylocks
+        reports a copied lock only; staticcheck SA2003 reports a deferred Lock only. goconcurrencylint GCL1001
+        (v0.6.0, MIT) is the match, but it ships to golangci-lint only as a module plugin, which needs a
+        custom binary built by golangci-lint custom, and golangci/golangci-lint#6496 to add it to the stock
+        binary is open. A preset that enabled it would fail on the stock binary. Binding waits for that pull
+        request to land in a release; a custom-built binary is not taken (the shared module's issue 635).
+      - >-
+        The wait-group rule gave 1 hit, a false positive; keep it off. The tool is young and small: pin it.
+      - >-
+        A guarded-by annotation analyzer exists but needs annotations on every field and was not run.
+      - "v1 evidence, not yet a source: own bugs (5 of 60)"
+  - id: go.concurrency.4
+    slug: clean-stop-on-signal
+    since: 0.1.0
+    rule: An interrupt (Ctrl-C), and SIGTERM where the system sends one, stop the program cleanly through signal.NotifyContext.
+    detail: >-
+      The program ends on os.Interrupt, and on syscall.SIGTERM where the system sends one, through
+      signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM); Go maps Windows' Ctrl+C, Ctrl+Break, close and
+      logoff onto those two. A matrix test starts the built binary or daemon (testenv.Binary.Start), interrupts
+      it (Running.Interrupt) and asserts exit within 5 seconds with the done or interrupted code and that a
+      temp file or socket it owns is removed. The old signal notify call is banned in favour of NotifyContext
+      outside the one serve helper.
+    level: program
+    why: >-
+      Own measure: used in 5 of 6 repos. A daemon that ignores the interrupt is killed by the service manager
+      and loses its state.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It has no main to stop.
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tool: ast-grep
+        tier: "2"
+        note: >-
+          shared matrix interrupt test over the built binary, plus an ast-grep ban on signal.Notify outside the
+          shared serve helper. Plant: a program that ignores the interrupt makes the test time out. Control: a
+          NotifyContext program passes
+    open:
+      - Practice-only marginal assertion on the matrix helper.
+  - id: go.concurrency.5
+    slug: state-cleared-with-its-cause
+    since: 0.1.0
+    rule: State is cleared when its cause ends.
+    level: type
+    why: >-
+      Own bugs: 5 of 60 sampled bugs were state that outlived its cause. Cause and end are semantic: no tool
+      knows a state has a cause.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: go-reasons-stated
+        backs: rule
+    review_question: What clears this new state when the thing that caused it stops?
+    open:
+      - >-
+        A test that stops the thing and asserts the tree is empty can be written per feature; it is a test,
+        not a check.
+      - >-
+        Candidate form is the leak check plus a shared stop-then-assert-empty helper, with a model asking what
+        clears new state.
+      - "v1 evidence, not yet a source: own bugs (5 of 60)"
+  - id: go.concurrency.6
+    slug: race-and-leak-checks
+    since: 0.1.0
+    rule: >-
+      A package that starts a goroutine is tested with the race detector and a leak check; the race run is in
+      the release gate and runs locally after any change that starts or changes a goroutine; and it may sit
+      outside the pre-push gate only when it is over that gate's measured budget.
+    detail: >-
+      The race run is a make target (make race) in the shared Makefile fragment. It runs in the release
+      workflow, on a tag or by manual dispatch, and never on a push or a pull request. When a change adds or
+      edits a go statement, the pre-push hook runs the race target for the touched packages. While the whole
+      race run fits the pre-push budget it stays in make check. A recipe lists the packages with a go
+      statement and greps for the leak check in their tests. Which leak check is open: the leak library's
+      test-main verifier or the runtime's goroutine-leak profile.
+    level: package
+    why: >-
+      Practice. No repo uses the leak library; only one runs the race detector by default. The profile found
+      one planted leak in verification. No push CI: the gate runs locally, and a check too slow for
+      the hook moves to the release workflow, not to a hosted job.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-go
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          race flag in the release gate and the race make target; a pre-push hook step that runs it for
+          packages whose go statements changed; companion check goroutine-tests (go/packages finds production
+          packages with go statements and requires goleak.VerifyTestMain or the goroutineleak profile in that
+          package's tests); a recipe form uses go list -f. Plant: a package with a goroutine and no leak check
+          fails; a push that changes a go statement without the race step fails the hook; a release workflow
+          without the race run fails the workflow check. Control: a package with the test-main verifier passes
+    open:
+      - Which leak check is open (conflict C-28).
+  - id: go.concurrency.7
+    slug: sequential-by-default
+    since: 0.1.0
+    rule: >-
+      Code is sequential by default: a goroutine is added only where a measured gain is cited at the go
+      statement, an adapter adds no goroutine, poll or timer, and a slow read is cached on demand with a
+      stated hold and bound.
+    detail: >-
+      The citation is a comment on the line above the go statement naming the measurement (what, how much,
+      where it is recorded). An adapter is a plain call: a go statement, time.Ticker, time.NewTimer,
+      time.AfterFunc or a loop around time.Sleep in a host or adapter package is a finding. A cached read
+      states how long it holds and how many entries it keeps, and nothing reads while nobody asks.
+    level: function
+    why: >-
+      Concurrency is the largest source of bugs that show only years in, and a measured reason at the call is
+      the cheapest guard. Keeping adapters free of polls is what keeps a program idle when nobody asks.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-go
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule for a go statement with no measurement comment above it, and forbidigo on go
+          statements, tickers, timers and AfterFunc in adapter packages (path rule over the host folder).
+          Plant: a go statement with no comment above it fires; time.NewTicker in internal/host/linux fires.
+          Control: a go statement with a measured-gain comment in the core passes
+    review_question: Does the measurement cited at this goroutine show the gain it claims?
+    relates:
+      - id: go.concurrency.2
+        how: see
+    open:
+      - >-
+        The owner of every goroutine is go.concurrency.2; idle by default is the daemon part's.

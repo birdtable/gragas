@@ -1,0 +1,6 @@
+[
+  {"name":"no pairs","patch":[{"op":"replace","path":"/0/pairs","value":[]}],"problem":"should be non-empty"},
+  {"name":"an aspect that is not one","patch":[{"op":"replace","path":"/0/pairs/0/aspect","value":"severity"}],"problem":"is not one of"},
+  {"name":"a pair with no found","patch":[{"op":"remove","path":"/0/pairs/0/found"}],"problem":"'found' is a required property"},
+  {"name":"no tool version","patch":[{"op":"remove","path":"/0/tool_version"}],"problem":"'tool_version' is a required property"}
+]

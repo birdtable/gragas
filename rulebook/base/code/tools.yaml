@@ -1,0 +1,112 @@
+part: code
+tools:
+  - key: one-formatter-plus-editorconfig
+    name: "formatter and editor config: one formatter plus EditorConfig"
+    role: >-
+      One formatter and one editor configuration across the estate; gofmt and goimports for Go, Prettier or
+      Biome with EditorConfig for the web stack.
+    binding: any
+    ships: the formatter configuration and EditorConfig in the shared repo config
+    state: chosen
+    why: >-
+      One command makes formatting a non-topic in review; Go's formatter is part of the language.
+    lost:
+      - name: golangci-lint's goimports formatter
+        why: measured at 141 CPU-seconds cold; the standalone goimports is used instead
+    open:
+      - >-
+        Which web formatter (Prettier or Biome) is not ruled; no row names a shared editor configuration yet.
+  - key: formatter-output-test
+    name: "formatting check: formatter output test"
+    role: >-
+      A check in the gate that the formatter lists nothing (its list mode exits 0 on findings), plus one
+      tree-wide format commit kept out of blame.
+    binding: any
+    ships: a gragas subcommand run by a Taskfile member, and a tier-0 hook
+    state: chosen
+    why: Reading the exit status misses every finding, so the output is what is tested.
+    open:
+      - >-
+        The blame-ignore list for a tree-wide formatting commit is a gap in the Go sources.
+  - key: churn-times-complexity
+    name: "hotspot ranking: churn times complexity"
+    role: >-
+      Ranks files by churn times complexity from git history with a 0 to 100 score per file; the report half
+      of the size trend.
+    binding: ts
+    ships: the hotspot report in the companion tool
+    state: candidate
+    why: >-
+      A churn-weighted list shows where size and complexity collect; the donor measured it as a one-off.
+    lost:
+      - name: code-maat
+        why: GPL-3.0, not checked further
+      - name: a commercial hotspot service
+        why: not adopted
+    open:
+      - >-
+        Lines alone beat the product on two repos in a rerun, so a churn-times-lines script may be enough.
+  - key: jscpd
+    name: "clone detector: jscpd"
+    role: >-
+      Finds duplicated token sequences across packages; the count only falls, with a second pass that ignores
+      identifiers.
+    version: jscpd 5.4.2
+    licence: MIT
+    binding: any
+    ships: the jscpd settings and the clone ratchet
+    state: chosen
+    why: >-
+      The lint runner's own detector compares within one package only; jscpd planted correctly across packages
+      and, with identifiers ignored, on renamed copies.
+    lost:
+      - name: dupl
+        why: >-
+          within-package only; kept as a tripwire and as a candidate engine for the copy census
+      - name: PMD CPD
+        why: judged not needed
+    open:
+      - >-
+        Its semantic and similarity modes were not run; the semantic mode needs a 548 MB model.
+  - key: local-offline-model
+    name: "similar-code finder: local offline model"
+    role: >-
+      Embeds each function with a local offline model and lists pairs with the same intent and different
+      syntax; advice only.
+    version: fallow similar-code 3.38.1
+    binding: ts
+    ships: none; advice
+    state: candidate
+    why: >-
+      Same job written differently is a semantic question that a text detector cannot answer.
+    open:
+      - Not run; the clone tool's experimental semantic mode is the other candidate.
+  - key: duplication-and-dead-code-finders
+    name: duplication and dead code finders
+    role: >-
+      Clone detection, copy censuses and unused-code finders as one category; duplication and dead code only
+      fall.
+    binding: any
+    ships: the ratchets of the duplication and deadcode rules
+    state: chosen
+    why: >-
+      Duplication and dead code are the two growth faults an agent adds without noticing; both are cheap to
+      count.
+    open:
+      - The copy census across repositories is in the arch part.
+  - key: knip
+    name: "unused code finder: knip"
+    role: >-
+      Follows the project's entry points and lists unused files, exports and dependencies; the Go counterpart
+      is the dead-code tool with a tidy module file.
+    version: knip 6.44.1
+    licence: MIT
+    binding: ts
+    ships: the knip configuration from the template
+    state: chosen
+    why: >-
+      It caught unused exports at land in a trial and finds 97 and 124 unused exports in two web repos.
+    open:
+      - >-
+        Needs the framework plugins active, else .astro files report false unused; re-run on the newest Astro
+        before binding.

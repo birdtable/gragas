@@ -1,0 +1,214 @@
+format: 3
+part: cli
+concern: environment
+rules:
+  - id: cli.environment.1
+    statement: "A non-empty NO_COLOR wins over every other setting, even when colour is forced, and so do non-TTY output, TERM=dumb and --no-color; output that is not to a terminal has no escape codes."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    exemptions:
+      - kinds:
+          - library
+        reason: It prints nothing.
+      - kinds:
+          - daemon
+          - no-terminal
+        reason: A daemon with no terminal has no colour to switch off.
+    reasoning:
+      definition: "The matrix runs every command (help and one real path) with NO_COLOR=1 together with the force variables set, non-TTY, TERM=dumb and --no-color, in a pty and a pipe, and fails on any 0x1b byte in stdout or stderr. The shared terminal module is the one reader of these variables (cli.config.3). One check holds this row, the TERM=dumb row and the pipe row."
+      pros:
+        - "Own measure: all four CLIs print escape codes with both NO_COLOR and the force variable set (292, 150, 216 and 256 escapes); the module passes and no repo gates on it. This is the fault that earns the matrix helper."
+    relations:
+      relates:
+        - cli.config.3
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.environment.2
+    statement: "Terminal width wins, else COLUMNS, never above 96; help fits and keeps the palette."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "Evidence M; the matrix is trialled and the copy printing 120 to 179 cells at COLUMNS=200 fails."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.environment.3
+    statement: "No terminal query unless rendering, and a bounded wait."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "The silent-pty trial fails everywhere today, the module included (fix A1 first); hold adoption order accordingly."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.environment.4
+    statement: "CI set means plain: no animation, no banner, no question."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "Held in the shared module; five shims in programs are removed by adoption."
+  - id: cli.environment.5
+    statement: "Not a terminal means no colour, animation, banner or question."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "Matrix trialled; passes in all programs today."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.environment.6
+    statement: "stdout and stderr are decided separately: colour appears only on the stream that is a terminal."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "A test already held in the module (a warning is painted against stderr, not stdout); generalised in the matrix."
+  - id: cli.environment.7
+    statement: "Accessible mode gives plain questions, plain bars, no banner and no escape byte in labels."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "Planned matrix; the module already has the switch."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.environment.8
+    statement: "Questions are never asked when nobody can answer; the refusal names the flag that answers it and ends with the refused code; and one shared --yes answers every yes/no question, so --apply --yes runs any command without a terminal, a destructive step excepted (cli.commands.3)."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "--yes is registered once by the shared module. It answers plain yes/no confirmations only; a choice among values is answered by its own flag (cli.environment.14), and a destructive step only by --confirm NAME."
+      pros:
+        - The refused code is 5. One shared --yes is what lets an agent run any command non-interactively without learning a flag per prompt.
+    relations:
+      relates:
+        - cli.commands.3
+        - cli.environment.14
+    sources:
+      - ref: decision-13
+        backs: rule
+      - ref: decision-65-cli
+        backs: rule
+  - id: cli.environment.9
+    statement: Nothing animates while nobody watches.
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "The test fails today (a live-update loop still ticks after focus-out; fix A4)."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.environment.10
+    statement: "A pager is used only when stdin and stdout are terminals, and a failing pager never loses the page."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      pros:
+        - "Evidence S; the test is planned."
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.environment.11
+    statement: Plain output carries the same facts as coloured output.
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "Strip test: run a command forced to colour and again plain; strip ANSI sequences from the coloured output with a stripper library and compare byte for byte with the plain output."
+      pros:
+        - A status that says ok only by a green colour is invisible without colour.
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+  - id: cli.environment.12
+    statement: "Output downsamples to the stream's real colour depth."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "Forced runs set the colour-capability variables to truecolor, 256-colour, plain xterm and dumb; the SGR parameters are parsed and the depth checked: 38;2 only under truecolor, 38;5 only under 256, 30 to 37 and 90 to 97 otherwise."
+      pros:
+        - "One program's truecolor output under TERM=xterm fails (fix A8)."
+  - id: cli.environment.13
+    statement: "One conformance function runs the terminal rows against each program's real binary, and each program calls it from its own tests."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "It runs the rows for colour off, width, CI, pipe, TERM=dumb, no question and depth. Trialled once; not in the shared test package yet."
+      pros:
+        - A program that does not call it can skip every terminal row.
+  - id: cli.environment.14
+    statement: "Every interactive question names, in code, the flag or argument that answers it, and a test walks every form."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+    reasoning:
+      definition: "The shared form constructor takes the answering flag as a required argument and prints it beside the question; a test enumerates every form in the program and checks the named flag is registered on the command that asks."
+      pros:
+        - "A form with no flag blocks an agent and a script; naming it in code is what lets cli.environment.8 refuse with the flag."
+    relations:
+      relates:
+        - cli.environment.8
+    sources:
+      - ref: decision-65-cli
+        backs: rule

@@ -1,0 +1,195 @@
+part: store
+concern: schemas
+order: 3
+title: Schemas, versions and data files
+summary: >-
+  Stored shapes are declared and checked. A data file is data and validates against a schema, a versioned file
+  carries its version and has a stated upgrade and downgrade path, a status vocabulary is declared once and
+  compared, a store that returns a time or an integer proves the stored form, and each engine has a contract
+  suite with a version floor.
+rules:
+  - id: store.schemas.1
+    slug: data-files-are-data
+    since: 0.1.0
+    rule: >-
+      Data files are data, so they are schema-valid, carry no logic or markup and hold only declared
+      placeholders.
+    detail: >-
+      Every data file validates against a JSON Schema in strict mode with no additional properties; a string
+      pattern forbids markup and logic delimiters except declared placeholders. The check uses the validator
+      as a library from the shared check, because the command-line wrapper had not been published since 2023.
+      A string in a fixture such as <b> is the plant, and the schema sets additionalProperties: false. The
+      wrapper that was rejected is ajv-cli.
+    level: file
+    why: >-
+      A data file that carries logic or markup becomes a program nobody reviews as one.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "1"
+        note: >-
+          ajv 8 validating every data file against a JSON Schema in strict mode with additionalProperties
+          false and a string pattern forbidding markup and logic delimiters. Plant: a data file with a bold
+          tag in a string, or an unknown key, fails. Control: a clean file passes
+    open:
+      - >-
+        The command-line wrapper of the validator was rejected for being stale since April 2023.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: store.schemas.2
+    slug: versioned-file-and-forward-only-steps
+    since: 0.1.0
+    rule: >-
+      A versioned file carries its version inside it and the reader says what it does with an older and a
+      newer one; schema changes are forward-only numbered steps, each in one transaction with the version
+      bump.
+    detail: >-
+      A newer file is left untouched and reported. A step marked rebuild runs only in one runner on a
+      dedicated connection, in this order: foreign keys off before BEGIN, BEGIN IMMEDIATE, create new, copy,
+      drop old, rename new, a foreign-key check that must be empty or roll back, version bump, COMMIT, foreign
+      keys on and read back. Shipped steps may not be edited (a diff against the last tag). Tests use one
+      fixture per released version plus a next fixture. The foreign-key check is the engine call
+      foreign_key_check. The shipped-steps-unchanged half is the recipe git diff <last tag> -- <steps dir>,
+      run against the directory of steps.
+    level: file
+    why: >-
+      One program renames a newer hours file aside, so a downgrade moves real data away. No repository tests a
+      file written by build N against N-1 and N+1. Latent today: one program's migrations are column additions
+      only, one has no foreign-key setting and one has no ALTER TABLE.
+    kind: rule
+    strength: Hard
+    status: active
+    unless:
+      - facets:
+          - no-persistent-files
+        reason: It has nothing to upgrade.
+    sources:
+      - ref: p-03-data
+        where: section 6
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a table test with one fixture per released version plus next, the diff of the steps directory
+          against the last tag, and a runner order test. Plant: an edited shipped step fails; a rename-first
+          step fails a test that the trigger and view survive; a dangling row makes the foreign-key check roll
+          back; a connection left with keys off fails the read-back. Control: the clean runner passes
+    open:
+      - >-
+        The rebuild order was tested by hand on one SQLite version; the runner is proposed and the plants are
+        proposed.
+      - No shared package; the pattern is written down and not extracted.
+    note: >-
+      The Postgres counterpart (numbered migrations, expand and contract) is in the postgres part.
+  - id: store.schemas.3
+    slug: status-vocabulary-declared-once
+    since: 0.1.0
+    rule: >-
+      A status column's vocabulary is declared once, in the casing the program declares, and compared across
+      the schema check list, the code constants and the doc table; the status check is generated from the same
+      declaration; tables are strict; and every check-then-insert has a unique constraint.
+    detail: >-
+      Each is read back from the schema by a test. The values follow the program's one declared casing
+      (service.contract.10); the rulebook names no default. A scan flags a select followed by an insert on the
+      same key with no unique index.
+    level: package
+    why: >-
+      In one repository 64 checks and 30 strict tables exist; another has none because its index can be
+      rebuilt. A status written in three places drifts.
+    kind: rule
+    strength: Hard
+    status: active
+    unless:
+      - facets:
+          - no-embedded-store
+        reason: It has no schema.
+    sources:
+      - ref: p-03-data
+        where: sections 5 and 13
+        backs: rule
+      - ref: decision-65-store
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a store test that reads the schema catalogue for strict tables and checks, compares the vocabulary
+          with the declared list, and a scan for check-then-insert without a unique index. Plant: a table
+          without strict fails; a status column with no check fails; a status value in a second casing fails;
+          a duplicate insert must be refused by the engine. Control: a declared status with a check passes
+    relates:
+      - id: service.contract.10
+        how: see
+      - id: postgres.schema.3
+        how: see
+    note: >-
+      The Postgres counterpart is postgres.schema.3 (a unique constraint and a check read back from the live
+      catalogue).
+  - id: store.schemas.4
+    slug: round-trip-time-and-integer
+    since: 0.1.0
+    rule: >-
+      A store that returns a time or an integer has a round-trip test asserting the stored form and the width.
+    level: function
+    why: >-
+      A time or integer that truncates in the store reads back different from what was written.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - facets:
+          - no-embedded-store
+        reason: It has no stored form.
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a round-trip test per store for time form and integer width. Plant: a truncated width fails.
+          Control: a full-width round trip passes
+    open:
+      - Not seen in the files read.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: store.schemas.5
+    slug: contract-suite-and-engine-floor
+    since: 0.1.0
+    rule: >-
+      Each named real engine has a contract suite pinning concurrent writers, retry on conflict, order, time
+      and integer width, and an engine version floor.
+    detail: >-
+      With one engine in use, the suite is the store's own test set and the floor is the part that bites now.
+      A build-time read of the linked engine version is compared with a known-bad list, which is a protected
+      path. The suite runs once per engine named on the port.
+    level: package
+    why: >-
+      The embedded driver bundles an engine version past a write-ahead-log reset bug fixed in 3.51.3. A bug in
+      a version below the floor corrupts data silently.
+    kind: rule
+    strength: Hard
+    status: active
+    unless:
+      - facets:
+          - no-store-engine
+        reason: There is no engine to pin.
+    sources:
+      - ref: p-03-data
+        where: sections 2, 4 and 24
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "3"
+        note: >-
+          a build-time read of the linked engine version against a known-bad list in rule data, run as a store
+          test helper. Plant: a build that links an engine version on the known-bad list fails. Control: a
+          version above the floor passes
+    relates:
+      - id: postgres.engine.1
+        how: see
+    note: >-
+      The Postgres form is postgres.engine.1 (tests run on the production engine version).

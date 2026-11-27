@@ -1,0 +1,609 @@
+format: 3
+layers:
+  - slug: base
+    name: Base
+    parts:
+      - slug: arch
+        name: Architecture and boundaries
+        owners:
+          - operator
+        concerns:
+          - slug: decisions
+            name: Decision records
+          - slug: layers
+            name: "Layers, boundaries and import rules"
+          - slug: ports
+            name: "Ports, adapters and providers"
+          - slug: shared
+            name: Shared code and reuse
+          - slug: structure
+            name: Structure and change shape
+          - slug: templates
+            name: Templates and scaffolds
+          - slug: measures
+            name: Architecture measures
+      - slug: code
+        name: Code health
+        owners:
+          - operator
+        concerns:
+          - slug: format
+            name: Formatting and static analysis
+          - slug: size
+            name: Size and complexity
+          - slug: duplication
+            name: Duplicated code
+          - slug: deadcode
+            name: Dead code
+          - slug: naming
+            name: Naming
+          - slug: comments
+            name: Comments and annotations
+          - slug: idioms
+            name: Idioms and function shape
+          - slug: config
+            name: Configuration reading
+      - slug: tests
+        name: Tests
+        owners:
+          - operator
+        concerns:
+          - slug: isolation
+            name: "Hermetic, deterministic tests"
+          - slug: selection
+            name: "Whole runs, and selecting tests by what changed"
+          - slug: journeys
+            name: End-to-end and browser journeys
+          - slug: admission
+            name: Admitting a test and keeping tests honest
+          - slug: doubles
+            name: "Real engines, doubles and fixtures"
+          - slug: flakes
+            name: "Reds, flakes and quarantine"
+          - slug: generated
+            name: "Fuzz, property and golden tests"
+          - slug: measures
+            name: Budgets and measures of the suite
+          - slug: runners
+            name: Test runners and their configuration
+      - slug: gates
+        name: Gates and enforcement
+        owners:
+          - operator
+        concerns:
+          - slug: command
+            name: One gate command and its tiers
+          - slug: hooks
+            name: Git hooks
+          - slug: plants
+            name: Every check proves it can fail
+          - slug: quality
+            name: Quality of checks
+          - slug: land
+            name: The land check and verdicts
+          - slug: ratchets
+            name: "Ratchets, baselines and debt"
+          - slug: exemptions
+            name: Suppressions and exemptions
+          - slug: protection
+            name: Protecting the gate
+          - slug: shared
+            name: Shared gates and toolchain
+          - slug: own-rules
+            name: "Rules for the repo's own code"
+          - slug: registry
+            name: The rule registry
+          - slug: measures
+            name: Measures
+          - slug: readers
+            name: "Readers of the gate's files"
+          - slug: tracked
+            name: What the repository tracks
+      - slug: supply
+        name: Supply chain and release
+        owners:
+          - operator
+        concerns:
+          - slug: intake
+            name: Dependency intake
+          - slug: install
+            name: Install and build inputs
+          - slug: age
+            name: Release age and provenance
+          - slug: health
+            name: Dependency health
+          - slug: scans
+            name: Vulnerability scans and security analysis
+          - slug: licences
+            name: Licences
+          - slug: secrets
+            name: Secrets and credentials
+          - slug: bumps
+            name: Version bumps and shared releases
+          - slug: release
+            name: Releases
+          - slug: workflows
+            name: CI workflow hygiene
+          - slug: provenance
+            name: Provenance of copies and generated files
+      - slug: docs
+        name: Docs and vocabulary
+        owners:
+          - operator
+        concerns:
+          - slug: glossary
+            name: Glossary and retired words
+          - slug: spelling
+            name: Spelling and word lists
+          - slug: voice
+            name: Voice
+          - slug: markdown
+            name: Markdown structure
+          - slug: freshness
+            name: "Typed, owned and dated docs"
+          - slug: links
+            name: "Links, citations and paths"
+          - slug: samples
+            name: Code in docs and the worked example
+      - slug: agents
+        name: Agents and review
+        owners:
+          - operator
+        concerns:
+          - slug: instructions
+            name: Agent instruction files
+          - slug: discovery
+            name: Finding what exists before writing
+          - slug: guards
+            name: Hooks and deny rules that bind agents
+          - slug: review
+            name: Reviewer lenses and verdicts
+          - slug: tickets
+            name: Tickets and changes
+          - slug: delivery
+            name: Delivery records and measuring guidance
+  - slug: lang
+    name: Language
+    parts:
+      - slug: go
+        name: Go
+        owners:
+          - operator
+        concerns:
+          - slug: layout
+            name: "Module layout, build and dependencies"
+          - slug: errors
+            name: "Errors, panics and exits"
+          - slug: logging
+            name: Logging in Go programs
+          - slug: concurrency
+            name: "Goroutines, locks, context and signals"
+          - slug: style
+            name: "Go style, types and resource linters"
+          - slug: cycle
+            name: Go in the development cycle
+      - slug: ts
+        name: TypeScript
+        owners:
+          - operator
+        concerns:
+          - slug: compiler
+            name: The strict compiler
+          - slug: type-safety
+            name: Type escapes and type coverage
+          - slug: lint
+            name: The lint engine and its rules
+          - slug: errors
+            name: Error handling and logging in source
+          - slug: lint-config
+            name: Lint configuration and suppression ratchet
+          - slug: runtime
+            name: Node runtime and test runner
+          - slug: modules
+            name: Module hygiene
+          - slug: packages
+            name: Package surface
+          - slug: schema
+            name: The schema model as the one source
+          - slug: gates
+            name: Gates written in TypeScript
+          - slug: cycle
+            name: TypeScript in the development cycle
+      - slug: py
+        name: Python
+        owners:
+          - operator
+        concerns:
+          - slug: cycle
+            name: Python in the development cycle
+  - slug: program
+    name: Program
+    parts:
+      - slug: cli
+        name: CLI
+        owners:
+          - operator
+        concerns:
+          - slug: exit
+            name: Exit codes and version
+          - slug: output
+            name: Machine output and the command contract
+          - slug: commands
+            name: What a command does
+          - slug: config
+            name: "Settings, environment and paths"
+          - slug: errors
+            name: Errors and words that reach a person
+          - slug: environment
+            name: Behaviour in every terminal condition
+          - slug: look
+            name: The shared terminal look
+          - slug: process
+            name: Running other programs
+          - slug: cycle
+            name: A screen in the development cycle
+      - slug: daemon
+        name: Daemon
+        owners:
+          - operator
+        concerns:
+          - slug: units
+            name: Service-manager units
+          - slug: lifecycle
+            name: "Upgrade, revert and version pairing"
+          - slug: health
+            name: Health and readiness
+          - slug: logging
+            name: Daemon logs
+          - slug: access
+            name: The local server surface
+          - slug: resilience
+            name: "Bounds, retries and parked work"
+          - slug: outbound
+            name: Outbound calls
+          - slug: notify
+            name: Notifications
+          - slug: deploy
+            name: Stacks the program writes
+          - slug: backups
+            name: Backups of managed data
+      - slug: service
+        name: Backend service
+        owners:
+          - operator
+        concerns:
+          - slug: jobs
+            name: Job runs
+          - slug: bootstrap
+            name: Bootstrap and pipeline
+          - slug: contract
+            name: API contract
+          - slug: outbox
+            name: Outbox and publishing
+          - slug: events
+            name: Event definitions
+          - slug: consumers
+            name: Event consumers
+          - slug: evolution
+            name: Event evolution
+          - slug: authz
+            name: Authorisation
+          - slug: outbound
+            name: Outbound calls
+          - slug: errors
+            name: Errors
+          - slug: logs
+            name: Structured logs
+          - slug: config
+            name: Configuration
+          - slug: health
+            name: Health and alarms
+          - slug: cycle
+            name: Services with containers in the development cycle
+      - slug: web
+        name: Web front end
+        owners:
+          - operator
+        concerns:
+          - slug: structure
+            name: Structure and boundaries
+          - slug: tokens
+            name: Tokens and styling
+          - slug: parts
+            name: Design parts and components
+          - slug: states
+            name: States and data on screen
+          - slug: layout
+            name: "Layout, widths, engines and pictures"
+          - slug: accessibility
+            name: Accessibility
+          - slug: forms
+            name: Forms and actions
+          - slug: speed
+            name: Bytes and speed
+          - slug: content
+            name: Words and content
+          - slug: permissions
+            name: Permissions in the UI
+          - slug: testing
+            name: Testing the screen
+          - slug: delivery
+            name: "Delivery, review and supply"
+          - slug: cycle
+            name: "Stories, tokens and browser journeys in the development cycle"
+      - slug: pages
+        name: Static pages and docs-only repositories
+        owners:
+          - operator
+        concerns:
+          - slug: cycle
+            name: Static pages and docs-only repositories in the development cycle
+  - slug: framework
+    name: Framework
+    parts:
+      - slug: react
+        name: React
+        owners:
+          - operator
+        concerns:
+          - slug: routing
+            name: Routing and navigation
+          - slug: server-state
+            name: Server state and data fetching
+          - slug: client-state
+            name: Client state and forms
+          - slug: components
+            name: Components and the design system
+          - slug: lint
+            name: React lint set
+          - slug: testing
+            name: React testing
+          - slug: performance
+            name: Render cost and splitting
+          - slug: config
+            name: Configuration and environment
+          - slug: cycle
+            name: React with Vite in the development cycle
+      - slug: astro
+        name: Astro
+        owners:
+          - operator
+        concerns:
+          - slug: build
+            name: Static build and script policy
+          - slug: content
+            name: Content collections
+          - slug: lint
+            name: Template lint
+      - slug: liquid
+        name: Liquid themes
+        owners:
+          - operator
+        concerns:
+          - slug: cycle
+            name: A Liquid theme in the development cycle
+  - slug: data
+    name: Data
+    parts:
+      - slug: store
+        name: "Data, any store"
+        owners:
+          - operator
+        concerns:
+          - slug: seams
+            name: Store seams and ownership
+          - slug: state-files
+            name: State files
+          - slug: schemas
+            name: "Schemas, versions and data files"
+          - slug: consistency
+            name: "Locks, versions and effects"
+          - slug: recovery
+            name: Backup and crash recovery
+      - slug: postgres
+        name: Postgres
+        owners:
+          - operator
+        concerns:
+          - slug: client
+            name: "Client, connections and transactions"
+          - slug: queries
+            name: Typed queries and error mapping
+          - slug: migrations
+            name: Migrations
+          - slug: schema
+            name: The live schema
+          - slug: indexes
+            name: Indexes
+          - slug: engine
+            name: Engine version and contract
+      - slug: dynamodb
+        name: DynamoDB
+        owners:
+          - operator
+        concerns:
+          - slug: keys
+            name: Keys and access patterns
+          - slug: migrations
+            name: Changing what a table holds
+          - slug: queries
+            name: Queries
+          - slug: writes
+            name: "Writes, conditions and expiry"
+  - slug: cloud
+    name: Cloud
+    parts:
+      - slug: aws
+        name: AWS
+        owners:
+          - operator
+        concerns:
+          - slug: iam
+            name: Identity and IAM grants
+          - slug: resources
+            name: Stored data and buckets
+          - slug: limits
+            name: Concurrency limits
+      - slug: lambda
+        name: AWS Lambda
+        owners:
+          - operator
+        concerns:
+          - slug: runtime
+            name: Handlers and middleware
+          - slug: identity
+            name: Function identity and grants
+          - slug: bundle
+            name: Bundle size
+      - slug: sst
+        name: SST
+        owners:
+          - operator
+        concerns:
+          - slug: deploy
+            name: Tool pin and deploy guard
+          - slug: constructs
+            name: Shared constructs and names
+          - slug: state
+            name: Retaining state
+          - slug: alarms
+            name: Shared alarms
+kinds:
+  - slug: cli
+    name: Command-line program
+    description: "A program a person or an agent runs from a terminal, one command at a time."
+  - slug: daemon
+    name: Long-running program
+    description: A program that runs in the background under a service manager and is reached through a socket or a port.
+  - slug: service
+    name: Network service
+    description: A program that answers requests over HTTP for other programs or for a page.
+  - slug: web-app
+    name: Web application
+    description: "Pages a person uses in a browser, built from components and served by a program of the product."
+  - slug: library
+    name: Library
+    description: "Code other code imports: a package or a module with no program of its own."
+  - slug: site
+    name: Static site
+    description: "Pages built ahead of time and served as files, with little or no code in the browser."
+  - slug: cloud-service
+    name: Cloud service
+    description: "A service run on a cloud provider's managed functions, tables and queues."
+  - slug: docs
+    name: Docs-only repository
+    description: "A repository that holds Markdown, pages or nothing, with no program to build: its checks are the commit members and a members file that says so."
+  - slug: no-identity
+    name: No identity
+    description: "A program with no visitor, no grant and no sign-in: every view is public data, so the rules that assume a signed-in person do not bind it."
+  - slug: static-data
+    name: Static data
+    description: "A page that reads one published document and writes nothing to a server: it has no live connection, no reconnect and no write, so the rules about a live server do not bind it."
+  - slug: capability-role
+    name: capability-role
+    description: "a facet of the part arch before the format; a rule scoped to it names this kind"
+  - slug: no-readers
+    name: no-readers
+    description: "a facet of the part arch before the format; a rule scoped to it names this kind"
+  - slug: test-selection
+    name: test-selection
+    description: "a facet of the part tests before the format; a rule scoped to it names this kind"
+  - slug: go
+    name: go
+    description: "a facet of the part go before the format; a rule scoped to it names this kind"
+  - slug: no-database
+    name: no-database
+    description: "a facet of the part go before the format; a rule scoped to it names this kind"
+  - slug: ts
+    name: ts
+    description: "a facet of the part ts before the format; a rule scoped to it names this kind"
+  - slug: py
+    name: py
+    description: "a facet of the part py before the format; a rule scoped to it names this kind"
+  - slug: no-json
+    name: no-json
+    description: "a facet of the part cli before the format; a rule scoped to it names this kind"
+  - slug: no-terminal
+    name: no-terminal
+    description: "a facet of the part cli before the format; a rule scoped to it names this kind"
+  - slug: single-client
+    name: single-client
+    description: "a facet of the part cli before the format; a rule scoped to it names this kind"
+  - slug: single-config-file
+    name: single-config-file
+    description: "a facet of the part cli before the format; a rule scoped to it names this kind"
+  - slug: no-http
+    name: no-http
+    description: "a facet of the part daemon before the format; a rule scoped to it names this kind"
+  - slug: no-notify
+    name: no-notify
+    description: "a facet of the part daemon before the format; a rule scoped to it names this kind"
+  - slug: no-page
+    name: no-page
+    description: "a facet of the part daemon before the format; a rule scoped to it names this kind"
+  - slug: no-retry
+    name: no-retry
+    description: "a facet of the part daemon before the format; a rule scoped to it names this kind"
+  - slug: no-stack
+    name: no-stack
+    description: "a facet of the part daemon before the format; a rule scoped to it names this kind"
+  - slug: rebuildable-stores
+    name: rebuildable-stores
+    description: "a facet of the part daemon before the format; a rule scoped to it names this kind"
+  - slug: anonymous-visitors
+    name: anonymous-visitors
+    description: "a facet of the part service before the format; a rule scoped to it names this kind"
+  - slug: no-jobs
+    name: no-jobs
+    description: "a facet of the part service before the format; a rule scoped to it names this kind"
+  - slug: canvas
+    name: canvas
+    description: "a facet of the part web before the format; a rule scoped to it names this kind"
+  - slug: field-traffic
+    name: field-traffic
+    description: "a facet of the part web before the format; a rule scoped to it names this kind"
+  - slug: story-without-text-surface
+    name: story-without-text-surface
+    description: "a facet of the part web before the format; a rule scoped to it names this kind"
+  - slug: react
+    name: react
+    description: "a facet of the part react before the format; a rule scoped to it names this kind"
+  - slug: liquid
+    name: liquid
+    description: "a facet of the part liquid before the format; a rule scoped to it names this kind"
+  - slug: no-embedded-store
+    name: no-embedded-store
+    description: "a facet of the part store before the format; a rule scoped to it names this kind"
+  - slug: no-log-or-lock-file
+    name: no-log-or-lock-file
+    description: "a facet of the part store before the format; a rule scoped to it names this kind"
+  - slug: no-persistent-files
+    name: no-persistent-files
+    description: "a facet of the part store before the format; a rule scoped to it names this kind"
+  - slug: no-secrets
+    name: no-secrets
+    description: "a facet of the part store before the format; a rule scoped to it names this kind"
+  - slug: no-store
+    name: no-store
+    description: "a facet of the part store before the format; a rule scoped to it names this kind"
+  - slug: no-store-engine
+    name: no-store-engine
+    description: "a facet of the part store before the format; a rule scoped to it names this kind"
+  - slug: no-user-data
+    name: no-user-data
+    description: "a facet of the part store before the format; a rule scoped to it names this kind"
+  - slug: not-lock-owner
+    name: not-lock-owner
+    description: "a facet of the part store before the format; a rule scoped to it names this kind"
+  - slug: not-state-file-owner
+    name: not-state-file-owner
+    description: "a facet of the part store before the format; a rule scoped to it names this kind"
+  - slug: read-only
+    name: read-only
+    description: "a facet of the part store before the format; a rule scoped to it names this kind"
+  - slug: stateless
+    name: stateless
+    description: "a facet of the part store before the format; a rule scoped to it names this kind"
+  - slug: postgres
+    name: postgres
+    description: "a facet of the part postgres before the format; a rule scoped to it names this kind"

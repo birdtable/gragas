@@ -1,0 +1,10 @@
+$ gragas plugin record author/standin/1.0.0 --op entries --apply
+--- exit 1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  failed     the plan could not be made:
+  the plugin standin@1.0.0 could not be
+  opened: the plugin needs a feature the
+  engine lacks: it needs nonesuch
+--- stderr

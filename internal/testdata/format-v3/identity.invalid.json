@@ -1,0 +1,11 @@
+[
+  {"name": "an unknown field", "patch": [{"op": "add", "path": "/0/standing", "value": "enforced"}], "problem": "Additional properties are not allowed ('standing' was unexpected)"},
+  {"name": "a missing required field", "patch": [{"op": "remove", "path": "/0/governance"}], "problem": "'governance' is a required property"},
+  {"name": "a wrong enum", "patch": [{"op": "replace", "path": "/0/kind", "value": "tier"}], "problem": "is not one of"},
+  {"name": "an older format version", "patch": [{"op": "replace", "path": "/0/format", "value": 2}], "problem": "value must be 3"},
+  {"name": "a content hash that is not a digest", "patch": [{"op": "add", "path": "/0/extends/content_hash", "value": "abc"}], "problem": "does not match"},
+  {"name": "a hand-written preset listed twice", "patch": [{"op": "add", "path": "/0/hand_written_presets", "value": ["lint-a", "lint-a"]}], "problem": "are equal"},
+  {"name": "a hand-written preset that is not a slug", "patch": [{"op": "add", "path": "/0/hand_written_presets", "value": ["Lint A"]}], "problem": "does not match"},
+  {"name": "an empty list of hand-written presets", "patch": [{"op": "add", "path": "/0/hand_written_presets", "value": []}], "problem": "should be non-empty"},
+  {"name": "a fingerprint written in the pin", "patch": [{"op": "add", "path": "/0/extends/fingerprint", "value": "SHA256:x"}], "problem": "Additional properties are not allowed ('fingerprint' was unexpected)"}
+]

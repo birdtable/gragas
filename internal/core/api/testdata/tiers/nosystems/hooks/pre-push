@@ -1,0 +1,2 @@
+#!/bin/sh
+exec go tool "-modfile=tools.mod" task pre-push

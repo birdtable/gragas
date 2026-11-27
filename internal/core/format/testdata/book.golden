@@ -1,0 +1,321 @@
+{
+  "Identity": {
+    "format": 3,
+    "name": "example",
+    "version": "1.0.0",
+    "kind": "overlay",
+    "licences": {
+      "rules": "CC-BY-4.0",
+      "presets": "MIT"
+    },
+    "language": "en",
+    "docs_url": "https://docs.example.test/example",
+    "extends": {
+      "rulebook": "base",
+      "version": "2.1.0"
+    },
+    "imports": [
+      {
+        "rulebook": "other",
+        "version": "0.3.0",
+        "parts": [
+          "go",
+          "cli"
+        ]
+      }
+    ],
+    "owners": [
+      "team-a"
+    ],
+    "governance": {
+      "contribution": "proposals",
+      "decision_required": true,
+      "trial_releases": 2,
+      "review_days": 90
+    },
+    "tested": {
+      "tools": [
+        {
+          "name": "golangci-lint",
+          "version": "2.1.0"
+        }
+      ],
+      "min_engine": "1.0.0"
+    },
+    "budgets": {
+      "statement_words": 30
+    }
+  },
+  "Structure": {
+    "format": 3,
+    "layers": [
+      {
+        "slug": "language",
+        "name": "Language",
+        "parts": [
+          {
+            "slug": "go",
+            "name": "Go",
+            "owners": [
+              "team-a"
+            ],
+            "concerns": [
+              {
+                "slug": "errors",
+                "name": "Errors"
+              },
+              {
+                "slug": "layout",
+                "name": "Layout",
+                "aliases": [
+                  "folders"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "kinds": [
+      {
+        "slug": "service",
+        "name": "Service",
+        "description": "runs as a process"
+      }
+    ]
+  },
+  "Rules": [
+    {
+      "id": "go.errors.1",
+      "aliases": [
+        "go.errs.1"
+      ],
+      "statement": "Wrap an error with what was being done.",
+      "strength": "must",
+      "status": "active",
+      "scope": {
+        "parts": [
+          "go"
+        ],
+        "paths": [
+          "**/*.go"
+        ],
+        "kinds": [
+          "service"
+        ]
+      },
+      "exemptions": [
+        {
+          "paths": [
+            "testdata/**"
+          ],
+          "reason": "fixtures hold planted code"
+        }
+      ],
+      "reasoning": {
+        "definition": "An error says what failed and what was being done.",
+        "pros": [
+          "the cause is found from the message"
+        ],
+        "cons": [
+          "longer messages"
+        ],
+        "decision": "wrap-errors"
+      },
+      "pairs": [
+        {
+          "number": 1,
+          "target": "source"
+        }
+      ],
+      "owner": "team-a",
+      "review_by": "2027-01-31",
+      "relations": {
+        "relates": [
+          "go.layout.1"
+        ],
+        "covers": [
+          "go.errors.2"
+        ]
+      },
+      "origin": "authored",
+      "sources": [
+        {
+          "ref": "effective-go",
+          "where": "errors",
+          "says": "Errors are values.",
+          "backs": "rule"
+        }
+      ],
+      "bindings": [
+        {
+          "tool": "golangci-lint",
+          "target": "config",
+          "key": "wrapcheck",
+          "value": true,
+          "options": {
+            "ignore-sigs": [
+              ".Errorf("
+            ]
+          },
+          "severity": "error",
+          "rung": 1,
+          "run_point": "push",
+          "remedy": "gofmt",
+          "pair": 1,
+          "pair_path": "pkg/a.go",
+          "tightens": "base.errors.1"
+        }
+      ]
+    },
+    {
+      "id": "go.errors.2",
+      "statement": "Return an error and never panic in a library.",
+      "strength": "should",
+      "status": "proposed",
+      "origin": "migrated"
+    },
+    {
+      "id": "go.layout.1",
+      "statement": "Keep one package per folder.",
+      "strength": "may",
+      "status": "retired",
+      "origin": "imported",
+      "replaced_by": "go.layout.1"
+    }
+  ],
+  "Anchors": null,
+  "Terms": [
+    {
+      "slug": "gate",
+      "definition": "A check that stops a push.",
+      "literal": "make check"
+    }
+  ],
+  "Sources": [
+    {
+      "slug": "effective-go",
+      "kind": "guide",
+      "title": "Effective Go",
+      "locator": "https://go.dev/doc/effective_go",
+      "attribution": "The Go authors",
+      "verified": "2026-11-01"
+    }
+  ],
+  "Decisions": [
+    {
+      "slug": "wrap-errors",
+      "title": "Wrap every error",
+      "text": "Wrapping keeps the cause and adds the step.",
+      "rejected": [
+        "return errors bare"
+      ],
+      "cites": {
+        "sources": [
+          "effective-go"
+        ],
+        "rules": [
+          "go.errors.1"
+        ],
+        "bindings": [
+          "go.errors.1 golangci-lint wrapcheck"
+        ]
+      },
+      "who": "team-a",
+      "date": "2026-10-30"
+    }
+  ],
+  "Exclusions": [
+    {
+      "overlay": "example",
+      "rule": "base.errors.1",
+      "number": 1,
+      "decision": "wrap-errors",
+      "who": "team-a",
+      "when": "2026-11-02T10:00:00Z",
+      "lifted": {
+        "decision": "wrap-errors",
+        "who": "team-a",
+        "when": "2026-11-03T10:00:00Z"
+      }
+    }
+  ],
+  "Proposals": [
+    {
+      "format": 3,
+      "slug": "tighten-wrap",
+      "target": "base",
+      "state": "open",
+      "link": "https://example.test/pull/1",
+      "opened": "2026-11-04",
+      "document": {
+        "contract": "1.3",
+        "proposal": {
+          "change": {
+            "anatomy": "A wrapped error names its step."
+          },
+          "link": "https://example.test/pull/1",
+          "opened": "2026-11-04",
+          "slug": "tighten-wrap",
+          "state": "open",
+          "target": "base"
+        }
+      }
+    }
+  ],
+  "Translations": [
+    {
+      "entity": "rule:go.errors.1",
+      "field": "statement",
+      "language": "fr",
+      "text": "Enveloppez une erreur avec ce qui était en cours.",
+      "hash": "sha256:2eeaad265b9cd5c91e2783a32f74a5d2dc23b123c29cc116289d71c7d0a1d690"
+    },
+    {
+      "entity": "rule:go.errors.1",
+      "field": "reasoning.definition",
+      "language": "fr",
+      "text": "Une erreur dit ce qui a échoué et ce qui était en cours.",
+      "hash": "sha256:f3e17c194cc69178a98115219e19f39e89a7079df9c805a6d52f938a4d8399db"
+    }
+  ],
+  "BindingRecords": [
+    {
+      "Path": "bindings/tighten-errors.yaml",
+      "Digest": "sha256:f0cbdf2a08a36336c24d9f4bc96a78af67d8a3d8abf499ce2333679c82be5b46",
+      "Data": "c3ViamVjdDogYmFzZS5lcnJvcnMuMQpub3Q6IFthIHNjaGVtYSwgbm90aGluZyByZWFkcyB0aGlzCg=="
+    }
+  ],
+  "History": [
+    {
+      "format": 3,
+      "number": 1,
+      "kind": "init",
+      "entity": "rule:go.errors.1",
+      "after": {
+        "status": "proposed"
+      },
+      "who": "team-a",
+      "when": "2026-11-01T09:00:00Z",
+      "plan": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "format": 3,
+      "number": 2,
+      "previous": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "kind": "promote",
+      "entity": "rule:go.errors.1",
+      "before": {
+        "status": "proposed"
+      },
+      "after": {
+        "status": "active",
+        "review_by": "2027-01-31"
+      },
+      "who": "team-a",
+      "when": "2026-11-02T09:00:00Z",
+      "plan": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "decision": "wrap-errors"
+    }
+  ]
+}

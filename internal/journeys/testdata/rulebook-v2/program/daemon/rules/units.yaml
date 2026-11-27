@@ -1,0 +1,168 @@
+part: daemon
+concern: units
+order: 1
+title: Service-manager units
+summary: >-
+  A daemon runs under the operating system's service manager (launchd on macOS, systemd on Linux) from one
+  rendered template per manager: the files are well formed, the unit runs with the least identity that can
+  reach what it serves and a sandbox, it restarts on failure only with a backoff, and each state file has one
+  writer.
+rules:
+  - id: daemon.units.1
+    slug: unit-files-well-formed
+    since: 0.1.0
+    rule: >-
+      Service-manager files (plist, unit) are well formed, and each comes from a template.
+    level: deploy
+    why: Practice; a malformed plist is silently ignored by the manager.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          plutil -lint on the rendered plist (macOS), the unit-render test of daemon.units.2, systemd-analyze
+          verify on a Linux host. Plant: a malformed plist fails. Control: the rendered plist passes
+    open:
+      - >-
+        The plutil plant was run in an earlier trial; the Linux verify step needs a Linux host.
+  - id: daemon.units.2
+    slug: least-identity-and-sandbox
+    since: 0.1.0
+    rule: >-
+      A daemon runs with the least identity that can reach what it serves, from one template per service
+      manager, with a sandbox wherever the manager offers one, and its notes state the trust line.
+    detail: >-
+      Least identity is chosen per platform, not assumed: a separate system account where the manager can give
+      one (systemd DynamicUser= or User=), and on a single-user machine the owner's own account (a launchd
+      LaunchAgent), never root, when a separate account would need more privilege to reach the owner's data
+      than the owner already has. A daemon never runs as root to serve owner-level requests. Each supported
+      manager has its own template; a manager added later adds a template and a golden, and the rule does not
+      change. The notes name who may reach the daemon, what that caller gains, and which manager settings hold
+      the line. The rendered templates are byte-compared to a golden; systemd-analyze verify and
+      systemd-analyze security with a threshold run on Linux (the threshold makes the command exit non-zero
+      above an exposure level, per a systemd commit; not run, no Linux box here); plutil -lint runs on macOS,
+      and the plist names no UserName of root.
+    level: deploy
+    why: >-
+      Practice; a daemon with more identity than it needs turns any bug into a compromise of that identity. On
+      a laptop a separate account is more exposure, not less, so the principle is least identity with the
+      trust line written down.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          render each manager's template and byte-compare to a golden; systemd-analyze security --threshold N
+          on Linux; plutil -lint on macOS and a test that the plist sets no root identity; a test that the
+          notes carry a trust-line section. Plant: a systemd template dropping a sandbox directive fails, and
+          a plist run as root fails. Control: the full template for each manager passes
+    open:
+      - Security threshold behaviour is from source, not run.
+  - id: daemon.units.3
+    slug: restart-on-failure-only
+    since: 0.1.0
+    rule: >-
+      The unit template restarts the daemon on failure only, with a backoff and a stated limit set in each
+      manager's own terms; an idle exit is a clean exit and is never restarted; a one-shot job is never placed
+      where the manager reruns it at load or login; and the health document counts restarts.
+    detail: >-
+      Under systemd: Restart=on-failure with RestartSec and StartLimitBurst plus StartLimitIntervalSec, never
+      Restart=always, so a daemon that leaves after its idle time (daemon.lifecycle.5) stays down until its
+      socket wakes it. Under launchd: KeepAlive with SuccessfulExit false and a ThrottleInterval, never a bare
+      KeepAlive true for a job that exits on idle. A one-shot job (an update, a migration) has neither
+      RunAtLoad nor KeepAlive and is not written to a folder the manager loads at login (under launchd, not in
+      ~/Library/LaunchAgents); it is written in the program's state folder, started from there and removed
+      when it ends, and doctor names one that is left. A manager added later states its own restart, backoff,
+      limit and one-shot settings in the test table.
+    level: deploy
+    why: >-
+      A daemon that dies and stays dead is an outage no one sees; the limit stops a crash loop. A restart on a
+      clean idle exit keeps a process awake that should sleep, and a one-shot job left where the manager loads
+      it reruns at every login.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          unit-render test with one row per manager asserting restart on failure only, a backoff and a limit
+          (systemd Restart=on-failure, RestartSec, StartLimitBurst; launchd KeepAlive SuccessfulExit false,
+          ThrottleInterval), that a one-shot job's plist or unit has no load-time or keep-alive key and is
+          written outside the login-loaded folder, and that the health document carries a restart count.
+          Plant: a unit with Restart=always, a plist with KeepAlive true on an idle-exit daemon, and a
+          one-shot plist in the LaunchAgents folder each fail. Control: restart on failure with a backoff and
+          a limit, and a one-shot job in the state folder, pass
+    relates:
+      - id: daemon.lifecycle.5
+        how: see
+      - id: daemon.resilience.1
+        how: see
+    note: >-
+      Split from the daemon bounds-and-supervision row; the other parts are daemon.resilience.1 to 3.
+      Rewritten with daemon.lifecycle.5 (idle by default) as the R-15 amendment to D-T53 asks.
+  - id: daemon.units.4
+    slug: one-writer-no-widening
+    since: 0.1.0
+    rule: >-
+      Each state file has one writer; a privileged process writes only files it alone owns, in a folder no
+      less privileged account can write; and a daemon that runs as a person passes only requests that give a
+      process of that person nothing it did not already have.
+    detail: >-
+      A test lists every state file with its one writer and its folder, and fails on a file with two writers
+      or a privileged writer in a folder another account can write. A route or verb that would widen what a
+      caller of the person's daemon can do (a passed write, a passed POST, a run of a command the caller could
+      not run itself) is refused until a design rules it, and the route table marks each route as read or as
+      ruled by a named design.
+    level: program
+    why: >-
+      A root writer in a folder a person owns can be tricked by a link into writing anywhere, and a person's
+      daemon that passes more than the person has is a privilege raise for anyone who reaches it.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a table test of state files, writers and folder owners against the code's write paths, and a
+          route-table test that refuses a writing route with no named design. Plant: a second writer of one
+          state file fails, and a privileged write into a person-owned folder fails; a passed POST route with
+          no design fails. Control: one writer per file in its own folder, and read-only passed routes, pass
+    relates:
+      - id: store.seams.4
+        how: see
+    note: >-
+      store.seams.4 records writers per seam; this rule binds the privilege of each writer.

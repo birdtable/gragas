@@ -1,0 +1,12 @@
+$ gragas check
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+reading rulebook/ in .
+
+part                         entries  enforced  tools
+Architecture and boundaries  5        1         1
+Go                           1        1         0
+
+  done       6 entries in 2 files, and no problem
+--- stderr
+warning: the names check is skipped: GRAGAS_NAMES_FILE is not set

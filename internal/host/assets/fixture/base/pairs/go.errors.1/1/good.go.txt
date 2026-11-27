@@ -1,0 +1,5 @@
+package a
+
+import "fmt"
+
+func F(err error) error { return fmt.Errorf("read the file: %w", err) }

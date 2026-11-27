@@ -1,0 +1,38 @@
+part: sst
+concern: state
+order: 3
+title: Retaining state
+summary: Resources the stack imports and does not own survive its removal.
+rules:
+  - id: sst.state.1
+    slug: imported-resources-retained
+    since: 0.1.0
+    rule: >-
+      Imported identity, IAM and DNS resources carry retain-on-delete, so removing the stack does not remove
+      them.
+    detail: >-
+      The infrastructure rule set also requires grants only through managed policies and a pinned role name
+      for every function (the Lambda part holds those two) as one set of rules over the infrastructure code.
+      In Go, a binary never rewrites shared state and removal must not take user data.
+    level: deploy
+    why: >-
+      A resource the stack only imported belongs to others; deleting the stack must not delete it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          ast-grep rule over the infrastructure code failing an imported identity, IAM or DNS resource without
+          retain-on-delete. Plant: an imported user pool without retention fails. Control: an imported pool
+          with retention passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      Beyond the AWS rule state-bearing-resources-retained, which covers state the stack owns.

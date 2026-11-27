@@ -1,0 +1,137 @@
+part: postgres
+concern: queries
+order: 2
+title: Typed queries and error mapping
+summary: >-
+  Queries are checked against the schema before they run. They are typed from the one data model, built with a
+  typed query builder, the live schema is checked against the model, parser behaviour is tested against a real
+  database, status guards come from the transition table, and storage errors map to one error envelope in one
+  place.
+rules:
+  - id: postgres.queries.1
+    slug: queries-typed-from-the-model
+    since: 0.1.0
+    rule: >-
+      Query types are generated from the program's one data model, which is the single source of every shape;
+      the live schema is checked against the model, never the model against the live schema; and SQL is built
+      with a typed query builder so every table and column is checked at compile time.
+    detail: >-
+      The model is declared once, in one schema library, and generates the table types, the DDL, the JSON
+      Schema and the API and tool contracts; no second schema library owns a shape. The gate regenerates every
+      derived file from the model and fails on a diff, and compares the schema after replaying every migration
+      with the DDL the model generates (postgres.migrations.1). Types are never generated from the live
+      database. A new derived shape (a new contract kind) is one more generator from the same model.
+    level: type
+    why: >-
+      A query written as a string fails at run time on a renamed column; types from the model fail the build
+      instead. One model that generates every other shape is the strongest guard against a type, a table and a
+      contract drifting apart over years, and a source chosen once cannot be argued about per change.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-postgres
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "2"
+        note: >-
+          regenerate the table types from the model and fail on a diff, with the typed query builder as the
+          only way to write queries, checked by tsc; a dependency ban on a second schema library. Plant: a
+          hand-edited table type fails the regenerate step, and a migration that renames a column the model
+          does not fails the replay comparison. Control: types regenerated from the model, and a migration
+          matching the model's DDL, pass
+    relates:
+      - id: postgres.migrations.1
+        how: see
+    open:
+      - The source rows give no plant; the plant is proposed here.
+      - >-
+        A service that today generates types from the live schema contradicts this rule; such services are
+        dormant under D-T00 until their own target is read.
+      - >-
+        In Go the counterpart is a query generator with the generated code regenerating with no diff, reserved
+        and not yet adopted.
+  - id: postgres.queries.2
+    slug: parser-tested-against-the-real-database
+    since: 0.1.0
+    rule: >-
+      Parser behaviour (how the client reads 64-bit integers, times and decimals) is tested against a real
+      Postgres, and generated query output is ignored by the formatter.
+    level: function
+    why: >-
+      A parser configured against a mock reads the wrong width in production; generated output rewritten by
+      the formatter fails the no-diff regeneration check.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "2"
+        note: >-
+          a round-trip test of integer width, time and decimal forms against a Postgres container, and a
+          formatter ignore entry for generated query output. Plant: a parser that truncates a 64-bit value
+          fails the round trip; a formatter that rewrites generated output fails the regeneration diff.
+          Control: the configured parser passes
+    relates:
+      - id: store.schemas.4
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      The embedded-store counterpart is store.schemas.4 (a round-trip test of stored form and width).
+  - id: postgres.queries.3
+    slug: status-guards-from-the-transition-table
+    since: 0.1.0
+    rule: >-
+      Status guards derive from the transition table through one builder, with no hand-written status
+      condition.
+    level: function
+    why: >-
+      A hand-written WHERE on a status drifts from the transition table the moment a transition is added.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: ast-grep
+        tier: "1"
+        note: >-
+          an ast-grep rule banning a hand-written status comparison in a query outside the builder. Plant: a
+          hand-written WHERE status = in a repository fails. Control: a guard from the builder passes
+    open:
+      - The source row gives no plant or tool; both are proposed.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: postgres.queries.4
+    slug: storage-errors-mapped-in-one-place
+    since: 0.1.0
+    rule: >-
+      There is one error envelope, and storage errors (the SQLSTATE codes) are mapped to it in one place.
+    detail: >-
+      Local error tables are banned, and a test shows that no raw database message reaches the response.
+    level: package
+    why: >-
+      A storage error that reaches the response raw leaks the schema and gives callers a different shape per
+      route.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-03-data
+        where: section 24
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tool: eslint
+        tier: "2"
+        note: >-
+          a toolkit test that every SQLSTATE the service can raise maps to the envelope and that no raw
+          database message reaches a response; ESLint bans a local error table. Plant: a handler that returns
+          a raw database message fails the test. Control: the mapped envelope passes
+    open:
+      - >-
+        The source row says the mapping lives in the shared toolkit; the test is proposed.

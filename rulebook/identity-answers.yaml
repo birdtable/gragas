@@ -1,0 +1,24 @@
+# The owner's identity values for the rulebook.
+# Each key names the migrate flag or the identity key it feeds. migrate reads flags,
+# not this file, and no loader reads it. The base URL is absent on purpose: the
+# owner has not given one, and the engine never guesses an address (S72).
+short_name: gragas-rules          # --name
+version: 1.0.0                    # --version
+licences:
+  rules: Apache-2.0               # --licence
+  presets: Apache-2.0             # --presets-licence
+language: en                      # --language, the authoritative language
+spelling: en-GB                   # one variant, held by a check (docs.spelling.2); no flag
+owners:                           # --owner, roles, never personal names
+  - rulebook-owner
+  - rulebook-maintainers
+governance:
+  checker_publishers:             # only the owners publish checker code
+    - rulebook-owner
+    - rulebook-maintainers
+  checker_second_reviewer: true   # checker code and presets; prose rules take none
+  checker_proof: sandboxed        # third-party checker code runs at the sandboxed level
+# docs_url: absent until the owner gives the published base URL (--docs-url)
+# explorer_url: unset until the explorer is published
+# format: taken from the build, never typed
+# budgets: unset until M9

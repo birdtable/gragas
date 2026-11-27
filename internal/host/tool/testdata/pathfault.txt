@@ -1,0 +1,21 @@
+# The paths whose answer depends on the system, one per line: the word, a tab, the path.
+# same: refused as not absolute and clean on every system.
+# abs: absolute here or else rooted with no volume.
+# absc: absolute here or else not absolute and clean.
+# rooted: rooted with no volume on a system with volumes, else not absolute and clean.
+# volume: names a volume with no root where there is a volume, else not absolute and clean.
+same	C:\repo
+same	\\host\share\repo
+abs	/a\b
+rooted	\repo
+absc	C:/repo
+volume	C:repo
+volume	C:
+same	C:/a/../b
+same	C:/a/./b
+same	C:/a/
+same	C:/a//b
+abs	/
+abs	/repo
+same	/a/../b
+unc	//host/share

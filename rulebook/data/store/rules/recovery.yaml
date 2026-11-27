@@ -1,0 +1,44 @@
+format: 3
+part: store
+concern: recovery
+rules:
+  - id: store.recovery.1
+    statement: "Backup uses the engine's own interface, and for every store that cannot be rebuilt a restore drill restores a backup or a point in time to a new path or instance, runs an integrity check and compares counts with the source; a file copy of a live store is not a backup."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - rebuildable-stores
+        reason: A rebuild replaces a restore.
+    reasoning:
+      definition: "Counts are compared against a minimum from the fixture, so a drill over an empty store fails. The drill is started by hand or by a release, never by a timer. For a managed relational store the restore goes to a new cluster; for an embedded store a test backs up a populated store, restores it and checks. Anything you cannot re-derive from other data counts as not rebuildable. The embedded-store integrity query is the engine call integrity_check."
+      pros:
+        - "A copy taken during writes may not be a backup. A neighbouring system found its corruption because its pipeline snapshotted and checked its backups. No row covered backup or restore before this one, and an unrebuildable store is a plain file (store.seams.6), so the embedded checks bind no store today."
+    relations:
+      relates:
+        - store.seams.6
+    sources:
+      - ref: p-03-data
+        where: section 4 and five-list item 2
+        backs: rule
+  - id: store.recovery.2
+    statement: "A stateful program is crash-injected: it is killed at random points in a scripted workload, restarted, and its invariants are asserted."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - library
+        reason: There is no state to lose.
+      - kinds:
+          - stateless
+        reason: There is no state to lose.
+    reasoning:
+      definition: A harness per stateful program runs at land for the affected store.
+      pros:
+        - "No crash was injected anywhere in the estate; the atomic-write row proposes it only for the write itself. A harness that cannot break the invariant with a known flaw proves nothing."
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: "sections 1, 18 and 23"
+        backs: rule

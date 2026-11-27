@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("rulebook: fixture-base\nsource: ../rulebook\nparts: [base, go, web]\nformat: 1\n")

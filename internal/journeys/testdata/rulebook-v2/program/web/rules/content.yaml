@@ -1,0 +1,391 @@
+part: web
+concern: content
+order: 9
+title: Words and content
+summary: >-
+  Every visible word, number, date and brand name comes from typed, checked configuration and one formatter,
+  so a page can change language or brand without code changes.
+rules:
+  - id: web.content.1
+    slug: no-sentence-in-view
+    since: 0.1.0
+    rule: >-
+      A template or component holds no sentence: every user-visible word comes from a named message module, a
+      data file or the server, with no literal in markup, aria-label, placeholder, title, alt or notice, and
+      no new per-feature copy file.
+    detail: >-
+      New files start at zero; old ones only fall (ESLint bulk suppressions). The lint is
+      `eslint-plugin-i18next` `no-literal-string` in jsx-text-only mode plus attribute lists on components and
+      templates; strings in frontmatter and script that reach the page are caught by `no-restricted-syntax` on
+      assignments to `textContent`, `innerText`, `title` and `placeholder` with a string literal; a
+      syntax-tree scanner is the second net. Server-owned display text that is not an error renders through a
+      marker part that is marked and counted. Where a builder has no notices, errors go to the lifecycle
+      banner as messages. Template element `<h1>` and `<script>` in `.astro` and `.tsx`; lint mode `mode:
+      "jsx-text-only"`; plants `el.textContent = "Something went wrong"`; control `t("dash.title")` as a JSX expression.
+    level: word
+    why: >-
+      One site holds 981 literals, another 1,844, about 8,400 sites in all; the scanner's verdicts agreed on
+      80 of 80 judged cases on the web. There is no zero target for old files.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: web-reasons-stated
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          `eslint-plugin-i18next` `no-literal-string` (jsx-text-only plus attribute lists) and
+          `no-restricted-syntax` on literal assignment to textContent, innerText, title and placeholder, with
+          bulk suppressions for old files. Plant: a sentence in an h1 and `el.textContent = "Something went
+          wrong"` each fail. Control: `{t("dash.title")}` passes
+    open:
+      - >-
+        Templates and a literal title attribute fired in the template stack; frontmatter constants and script
+        strings need the textContent selector, which was not planted. Not run on components.
+      - The marker-part and message-kernel names are one codebase's and belong to react.
+      - >-
+        v1 evidence, not yet a source: A: 981 and 1,844 literals in two sites; about 8,400 in all
+  - id: web.content.2
+    slug: one-formatter
+    since: 0.1.0
+    rule: >-
+      Numbers, sizes, durations, relative times, dates, times, money and lists come from one formatter with
+      one locale rule, golden-tested against a table that the Go side also runs; the Intl constructors appear
+      only inside it.
+    detail: >-
+      View files may not use `toFixed`, `toLocale*String`, `Intl.NumberFormat`, `Intl.DateTimeFormat`,
+      `Intl.PluralRules`, `Math.pow`, `** 10`, `>> 10`, `/ 1024` or `/ 1e9`; only the formatter module may
+      (ESLint `no-restricted-properties` and `no-restricted-syntax`). No currency-symbol concatenation. The
+      shared golden table runs in the TypeScript and the Go formatter tests (190 of 190 in trial). Named
+      formats live in a data file. Pure logic with a stateable invariant (a formatter, a parser) has a
+      property test; no property-test library is picked, so one enters through the supply-chain rule. Golden
+      data file: `formats.json`; property tests use `fast-check`. Plant: `bytes.toFixed(1) + " GB"`.
+    level: function
+    why: >-
+      1,500,000,000 bytes reads 2 GB, 1.4 GB, 1.5 GB and 1.4 GB: at least four rounding rules and two bases,
+      differing between sites and inside one.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-07-testing
+        where: section 4.9
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint `no-restricted-properties` and `no-restricted-syntax` outside the formatter module, and a
+          golden table run by both the TypeScript and Go formatter tests. Plant: `bytes.toFixed(1) + " GB"` in
+          a view file fails; a changed rounding rule in one of the two formatters fails the golden table.
+          Control: `formatBytes(n)` passes
+      - binding: go
+        class: test-kit
+        tier: "0"
+        note: >-
+          the Go formatter runs the same golden table. Plant: a Go formatter with a different rounding rule
+          fails the table. Control: the matching formatter passes
+    review_question: Is there a stateable invariant here, and is it tested by generated input?
+    open:
+      - >-
+        Half holds: no tool demands a stateable invariant, so the property-test clause stays review. The
+        pattern scan misses `>> 10`, `** 10`, `Math.pow`, a direct `Intl.NumberFormat` and a hand plural
+        through a lookup table; the forms are kept as plants and the real gate is the import ban.
+      - >-
+        One format exists today (one locale); locale-specific grouping is decided at the language trigger. The
+        reference retired its "no i18n library" clause in favour of a message kernel.
+      - "v1 evidence, not yet a source: A: 1.5 GB read four different ways"
+  - id: web.content.3
+    slug: plurals-one-function
+    since: 0.1.0
+    rule: Plurals go through one function; a hand-built plural is refused.
+    detail: >-
+      `no-restricted-syntax` on a conditional expression testing equality with 1 in view files, and
+      `Intl.PluralRules` outside the formatter; on the Go side a forbidigo-style or parser test for `== 1`
+      followed by a string result in the same function (heuristic, baseline). Plural messages are structured
+      variants. The real gate is the import ban of the formatter rule. Plant forms: `n === 1 ? "file" :
+      "files"`, selector `ConditionalExpression[test.right.value=1]`; the Go heuristic uses `go/parser`; the
+      passing form is `plural(n, "file")`.
+    level: function
+    why: 12 or more Go helpers each have their own plural.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          `no-restricted-syntax` on the equality-with-1 conditional and on `Intl.PluralRules` outside the
+          formatter. Plant: `n === 1 ? "file" : "files"` in a view file fails. Control: `plural(n, "file")`
+          passes
+    open:
+      - >-
+        It fires on non-plural `=== 1 ?` expressions (known); allowed with a reason and a baseline.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: 12 or more Go helpers
+  - id: web.content.4
+    slug: time-zone-stated
+    since: 0.1.0
+    rule: >-
+      The zone a time is shown in is stated by the product, never by the viewer's browser by accident.
+    detail: >-
+      `no-restricted-syntax` on `new Intl.DateTimeFormat` without a `timeZone` property and on
+      `toLocaleString`, `toLocaleTimeString` and `toLocaleDateString` calls without a `timeZone` option; only
+      the formatter module may call them at all. Plant: `new Intl.DateTimeFormat("en")` with no zone.
+    level: function
+    why: Seven web sites showed times with no stated zone.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint `no-restricted-syntax` selectors on date formatting calls lacking a timeZone option, outside
+          the formatter. Plant: `new Intl.DateTimeFormat("en")` with no zone fails. Control: the formatter's
+          call with `timeZone` passes
+    open:
+      - >-
+        The selector using `:has` has not been run. The pattern scan was trialled on trees.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: A: 7 web sites"
+  - id: web.content.5
+    slug: dates-one-module
+    since: 0.1.0
+    rule: >-
+      Dates use one date library with timezone support, no raw date arithmetic appears outside one date
+      module, and display goes through the shared formatter.
+    detail: The reference date library was `date-fns` with timezone support.
+    level: package
+    why: Raw date arithmetic is where daylight-saving and zone bugs hide.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          `no-restricted-imports` on other date libraries and `no-restricted-syntax` on raw `Date` arithmetic
+          outside the date module. Plant: adding days with raw millisecond arithmetic outside the date module
+          fails. Control: the same through the date module passes
+    open:
+      - >-
+        The reference named one date library; the pick belongs to the stack choice (see the supply-chain
+        rules). Native platform dates are the first choice under the platform-first rule.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.content.6
+    slug: locale-one-place
+    since: 0.1.0
+    rule: >-
+      The locale is a boot-time value read from one place, the page language and direction follow it, and
+      fonts name a family per script in use.
+    detail: >-
+      One config lists the default and the supported languages; a change reloads the app; the strategy is
+      explicit (stored choice, preferred language, base locale) with no cookie. Until a second language exists
+      the only one is the default and no language is pre-chosen. Axe `html-has-lang` and `html-lang-valid`;
+      `no-restricted-properties` on `navigator.language(s)` and on assignments to the document's lang outside
+      the locale module. A font family per script is review. Locale setter banned outside the module:
+      `document.documentElement.lang`; markup `<html lang>`; engine `axe-core`.
+    level: program
+    why: v1 gave no reason beyond its evidence grade, Evidence D.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "3"
+        note: >-
+          axe `html-has-lang` and `html-lang-valid` in the accessibility run, and `no-restricted-properties`
+          outside the locale module. Plant: a page without html lang fails axe; reading `navigator.language`
+          in a view fails the lint. Control: a page whose lang follows the locale constant passes
+    open:
+      - "Half holds: fonts per script is review."
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.content.7
+    slug: brand-written-once
+    since: 0.1.0
+    rule: >-
+      Product name, short name, tagline and brand identity (organisation, manifest, theme colour, title
+      template) are written once per product in per-brand config chosen at build time, and read by the page,
+      the manifest, the banner and the docs; no brand literal appears elsewhere and no logo is imported
+      directly.
+    detail: >-
+      Cspell `flagWords` lists the name, short name and tagline strings with the brand file alone in its
+      ignored paths (or ESLint `no-restricted-syntax` on a matching literal outside the brand module). The Go
+      banner reads the generated constant; the docs read it by include. The page entry and the manifest are
+      generated per brand. Existing literals have a baseline whose counts only fall. Scan config:
+      `ignorePaths` limited to the brand file.
+    level: package
+    why: >-
+      45 and 27 site literals in two web sites; 112, 444, 130, 108 and 53 Go sites in five programs.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "1"
+        note: >-
+          cspell `flagWords` (or `no-restricted-syntax`) outside the brand file, and generated-constant checks
+          for the banner. Plant: the product name typed in a template fails. Control: the name read from the
+          brand file passes
+    open:
+      - >-
+        Existing literals need a baseline (counts only fall); the brand scan was trialled on trees.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: 45 and 27 web literals; 112, 444,
+        130, 108 and 53 Go sites
+  - id: web.content.8
+    slug: logo-and-favicon-generated
+    since: 0.1.0
+    rule: >-
+      A logo is used at its own colours from one recorded source, and the favicon set and logo files are
+      generated from it and hash-checked.
+    detail: >-
+      The generate-with-check mode compares hashes; a scan that the logo SVG's fill and stroke colours equal
+      the recorded source colours is a small addition (Stylelint cannot read SVG attributes). No direct logo
+      asset import. Hash check command: `companion gen` with `gen --check`.
+    level: deploy
+    why: One site's favicon generator is unfound.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. the generate-with-check loop over the favicon and logo files, plus an SVG colour
+          scan. Plant: replacing a favicon PNG by hand fails the hash check; regenerating passes. Control:
+          freshly generated files pass
+    open:
+      - Whether tools and the organisation are one brand is open.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.content.9
+    slug: sentence-from-parameters
+    since: 0.1.0
+    rule: >-
+      A sentence built from parts carries each part as a parameter of one message function; no hard-coded
+      fragments are spliced.
+    detail: >-
+      `no-restricted-syntax` on string concatenation or a template literal in view files where a literal piece
+      contains a space and a variable is spliced (`"Hello " + name`, or `n` spliced before ` files` in a
+      template literal); allowed with a reason and
+      a baseline; keep the selector tight, since it fires on non-sentence concatenations such as class names.
+      Plants: `"Deleted " + count + " files"` and `"Hello " + name` fail; `msg("deleted", values)` with `count`
+      among the values passes.
+    level: word
+    why: 13 to 25 percent of site strings are fragments.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          `no-restricted-syntax` on spliced fragment concatenation and template literals in view files. Plant:
+          `"Deleted " + count + " files"` in a view fails. Control: `msg("deleted", { count })` passes
+    open:
+      - The fragment scan was trialled; the lint selector is not run.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: A: 13 to 25 percent of site strings
+        are fragments
+  - id: web.content.10
+    slug: messages-typed-owned-checked
+    since: 0.1.0
+    rule: >-
+      Messages are typed, owned and checked: a key used in code exists, every locale has the same keys and
+      placeholders as the base language, plurals are structured variants that compile, only whitelisted markup
+      is allowed, and keys are never built dynamically.
+    detail: >-
+      The key's owner prefix is the file's owner. A term is not used inside a sentence (a glossary lists the
+      terms). Messages are imported per domain, not as one barrel. Codes are a closed documented set apart
+      from sentences, each sentence takes its parts as parameters, and retired words fail.
+    level: package
+    why: The source report names the missing locale key parity as a gap with no row.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          the message compiler's typed output, a locale-parity test and a lint banning dynamic key
+          construction. Plant: a key used in code but absent from the base language fails; a locale missing a
+          placeholder fails. Control: a locale with the same keys and placeholders passes
+    open:
+      - >-
+        The message compiler named in the source is one chosen library; the pick belongs to the stack choice
+        and the react part.
+      - The owner prefix and term rules need the glossary of the documentation concern.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.content.11
+    slug: screens-read-no-config
+    since: 0.1.0
+    rule: >-
+      A screen never reads config for words, formats, brand or icons directly: a few small interfaces do,
+      wired in one file; and where a server's own text is the content it is marked and counted.
+    detail: >-
+      The boundaries rule makes a screen element unable to import config, words, formats, brand or icon data;
+      a marker part wraps any server-provided sentence (declared as English, not translated), a lint bans
+      rendering `error.detail` or `res.message` raw, and the count of marked uses is printed. Only the kernel
+      packages and the app element import config. Marker part `<ServerText>`; plant `config/words.json`; raw
+      forms `error.detail` and `res.message` as JSX expressions.
+    level: file
+    why: v1 gave no reason beyond its evidence grade, Evidence D.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: web-reasons-stated
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          the boundaries rule's screen element, plus a lint banning raw server text in markup. Plant: a screen
+          importing the words data file fails; rendering `{error.message}` fails. Control: the same wrapped in
+          the marker part passes and is counted
+    open:
+      - The marker part does not exist yet.
+  - id: web.content.12
+    slug: config-is-data
+    since: 0.1.0
+    rule: >-
+      Config files hold data only: no logic and no markup; the gate and format files are protected paths, and
+      any managed content editor is an add-on.
+    detail: >-
+      The formats, icons and system tokens files are protected paths; the messages files are not. A managed
+      editor is an add-on: git is the source of truth, the editor writes back by pull request, the runtime
+      reads only bundled files, and any runtime content read goes through a gate primitive.
+    level: file
+    why: Config that holds logic is code outside the checks.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          a data-schema check on config files, an import rule limiting readers to the kernel packages and the
+          app element, and a protected-path rule in the land check. Plant: a config file holding a function or
+          markup fails; an edit to a protected path without the allowed marker fails. Control: a plain data
+          file passes
+    open:
+      - The protected-path list names one codebase's files; the rule is the pattern.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "gate/crash.json: every writing command of the tree, crash-injected, scripted or outside the write path (store.recovery.2)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["crash"],
+  "properties": {
+    "$comment": {"type": "string"},
+    "crash": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command", "covers"],
+        "properties": {
+          "command": {"type": "string", "pattern": "^[a-z][a-z-]*$"},
+          "covers": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z][a-z-]*( [a-z][a-z-]*)*$"}, "description": "each command of the family that writes, by its path under the root, named here: a workload kills one of them, and they share its write path"},
+          "seed": {"enum": ["empty", "v2", "history", "undo", "import", "bind", "bound", "unwritten"], "description": "the root the workload starts from: an empty git folder, the planted v2 rulebook, the history journeys' rulebook, the undo journeys' rulebook with its one promote recorded, that rulebook with a guide folder and a style concern beside it for an import, the history rulebook with an active rule a tool setting can be bound to, that one with the setting bound and the decision a move stands on, or that one with the preset the bind wrote deleted, so preset has a file to write"},
+          "args": {"type": "array", "minItems": 2, "items": {"type": "string", "minLength": 1}, "contains": {"const": "--apply"}},
+          "points": {"type": "integer", "minimum": 4},
+          "scripted": {"type": "string", "pattern": "^TestACrash[A-Za-z]+$"},
+          "why": {"type": "string", "minLength": 20},
+          "outside": {"type": "string", "minLength": 20},
+          "exit": {"type": "string", "pattern": "^[a-z0-9-]+/[a-z0-9-]+#[1-9][0-9]*$"}
+        },
+        "oneOf": [
+          {"required": ["seed", "args", "points"], "not": {"anyOf": [{"required": ["scripted"]}, {"required": ["outside"]}]}},
+          {"required": ["scripted", "why"], "not": {"anyOf": [{"required": ["args"]}, {"required": ["outside"]}]}},
+          {"required": ["outside", "exit"], "not": {"anyOf": [{"required": ["args"]}, {"required": ["scripted"]}]}}
+        ]
+      }
+    }
+  }
+}

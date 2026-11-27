@@ -1,0 +1,15 @@
+$ gragas gen --json
+--- stdout
+{
+  "schema": 2,
+  "command": "gen",
+  "apply": false,
+  "ended": "done",
+  "msg": "the generated files are current",
+  "data": {
+    "stale": []
+  }
+}
+--- stderr
+warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
+--- exit 0

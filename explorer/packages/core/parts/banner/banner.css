@@ -1,0 +1,31 @@
+[data-part="banner"] {
+  display: flex;
+  align-items: center;
+  gap: var(--gr-space-2);
+  padding: var(--gr-space-2) var(--gr-space-3);
+  background: var(--gr-ground-surface);
+  border: 1px solid currentColor;
+  border-radius: var(--gr-radius-md);
+}
+
+[data-part="banner"][data-tone="info"] {
+  color: var(--gr-text-note);
+}
+[data-part="banner"][data-tone="success"] {
+  color: var(--gr-text-good);
+}
+[data-part="banner"][data-tone="warning"] {
+  color: var(--gr-text-attn);
+}
+[data-part="banner"][data-tone="error"] {
+  color: var(--gr-text-bad);
+}
+
+.gr-banner-tone {
+  font-weight: 600;
+}
+
+.gr-banner-body {
+  flex: 1;
+  color: var(--gr-text-prose);
+}

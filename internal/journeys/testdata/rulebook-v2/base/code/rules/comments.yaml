@@ -1,0 +1,271 @@
+part: code
+concern: comments
+order: 6
+title: Comments and annotations
+summary: >-
+  A comment says why and never what, and none narrates a change. A TODO names an issue, commented-out code is
+  refused, a suppression carries a reason, and an interface comment states the contract a reader cannot read
+  from the body.
+rules:
+  - id: code.comments.1
+    slug: comment-says-why
+    since: 0.1.0
+    rule: >-
+      A comment says why, not what, and none narrates the change; one question judges it.
+    detail: >-
+      The question: could someone who never saw the code write this comment from the adjacent lines? If yes it
+      goes. A comment that states an interface contract may be longer than a function body, so the length
+      clause is dropped from this rule. A regular-expression report for change-narrating words (now, no
+      longer, previously, used to, changed, was) was considered and not run; false hits are expected. Agents
+      narrate; the question fails narration without counting words.
+    level: word
+    why: >-
+      A comment that restates the line adds a second thing to keep in step with the code. A study of 60 Go
+      bugs found no comment fault, so this is practice and an instruction.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: ousterhout-aposd
+        where: chapters 13 and 16
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.4
+        backs: rule
+    review_question: >-
+      Could someone who never saw this code write this comment from the adjacent lines?
+    open:
+      - >-
+        This lens was the weakest in the trial and needs a better prompt. Whether a comment says why is
+        semantic, so no mechanical check holds it.
+      - "v1 evidence, not yet a source: practice (a study of 60 Go bugs found none)"
+  - id: code.comments.2
+    slug: todo-names-an-issue
+    since: 0.1.0
+    rule: >-
+      A TODO, FIXME, HACK or XXX names an issue in one shared pattern; a bare one is refused.
+    detail: >-
+      The tracked form is TODO(#123). The first tier is a comment-node pattern check (it catches line and
+      block-comment forms); the second tier checks that the named issue exists and is open. The Go lint
+      runner's godox cannot test the named-issue form and was rejected; in the web stack the core
+      no-warning-comments rule does not read an issue id, so every TODO fails, and the tracked form needs an
+      expiring-todo rule or a small local rule.
+    level: word
+    why: >-
+      A TODO with no issue is a promise with no owner. Not measured: nothing checks that a TODO names an issue
+      today (one bare TODO in one of six Go repos).
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ousterhout-aposd
+        where: chapter 13
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: ast-grep
+        tier: "3"
+        note: >-
+          tier 1: an ast-grep 0.51.1 rule on comment nodes, a regex for TODO and not TODO(#NNN); tier 3:
+          todocheck (MIT, v0.6.1) checks that the named issue exists and is open. Plant: // TODO fix this and
+          /* TODO later */ are reported; // TODO(#123) is not (run). Control: a TODO(#123) comment and a
+          string containing TODO pass
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          ESLint core no-warning-comments for todo and fixme with unicorn/expiring-todo-comments, or a small
+          local rule (not no-restricted-syntax), so the tracked form passes (todo-plz ticket-ref is the
+          donor's equivalent), in one shared pattern. Plant: // TODO fix this with no issue id fails. Control:
+          TODO(#123) passes
+    open:
+      - >-
+        The open-issue half rests on todocheck, not run; its last tag is from 2023, so pin a commit or drop
+        that half and keep the ast-grep form. The expiring-todo rule exists but was not run.
+      - >-
+        The two Go sources disagree on godox; the amended sources say to settle it before marking this a tool.
+      - "v1 evidence, not yet a source: practice; D for the web side"
+  - id: code.comments.3
+    slug: no-commented-out-code
+    since: 0.1.0
+    rule: Commented-out code is refused, found by a lint check enabled by name.
+    detail: >-
+      In Go the check is gocritic commentedOutCode, enabled by name (a stock linter set does not enable it); a
+      two-line commented statement pair beside a nolint line was not reported, so a short group can pass. In
+      the web stack the sonarjs no-commented-code rule fires on some forms and misses others (a commented call
+      chain such as // fetchAll(items.map(x => x.id)); and a commented if block), so it holds only some forms.
+    level: word
+    why: >-
+      Commented-out code is dead code that no tool tracks and that readers cannot tell from intent. Not
+      configured in any Go repo; one source says no tool works.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: golangci-lint-linters
+        where: gocritic
+        says: >-
+          Provides diagnostics that check for bugs, performance and style issues.
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: gocritic
+        tier: "1"
+        fix: auto
+        note: >-
+          golangci-lint gocritic with enabled-checks [commentedOutCode]. Plant: a block of commented-out calls
+          fails (3 of 3 planted groups flagged, 0 of 1 prose control). Control: a prose comment with code-like
+          words passes
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          sonarjs/no-commented-code (fired on a commented const statement) with a plugin or small rule for the
+          forms it misses; eslint-plugin-etc was rejected (last published 2023-05, peers ESLint 8). Plant: //
+          const x = compute(1, 2); fails. Control: a prose comment passes
+    open:
+      - >-
+        A plugin build would be one small ESLint rule over comments if no maintained one passes.
+  - id: code.comments.4
+    slug: interface-comment-states-the-contract
+    since: 0.1.0
+    rule: >-
+      Every exported name of a port or shared API has a doc comment stating its contract; elsewhere a doc
+      comment is written only when it says more than the signature, and a comment one could write from the
+      line below is a finding.
+    detail: >-
+      On a port, a shared package's surface and any other API a second program or package builds on, every
+      exported name has a doc comment stating, where they apply, units, the meaning of nil, null or absent,
+      ownership, invariants, ordering, what it mutates and what it throws or returns as an error. Presence and
+      form there are a rule: in Go the lint runner's exported check over the port and shared-package paths
+      (with its comments exclusion preset off, so it is not hidden) and the doc-comment form check. Elsewhere
+      an exported name gets a doc comment only when it says something local, non-obvious and with no other
+      home; a comment that restates the name or the line below is deleted. The content is review. A surface
+      change of a shared part or port fails until a reason is recorded (arch.shared.9).
+    level: word
+    why: >-
+      Ports are where the reader cannot read the body; a contract that is not written is guessed. A doc
+      comment required on every export elsewhere produces filler that restates the name, which three target
+      repos ban.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ousterhout-aposd
+        where: chapter 13 sections 13.1, 13.3 and 13.5
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 5.4
+        backs: rule
+      - ref: b-04-philosophy-of-software-design
+        where: section 7 item 4
+        backs: rule
+      - ref: decision-65-code
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: revive
+        tier: "1"
+        fix: auto
+        note: >-
+          golangci-lint revive exported scoped to the port and shared-package paths in rule data (with the
+          golangci exclusion preset for comments off) and godoclint (doc-comment form). Plant: an exported
+          port method with no comment, and an exported port func whose comment does not start with its name,
+          are both reported. Control: an exported helper in a command package with no comment passes
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: godoclint
+        tier: "1"
+        fix: never
+        note: Held by the golangci preset, whose comment on godoclint names this rule.
+    review_question: >-
+      Does this port's comment state units, absence, ownership, invariants and ordering where they apply, and
+      could any comment here have been written from the name or the line below?
+    relates:
+      - id: arch.shared.9
+        how: see
+    open:
+      - >-
+        Half holds; the cheap cure is a filler comment, which the review question asks about. The golangci
+        comments exclusion preset is from memory, not checked.
+    note: The web check of the comment is a review question with no check.
+  - id: code.comments.5
+    slug: comment-hygiene
+    since: 0.1.0
+    rule: >-
+      Comment blocks stay short within the comment standard, cite a ruling once, carry no decoration lines or
+      narrated history, and do not restate types or facts with a home.
+    detail: >-
+      A ruling id appears once per file with no prose; there are no decoration lines; doc comments restate no
+      types; a comment id that is cited must exist. In Go inline comment groups over three lines only fall. A
+      checker for comment-block length, decoration lines and restated ruling ids is built because no stock
+      linter does it.
+    level: word
+    why: >-
+      Long, decorated and restating comments rot first and bury the few that carry a contract.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. comment-hygiene check of comment-block length against the standard, decoration
+          lines and restated ruling ids, with a shrink-only count of long inline comment groups. Plant: a
+          four-line inline comment group raises the count and fails; a decoration line fails. Control: a
+          three-line comment passes
+    relates:
+      - id: code.comments.1
+        how: see
+    open:
+      - >-
+        Conflict in the sources, kept: the Go row ratchets inline comment groups at three lines and the donor
+        standard says 2 to 3 lines, while a web comment-length ratchet was rejected and an interface comment
+        may rightly be longer than a function body (code.comments.1 drops the length clause). The decision
+        between them is open.
+      - The check is a gap in the web rulebook; no stock linter has these three rules.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+  - id: code.comments.6
+    slug: suppression-carries-a-reason
+    since: 0.1.0
+    rule: A disable comment carries a reason.
+    detail: >-
+      In the web stack a lint disable comment with no description fails; the Go counterpart is the nolint rule
+      of the suppression concern in the gates part.
+    level: word
+    why: A suppression with no reason cannot be reviewed or retired.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ousterhout-aposd
+        where: chapters 13 and 16
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          @eslint-community/eslint-plugin-eslint-comments require-description (fired on an undescribed
+          eslint-disable-next-line). Plant: an eslint-disable with no reason fails. Control: an eslint-disable
+          with a reason passes
+    open:
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.

@@ -1,0 +1,61 @@
+part: daemon
+concern: deploy
+order: 9
+title: Stacks the program writes
+summary: >-
+  A program that writes a deployed stack for its owner names images by tag and checks the running digest,
+  opens its ports on loopback and publishes them only through the private network's serve, and prints a change
+  to shared network or identity policy for the owner instead of applying it.
+rules:
+  - id: daemon.deploy.1
+    slug: tag-loopback-print-shared-policy
+    since: 0.1.0
+    rule: >-
+      A deployed stack the program writes names its image by tag and its update check compares the running
+      digest with the registry; every port it opens binds loopback and is published only through the private
+      network's serve, never publicly; and a change to shared network or identity policy that reaches other
+      devices is printed for the owner to apply, never applied by the program.
+    detail: >-
+      The tag is the image's moving tag; the update check reads the registry's digest for it (within the daily
+      budget of daemon.outbound.2) and reports what would change. Exact pins stay the rule for code
+      dependencies (supply.install.4); a stack's image is not a code dependency. A port bound to 0.0.0.0 or a
+      public address, or published through a public relay, is refused when the stack is written. Shared policy
+      is anything another device or person reads: the private network's access list, its DNS, an identity
+      provider's groups. The program prints the exact lines and where they go.
+    level: deploy
+    why: >-
+      A home server that pins images never updates, which is worse than a tag plus a digest check that says
+      what changed. Loopback plus the private network's serve makes a written stack safe by construction, and
+      printing shared policy keeps a program from reaching past its own machine.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+        - cli
+    unless:
+      - facets:
+          - no-stack
+        reason: >-
+          A program that writes no deployed stack has no image, port or shared policy to place.
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a golden test over the stack writer asserting image references are name:tag, every published port
+          binds 127.0.0.1 or ::1, and no public relay setting is written; a test that the shared-policy
+          command prints and calls no write API of the network or identity provider. Plant: a stack with a
+          port bound to 0.0.0.0 fails, and a writer that calls the network's policy API fails. Control: a
+          loopback-bound stack and a printed policy diff pass
+    relates:
+      - id: daemon.outbound.2
+        how: see
+      - id: supply.install.4
+        how: see
+    note: >-
+      supply.install.4 is rewritten under the same card to scope exact pins to code dependencies.

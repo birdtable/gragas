@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("# A pin with nothing wrong: the rulebook beside the project, three parts.\nrulebook: fixture-base\nsource: rulebook\nparts: [base, go, web]\nformat: 1\n")

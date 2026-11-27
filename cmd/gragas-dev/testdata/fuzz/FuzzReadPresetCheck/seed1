@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"schema\": \"gragas.result/v1\", \"command\": \"preset\", \"ended\": \"done\", \"msg\": \"1 preset file compared\", \"data\": {\"files\": [{\"path\": \"presets/golangci-lint/.golangci.yml\", \"tool\": \"golangci-lint\", \"state\": \"same\"}], \"compared\": 1}}")

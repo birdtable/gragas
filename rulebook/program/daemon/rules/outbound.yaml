@@ -1,0 +1,45 @@
+format: 3
+part: daemon
+concern: outbound
+rules:
+  - id: daemon.outbound.1
+    statement: "A client carrying a credential follows no redirect and reports one as an error naming the callee; a request to an owner-configured address puts its token in a header, never the address, signs the body with a timestamp, resolves the name once and dials the address it checked, needs https outside loopback and private networks, and sends nothing a read permission would not show."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+        - cli
+        - service
+    exemptions:
+      - kinds:
+          - no-http
+        reason: A program that builds no HTTP client calls nothing out.
+    reasoning:
+      definition: "The shared client sets a redirect policy that returns an error when the request carries a credential. A webhook or similar call uses an Authorization header, an HMAC over the timestamp and the body, a stated timeout (for example 10 seconds), and a dialer that connects to the resolved address it validated, so a DNS answer cannot change between the check and the dial. Plain http is allowed only to loopback, private or private-network addresses. The body is built from what the read permission for that subject would return, never from internal state."
+      pros:
+        - "Each closes a real leak: a key sent on to a redirect target, a token in an address that lands in a log, a DNS rebind between check and dial, and a payload that tells a channel more than its reader may know."
+    relations:
+      relates:
+        - daemon.access.5
+        - service.outbound.2
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.outbound.2
+    statement: "A record or answer about an outbound channel never holds its address or token, its failure text is the program's own words, length-capped and cleaned, and a call to an outside service whose allowance is shared has a daily budget in code and uses the cheapest request that answers."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+        - cli
+    reasoning:
+      definition: "A channel is shown by name and kind only. A failure from the far side is reduced to a short sentence of the program's own with control characters stripped, and the raw text goes to the log without the address or token. A shared allowance is one the caller does not own alone (an anonymous rate limit, a public registry's quota); the budget is a constant per service and day, counted in the program's state, and a call past it is skipped with a sentence. The cheapest request is the one that reads the least (a HEAD, a digest, a conditional request)."
+      pros:
+        - "A channel address often is its credential, so any record that holds it leaks it. A shared public allowance spent carelessly is taken from everyone who shares it."
+    sources:
+      - ref: decision-65-daemon
+        backs: rule

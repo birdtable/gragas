@@ -1,0 +1,29 @@
+{
+  "consumer": "explorer",
+  "reads": [
+    {"document": "bundle", "fields": [
+      "contract", "versions.contract", "versions.format", "versions.engine", "released",
+      "release.version", "release.date", "release.release_note", "release.health.numbers[].name", "release.health.numbers[].value",
+      "identity.name", "identity.kind", "identity.language", "identity.docs_url", "identity.explorer_url", "identity.owners[]",
+      "structure.layers[].slug", "structure.parts[].slug", "structure.parts[].concerns[].slug", "structure.kinds[].slug",
+      "terms[].slug", "terms[].definition", "terms[].literal",
+      "rules[].id", "rules[].aliases[]", "rules[].statement", "rules[].strength", "rules[].status", "rules[].standing", "rules[].marks[]",
+      "rules[].scope.parts[]", "rules[].exemptions[].reason", "rules[].relations[].rule", "rules[].replaced_by", "rules[].translations[].language",
+      "bindings[].rule", "bindings[].tool", "bindings[].key", "bindings[].rung", "bindings[].run_point", "bindings[].proof.result",
+      "proof_grid[].result", "proof_grid[].run_level",
+      "decisions[].slug", "decisions[].title", "sources[].slug", "sources[].title", "sources[].locator",
+      "history[].number", "history[].kind", "history[].when",
+      "changelog[].change", "changelog[].sentence", "changelog[].consumer_action",
+      "health.numbers[].name", "rule_map[].rows[].mark"
+    ]},
+    {"document": "report", "fields": [
+      "contract", "versions.contract", "pin.version", "release.version", "run_time", "lock_digest",
+      "sections[].per_rule[].rule", "sections[].per_rule[].standing", "sections[].per_rule[].marks[]", "sections[].per_rule[].observation",
+      "waivers[].rule", "waivers[].expires", "baselines[].count", "baselines[].zero_by",
+      "drift[].kind", "mismatches[].what", "renderings[].state", "trust.signature", "trust.release_state"
+    ]},
+    {"document": "changelog", "fields": [
+      "contract", "releases[].version", "releases[].release_note", "releases[].entries[].sentence", "releases[].entries[].consumer_action"
+    ]}
+  ]
+}

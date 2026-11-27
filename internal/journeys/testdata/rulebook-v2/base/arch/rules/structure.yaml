@@ -1,0 +1,442 @@
+part: arch
+concern: structure
+order: 5
+title: Structure and change shape
+summary: >-
+  How a program grows: every new concern lands in exactly one door of a table, a change is complete when it
+  lands, moves change no behaviour, a project declares its kind and stack, and things that change together
+  live together in the same folder shape across a kind.
+rules:
+  - id: arch.structure.1
+    slug: one-door-per-concern
+    since: 0.1.0
+    rule: >-
+      A new concern lands in exactly one door of a classification table and the change names it; a program
+      cannot grow its own folder for a shared concern.
+    detail: >-
+      The doors are an existing module, a new module, a shared package, a design-system part, a generated
+      client, an app-wide concern, a new library and a new check. The change names the door in a trailer. If
+      none fits, the decision record of arch.decisions.2 comes first. The concern table gives one owner per
+      concern. An agent cannot create a plumbing folder in a service, and there is no util or common package.
+    level: process
+    why: >-
+      Without a table every agent invents a new place, and shared plumbing grows a private copy in each
+      program.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-08-splitting
+        where: section 18
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. commitlint 21.2.4 trailer-exists for a Door trailer at land (body-empty also
+          fires; the rule is machine-read from the commit message) plus the structure check that fails a new
+          plumbing or shared-concern folder in a program; the diff-conditional half (a package file or
+          dependency added needs the trailer) is the land step's check. Plant: a message with no Door trailer
+          exits 1, with one exits 0; a new folder for a shared concern in a service fails. Control: a change
+          with the trailer and a door from the table passes
+    relates:
+      - id: arch.decisions.2
+        how: see
+    open:
+      - Half the check is commitlint (the message form); the diff condition is ours.
+      - >-
+        The Go form has no per-change door statement today, only the concern table and the shared-package
+        entry rule.
+  - id: arch.structure.2
+    slug: extension-lands-complete
+    since: 0.1.0
+    rule: >-
+      An extension lands complete in one change: structure, rule, check with its plant, catalogue row,
+      examples and docs.
+    detail: >-
+      One change holds the structure (from the generator), the rule rows, each new check with its negative
+      test, the catalogue row, stories and specs, the scope-rules entry, and the rulebook and page update. In
+      Go, growing the foundation is one change record adding the rule, its check, its plant and its grid cell
+      together. A living example per state and a catalogue entry for a part belong to the same change.
+    level: process
+    why: >-
+      A rule without its plant or a part without its example is half added, and the half that is missing is
+      the one a reviewer cannot see.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. the land check compares the change against the extension checklist (rule row with
+          a check and a plant, a catalogue row, an example, docs) and fails a change that adds one and not the
+          others. Plant: a change adding a rule row without its plant fails. Control: a change adding the row,
+          check, plant and docs passes
+    open:
+      - >-
+        The checklist check is described by the sources only as one change record; the exact mechanism is to
+        be built.
+      - >-
+        Some plants and controls of this rule were written at the merge from the sources' description of the
+        check, and have not been run.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: arch.structure.3
+    slug: moves-change-no-behaviour
+    since: 0.1.0
+    rule: >-
+      Splitting, merging or renaming a module needs a decision, and a move or rename commit changes no
+      behaviour and no baseline count; editing comes in a second commit.
+    detail: >-
+      A move commit contains only renames at 100% similarity and import-path and package-clause edits;
+      baseline keys are rewritten and counts left unchanged. A commit that marks itself as a move is checked,
+      other commits are not. A move that lands before any behaviour change is the wanted result.
+    level: process
+    why: >-
+      A move mixed with an edit cannot be reviewed as a move, and baselines reset when a rename is not
+      recorded. Not measured in Go; the web rule holds it for the UI.
+    kind: rule
+    strength: Answered
+    status: active
+    sources:
+      - ref: p-02-enforcement-and-measure
+        where: section 5.14
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. companion move-commit check: a commit whose subject starts with move: may contain
+          only renames at 100% similarity (git diff -M100% --name-status) and import-path and package-clause
+          edits (a diff filter that strips import blocks and package lines leaves empty); other commits are
+          not checked. Plant: a move commit that renames a file and edits a function body fails. Control: a
+          pure rename with updated imports passes
+    open:
+      - >-
+        Opt-in by the commit subject, so an agent that omits the marker passes; making it automatic needs a
+        rename-detected-with-edit heuristic that fires on legitimate refactors. The must-enforce record asks
+        for detecting a rename with edits from git and blocking until split or answered.
+      - "v1 evidence, not yet a source: practice; no fault in our record"
+  - id: arch.structure.4
+    slug: project-declares-kind-and-stack
+    since: 0.1.0
+    rule: >-
+      A project declares its kind and its one framework and uses the stack the foundation lists for that kind;
+      a package outside the list needs a written exception.
+    detail: >-
+      The framework value is read from the project's parameter file. A second framework is refused by the
+      import-side rule in the web part. Which framework per kind follows the foundation's by-kind answer,
+      which is a recommendation: only some project rulings bind their own artefacts.
+    level: program
+    why: >-
+      A stack the foundation did not list is a stack nobody maintains; the declared kind is what lets the
+      right pack be applied.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: decision-7
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: syncpack
+        tier: "2"
+        note: >-
+          companion sync generates the syncpack configuration for the project kind and framework from the
+          stack table; a dependency outside that kind's set is unlisted and fails. Plant: a React dependency
+          in an Astro project fails. Control: the listed Astro set passes
+    open:
+      - >-
+        Which framework per kind still follows the by-kind recommendation; only the rulings of two projects
+        are ruled, each for itself.
+      - "v1 evidence, not yet a source: C for bytes; operator named it"
+  - id: arch.structure.5
+    slug: new-module-names-its-driver
+    since: 0.1.0
+    rule: >-
+      A new module, package or repository names the driver that a folder or namespace cannot meet, because a
+      logical split comes before a physical one.
+    detail: >-
+      Before a new package, shared library or repository is created, the change states the driver a folder or
+      namespace inside the existing package cannot meet. A seeded change that creates a package with one
+      importer must be flagged. A required field in the change template can be checked for presence only.
+    level: process
+    why: >-
+      Companies reported going back to a coarser split after paying for a physical split they did not need,
+      risking a distributed monolith. New packages are free for an agent to make, so the question has to come
+      from outside.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: ford-sathp
+        where: chapter 3 on modularity drivers
+        backs: rule
+      - ref: p-08-splitting
+        where: section 11
+        backs: rule
+    review_question: >-
+      What named driver does a folder or namespace fail to meet, so this needs its own package or repository?
+    relates:
+      - id: arch.structure.1
+        how: see
+    open:
+      - >-
+        Review only; a driver-named field in the change template could be checked for presence only.
+    note: >-
+      With agents the question has to come from outside (an inference). The new-package case also rides on
+      arch.structure.1.
+  - id: arch.structure.6
+    slug: same-folder-shape-per-kind
+    since: 0.1.0
+    rule: >-
+      Things that change together live together, in the same folder shape across a kind of program, and the
+      layout matches the template for that kind.
+    detail: >-
+      The folder-shape template for a kind says what folders must exist and which file kinds sit beside which;
+      a missing or extra folder fails. Whether things belong together is judgement; the shape is mechanical.
+      The Go program template is: cmd/<name> for each binary; under internal, core and core/api for the
+      decisions and the operations every client calls; one port package holding the platform interfaces with
+      its fake; slot packages that hold a registry each; adapters under host/<platform> and host/<tool>; door
+      for the network front; config; cli/<group> for commands and cli/ui for terminal output. The import table
+      between these folders is rule data read by the layer test (arch.layers.1), not prose. A new kind of
+      program or a new language adds its own template under the same rule.
+    level: program
+    why: >-
+      A census of 20 UI steps found 3 identical and 12 independent; the same shape across a kind is what lets
+      a check and an agent find things. Two Go target designs name the same folders for core, port, adapters
+      and commands, and a template that does not exist (the rule pointed at one) holds nothing.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: eslint
+        tier: "2"
+        note: >-
+          v1 class our-cli. companion shape --kind <kind> compares the tree with the folder-shape template
+          for its declared kind and fails on a missing or extra folder (alternative:
+          eslint-plugin-project-structure 3.14.5 folder-structure). Plant: a feature folder missing its model/
+          sibling, or a file in the wrong tier of the template, fails. Control: the template shape passes
+    review_question: Do the things in this folder change together?
+    relates:
+      - id: arch.layers.1
+        how: see
+    open:
+      - >-
+        Built because every rule binds from adoption (decision 19), though the evidence is D; if the operator
+        would rather not build for evidence D this becomes a best practice. Half holds: the shape; belonging
+        together is review.
+  - id: arch.structure.7
+    slug: package-is-a-unit-of-meaning
+    since: 0.1.0
+    rule: >-
+      A package or module is a unit of meaning: no catch-all names such as util, common, helpers, types or
+      misc, and the phrase describing it needs no "and".
+    detail: >-
+      The name deny-list holds util and common, the layer-type names helpers, types, models, interfaces and
+      base, and the words other and misc, matched on the whole name. The names adapters, domain and port are
+      the ports model's own and stay off the list. The word "and" in the description stays a review question:
+      Go package names have no word breaks, and a substring match only gives false hits (standin-gate,
+      standdown and ondemand all hit falsely).
+    level: word
+    why: >-
+      A run over 190 Go folder names in six repos found one hit, a package named base; the substring test for
+      "and" hit three false names. A catch-all name invites everything.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: tornhill-code-crime-scene
+        where: chapters 5 and 10
+        backs: rule
+      - ref: p-01-core-programming
+        where: section 20
+        backs: rule
+      - ref: p-08-splitting
+        where: section 9
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: revive
+        tier: "1"
+        fix: auto
+        note: >-
+          golangci-lint revive rule package-naming (not var-naming, whose package options are deprecated
+          no-ops) with check-extra-bad-name true and user-defined-bad-names listing helpers, types, models,
+          interfaces, base, other, misc; matched on the whole name. Plant: packages named util and helpers
+          each reported by revive package-naming with check-extra-bad-name (run with golangci-lint 2.14.0).
+          Control: a package named lockfile passes
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          eslint-plugin-check-file 3.3.2 folder-naming-convention with a regex deny-list of layer nouns and
+          catch-alls (util, common, helpers, misc, other, types, models) and ls-lint 2.3.2 for names of
+          non-code files. Plant: a folder named helpers and a file named stuffandthings.ts must each fail.
+          Control: a table-conforming name passes
+    review_question: Does the phrase describing this package need the word "and"?
+    open:
+      - >-
+        user-defined-bad-names was not run in the trial; the 'needs the word and' half is review.
+      - >-
+        v1 evidence, not yet a source: practice; C for the web form (a name lint is cheap and gameable, so the
+        question stays beside it)
+  - id: arch.structure.8
+    slug: refactor-of-a-live-path-is-pinned-first
+    since: 0.1.0
+    rule: >-
+      A refactor of a path in live use starts only after a merged contract test of what its consumers read,
+      and a refactor that moves code that touches the system (files, processes, the network) behind ports
+      records a transcript of every command's output first, with each step's transcript diff empty.
+    detail: >-
+      Before the first refactor commit on a path a consumer reads, a contract test of the fields and answers
+      that consumer reads is merged (arch.ports.7 holds the contract; this rule holds its order). A refactor
+      that moves such code behind ports records, before it starts, the output of every read-only command,
+      the status and health commands and every dry run, and each step of the refactor reruns them and shows an
+      empty diff; a step with a diff is a behaviour change and is split out. The transcripts are committed
+      beside the tests and replaced only by the change that means to change the output.
+    level: process
+    why: >-
+      A refactor without a pinned consumer contract finds its breakage in the consumer, after release. A port
+      extraction touches every command at once, and only a recorded transcript shows that nothing a person
+      reads moved.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-arch
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          the refactor plan names the contract test and the transcript set; the gate reruns every recorded
+          command and fails on any diff from the committed transcript, and the land review refuses a refactor
+          commit on a live path whose contract test is not already on main. Plant: a refactor step that
+          changes one line of a dry run's output fails the transcript diff. Control: a pure move with every
+          transcript unchanged passes
+    review_question: >-
+      Which consumer reads this path, and was its contract test merged before the first refactor commit?
+    relates:
+      - id: arch.ports.7
+        how: see
+    open:
+      - >-
+        The order check (contract test before refactor) is review until the land step can read the plan.
+  - id: arch.structure.9
+    slug: growing-list-is-a-folder-of-entries
+    since: 0.1.0
+    rule: >-
+      A list that grows by one entry per feature is a folder of one file per entry, joined by a generator and
+      held by gen --check; no feature edits a line another feature owns.
+    detail: >-
+      Commands, gate members, planned items, surface marks and the notes an index points at are the usual
+      lists. Adding an entry is a new file, and removing one is a deleted file; the one table the program or a
+      reader needs is rendered from the folder by a generator, sorted by a key in the entries so no order list
+      exists. A cross-cutting rule over the entries ("every entry has two examples") is a test that walks the
+      joined result, not a column each feature edits. A generated join still conflicts as text when two
+      changes add neighbours, and the fix is to run the generator (gates.protection.5). An index is generated
+      too (docs.freshness.1): a person reads it and nobody edits it.
+    level: process
+    why: >-
+      Own measure: in one repository a single new command edited a dozen shared files, and the run log of one
+      working day shows each landing sending the queue back through a rebase and a full gate run. Surveyed
+      projects avoid the same by putting each command in its own folder and walking the tree in a test.
+    kind: rule
+    strength: Hard
+    status: proposed
+    sources:
+      - ref: kubectl-cmd-sanity
+        backs: rule
+      - ref: helm-golden-output
+        backs: rule
+      - ref: cargo-commands-mod
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        fix: never
+        note: >-
+          a repository test that lists each registry folder named in rule data, joins its entries and compares
+          the join with the committed generated file; gen --check holds the file. Plant: a hand-added line in
+          a joined table fails. Control: a new entry file with the join regenerated passes
+    relates:
+      - id: gates.protection.5
+        how: see
+      - id: docs.freshness.1
+        how: see
+    open:
+      - >-
+        Proposed until a generic folder-join test exists. It is built with the join generator, steps 1 to 3 of
+        gragas#444; the first user is the command folder of cli.commands.29. The count of unresolved checks
+        falls when it lands.
+  - id: arch.structure.10
+    slug: fact-beside-the-thing
+    since: 0.1.0
+    rule: >-
+      A fact about a package, an export or a command (what it holds, why it imports what it imports, its
+      stability mark) is written in that thing's own folder, and any central table of such facts is rendered
+      from them.
+    detail: >-
+      The fact sits where the thing's own author already edits: what a package holds in its package doc
+      comment, an answer about an import in a file of the package's folder, a mark beside the export or in a
+      per-package file, a command's usage text in the command's own file. The central table, the layer
+      document or the usage page is a generator's output, so a change to one package edits one folder and one
+      generated row. A column of prose in a table that every package change edits is the sign of a fact kept
+      away from its thing. A table row keeps what is true of the layer itself, in one line.
+    level: program
+    why: >-
+      Own measure: over three days one layer table was changed in 42 commits, and by changed line the
+      paragraph each package says it holds took 92 lines, more than the lists of what may import what. Each
+      package change edited a prose column that another package change also edited.
+    kind: rule
+    strength: Hard
+    status: proposed
+    sources:
+      - ref: bazel-build-files
+        says: >-
+          Build facts about a package live in a build file in that package's own folder, not in one table at
+          the root.
+        backs: rule
+      - ref: kubernetes-owners
+        says: >-
+          Who owns a directory is a file in that directory, inherited upward.
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        fix: never
+        note: >-
+          the layer renderer reads each package's doc comment and a test fails a layer-table row that carries
+          a per-package prose field. Plant: a package row with a holds paragraph fails. Control: the same
+          paragraph in the package's doc comment, rendered into the generated table, passes
+    relates:
+      - id: arch.structure.9
+        how: see
+      - id: arch.layers.14
+        how: see
+    open:
+      - >-
+        Proposed until the renderer reads package doc comments. That is step 4 of gragas#477 (holds prose
+        moves into package doc comments); it has no tool key to bind to until then.

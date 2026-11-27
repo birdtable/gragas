@@ -1,0 +1,79 @@
+/* What every part shares: one focus ring token, reduced motion, the
+   24 px pointer target (44 where the pointer is coarse, web.layout.5), dvh and
+   never 100vh (web.layout.7), and the visually hidden text a screen reader
+   still reads. Colours, sizes and fonts are the tokens' custom properties. */
+
+[data-part] {
+  box-sizing: border-box;
+  font-family: var(--gr-font-sans);
+  color: var(--gr-text-ink);
+}
+
+[data-part] *,
+[data-part] *::before,
+[data-part] *::after {
+  box-sizing: inherit;
+}
+
+.gr-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* One focus ring for every interactive part. */
+[data-part] :is(a, button, input, [role="tab"], [tabindex]):focus-visible,
+:is(a, button, input, [role="tab"], [tabindex])[data-part]:focus-visible {
+  outline: 2px solid var(--gr-focus);
+  outline-offset: 2px;
+}
+
+/* A pointer target is at least 24 by 24 CSS px, 44 by 44 where the pointer is coarse. */
+.gr-target {
+  min-width: 24px;
+  min-height: 24px;
+}
+
+@media (pointer: coarse) {
+  .gr-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part],
+  [data-part] *,
+  [data-part] *::before,
+  [data-part] *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* The one button every part draws: a border from the control token, the action
+   colour for its text, and the shared focus ring above. */
+.gr-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gr-space-1);
+  padding: var(--gr-space-1) var(--gr-space-3);
+  font: inherit;
+  color: var(--gr-text-action);
+  background: var(--gr-ground-surface);
+  border: 1px solid var(--gr-control-border);
+  border-radius: var(--gr-radius-sm);
+  cursor: pointer;
+}
+
+.gr-button:hover {
+  background: var(--gr-ground-page);
+}

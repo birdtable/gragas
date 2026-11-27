@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "document-grid.schema.json",
+  "title": "The proof grid, binding by tool version (document, spec S57)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "cells"
+  ],
+  "properties": {
+    "contract": {
+      "$ref": "common.schema.json#/$defs/contract",
+      "x-introduced": "1.0",
+      "x-decides": "which contract version's schema reads the document, and whether it is read or ends not ready on a newer major"
+    },
+    "cells": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-proof-result.schema.json"
+      },
+      "x-introduced": "1.0"
+    },
+    "tested_set": {
+      "anyOf": [
+        {
+          "$ref": "entity-tested-set.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    }
+  }
+}

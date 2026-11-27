@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"
+     role="img" aria-label="gragas">
+  <title>gragas</title>
+
+  <!--
+    A greylag goose in profile, standing. Grágás is the Icelandic for the greylag
+    goose and the name of the medieval Icelandic law book, so the bird is the
+    name, and the book is the one detail: the folded wing is a grey page ruled
+    with three lines. That is what gragas is, a rulebook, and the ruling is the
+    only part of the drawing that is not a bird.
+
+    What makes it a greylag rather than a heron or a swan: a neck thick for its
+    length, a head with a sloping forehead and no knob, and a deep wedge of a
+    bill that is as long as the head is. The bill is grey where the body is ink,
+    so it reads at a glance as the bird's one pale feature, as the greylag's
+    pink one does.
+
+    The ground, ink and grey are the family's: the same as the other tools that
+    use them. Flat shapes, no gradients, its own ground so it reads the same on a
+    light page or a dark one. At sixteen pixels the ruling and the eye drop out,
+    and the neck, the bill and the page-shaped wing carry it.
+  -->
+
+  <defs>
+    <clipPath id="badge">
+      <rect x="0" y="0" width="256" height="256" rx="56" ry="56"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#badge)">
+    <rect width="256" height="256" fill="#C7D0D8"/>
+
+    <!-- The ground the goose stands on. -->
+    <rect x="0" y="228" width="256" height="28" fill="#161A1F"/>
+
+    <!-- Legs, behind the body. -->
+    <path stroke="#161A1F" stroke-width="9" stroke-linecap="round" fill="none"
+          d="M120 196 L116 230 M160 196 L164 230"/>
+
+    <!-- The body: grey, deep at the chest, the tail a point lifted at the right. -->
+    <path fill="#6C7681"
+          d="M52 168 C48 138 76 118 116 118 C160 114 208 120 242 134
+             L224 152 C220 190 190 210 146 210 C96 210 56 200 52 168 Z"/>
+
+    <!-- Neck and head: the neck is long, thick and leans back into the shoulder. -->
+    <path fill="#161A1F"
+          d="M66 152 C60 118 72 92 84 66 C80 40 98 26 116 34 C128 40 128 56 120 68
+             C110 90 112 110 126 128 L100 146 Z"/>
+
+    <!-- The bill: a deep wedge, pale, as long as the head. -->
+    <path fill="#F2F5F8" d="M84 48 L42 58 L46 74 L86 70 Z"/>
+
+    <!-- The eye. -->
+    <circle cx="106" cy="48" r="5" fill="#F2F5F8"/>
+
+    <!-- The folded wing is a page, and the page is ruled. -->
+    <path fill="#F2F5F8"
+          d="M98 146 C136 134 196 138 232 150 C220 184 170 192 110 178 Z"/>
+    <path stroke="#161A1F" stroke-width="4" stroke-linecap="round" fill="none"
+          d="M114 154 L206 156 M118 164 L210 166 M126 174 L196 174"/>
+  </g>
+</svg>

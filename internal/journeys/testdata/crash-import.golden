@@ -1,0 +1,54 @@
+$ gragas import guide --into-part go --into-concern style --guide-slug handler-guide --guide-title Handler guide --guide-url https://example.org/handlers --guide-tag v1.2.0 --apply
+--- before
+c342066e8677fb569091e229dc5f358669ab85a505874d0cec96a3c11a4a2dea guide/handlers.md
+a7378c2c06875a3c26c08883fb1d663d593226832fc6ff7e40c62544adccfc71 language/go/rules/errors.yaml
+93d53f8940029b3e40a77be9c8d8df9c0c239c28bb88ad6136ebc7eb3d847ae1 presets/golangci-lint/settings.yml
+7d1543288bbbe5e0ef83911768156af6f901e0611bf851dce435757f72ea996b rulebook.yaml
+3292da10a25b244041baa53df885bb2325d7a4661dee4d0f6a5bdd362d9e4b5c structure.yaml
+--- after
+7e145de162a187316e249f9ff3b97f3ee28d62ba3cf53d7184ea7b0704f7093a decisions.yaml
+c342066e8677fb569091e229dc5f358669ab85a505874d0cec96a3c11a4a2dea guide/handlers.md
+d2947041f0125c0dd11969e51119a78315d47969abd384cd2fba6d2d1854db9f history.jsonl
+a7378c2c06875a3c26c08883fb1d663d593226832fc6ff7e40c62544adccfc71 language/go/rules/errors.yaml
+c1051d4935426da0a1c601b49a835967fa1007303b74778d86b808ab1f267e39 language/go/rules/style.yaml
+93d53f8940029b3e40a77be9c8d8df9c0c239c28bb88ad6136ebc7eb3d847ae1 presets/golangci-lint/settings.yml
+7d1543288bbbe5e0ef83911768156af6f901e0611bf851dce435757f72ea996b rulebook.yaml
+bfe4d3ca0868692897cf53d4af480e557b287ce0d13a6c25d5e9611e0a04e67c sources.yaml
+3292da10a25b244041baa53df885bb2325d7a4661dee4d0f6a5bdd362d9e4b5c structure.yaml
+--- boundaries
+before-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+after-intent
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+between-files
+after-record
+after-record
+after-record

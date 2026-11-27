@@ -1,0 +1,47 @@
+{
+ "generated_by": "gragas gen",
+ "total": {
+  "rules": 6,
+  "enforced": 2,
+  "planned": 0,
+  "advisory": 3,
+  "later": 0,
+  "retired": 1,
+  "proposed": 1,
+  "unsourced": 1,
+  "checks": 5,
+  "unresolved": 3,
+  "external_equal": 0,
+  "external_stricter": 1
+ },
+ "parts": {
+  "arch": {
+   "rules": 5,
+   "enforced": 1,
+   "planned": 0,
+   "advisory": 3,
+   "later": 0,
+   "retired": 1,
+   "proposed": 1,
+   "unsourced": 1,
+   "checks": 4,
+   "unresolved": 3,
+   "external_equal": 0,
+   "external_stricter": 0
+  },
+  "go": {
+   "rules": 1,
+   "enforced": 1,
+   "planned": 0,
+   "advisory": 0,
+   "later": 0,
+   "retired": 0,
+   "proposed": 0,
+   "unsourced": 0,
+   "checks": 1,
+   "unresolved": 0,
+   "external_equal": 0,
+   "external_stricter": 1
+  }
+ }
+}

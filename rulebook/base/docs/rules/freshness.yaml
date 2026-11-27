@@ -1,0 +1,110 @@
+format: 3
+part: docs
+concern: freshness
+rules:
+  - id: docs.freshness.1
+    statement: "Every doc carries its type, status and version or as-of date, in typed front matter or in one fixed header line or status paragraph, read by one schema, and indexes are generated from it, never written by hand."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A repo declares one container for these fields: typed front matter, a fixed header line (Version, Status and Ages-with), or a bold status paragraph that opens the doc. Whatever the container, one shared parser reads it into the same fields and validates them against one JSON Schema; a doc with no type or status fails, and a doc in a container other than the declared one fails. The sidebar or index (a table of notes included) is generated from the folders and these fields, or checked against them by a test, never kept by hand. Every doc has a named owner, in the fields or in one owners file."
+      pros:
+        - "No pinned repo had front matter; without a type, a status and an owner nobody can tell a current record from an old one or who keeps it true. The invariants are the rule; the container is the repo's choice, so a repo that already writes a header line or a status paragraph is held to the same fields without a rewrite."
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+  - id: docs.freshness.2
+    statement: "The docs/ folder holds typed documents that are true now and marked records, and working material such as epics, handovers and run notes lives outside it."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Marked records are of three kinds, each typed so the docs check knows it is a record. A superseded decision note stays, marked at its top with its successor, keeping its old sections and its rejected alternatives with their reasons. A history log (what landed, when) is append-only and marked as history; an edit to an earlier entry fails. Unadopted proposals live in one marked folder with an index and bind nothing until a decision adopts them; nothing outside that folder cites a proposal as a rule. Nothing in docs/ is deleted to retire it."
+      pros:
+        - "Notes mixed into the docs folder read as current fact and go stale unseen. A record that is marked is not that risk: deleting it loses the reasons behind the current design, and marking it keeps them without letting them pass for current fact."
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+  - id: docs.freshness.3
+    statement: "A non-generated doc carries an as-of date and reads as a record of that day, a date-only change is reported, and a superseded section carries a dated note naming the note that replaced it, which links back."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A section that a later note replaces keeps its text; a dated line at its top names the replacing note, and the replacing note links back to the section. A generated doc carries no as-of date (docs.freshness.7)."
+      pros:
+        - "A date bumped with no content change makes an old claim look fresh, and a section replaced without a note reads as current."
+    relations:
+      relates:
+        - docs.freshness.7
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+  - id: docs.freshness.4
+    statement: "A doc states a current fact only where a check holds it, and says what is built and what is only designed."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Generated reference is regenerated and diffed in the gate, numbers come from a script, paths are links that the link check follows, and every other doc is a dated record of the day it was written. A doc never says to build to a design that is frozen or to a thing that is not built."
+      pros:
+        - "A product doc still said \"Build to it today\" for a frozen tree."
+    sources:
+      - ref: docs-reasons-stated
+        backs: rule
+  - id: docs.freshness.5
+    statement: "A decision is never edited in place: it is superseded by number, the superseding record names the old one, the old one is marked, and the links point both ways."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A decision has a number that is never reused. A repo declares its container: one file per decision, numbered decisions inside design notes, or entries in one append-only log amended by dated sub-entries. In every container a reversal is a new decision that names the one it replaces, the old one gains a superseded mark that names its successor, its text stays, and every cited decision number resolves."
+      pros:
+        - "A decision that supersedes another without the back link leaves two live answers, and an edit in place loses what was decided and why. The invariants are the rule; the container is the repo's choice."
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+  - id: docs.freshness.6
+    statement: "A stub, a placeholder return or a not-implemented body in shipped source is reported."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A syntax scan counts not-implemented throws, TODO returns and stub bodies. It is a report, not a gate."
+      pros:
+        - A shipped stub looks like a feature.
+  - id: docs.freshness.7
+    statement: "A generated doc says so in its first lines with the command that makes it, the gate regenerates and diffs it, and the help text and the doc for the same subject come from one source."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    reasoning:
+      definition: "The source is the program's command registry (one declaration per command with its summary, the version it arrived in, what a second run does and who may run it); help, help --json, the README's command table, the MCP tool list, agent skill text and the generated guide are rendered from it. A generated file opens with a line that says it is generated, by which command, and not to edit it. The gate runs the command and fails on any difference. Prose about a command that is not generated links to the generated part instead of restating it. There is one registry and help prints it; MCP tools and the skill text are generated from it. Help is written once, the README's command table is generated from it, and a test fails when they differ. A guide generated from lessons beside the code says not to edit it here."
+      pros:
+        - "A command described once and rendered everywhere cannot drift: the agent's skill, the tool list and the README are the program's own words, not a second copy of them."
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+  - id: docs.freshness.8
+    statement: "No hand-written file carries a digest of the current state: a digest lives in the generated output, and a change to the state adds a note with a reason."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A chain whose newest line must equal the digest of the current state is wrong for every change in flight after any other lands, and the fix is a hand edit in a file nobody else should edit. The digest moves into the generated listing's header; the reason moves into a note per change, a new file with the date and at least a few words of why. The check is that when the listing's digest differs from the base's, the change adds a note. What is lost is the chain's proof that every past listing was recorded; the notes and the history give the same answer with one more command. Ratchets whose point is a hand edit that can only lower a count are not chains and stay."
+      pros:
+        - "Own measure: a file of this kind changed in 10 commits in three days, and every one appended a line to a chain, so any two changes in flight conflicted and the second one's digest was wrong after the rebase."
+    relations:
+      relates:
+        - docs.freshness.1
+    sources:
+      - ref: towncrier-fragments
+        backs: rule
+      - ref: changesets-fragments
+        says: "A change is one small file in a folder; the release step joins them."
+        backs: rule

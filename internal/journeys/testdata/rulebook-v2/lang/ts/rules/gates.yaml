@@ -1,0 +1,54 @@
+part: ts
+concern: gates
+order: 10
+title: Gates written in TypeScript
+summary: >-
+  A gate written for Node holds the process rules that keep a failure from being lost: the uncaught handler
+  first, an empty subject refused, the exit code set and never forced early.
+rules:
+  - id: ts.gates.1
+    slug: node-gate-process-discipline
+    since: 0.1.0
+    rule: >-
+      A Node gate registers its uncaught-exception handler first, refuses an empty subject, sets
+      process.exitCode and never calls process.exit before its last rule.
+    detail: >-
+      The handler for uncaught exceptions and unhandled rejections is registered before any import that can
+      throw, and it sets a failing exit code and prints the gate's name. The gate fails when its subject (the
+      file list, the rule list, the parsed tree) is empty. It sets `process.exitCode` and lets the event loop
+      drain, so every rule runs and every pending write is flushed; `process.exit` is called by no gate file.
+      The language-neutral rules (the gate list derived from the files, a gate that never imports its subject,
+      a checker that counts what it parsed) live in the gates and architecture parts. Biome form: a GritQL
+      plugin for a `process.exit` call in a gate file. ESLint form: `n/no-process-exit` (or
+      `no-restricted-syntax` on the same call) for gate files. The handler order and the empty-subject refusal
+      are held by the plant test, engine-free.
+    level: program
+    why: >-
+      A gate that exits early skips the rules after it and can cut its own output, and a gate with no handler
+      can die on a throw and leave a zero exit code; both report green for work that did not happen.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: nodejs-docs
+        where: process.exitCode
+        backs: rule
+      - ref: decision-65-ts
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          a plant test per gate: a throw before the first rule must exit non-zero with the gate's name, an
+          empty subject must fail, and a planted failing first rule must still let the last rule run. Plant: a
+          gate whose first rule throws exits non-zero; a gate given no files fails; a gate that exits after
+          its first failing rule fails the test. Control: a gate that runs every rule and sets the exit code
+          passes
+      - binding: ts
+        class: preset-config
+        tool: eslint
+        tier: "1"
+        note: >-
+          a GritQL plugin for Biome, or ESLint `n/no-process-exit`, on gate files. Plant: a `process.exit(1)`
+          in a gate file fails the lint. Control: `process.exitCode = 1` passes

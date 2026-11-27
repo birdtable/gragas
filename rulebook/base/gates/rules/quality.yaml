@@ -1,0 +1,73 @@
+format: 3
+part: gates
+concern: quality
+rules:
+  - id: gates.quality.1
+    statement: "A blocking check has a measured false-positive rate under 10 percent; a check above the bar drops a level."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "For every check that blocks, keep a count of hits, suppressed hits, findings later overturned, and the agent time spent satisfying a failure, from the delivery record, and report them per check. A check that is mostly suppressed is changed or dropped. A check above the bar drops a level (blocking to ratcheted to review) by a recorded decision; the reporter itself never demotes a check, because that would be a gate weakening. The 10 percent bar is a practice figure and a guess on UI gates. A failing test is never rerun to green."
+      pros:
+        - "A check that wastes agent rounds taxes every ticket, and time spent satisfying a wrong finding is invisible unless recorded. One lint rule has 40 of 40 hits suppressed; one repo has 26 init functions each suppressed with a reason (V-55). No UI gate has an override count today."
+    relations:
+      relates:
+        - gates.quality.2
+    sources:
+      - ref: p-02-enforcement-and-measure
+        where: section 7.1
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 7.7
+        backs: rule
+      - ref: sadowski-tricorder
+        backs: rule
+  - id: gates.quality.2
+    statement: "A failing rule's message names its home and the fix; a failing test's first screen names the check, the expected and actual values and the one line to rerun it, and the rest goes to a file."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The rule table requires home and fix fields in every rule message; for our own lint plugin rules a plugin lint enforces the message format and docs URL. The first screen of a failing test is a review question. No line limit is set because none is measured."
+      pros:
+        - "A message that does not say what to do is satisfied by guessing. Argued, not measured; no measured number is cited."
+    sources:
+      - ref: p-09-agentic-development
+        where: section 7.2
+        backs: rule
+  - id: gates.quality.3
+    statement: "Every gate on main is green, so that a red result means something."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A failing test is never rerun to green, a blocking check has a measured false-positive rate (gates.quality.1), and the release backstop (a full run at the tag) catches what selection missed."
+      pros:
+        - "A main that is sometimes red teaches everyone to retry, and a retry hides a real fault."
+    relations:
+      relates:
+        - gates.quality.1
+    sources:
+      - ref: decision-18
+        backs: rule
+      - ref: decision-27
+        backs: rule
+  - id: gates.quality.4
+    statement: "A new check runs on one real repo before it is required anywhere, and the trial is recorded."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Shared checks run over existing repos at pinned commits with a control run, so a result cannot pass by accident, and a dry adoption report is written per tool, before any check is required. The trial needs a known positive. The registry refuses a required check with no trial record; that a trial was real and was read is judgement."
+      pros:
+        - A check that has never run on real code misfires on first contact and gets switched off.
+  - id: gates.quality.5
+    statement: A gate is one you can explain in a sentence.
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A required one-line `why` field on each rule row with a length cap gives presence only; a model lens checks that the sentence matches the check."
+      pros:
+        - A gate nobody can explain gets weakened or removed without understanding.

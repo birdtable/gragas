@@ -1,0 +1,5 @@
+heading 1 line 1 "Trailing text" #trailing-text
+paragraph lines 6-6 "Prose right after the fence."
+paragraph lines 12-12 "And more."
+block lines 3-5 info "gragas" closed true under #trailing-text bytes 17-47 body 27-43 "id: go.errors.5\n"
+block lines 8-11 info "gragas" closed true under #trailing-text bytes 77-125 body 88-120 "id: go.errors.6\n``` not a close\n"

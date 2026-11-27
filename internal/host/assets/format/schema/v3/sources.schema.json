@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sources.schema.json",
+  "title": "sources.yaml: what the rules cite (format v3)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "sources"],
+  "properties": {
+    "format": {"$ref": "common.schema.json#/$defs/format"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "kind", "title", "locator"],
+        "properties": {
+          "slug": {"$ref": "common.schema.json#/$defs/slug"},
+          "kind": {"enum": ["standard", "guide", "study", "incident", "decision-record", "vendor-document", "own-decision"]},
+          "title": {"$ref": "common.schema.json#/$defs/text"},
+          "locator": {"$ref": "common.schema.json#/$defs/text", "description": "a URL, an ISBN, a DOI, an RFC or a decision slug"},
+          "attribution": {"$ref": "common.schema.json#/$defs/text"},
+          "verified": {"$ref": "common.schema.json#/$defs/date", "description": "the day someone opened it"}
+        }
+      }
+    }
+  }
+}

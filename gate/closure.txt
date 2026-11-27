@@ -1,0 +1,54 @@
+# The external modules the shipped binary may link (supply.intake.2), one per line.
+# The list only falls: a module linked and not listed fails, and a module listed and
+# no longer linked is taken off. Read with cgo off for each platform gate.ShippedPlatforms
+# names (darwin, freebsd, linux and windows, amd64 and arm64), joined (A67).
+charm.land/bubbles/v2
+charm.land/bubbletea/v2
+charm.land/fang/v2
+charm.land/huh/v2
+charm.land/lipgloss/v2
+charm.land/log/v2
+github.com/atotto/clipboard
+github.com/birdtable/go-console
+github.com/birdtable/go-files
+github.com/birdtable/go-proc
+github.com/birdtable/go-run
+github.com/catppuccin/go
+github.com/charmbracelet/colorprofile
+github.com/charmbracelet/ultraviolet
+github.com/charmbracelet/x/ansi
+github.com/charmbracelet/x/exp/charmtone
+github.com/charmbracelet/x/exp/ordered
+github.com/charmbracelet/x/exp/strings
+github.com/charmbracelet/x/term
+github.com/charmbracelet/x/termios
+github.com/charmbracelet/x/windows
+github.com/clipperhouse/displaywidth
+github.com/clipperhouse/uax29/v2
+github.com/dustin/go-humanize
+github.com/go-logfmt/logfmt
+github.com/inconshreveable/mousetrap
+github.com/lucasb-eyer/go-colorful
+github.com/mattn/go-runewidth
+github.com/mitchellh/hashstructure/v2
+github.com/muesli/cancelreader
+github.com/muesli/mango
+github.com/muesli/mango-cobra
+github.com/muesli/mango-pflag
+github.com/muesli/roff
+github.com/pelletier/go-toml/v2
+github.com/rivo/uniseg
+github.com/santhosh-tekuri/jsonschema/v6
+github.com/shirou/gopsutil/v4
+github.com/spf13/cobra
+github.com/spf13/pflag
+github.com/tetratelabs/wazero
+github.com/xo/terminfo
+github.com/yuin/goldmark
+go.yaml.in/yaml/v3
+golang.org/x/mod
+golang.org/x/sync
+golang.org/x/sys
+golang.org/x/term
+golang.org/x/text
+mvdan.cc/sh/v3

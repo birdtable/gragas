@@ -1,0 +1,10 @@
+name: status
+order: 400
+context: P
+ends: listing
+summary: "Say what applies to this project and which versions are in play"
+examples:
+  - {line: "gragas status", does: "say it"}
+  - {line: "gragas status --json", does: "as one JSON document"}
+exits: ["done", "not ready"]
+json: status

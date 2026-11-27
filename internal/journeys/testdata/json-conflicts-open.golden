@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "contract": "1.3",
+  "command": "conflicts",
+  "word": "findings",
+  "dir": "",
+  "open": 1,
+  "resolved": 0,
+  "conflicts": [
+    {
+      "entry": {
+        "tool": "golangci-lint",
+        "target": "source",
+        "key": "errorlint"
+      },
+      "differs": [
+        "severity"
+      ],
+      "sides": [
+        {
+          "rule": "go.errors.1",
+          "severity": "error"
+        },
+        {
+          "rule": "go.errors.2",
+          "severity": "warning"
+        }
+      ]
+    }
+  ],
+  "resolutions": [
+    "split the entry: give each rule an entry of its own, since different options are usually different entries",
+    "rebind one rule to another entry or value: gragas rebind",
+    "declare a conflicts relation on both rules and record a decision that names the winning binding: gragas decision new"
+  ]
+}

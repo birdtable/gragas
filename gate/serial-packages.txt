@@ -1,0 +1,17 @@
+# Packages whose tests still run one at a time, which paralleltest and tparallel skip
+# (tests.runners.4; gate/baselines.yaml row serial-packages). lint/project.yml's exclusion
+# for the two linters names exactly these, and a test holds the two together. A package
+# leaves this list when its tests call t.Parallel, or carry //nolint:paralleltest // serial:
+# <reason>; the list only shrinks, and a new package is never added.
+cmd/gragas-dev
+cmd/gragas-new
+cmd/gragas-release
+internal
+internal/core/link
+internal/dev/gate
+internal/dev/generate
+internal/host/fs
+internal/host/git
+internal/host/term
+internal/journeys
+internal/ordered

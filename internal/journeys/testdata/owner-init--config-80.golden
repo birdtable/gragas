@@ -1,0 +1,8 @@
+$ gragas init --config /nowhere/settings.yaml
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  not ready  --config names /nowhere/settings.yaml, which does not exist
+    leave out --config, or write the file
+--- stderr
+--- exit 4

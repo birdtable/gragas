@@ -1,0 +1,5 @@
+rule: arch.measures.1
+path: internal/cli/root/registry_data.go
+fingerprint: 2a210aa7487d249ec93de185d133c1806be4daf8e3ed57ae05dad2317501c2d3
+answer: keep
+reason: "the root joins the conflicts command package as it joins every command package below internal/cli/cmd, through the one generated join file, so a new command is a new folder and no shared line; the package draws only through the session the root hands it and reads nothing itself"

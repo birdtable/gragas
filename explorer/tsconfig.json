@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.library.json",
+  "compilerOptions": {
+    // allowImportingTsExtensions: node runs the scripts as .ts, so a script imports
+    // its sibling by its real name; this file is only type-checked (--noEmit).
+    "allowImportingTsExtensions": true,
+    // dom: vitest's node types import the browser package's declarations, which
+    // name DOM types, and skipLibCheck is off. The files here are tests and
+    // scripts that run in Node and ship nowhere.
+    "lib": ["es2023", "dom"],
+    "types": ["node"]
+  },
+  "include": ["browser/commands.d.ts", "test", "scripts", "count-reporter.ts"]
+}

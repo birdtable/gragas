@@ -1,0 +1,3251 @@
+{
+  "schema": 1,
+  "generated_by": "gragas-docs",
+  "json_fields": [
+    "schema",
+    "command",
+    "apply",
+    "ended",
+    "msg",
+    "next",
+    "run",
+    "changes",
+    "data",
+    "error"
+  ],
+  "global_flags": [
+    {
+      "name": "accessible",
+      "type": "bool",
+      "default": "false",
+      "usage": "Plain questions (ACCESSIBLE)"
+    },
+    {
+      "name": "config",
+      "type": "string",
+      "default": "",
+      "usage": "The settings file (GRAGAS_CONFIG)"
+    },
+    {
+      "name": "json",
+      "type": "bool",
+      "default": "false",
+      "usage": "Answer in one JSON document"
+    },
+    {
+      "name": "no-color",
+      "type": "bool",
+      "default": "false",
+      "usage": "No colour (NO_COLOR)"
+    },
+    {
+      "name": "plain",
+      "type": "bool",
+      "default": "false",
+      "usage": "Print plainly: nothing moves"
+    }
+  ],
+  "commands": [
+    {
+      "path": "gragas attention",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "attention"
+    },
+    {
+      "path": "gragas bind",
+      "state": "built",
+      "positionals": "\u003cid\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "key",
+          "type": "string",
+          "default": "",
+          "usage": "The tool's entry"
+        },
+        {
+          "name": "option",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "An option of the entry, name=value; a name given twice holds a list"
+        },
+        {
+          "name": "pair",
+          "type": "int",
+          "default": "0",
+          "usage": "The number of the pair that proves it"
+        },
+        {
+          "name": "remedy",
+          "type": "string",
+          "default": "",
+          "usage": "The tool's fixer, shown and never run"
+        },
+        {
+          "name": "run-point",
+          "type": "string",
+          "default": "",
+          "usage": "Where in the work it runs: edit, commit, push, land, review, release or deploy"
+        },
+        {
+          "name": "rung",
+          "type": "int",
+          "default": "0",
+          "usage": "How the binding holds the rule, 0 to 6"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "default": "",
+          "usage": "How loudly the tool reports it: error, warning or info"
+        },
+        {
+          "name": "target",
+          "type": "string",
+          "default": "",
+          "usage": "What the entry is about, such as config"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "default": "",
+          "usage": "The tool's slug, as gragas tools shows"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "default": "",
+          "usage": "The entry's value: true, false, a number or a word"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas cache",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        }
+      ],
+      "json_kind": "cache"
+    },
+    {
+      "path": "gragas cache clear",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        }
+      ],
+      "json_kind": "cache"
+    },
+    {
+      "path": "gragas cache list",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        }
+      ],
+      "json_kind": "cache"
+    },
+    {
+      "path": "gragas check",
+      "state": "legacy",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "dir",
+          "shorthand": "C",
+          "type": "string",
+          "default": ".",
+          "usage": "The repository holding rulebook/"
+        },
+        {
+          "name": "fail-on",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "end on findings when one is of this kind, below a pin (the kinds are tool-config, tier-contract, exemption, names, tracked-files, counts)"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "check"
+    },
+    {
+      "path": "gragas conflicts",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "sarif",
+          "type": "bool",
+          "default": "false",
+          "usage": "Answer in one SARIF document"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "conflicts"
+    },
+    {
+      "path": "gragas contract",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "sarif",
+          "type": "bool",
+          "default": "false",
+          "usage": "Answer in one SARIF document"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "contract"
+    },
+    {
+      "path": "gragas contract fields",
+      "state": "built",
+      "positionals": "\u003centity\u003e",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "contract"
+    },
+    {
+      "path": "gragas contract fixture",
+      "state": "built",
+      "positionals": "--out \u003cdir\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "out",
+          "type": "string",
+          "default": "",
+          "usage": "The folder to write into"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "contract"
+    },
+    {
+      "path": "gragas contract validate",
+      "state": "built",
+      "positionals": "\u003cfile\u003e",
+      "flags": [
+        {
+          "name": "as",
+          "type": "string",
+          "default": "",
+          "usage": "Read the file as this document, when its fields do not tell"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "contract"
+    },
+    {
+      "path": "gragas coverage",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "coverage"
+    },
+    {
+      "path": "gragas decision",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas decision new",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "cite-binding",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "A binding it cites, as \u003crule id\u003e \u003ctool\u003e \u003ckey\u003e (repeat)"
+        },
+        {
+          "name": "cite-rule",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "A rule it cites (repeat)"
+        },
+        {
+          "name": "cite-source",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "A source it cites (repeat)"
+        },
+        {
+          "name": "decision-slug",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of the new decision"
+        },
+        {
+          "name": "rejected",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "An option turned down, and why (repeat; at least one)"
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "default": "",
+          "usage": "What was decided, on one line"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "default": "",
+          "usage": "What it is called"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas decision supersede",
+      "state": "built",
+      "positionals": "\u003cslug\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "decision-slug",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of the new decision"
+        },
+        {
+          "name": "rejected",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "An option turned down, and why (repeat; at least one)"
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "default": "",
+          "usage": "What was decided, on one line"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "default": "",
+          "usage": "What it is called"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas explain",
+      "state": "built",
+      "positionals": "\u003cid\u003e | \u003ctool\u003e \u003ckey\u003e",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "explain"
+    },
+    {
+      "path": "gragas gen",
+      "state": "legacy",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "check",
+          "type": "bool",
+          "default": "false",
+          "usage": "Fail when a file would change"
+        },
+        {
+          "name": "dir",
+          "shorthand": "C",
+          "type": "string",
+          "default": ".",
+          "usage": "The repository holding rulebook/"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas guard",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        }
+      ],
+      "json_kind": "guard"
+    },
+    {
+      "path": "gragas guard edit",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        }
+      ],
+      "json_kind": "guard"
+    },
+    {
+      "path": "gragas guard staged",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "merge-hook",
+          "type": "bool",
+          "default": "false",
+          "usage": "Run as git's pre-merge-commit hook, before git records the merge"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        }
+      ],
+      "json_kind": "guard"
+    },
+    {
+      "path": "gragas history",
+      "state": "built",
+      "positionals": "[id]",
+      "flags": [
+        {
+          "name": "at",
+          "type": "string",
+          "default": "",
+          "usage": "Read the history as it is at this tag, commit or branch"
+        },
+        {
+          "name": "entity",
+          "type": "string",
+          "default": "",
+          "usage": "List only the rows about this entity, as the history names it"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "history"
+    },
+    {
+      "path": "gragas import",
+      "state": "built",
+      "positionals": "[\u003cfolder\u003e]",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "config",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "A config file to bring in, once for each"
+        },
+        {
+          "name": "guide-attribution",
+          "type": "string",
+          "default": "",
+          "usage": "Who wrote the guide"
+        },
+        {
+          "name": "guide-slug",
+          "type": "string",
+          "default": "",
+          "usage": "The guide's source, as lower-case words joined by hyphens"
+        },
+        {
+          "name": "guide-tag",
+          "type": "string",
+          "default": "",
+          "usage": "The release of the guide the drafts are read at"
+        },
+        {
+          "name": "guide-title",
+          "type": "string",
+          "default": "",
+          "usage": "What the guide is called"
+        },
+        {
+          "name": "guide-url",
+          "type": "string",
+          "default": "",
+          "usage": "Where the guide is found"
+        },
+        {
+          "name": "into-concern",
+          "type": "string",
+          "default": "",
+          "usage": "The concern of that part the rules are drafted into"
+        },
+        {
+          "name": "into-part",
+          "type": "string",
+          "default": "",
+          "usage": "The part the rules are drafted into"
+        },
+        {
+          "name": "target",
+          "type": "string",
+          "default": "",
+          "usage": "What the entry is about, such as config"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "default": "",
+          "usage": "The tool's slug, as gragas tools shows"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas init",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "docs-url",
+          "type": "string",
+          "default": "",
+          "usage": "The base URL of the published pages"
+        },
+        {
+          "name": "import",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "A part taken from another rulebook, RULEBOOK@VERSION=PART,PART=sha256:\u003chash\u003e (repeat for more)"
+        },
+        {
+          "name": "kind",
+          "type": "string",
+          "default": "",
+          "usage": "What the folder is: project or rulebook"
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "default": "en",
+          "usage": "The authoritative language"
+        },
+        {
+          "name": "layer",
+          "type": "string",
+          "default": "core",
+          "usage": "The slug of the first layer"
+        },
+        {
+          "name": "licence",
+          "type": "string",
+          "default": "CC-BY-4.0",
+          "usage": "The licence of the rules"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "default": "",
+          "usage": "The rulebook's short name, a slug"
+        },
+        {
+          "name": "owner",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "Who owns the rulebook, shown in its views; it grants nothing (repeat for more)"
+        },
+        {
+          "name": "parent",
+          "type": "string",
+          "default": "",
+          "usage": "An overlay's parent rulebook"
+        },
+        {
+          "name": "parent-hash",
+          "type": "string",
+          "default": "",
+          "usage": "The content hash of the parent's pinned release, sha256:\u003c64 hex digits\u003e"
+        },
+        {
+          "name": "parent-version",
+          "type": "string",
+          "default": "",
+          "usage": "The parent's version the overlay pins"
+        },
+        {
+          "name": "part",
+          "type": "string",
+          "default": "core",
+          "usage": "The slug of the first part"
+        },
+        {
+          "name": "presets-licence",
+          "type": "string",
+          "default": "MIT",
+          "usage": "The licence of the presets"
+        },
+        {
+          "name": "rulebook-kind",
+          "type": "string",
+          "default": "base",
+          "usage": "base, overlay, companion or fork"
+        },
+        {
+          "name": "version",
+          "type": "string",
+          "default": "1.0.0",
+          "usage": "The starting version the first release publishes"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas journal",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        }
+      ],
+      "json_kind": "journal"
+    },
+    {
+      "path": "gragas journal list",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        }
+      ],
+      "json_kind": "journal"
+    },
+    {
+      "path": "gragas journal recover",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        }
+      ],
+      "json_kind": "journal"
+    },
+    {
+      "path": "gragas journal restore",
+      "state": "built",
+      "positionals": "\u003crun\u003e",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        }
+      ],
+      "json_kind": "journal"
+    },
+    {
+      "path": "gragas migrate",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "docs-url",
+          "type": "string",
+          "default": "",
+          "usage": "The base URL of the published pages"
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "default": "en",
+          "usage": "The authoritative language"
+        },
+        {
+          "name": "licence",
+          "type": "string",
+          "default": "CC-BY-4.0",
+          "usage": "The licence of the rules"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "default": "",
+          "usage": "The rulebook's short name, a slug"
+        },
+        {
+          "name": "owner",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "Who owns the rulebook, shown in its views; it grants nothing (repeat for more)"
+        },
+        {
+          "name": "presets-licence",
+          "type": "string",
+          "default": "MIT",
+          "usage": "The licence of the presets"
+        },
+        {
+          "name": "version",
+          "type": "string",
+          "default": "1.0.0",
+          "usage": "The starting version the first release publishes"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas plugin",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plugin"
+    },
+    {
+      "path": "gragas plugin add",
+      "state": "built",
+      "positionals": "\u003cfolder\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plugin"
+    },
+    {
+      "path": "gragas plugin approve",
+      "state": "built",
+      "positionals": "\u003cname\u003e[@\u003cversion\u003e]",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "digest",
+          "type": "string",
+          "default": "",
+          "usage": "The digest of the bundle shown, which --apply records"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plugin"
+    },
+    {
+      "path": "gragas plugin contract",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plugin"
+    },
+    {
+      "path": "gragas plugin list",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plugin"
+    },
+    {
+      "path": "gragas plugin record",
+      "state": "built",
+      "positionals": "\u003cfolder\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "case",
+          "type": "string",
+          "default": "",
+          "usage": "The number of the case folder; the next free one when not given"
+        },
+        {
+          "name": "config",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "A config file to bring in, once for each"
+        },
+        {
+          "name": "fixture",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "A file of the project the tool runs over (repeatable)"
+        },
+        {
+          "name": "op",
+          "type": "string",
+          "default": "entries",
+          "usage": "The reading call to record: entries or findings"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plugin"
+    },
+    {
+      "path": "gragas plugin test",
+      "state": "built",
+      "positionals": "\u003cbundle\u003e",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plugin"
+    },
+    {
+      "path": "gragas plugin upgrade",
+      "state": "built",
+      "positionals": "\u003csource\u003e \u003cname\u003e[@\u003cversion\u003e]",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plugin"
+    },
+    {
+      "path": "gragas preset",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "check",
+          "type": "bool",
+          "default": "false",
+          "usage": "Fail when a file would change"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas rebind",
+      "state": "built",
+      "positionals": "\u003cid\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of a decision the book holds"
+        },
+        {
+          "name": "key",
+          "type": "string",
+          "default": "",
+          "usage": "The tool's entry"
+        },
+        {
+          "name": "option",
+          "type": "stringArray",
+          "default": "[]",
+          "usage": "An option of the entry, name=value; a name given twice holds a list"
+        },
+        {
+          "name": "remedy",
+          "type": "string",
+          "default": "",
+          "usage": "The tool's fixer, shown and never run"
+        },
+        {
+          "name": "severity",
+          "type": "string",
+          "default": "",
+          "usage": "How loudly the tool reports it: error, warning or info"
+        },
+        {
+          "name": "target",
+          "type": "string",
+          "default": "",
+          "usage": "What the entry is about, such as config"
+        },
+        {
+          "name": "to-key",
+          "type": "string",
+          "default": "",
+          "usage": "Move it to this entry"
+        },
+        {
+          "name": "to-target",
+          "type": "string",
+          "default": "",
+          "usage": "Move it to this target type"
+        },
+        {
+          "name": "to-tool",
+          "type": "string",
+          "default": "",
+          "usage": "Move it to this tool"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "default": "",
+          "usage": "The tool's slug, as gragas tools shows"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "default": "",
+          "usage": "The entry's value: true, false, a number or a word"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas resolve",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "resolve"
+    },
+    {
+      "path": "gragas rule",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas rule confirm",
+      "state": "built",
+      "positionals": "\u003cid\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas rule edit",
+      "state": "built",
+      "positionals": "\u003cid\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "cite",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "A source slug that backs it; repeatable"
+        },
+        {
+          "name": "conflicts",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "Add a rule it conflicts with; repeatable"
+        },
+        {
+          "name": "covers",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "Add a rule it covers; repeatable"
+        },
+        {
+          "name": "depends",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "Add a rule it depends on; repeatable"
+        },
+        {
+          "name": "relates",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "Add a rule it relates to; repeatable"
+        },
+        {
+          "name": "review-by",
+          "type": "string",
+          "default": "",
+          "usage": "The date it is next confirmed, YYYY-MM-DD"
+        },
+        {
+          "name": "rule-owner",
+          "type": "string",
+          "default": "",
+          "usage": "Who owns the rule"
+        },
+        {
+          "name": "scope-kind",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "A kind the rule applies to; repeatable"
+        },
+        {
+          "name": "scope-part",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "A part the rule applies to; repeatable"
+        },
+        {
+          "name": "scope-path",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "A glob the rule applies to; repeatable"
+        },
+        {
+          "name": "uncite",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "A source slug it stops citing; repeatable"
+        },
+        {
+          "name": "zero-by",
+          "type": "string",
+          "default": "",
+          "usage": "The date its findings must reach zero, YYYY-MM-DD"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas rule exclude",
+      "state": "built",
+      "positionals": "\u003cid\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of a decision the book holds"
+        },
+        {
+          "name": "decision-slug",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of the new decision"
+        },
+        {
+          "name": "decision-text",
+          "type": "string",
+          "default": "",
+          "usage": "What was decided and why"
+        },
+        {
+          "name": "decision-title",
+          "type": "string",
+          "default": "",
+          "usage": "The title of the decision"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas rule include",
+      "state": "built",
+      "positionals": "\u003cid\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of a decision the book holds"
+        },
+        {
+          "name": "decision-slug",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of the new decision"
+        },
+        {
+          "name": "decision-text",
+          "type": "string",
+          "default": "",
+          "usage": "What was decided and why"
+        },
+        {
+          "name": "decision-title",
+          "type": "string",
+          "default": "",
+          "usage": "The title of the decision"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas rule new",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "cite",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "A source slug that backs it; repeatable"
+        },
+        {
+          "name": "concern",
+          "type": "string",
+          "default": "",
+          "usage": "The concern, as part.concern"
+        },
+        {
+          "name": "decision-text",
+          "type": "string",
+          "default": "",
+          "usage": "What was decided and why"
+        },
+        {
+          "name": "decision-title",
+          "type": "string",
+          "default": "",
+          "usage": "The title of the decision"
+        },
+        {
+          "name": "definition",
+          "type": "string",
+          "default": "",
+          "usage": "What the rule means"
+        },
+        {
+          "name": "own",
+          "type": "bool",
+          "default": "false",
+          "usage": "The owner's own decision is the source"
+        },
+        {
+          "name": "review-by",
+          "type": "string",
+          "default": "",
+          "usage": "The date it is next confirmed, YYYY-MM-DD"
+        },
+        {
+          "name": "rule-owner",
+          "type": "string",
+          "default": "",
+          "usage": "Who owns the rule"
+        },
+        {
+          "name": "scope-kind",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "A kind the rule applies to; repeatable"
+        },
+        {
+          "name": "scope-part",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "A part the rule applies to; repeatable"
+        },
+        {
+          "name": "scope-path",
+          "type": "stringSlice",
+          "default": "[]",
+          "usage": "A glob the rule applies to; repeatable"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "default": "",
+          "usage": "A source slug that backs it, or own"
+        },
+        {
+          "name": "statement",
+          "type": "string",
+          "default": "",
+          "usage": "The rule in one sentence"
+        },
+        {
+          "name": "strength",
+          "type": "string",
+          "default": "",
+          "usage": "How firmly it binds: must, should or may"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas rule promote",
+      "state": "built",
+      "positionals": "\u003cid\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of a decision the book holds"
+        },
+        {
+          "name": "decision-slug",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of the new decision"
+        },
+        {
+          "name": "decision-text",
+          "type": "string",
+          "default": "",
+          "usage": "What was decided and why"
+        },
+        {
+          "name": "decision-title",
+          "type": "string",
+          "default": "",
+          "usage": "The title of the decision"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas rule renumber",
+      "state": "built",
+      "positionals": "\u003cid\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of a decision the book holds"
+        },
+        {
+          "name": "decision-slug",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of the new decision"
+        },
+        {
+          "name": "decision-text",
+          "type": "string",
+          "default": "",
+          "usage": "What was decided and why"
+        },
+        {
+          "name": "decision-title",
+          "type": "string",
+          "default": "",
+          "usage": "The title of the decision"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas rule replace",
+      "state": "built",
+      "positionals": "\u003cid\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of a decision the book holds"
+        },
+        {
+          "name": "decision-slug",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of the new decision"
+        },
+        {
+          "name": "decision-text",
+          "type": "string",
+          "default": "",
+          "usage": "What was decided and why"
+        },
+        {
+          "name": "decision-title",
+          "type": "string",
+          "default": "",
+          "usage": "The title of the decision"
+        },
+        {
+          "name": "definition",
+          "type": "string",
+          "default": "",
+          "usage": "What the rule means"
+        },
+        {
+          "name": "review-by",
+          "type": "string",
+          "default": "",
+          "usage": "The date it is next confirmed, YYYY-MM-DD"
+        },
+        {
+          "name": "rule-owner",
+          "type": "string",
+          "default": "",
+          "usage": "Who owns the rule"
+        },
+        {
+          "name": "statement",
+          "type": "string",
+          "default": "",
+          "usage": "The rule in one sentence"
+        },
+        {
+          "name": "strength",
+          "type": "string",
+          "default": "",
+          "usage": "How firmly it binds: must, should or may"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas rule restore",
+      "state": "built",
+      "positionals": "\u003cid\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of a decision the book holds"
+        },
+        {
+          "name": "decision-slug",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of the new decision"
+        },
+        {
+          "name": "decision-text",
+          "type": "string",
+          "default": "",
+          "usage": "What was decided and why"
+        },
+        {
+          "name": "decision-title",
+          "type": "string",
+          "default": "",
+          "usage": "The title of the decision"
+        },
+        {
+          "name": "review-by",
+          "type": "string",
+          "default": "",
+          "usage": "The date it is next confirmed, YYYY-MM-DD"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas rule retire",
+      "state": "built",
+      "positionals": "\u003cid\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of a decision the book holds"
+        },
+        {
+          "name": "decision-slug",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of the new decision"
+        },
+        {
+          "name": "decision-text",
+          "type": "string",
+          "default": "",
+          "usage": "What was decided and why"
+        },
+        {
+          "name": "decision-title",
+          "type": "string",
+          "default": "",
+          "usage": "The title of the decision"
+        },
+        {
+          "name": "successor",
+          "type": "string",
+          "default": "",
+          "usage": "The rule that takes its place"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas source",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas source edit",
+      "state": "built",
+      "positionals": "\u003cslug\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "attribution",
+          "type": "string",
+          "default": "",
+          "usage": "Who wrote it"
+        },
+        {
+          "name": "locator",
+          "type": "string",
+          "default": "",
+          "usage": "A URL, an ISBN, a DOI, an RFC or a decision slug"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "default": "",
+          "usage": "What it is called"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas source new",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "attribution",
+          "type": "string",
+          "default": "",
+          "usage": "Who wrote it"
+        },
+        {
+          "name": "locator",
+          "type": "string",
+          "default": "",
+          "usage": "A URL, an ISBN, a DOI, an RFC or a decision slug"
+        },
+        {
+          "name": "source-kind",
+          "type": "string",
+          "default": "",
+          "usage": "What the source is: one of the kinds named above"
+        },
+        {
+          "name": "source-slug",
+          "type": "string",
+          "default": "",
+          "usage": "The source, as lower-case words joined by hyphens"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "default": "",
+          "usage": "What it is called"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas term",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas term edit",
+      "state": "built",
+      "positionals": "\u003cslug\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "literal",
+          "type": "string",
+          "default": "",
+          "usage": "The header name, package or other literal it stands for"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas term new",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "literal",
+          "type": "string",
+          "default": "",
+          "usage": "The header name, package or other literal it stands for"
+        },
+        {
+          "name": "slug",
+          "type": "string",
+          "default": "",
+          "usage": "The term, as lower-case words joined by hyphens"
+        },
+        {
+          "name": "term-definition",
+          "type": "string",
+          "default": "",
+          "usage": "What the term means, in one line"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas term retire",
+      "state": "built",
+      "positionals": "\u003cslug\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of a decision the book holds"
+        },
+        {
+          "name": "decision-slug",
+          "type": "string",
+          "default": "",
+          "usage": "The slug of the new decision"
+        },
+        {
+          "name": "decision-text",
+          "type": "string",
+          "default": "",
+          "usage": "What was decided and why"
+        },
+        {
+          "name": "decision-title",
+          "type": "string",
+          "default": "",
+          "usage": "The title of the decision"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas tools",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "tools"
+    },
+    {
+      "path": "gragas unbind",
+      "state": "built",
+      "positionals": "\u003cid\u003e",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "key",
+          "type": "string",
+          "default": "",
+          "usage": "The tool's entry"
+        },
+        {
+          "name": "target",
+          "type": "string",
+          "default": "",
+          "usage": "What the entry is about, such as config"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "default": "",
+          "usage": "The tool's slug, as gragas tools shows"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas undo",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": "false",
+          "usage": "Write the files"
+        },
+        {
+          "name": "entry",
+          "type": "string",
+          "default": "",
+          "usage": "The entry to take back, by the number or the digest the dry run shows; --apply needs it"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        },
+        {
+          "word": "refused",
+          "code": 5
+        },
+        {
+          "word": "declined",
+          "code": 6
+        }
+      ],
+      "json_kind": "plan"
+    },
+    {
+      "path": "gragas validate",
+      "state": "built",
+      "positionals": "",
+      "flags": [
+        {
+          "name": "sarif",
+          "type": "bool",
+          "default": "false",
+          "usage": "Answer in one SARIF document"
+        }
+      ],
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "findings",
+          "code": 1
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "validate"
+    },
+    {
+      "path": "gragas version",
+      "state": "built",
+      "positionals": "",
+      "flags": null,
+      "exits": [
+        {
+          "word": "done",
+          "code": 0
+        },
+        {
+          "word": "usage",
+          "code": 2
+        },
+        {
+          "word": "busy",
+          "code": 3
+        },
+        {
+          "word": "not ready",
+          "code": 4
+        }
+      ],
+      "json_kind": "version"
+    }
+  ],
+  "not_built": [
+    "propose",
+    "fix",
+    "signals",
+    "verify",
+    "prove",
+    "release",
+    "diff",
+    "changelog",
+    "health",
+    "archive",
+    "withdraw",
+    "index",
+    "docs",
+    "show",
+    "find",
+    "handbook",
+    "sarif",
+    "explorer",
+    "status",
+    "waive",
+    "baseline",
+    "upgrade",
+    "switch",
+    "report",
+    "agents",
+    "rules",
+    "review"
+  ]
+}

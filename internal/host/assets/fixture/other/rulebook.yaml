@@ -1,0 +1,19 @@
+format: 3
+name: fixture-other
+version: 0.3.0
+kind: base
+licences:
+  rules: CC-BY-4.0
+  presets: MIT
+language: en
+docs_url: https://example.org/fixture-other/
+owners: [alex]
+governance:
+  contribution: open
+  decision_required: false
+  trial_releases: 1
+  review_days: 365
+tested:
+  tools:
+    - {name: golangci-lint, version: 2.1.0}
+  min_engine: 0.1.0

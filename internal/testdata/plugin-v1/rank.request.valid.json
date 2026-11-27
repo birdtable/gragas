@@ -1,0 +1,26 @@
+[
+  {
+    "tool_version": "10.13.0",
+    "pairs": [
+      {
+        "key": "a",
+        "aspect": "options",
+        "preset": [
+          "always",
+          {
+            "null": "ignore"
+          }
+        ],
+        "found": [
+          "always"
+        ]
+      },
+      {
+        "key": "b",
+        "aspect": "value",
+        "preset": 300,
+        "found": null
+      }
+    ]
+  }
+]

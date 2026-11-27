@@ -1,0 +1,26 @@
+$ gragas gen --check --json
+--- stdout
+{
+  "schema": 2,
+  "command": "gen",
+  "apply": false,
+  "ended": "findings",
+  "msg": "1 generated file differ from their sources",
+  "next": "gragas gen --apply",
+  "changes": [
+    "write rulebook/coverage.json"
+  ],
+  "data": {
+    "stale": [
+      "rulebook/coverage.json"
+    ]
+  },
+  "error": {
+    "kind": "failed",
+    "msg": "1 generated file differ from their sources",
+    "hint": "gragas gen --apply"
+  }
+}
+--- stderr
+warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
+--- exit 1

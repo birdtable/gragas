@@ -1,0 +1,10 @@
+name: changelog
+order: 280
+context: B
+ends: listing
+summary: "List the changes of a release, each with what a consumer does"
+examples:
+  - {line: "gragas changelog", does: "list the latest release's changes"}
+  - {line: "gragas changelog <release>", does: "list another release's"}
+exits: ["done"]
+json: changelog

@@ -1,0 +1,60 @@
+# The product kinds a when or an unless may name, and the products of each
+# kind, each cited by a source that shows it (R-12, section 2).
+kinds:
+  - key: cli
+    name: Command-line program
+    description: A program a person or an agent runs from a terminal, one command at a time.
+    instances:
+      - ref: gragas-readme
+  - key: daemon
+    name: Long-running program
+    description: >-
+      A program that runs in the background under a service manager and is reached through a socket or a port.
+  - key: service
+    name: Network service
+    description: A program that answers requests over HTTP for other programs or for a page.
+  - key: web-app
+    name: Web application
+    description: >-
+      Pages a person uses in a browser, built from components and served by a program of the product.
+    instances:
+      - ref: gragas-readme
+        where: gragas explorer, not yet built
+  - key: library
+    name: Library
+    description: "Code other code imports: a package or a module with no program of its own."
+  - key: site
+    name: Static site
+    description: >-
+      Pages built ahead of time and served as files, with little or no code in the browser.
+    note: "No target product is a site yet (D-T01): the parts that bind to it are dormant."
+  - key: cloud-service
+    name: Cloud service
+    description: A service run on a cloud provider's managed functions, tables and queues.
+    note: >-
+      No target product is a cloud service yet (D-T00): the parts that bind to it are dormant.
+  - key: docs
+    name: Docs-only repository
+    description: >-
+      A repository that holds Markdown, pages or nothing, with no program to build: its checks are the commit
+      members and a members file that says so.
+    note: "No target product is a docs-only repository yet: the parts that bind to it are dormant."
+  - key: no-identity
+    name: No identity
+    description: >-
+      A program with no visitor, no grant and no sign-in: every view is public data, so the rules that assume a
+      signed-in person do not bind it.
+    note: >-
+      A trait that switches rules off is a kind like any other (S73 of the spec, docs/spec.md). The first
+      product of this kind is the explorer, which gragas does not build yet (README.md), so no source shows an
+      instance. The claim that no sign-in exists is held by web.permissions.17, a review question until a tool
+      can see a sign-in surface.
+  - key: static-data
+    name: Static data
+    description: >-
+      A page that reads one published document and writes nothing to a server: it has no live connection, no
+      reconnect and no write, so the rules about a live server do not bind it.
+    note: >-
+      A trait that switches rules off is a kind like any other (S73 of the spec, docs/spec.md). The first
+      product of this kind is the explorer, which gragas does not build yet (README.md), so no source shows an
+      instance.

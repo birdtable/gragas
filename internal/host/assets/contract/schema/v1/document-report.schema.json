@@ -1,0 +1,370 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "document-report.schema.json",
+  "title": "The project report (document, spec 16.8): carries no project name, path, remote or author",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "versions",
+    "pin",
+    "release",
+    "run_time",
+    "lock_digest",
+    "sections",
+    "trust"
+  ],
+  "properties": {
+    "contract": {
+      "$ref": "common.schema.json#/$defs/contract",
+      "x-introduced": "1.0",
+      "x-decides": "which contract version's schema reads the document, and whether it is read or ends not ready on a newer major"
+    },
+    "versions": {
+      "$ref": "common.schema.json#/$defs/versions",
+      "x-introduced": "1.0"
+    },
+    "pin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rulebook",
+        "version"
+      ],
+      "properties": {
+        "rulebook": {
+          "$ref": "common.schema.json#/$defs/text",
+          "x-introduced": "1.0"
+        },
+        "version": {
+          "$ref": "common.schema.json#/$defs/semver",
+          "x-introduced": "1.0"
+        }
+      },
+      "x-introduced": "1.0"
+    },
+    "release": {
+      "$ref": "entity-release.schema.json",
+      "x-introduced": "1.0"
+    },
+    "run_time": {
+      "$ref": "common.schema.json#/$defs/timestamp",
+      "x-introduced": "1.0"
+    },
+    "lock_digest": {
+      "$ref": "common.schema.json#/$defs/digest",
+      "x-introduced": "1.0"
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "manifest",
+          "per_rule"
+        ],
+        "properties": {
+          "manifest": {
+            "$ref": "common.schema.json#/$defs/digest",
+            "x-introduced": "1.0"
+          },
+          "name": {
+            "$ref": "common.schema.json#/$defs/textOrEmpty",
+            "x-introduced": "1.0",
+            "default": ""
+          },
+          "per_rule": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "rule",
+                "standing"
+              ],
+              "properties": {
+                "rule": {
+                  "$ref": "common.schema.json#/$defs/id",
+                  "x-introduced": "1.0"
+                },
+                "standing": {
+                  "$ref": "common.schema.json#/$defs/standing",
+                  "x-introduced": "1.0"
+                },
+                "marks": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "common.schema.json#/$defs/slug"
+                  },
+                  "x-introduced": "1.0",
+                  "default": []
+                },
+                "observation": {
+                  "type": "string",
+                  "enum": [
+                    "held",
+                    "not held",
+                    "not observed"
+                  ],
+                  "x-introduced": "1.0",
+                  "default": "held"
+                },
+                "provenance": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [],
+                  "properties": {
+                    "layer": {
+                      "anyOf": [
+                        {
+                          "$ref": "common.schema.json#/$defs/slug"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "x-introduced": "1.0",
+                      "default": null
+                    },
+                    "decision": {
+                      "anyOf": [
+                        {
+                          "$ref": "common.schema.json#/$defs/slug"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "x-introduced": "1.0",
+                      "default": null
+                    },
+                    "switch": {
+                      "anyOf": [
+                        {
+                          "$ref": "common.schema.json#/$defs/slug"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "x-introduced": "1.0",
+                      "default": null
+                    }
+                  },
+                  "x-introduced": "1.0",
+                  "default": {}
+                },
+                "bindings": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "common.schema.json#/$defs/text"
+                  },
+                  "x-introduced": "1.0",
+                  "default": []
+                }
+              }
+            },
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0"
+    },
+    "waivers": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-waiver.schema.json"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "baselines": {
+      "type": "array",
+      "items": {
+        "$ref": "entity-baseline.schema.json"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "drift": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entry",
+          "kind"
+        ],
+        "properties": {
+          "entry": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "weaker",
+              "tighter",
+              "absent",
+              "unmapped",
+              "edited copy"
+            ],
+            "x-introduced": "1.0",
+            "x-decides": "the fidelity finding the report states for its entry"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "mismatches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "what",
+          "found",
+          "expected"
+        ],
+        "properties": {
+          "what": {
+            "type": "string",
+            "enum": [
+              "tool",
+              "preset",
+              "adapter",
+              "engine"
+            ],
+            "x-introduced": "1.0"
+          },
+          "found": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "expected": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "renderings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "state"
+        ],
+        "properties": {
+          "path": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "stale",
+              "edited"
+            ],
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "wiring": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "line",
+          "present"
+        ],
+        "properties": {
+          "line": {
+            "$ref": "common.schema.json#/$defs/text",
+            "x-introduced": "1.0"
+          },
+          "present": {
+            "type": "boolean",
+            "x-introduced": "1.0"
+          }
+        }
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "trust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signature",
+        "digests_matched",
+        "release_state"
+      ],
+      "properties": {
+        "signature": {
+          "type": "string",
+          "enum": [
+            "verified",
+            "unsigned-accepted"
+          ],
+          "x-introduced": "1.0"
+        },
+        "digests_matched": {
+          "type": "boolean",
+          "x-introduced": "1.0"
+        },
+        "release_state": {
+          "type": "string",
+          "enum": [
+            "current",
+            "withdrawn",
+            "archived"
+          ],
+          "x-introduced": "1.0"
+        }
+      },
+      "x-introduced": "1.0"
+    },
+    "last_change": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "when"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "upgrade",
+                "switch"
+              ],
+              "x-introduced": "1.0"
+            },
+            "when": {
+              "$ref": "common.schema.json#/$defs/timestamp",
+              "x-introduced": "1.0"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "x-introduced": "1.0",
+      "default": null
+    }
+  }
+}

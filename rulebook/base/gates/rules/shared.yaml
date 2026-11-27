@@ -1,0 +1,116 @@
+format: 3
+part: gates
+concern: shared
+rules:
+  - id: gates.shared.1
+    statement: "Gates are generic and shared by version: one lint stack, with config rendered from one shared source into each repo and checked byte for byte; a project adds only its own rules."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The gate files in each project equal the version-locked template output, and only parameters are project-owned. For Go: golangci-lint has no `extends` or `include`, so the shared config (base plus packs) is copied into each repo by a sync command and a check re-renders in memory and compares bytes, listing every stale path. Sibling repos run the same shared gates and presets published once, with the runtime floor aligned, and a parity check fails when a resolved config drifts from the preset version (one Go version across the estate)."
+      pros:
+        - "5 distinct lint configs among 6 repos (V-25)."
+    sources:
+      - ref: decision-4
+        backs: rule
+  - id: gates.shared.2
+    statement: The required managed root files exist in each repo.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The structural check fails when a managed lint or hook file, or one of the one-line root config files, is absent from the repo root."
+      pros:
+        - A repo missing a root file silently falls back to tool defaults.
+  - id: gates.shared.3
+    statement: "The managed root files are byte-equal to the template copy; an edited one fails."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: The template writes a few one-line root files that only point at the shared config and are never edited. A file that must stay a copy is checked byte for byte against its origin in the gate.
+      pros:
+        - A root file that was edited can loosen the shared config.
+  - id: gates.shared.4
+    statement: "A repo may set only a closed list of keys in its config overlay, nothing that loosens the shared base; strictness flags are never switched off."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The compiler overlay may hold only include, exclude, paths and outDir. Every override is in one parameters file read by a gate (validated with ajv-cli or check-jsonschema), \"which package\" decisions a human makes are written there, and a person's config refuses unknown keys (schema with additional properties false). Go lint config has no merge, so a repo may add only named fields in a separate local file that the check reads by meaning. A loosened setting fails; the strictness flags (strict compiler flags) stay on."
+      pros:
+        - A repo that can add keys to its overlay can turn the base off.
+    relations:
+      relates:
+        - gates.measures.4
+  - id: gates.shared.5
+    statement: "Each shared package and tool has one pinned version, and a preflight checks it is present before the gate runs."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "One version file (`tools.txt` with name, version and sha256, read by `make preflight` and the `companion preflight` command; a tools file for Go tools with a separate sum file, and a plain list of name, version and checksum for the rest); the preflight exits non-zero on a missing or wrong-version tool, running each `--version`. Consumers stay within the currency window, the toolchain follows the lockfile, and one module version is used in every program. Verified 5 Nov: `go tool -modfile=tools.mod deadcode ./...` works with a `tool` directive in a separate tools module."
+      pros:
+        - "A secret scanner is at 8.27.2 in one repo and 8.28.0 in two others (V-68, in part); 5 lint configs among 6 repos (V-25). A box check found golangci-lint at 2.14.0 with 2.15.0 the latest release."
+  - id: gates.shared.6
+    statement: "A new repo starts with the pinned toolchain, hook install, lint, type-check and one gate command, and the shared package as a dev dependency."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A new TypeScript repo starts with an engines range, a package-manager pin, hook install, lint, type-check and gate scripts and the shared package as a dev dependency. A new Go repo starts with a Go version, a tools file, the hook and one make target. One package manager, pinned. The template lays down configs, scripts and gates."
+      pros:
+        - A repo set up by hand begins with a different gate than the next one.
+  - id: gates.shared.7
+    statement: "A migration is swept within a deadline, then the old way is blocked."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The sync check compares each consumer's lock with the newest allowed shared version; a consumer older than the migration deadline in the migration record fails its own gate. It applies to code migrations and to contracts read by programs another owner deploys; it does not apply to a config key spelling, and a program whose readers all change in the same release keeps no old way to sweep."
+      pros:
+        - Three adoption issues were open since 27 October with no end date.
+    sources:
+      - ref: decision-65-gates
+        backs: rule
+  - id: gates.shared.8
+    statement: "A check that exists is in the gate, or it is deleted, and the gate list is derived from the gate files themselves, never typed into a second list."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Every make target named as a check is reachable from the `check` target. Where a repo keeps its gates as files, each gate file declares its own metadata (name, rules held, budget, exit voice), and the gate command builds its member list by reading those files; a list typed by hand in a Makefile, a config or a doc is a second home that drifts and is a finding. A bespoke check script moves into the standard lint or import-rule tool and is then deleted: import rules go to the dependency-boundary linter or a repo test, one lint stack carries the rest, and a check that is not in the gate is deleted. Data validators of configuration files are not domain scripts and stay."
+      pros:
+        - "A drift check that is not in the gate fails 13 of 35 entries unseen (V-27). The scan is a `gatescan` rule. A gate list typed apart from the gate files loses the gate that was added last."
+    sources:
+      - ref: ford-bea
+        where: chapter 7
+        backs: rule
+      - ref: decision-65-gates
+        backs: rule
+  - id: gates.shared.9
+    statement: "A check replaced by a standard tool keeps a rule-by-rule parity table, and the replacement fires all the old check's plants before the old check is removed."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The table maps each old rule to a lint rule, a spec, or \"dropped\" with a reason; the remaining hits are then fixed or exempted with a ticket and an expiry. The replacement change runs the old plant corpus against the new config in the same change (a parity run); a plant that stops firing fails the swap. Deleting the awkward plant first is a gate weakening (gates.protection.1). Applies to home-made regex style scripts and any home-made check."
+      pros:
+        - "A replacement silently narrows coverage, and only plants prove parity."
+    relations:
+      relates:
+        - gates.protection.1
+    sources:
+      - ref: ford-bea
+        where: chapter 4 (fidelity fitness functions)
+        backs: rule
+  - id: gates.shared.10
+    statement: Formatting is one command.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "One formatter command checks formatting in each repo; for `.astro` files that the chosen formatter cannot handle, `prettier-plugin-astro` is named in the one command, and a single wrapper command (`companion fmt`) hides the choice."
+      pros:
+        - "Two formatters disagree, and each run undoes the other's output."

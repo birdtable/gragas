@@ -1,0 +1,6 @@
+{
+  "contract": 1,
+  "features": [
+    "cache-vars"
+  ]
+}

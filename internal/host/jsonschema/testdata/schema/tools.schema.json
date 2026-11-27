@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tools.schema.json",
+  "title": "The stack of one part: rulebook/<layer>/<part>/tools.yaml (schema v2)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["part", "tools"],
+  "properties": {
+    "part": {"$ref": "common.schema.json#/$defs/short"},
+    "tools": {"type": "array", "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["key", "name", "role", "state"],
+      "properties": {
+        "key": {"type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "what a check's tool names; unique across the rulebook"},
+        "name": {"type": "string", "minLength": 2},
+        "role": {"type": "string", "minLength": 5, "description": "what it does for this part"},
+        "version": {"type": "string"},
+        "licence": {"type": "string"},
+        "binding": {"$ref": "common.schema.json#/$defs/binding"},
+        "ships": {"type": "string", "description": "the config or preset this part ships for it"},
+        "state": {"enum": ["chosen", "candidate", "banned", "replaced", "unsure"]},
+        "preset": {"type": "string", "pattern": "^presets/\\S+$", "description": "the hand-written preset a check's key must resolve in (decision 49), from the repository root"},
+        "key_source": {
+          "type": "string",
+          "pattern": "^(eslint --print-config|golangci-lint help linters|dir:presets/\\S+)$",
+          "description": "where a key is listed: eslint --print-config, golangci-lint help linters, or dir:<a rule directory>"
+        },
+        "why": {"type": "string"},
+        "lost": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["name", "why"],
+                 "properties": {"name": {"type": "string"}, "why": {"type": "string"}}}},
+        "open": {"type": "array", "items": {"type": "string"}},
+        "note": {"type": "string"}
+      },
+      "dependentRequired": {"key_source": ["preset"]}
+    }}
+  }
+}

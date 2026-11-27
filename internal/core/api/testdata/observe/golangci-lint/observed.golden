@@ -1,0 +1,6 @@
+as-set    errcheck               set by base (errors)
+weaker    gosec                  set by base
+excluded  staticcheck            was excluded by team (no-static)
+unmapped  ineffassign            was excluded by team (no-ineff)
+unmapped  govet
+unmapped  unused

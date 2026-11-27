@@ -1,0 +1,149 @@
+format: 3
+part: web
+concern: structure
+rules:
+  - id: web.structure.1
+    statement: "Exactly one module touches the network or writes a URL; views and parts take data as arguments, the hosts a page may reach come from configuration, and a fetch that follows a user-supplied address resolves and checks it first."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The one module is the generated client output plus one core client module (the gateway folder). No other file calls `fetch`, `EventSource`, `XMLHttpRequest`, `new WebSocket` or `navigator.sendBeacon`, in any form: bare, through `window`, `globalThis` or `self`, as a destructured alias, or by bracket access. Embedded page scripts and virtual files are inside the rule. No connector call (`.get`, `.post` and the like) is made outside the client layer and its gated hooks. A site that fetches at build time declares that as a parameter. The hosts a program may reach come from configuration, never from a request; a fetch whose address can come from a request resolves the address and checks it against the allowed hosts first (server-side request forgery). Embedded scripts in `.astro` files (`<script>`) are inside the rule. The destructured alias form takes `fetch` out of `window` in a `const` and the bracket form is `window[\"fetch\"]`."
+      pros:
+        - "A network call anywhere lets data, permissions and error handling be bypassed, and a host taken from a request is an open door. Both sites passed when counted; no fault was found in outbound hosts, and 20 outbound call sites on the Go side were counted and not traced."
+    sources:
+      - ref: mcdonald-grokking-web-app-security
+        where: ch. 14 on server-side request forgery
+        backs: rule
+  - id: web.structure.2
+    statement: "Raw markup is written only through one funnel module, and HTML that comes from data goes through a sanitiser inside it."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Outside the funnel, no `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `DOMParser` with innerHTML, `createContextualFragment`, `setHTMLUnsafe`, iframe `srcdoc` or computed property form of these. The framework's own raw-HTML escape (a set-html directive, a dangerously-set prop) is banned the same way. The sanitiser library is imported in the funnel only. The funnel module exposes `put()` and `raw()`. Template stack: `astro/no-set-html-directive` from `eslint-plugin-astro`. Component stack: the React form, react.components.3. Sanitiser: `dompurify`, imported in the funnel only. The computed form is `el[\"innerHTML\"] = x`."
+      pros:
+        - "A stray raw-HTML write is a script-injection hole; a text rule that matched only five spellings let the others pass."
+    relations:
+      relates:
+        - react.components.3
+  - id: web.structure.3
+    statement: "An entry file and a route file only wire: they import from the owning module's public entry and contain no function over a small line limit, no client call, no query hook and no markup."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Entry files are the program entry and route files. A function declaration over the limit (kept in rule data) fails. The route-file form on a router stack (one page import, route group, route helper) is react.routing.11. Entry files include `app/main.ts` and route files; the function check is `no-restricted-syntax` on `FunctionDeclaration` with a body over the `thin-route` line limit kept in rule data."
+      pros:
+        - "Logic in an entry or a route file escapes the module's tests and boundaries; both entries complied when counted."
+    relations:
+      relates:
+        - react.routing.11
+  - id: web.structure.4
+    statement: "A page is one orchestrator of route input, gated data and catalogued parts. Where the page reads a server of ours, the server hands over order, totals, peaks and sentences and the page only draws, and a value the page recomputes from fields beside it is refused in review. A page's own business rules, where it has any, live in the module's model folder."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The model folder is `model/`. The server side of the split is service.contract.20 (units in keys, formatted text beside the number, sentences with their inputs)."
+      pros:
+        - "A page that holds its own rules cannot be tested without rendering and drifts from the other pages. One implementation of a rule is the only one that stays right, and the server is where the test runs on real data; a page that recomputes a total is a second implementation."
+    relations:
+      relates:
+        - service.contract.20
+    sources:
+      - ref: decision-65-web
+        backs: rule
+  - id: web.structure.5
+    statement: "Pure layers touch no document, window or storage; they take plain values and return decisions, and the orchestrating module holds the ports."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Scoped to pure folders: no import of DOM modules and no use of `document`, `window`, `localStorage`, `sessionStorage` or `navigator`. A function that takes a port and also branches is reported, not failed. The port-and-branch report is a query of `companion shape`."
+      pros:
+        - "A pure layer is the part that tests without a browser; once it touches the DOM it cannot be exercised in isolation."
+    sources:
+      - ref: khorikov-unit-testing
+        where: ch. 6.3 to 6.5 and 7.1 to 7.5
+        backs: rule
+      - ref: b-03-unit-testing
+        where: section 5
+        backs: rule
+      - ref: p-01-core-programming
+        where: section 16
+        backs: rule
+  - id: web.structure.6
+    statement: "A presentational part imports no data layer, query hook or client; data arrives from a page or a container."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The check declares zero part folders a valid state and returns \"not applicable: 0 inputs\" with the count, never a pass. Component-stack form: `components/` imports no `api/`; the plant is a part importing `../api/client`."
+      pros:
+        - A part that fetches for itself cannot be shown in a catalogue or reused on another page.
+  - id: web.structure.7
+    statement: "Shared presentation and utility code contains no query hook and no fetch; data access lives in modules."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - Shared code that fetches turns every consumer into a network client and hides the data flow.
+  - id: web.structure.8
+    statement: "Each module declares itself in one typed manifest the host reads, imports no page eagerly, and a feature flag switches off a module's surface, never its code."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The manifest holds an id equal to the module's folder, a title, a flag, its requirements, navigation, slots, query-cache roots and persistence. Dependencies and tier live in one data file, and routes come from the module's route group. A flag also switches off the closure of the modules that depend on it."
+      pros:
+        - "Without a manifest the host imports modules by name, and a module cannot be turned off without deleting code."
+  - id: web.structure.9
+    statement: "A project uses exactly one UI framework; a second framework, or a client island directive in a single-framework project, fails with no exception route."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "More than one of react, astro, preact, svelte, solid and vue in the dependencies fails. A static-site project with a React integration, or any `client:` directive, fails. The check is `companion frameworks`. The `client:` selector runs through `astro-eslint-parser` on attribute names `client:*`; the static-site plant is `<Foo client:load />` and the React integration is `@astrojs/react`."
+      pros:
+        - "Two frameworks in one project double the toolchain and the rules that apply; the operator ruled it out."
+  - id: web.structure.10
+    statement: "A backend service of ours is a provider: every path, header name and field of its API appears in one adapter file, and no page, part or layout holds a URL path literal."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A string beginning with `/` that matches the service's path prefixes outside the adapter folder fails, scoped to include embedded page scripts, ratcheted. A path built by concatenation passes; that is accepted. The adapter folder is `src/lib/source/` (glob `src/lib/source/**`, `.astro` virtual scripts included). Plant: `fetchJSON('/api/disks')` in `lib/layout/disks.ts` fails, while the same string in `src/lib/source/disks.ts` passes."
+      pros:
+        - "Seven files in one site held eight path literals; a changed path then breaks pages the adapter never saw."
+  - id: web.structure.11
+    statement: "A shape shared with a server has one source; the page lists the fields it reads, and that list is checked against the provider's golden or schema, so an added field passes and a renamed one fails."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The consumer list is derived from the response type where possible. Optional fields count as misses unless excepted; routes reached through a general call path must be listed; a list that shrinks without a recorded reason fails; an empty list on a live consumer fails. The check runs when the provider lands. The check is `companion contract`; where it lands for another repository (cross-repo) is unsettled."
+      pros:
+        - "Pages read fields the server does not send (11 in one site, 6 in another, 6 pages in a third). A symmetric name check would fail on a field the server merely added, so the check is one-way."
+    sources:
+      - ref: ford-bea
+        where: "ch. 5 contracts and ch. 7 Postel's law"
+        backs: rule
+      - ref: ford-sathp
+        where: ch. 13 contracts
+        backs: rule
+      - ref: b-01-evolutionary-architectures
+        where: section 5.2
+        backs: rule
+      - ref: b-05-architecture-hard-parts
+        where: section 5.2
+        backs: rule
+  - id: web.structure.12
+    statement: "A new site starts from a template with default tokens, a one-page install, a catalogue that shows each primitive's accessibility state, and an upgrade path."
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - A new site that builds its own starting point forks the design system on day one.

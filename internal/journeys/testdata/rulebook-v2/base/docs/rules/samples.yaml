@@ -1,0 +1,171 @@
+part: docs
+concern: samples
+order: 7
+title: Code in docs and the worked example
+summary: >-
+  Code samples in documentation use the real interfaces and are checked to compile, guide steps run as
+  written, each kind of README has a fixed shape, a change in visible behaviour touches its doc in the same
+  commit, and one program is kept as the worked example of every rule.
+rules:
+  - id: docs.samples.1
+    slug: doc-code-compiles
+    since: 0.1.0
+    rule: >-
+      Code in docs uses the real interfaces: every import in a documentation code fence resolves, every block
+      compiles or type-checks, and install and upgrade steps in a guide are run as written by a test, with a
+      step that loses its block failing.
+    detail: >-
+      For Go, fenced blocks are extracted into a scratch package inside the module and vetted. For TypeScript,
+      every fence in the design-system and reference docs type-checks against the real barrels. A block marked
+      as a fragment is skipped and counted, and that count only falls. A repository with no blocks prints not
+      applicable. The golden path and the rule file agree. Steps under the install and upgrade headings
+      of a guide and the changelog are written as the program's own commands, not shell lines, and are cut
+      out by a test and run in order on a clean machine or container, from the previous release to the
+      commit; a step heading with no block, or a block that fails, fails the
+      test.
+    level: file
+    why: >-
+      Docs rot; the counted 41 fenced Go blocks in six clones showed no known fault from them yet, so the Go
+      half is practice only.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. extract fenced Go blocks (a small goldmark script or an extract-only tool) into a
+          scratch package in the module and run go vet; fragment blocks skipped and counted with a ratcheted
+          count. Plant: a doc block calling a removed function fails; a fragment block is skipped and counted.
+          Control: a compiling block passes
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. every import in a documentation code fence resolves, extended to type-check each
+          fence, with the repo's own offline link test for links in docs against the real barrels. Plant:
+          a fence importing a missing symbol fails. Control: a fence with real imports passes
+      - binding: any
+        class: test-kit
+        tier: "4"
+        note: >-
+          a guide-steps test that cuts the install and upgrade blocks from the guide and the changelog and
+          runs them in order in a clean container or machine. Plant: an upgrade step whose block was deleted
+          fails; a step whose command no longer exists fails. Control: a guide whose steps all run passes
+    open:
+      - "The Go half is unsure: what would change it is a stale block found in a ticket."
+    note: >-
+      Merges the Go row, the TypeScript row and the import half of the UI citation row.
+  - id: docs.samples.2
+    slug: readme-three-questions
+    since: 0.1.0
+    rule: >-
+      A README keeps the shape of its kind: a directory README answers what is here, how to run it and where
+      the rules are and points to AGENTS.md, a package README states what it is, what it exports, what it may
+      import and how it is tested, and a CLI's product README has a fixed order of parts.
+    detail: >-
+      The kind follows from where the README sits: the repo root holds the product README, a package root a
+      package README, any other folder a directory README. The product order is: a claim, what it is, install,
+      getting started, the commands table (generated from help), longer parts, limits, where things live,
+      documentation and contributing. A new kind adds its shape here and to the check, never a README with no
+      kind. The package README's import line agrees with the declared import table.
+    level: file
+    why: >-
+      A README with a known shape is read in one pass by a stranger and can be partly generated; a README that
+      does not point to the rules sends an agent and a person to guess.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. a structure check per README kind: the three headings and the AGENTS.md link for a
+          directory, the four parts for a package, the ordered parts for a product, with the commands table
+          compared with the help output. Plant: a directory README with a missing heading fails; a package
+          README with no import part fails; a product README with install after getting started fails.
+          Control: a README in the shape of its kind passes
+    review_question: >-
+      Does the README actually answer what its parts ask, or is a placeholder paragraph under each heading?
+    open:
+      - >-
+        Whether it answers the questions is semantic; a structure check is mechanical and beaten by a
+        placeholder paragraph.
+  - id: docs.samples.3
+    slug: change-touches-doc
+    since: 0.1.0
+    rule: >-
+      A change in user-visible behaviour (a flag, an exit code, a --json field, a command, a config key, a
+      written file) touches its doc in the same commit, or says docs: none in the commit.
+    detail: >-
+      The behaviour is read from the command manifest, the config schema and the list of files the program
+      writes; the doc is the file under the docs folder or the README that names the changed item. A doc
+      change in a later commit does not count.
+    level: process
+    why: A visible choice about docs, though it buys visibility and not truth.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-docs
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. companion docs-touch fails when a --json field, flag, exit code, command, config
+          key or written file in the manifests changed in a commit and no file under the docs folder or the
+          README changed in that commit and its message has no docs: none line. Plant: rename a flag with no
+          doc change and no trailer fails; a new config key with its doc in the next commit fails. Control: a
+          doc change in the same commit, or the trailer, passes
+    open:
+      - Needs the command manifest (a row of the code part).
+      - "docs: none costs nothing to write, so any agent can write it for free."
+  - id: docs.samples.4
+    slug: worked-example-program
+    since: 0.1.0
+    rule: >-
+      One program is kept as the worked example of every rule, linked from templates and guidance.
+    level: program
+    why: The first file an agent opens should be a good one.
+    kind: instruction
+    strength: Review
+    status: proposed
+    review_question: Does the worked example still follow every rule that links to it?
+    open:
+      - No Go row named a reference program; the UI part holds it for UI.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: docs.samples.5
+    slug: project-profile-page
+    since: 0.1.0
+    rule: Each project has a profile page in the shared docs with the same fixed headings.
+    level: file
+    why: >-
+      A fixed page per project lets a reader and an agent find the same facts in the same place.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. a structure check that each project's profile page has the exact headings. Plant:
+          a profile page missing a heading fails. Control: a complete page passes
+    open:
+      - No Go or UI catalogue row; the heading list is not written yet.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

@@ -1,0 +1,5 @@
+rule: arch.measures.1
+path: internal/cli/root/join_gen.go
+fingerprint: 43fa0d32ffbab4ce532bf7a2dc61ba11feadbec1adc71a6ccbf47f5f5637ec48
+answer: keep
+reason: "the root joins the journal command, which lists the runs that wrote, prints how to restore one and rolls an interrupted one back, as a package of its own below internal/cli/cmd; it draws only through the kit session"

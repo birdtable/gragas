@@ -1,0 +1,110 @@
+format: 3
+part: store
+concern: state-files
+rules:
+  - id: store.state-files.1
+    statement: "Every path, file name and identifier of persistent state is made in one function of one package, from the program's name."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - library
+        reason: It has no state of its own.
+    reasoning:
+      definition: "No literal for .local, Library, XDG_ or /var/lib appears elsewhere. The check is a forbidigo or AST test on those literals outside the paths package, with a shrink-only count."
+      pros:
+        - "Seven places in one repository spelled the XDG rule and nine sites another one /var/lib; paths were resolved by five rules in at least seven places."
+  - id: store.state-files.2
+    statement: "Every file a program writes, state or config, is replaced whole only by the atomic write: written to a temporary file in the same folder, flushed, renamed into place and its folder flushed, with the original mode and owner kept and a link written where it points; a bare write, rename or create onto such a path, and a new hand-written temp-then-rename, are violations."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The rule covers a person's config that a command edits as much as the program's own state: the atomic write keeps the mode and owner of the file it replaces and, when the path is a symbolic link, writes the file the link points to and leaves the link. A new kind of file a program writes goes through the same helper; the rule does not list kinds. Banned outside the owner package: os.WriteFile, os.Rename, os.Create, os.CreateTemp, os.Link, (*os.Root).Rename and unix.Renameat, with a per-file shrink-only allow list for legitimate non-state uses (counts today per repository: WriteFile 1 to 23, Rename 1 to 14, Link 0 to 9). Atomic-write libraries that do not flush the folder are not imported. An ast-grep shape rule of the same intent stays as advice, with its five known bypasses kept as fixtures. The root-confined variant stays in the Linux-only programs. Verified under golangci-lint with forbidigo: the selector is flagged where it is taken, so f := os.Rename and r.Rename on an os.Root both fire."
+      pros:
+        - "Thirteen bodies replace a whole file and twelve of them are outside the owner; 52 non-test WriteFile sites exist and 14 replace a state file in place. A helper that makes the temp file elsewhere is caught only because CreateTemp is banned too. A config rewritten by a bare write loses its mode, its owner or the link a person made, and a crash halfway leaves half a file."
+    sources:
+      - ref: p-03-data
+        where: sections 2 to 4
+        backs: rule
+      - ref: decision-65-store
+        backs: rule
+  - id: store.state-files.3
+    statement: "The atomic write keeps its promise and proves it: a unique temp name, the file flushed, rename, the folder flushed, the temp removed on failure, with a crash-injection test after each step."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - library
+          - not-state-file-owner
+        reason: Only the owner of the atomic write carries it.
+    reasoning:
+      definition: "A weaker promise is a named option, not a copy."
+      pros:
+        - "A write that skips a flush looks atomic until the machine stops. One program's test already plants a bypass of the shared write."
+  - id: store.state-files.4
+    statement: "A move of user data (copy, then remove the source) flushes the copy and its folder before it removes the source."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-user-data
+        reason: There is no source to lose.
+    reasoning:
+      pros:
+        - "One program's copy-across removes the source after a copy it never flushed, though its comment says the copy is on disk (read, not run)."
+  - id: store.state-files.5
+    statement: "An append-only journal line is one write ending in a newline; a torn last line is ended before the next append, and the reader skips and counts what it cannot read."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "No rotation library for a multi-writer journal. The append flag is banned outside the journal package, and a shape rule finds a seek to end followed by a write in one function. The shape rule matches $F.Seek(0, io.SeekEnd) in a function that also calls .Write(; it misses a variable such as whence := io.SeekEnd."
+      pros:
+        - "Fourteen production files in six repositories open with the append flag (19 sites). In a trial of four append shapes, a rotation library lost records under three writers."
+    sources:
+      - ref: store-reasons-stated
+        backs: rule
+  - id: store.state-files.6
+    statement: "A secret is written with its final mode in a folder only the owner can list, and the program refuses a file that is wider."
+    strength: must
+    status: active
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-secrets
+        reason: There is nothing to protect.
+    reasoning:
+      definition: "The mode is 0600, or 0640 with a named group."
+      pros:
+        - "One program writes a file that will hold an API key with a truncating write and an existence check, leaving a window where it is wider than intended."
+    sources:
+      - ref: store-reasons-stated
+        backs: rule
+  - id: store.state-files.7
+    statement: A state file on a network or FUSE file system is refused where the format needs a local disk (a write-ahead log or a lock file).
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-log-or-lock-file
+        reason: It has no format that needs a local disk.
+    reasoning:
+      pros:
+        - A log or lock on a network file system gives silent corruption or no exclusion.
+  - id: store.state-files.8
+    statement: "A path from outside (a flag, a config value, an environment variable or a request) is confined before use, and an archive or folder from outside is unpacked under traversal, link and size limits, with each refused entry named."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Confine with filepath.IsLocal or a rooted file system handle (os.Root), or the platform's equivalent in another language. An archive, an imported folder or a feedback bundle from outside is untrusted: an entry whose path leaves the target, a symbolic or hard link, an entry over the per-entry size limit and a total over the archive limit are each refused by name, and nothing is written for a refused archive."
+      pros:
+        - "A path from a caller can escape its directory. The traversal word had no hits in the catalogue before this row, and the security analyser's rule for variable paths fires on every ordinary call (3 hits on 3), so it cannot gate."
+    sources:
+      - ref: decision-65-store
+        backs: rule

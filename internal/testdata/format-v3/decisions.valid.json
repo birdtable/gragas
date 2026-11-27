@@ -1,0 +1,18 @@
+[
+  {
+    "format": 3,
+    "decisions": [
+      {
+        "slug": "keep-the-names-out",
+        "title": "Keep the names out",
+        "text": "No file of the rulebook names a person or an organisation.",
+        "rejected": ["A list of allowed names", "A review step"],
+        "cites": {"sources": ["rfc-8785"], "rules": ["go.errors.1"], "bindings": ["go.errors.1 golangci-lint errorlint"]},
+        "who": "alex",
+        "date": "2026-10-02",
+        "supersedes": "older-ruling"
+      },
+      {"slug": "older-ruling", "title": "An older ruling", "text": "Names are allowed in the guide.", "who": "alex", "date": "2026-01-02", "superseded_by": "keep-the-names-out"}
+    ]
+  }
+]

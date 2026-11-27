@@ -1,0 +1,273 @@
+part: web
+concern: forms
+order: 7
+title: Forms and actions
+summary: >-
+  Forms are built from the design system field, validated by schema, with errors mapped from the server and no
+  silent loss of unsaved work.
+rules:
+  - id: web.forms.1
+    slug: field-label-and-linked-errors
+    since: 0.1.0
+    rule: >-
+      Field markup is the design system's form field: every field has a visible label, the right input type
+      and linked hints; an invalid field shows a linked message beside it and a summary, and what was typed
+      stays.
+    detail: >-
+      Axe `label`, `aria-valid-attr-value` and `autocomplete-valid` run on every form page. The field part has
+      a required label prop (omitting it is a type error) and linked hint and error ids; a form summary lists
+      the errors. A journey submits invalid data and asserts each message is linked by `aria-describedby`, the
+      summary lists them and the typed values remain. With no form the check prints "not applicable: 0 inputs"
+      with the count. Record pages keep the record mode of the field. Counted element `<form>`; summary part
+      `FormSummary`.
+    level: program
+    why: >-
+      No form exists to measure in either site (evidence D); the two source rules differ on where focus goes
+      after submit.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          axe `label`, `aria-valid-attr-value` and `autocomplete-valid` in the accessibility run, the field
+          part's required label prop, and a journey with invalid data. Plant: an input with a placeholder and
+          no label fails axe `label`; an invalid field whose message is not linked fails the journey. Control:
+          a labelled field with a linked message passes
+    open:
+      - "Vacuous today: no form in either site."
+      - >-
+        Built because every rule binds from adoption; if the operator would rather not build for evidence D,
+        it becomes a best practice.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D: no form exists to measure
+  - id: web.forms.2
+    slug: focus-first-invalid
+    since: 0.1.0
+    rule: On submit, focus moves to the first invalid control or to the summary.
+    detail: >-
+      Which of the two is a project parameter; the source reports disagree and the choice is open. Assertion
+      on `document.activeElement`.
+    level: program
+    why: v1 gave no reason beyond its evidence grade, Evidence B.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a journey submits an invalid form and asserts the active element is the first invalid control or the
+          summary. Plant: a form that leaves focus on the submit button fails. Control: a form that moves
+          focus to the first invalid control passes
+    open:
+      - >-
+        Vacuous today. Whether focus goes to the first invalid control or the summary is open.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: B"
+  - id: web.forms.3
+    slug: one-form-pattern
+    since: 0.1.0
+    rule: There is one form pattern and one server-to-field error mapping per project.
+    detail: >-
+      Template stack: native `<form>` and `FormData`, with a manifest ban on every form library. Component
+      stack: one form library, whose import ban and field-error setter ban are react.client-state.2. A server
+      400 problem response maps to form and field errors through one helper that maps each field code to a
+      message key; the server's message is not rendered, and no field error is set outside the mapping module.
+    level: function
+    why: With no form in either site the check is vacuous until the detector sees one.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          a manifest ban list on form libraries the stack does not allow (every one on the template stack; the
+          component-stack ban is react.client-state.2). Plant: importing a form library in a template-stack
+          project fails; on the component stack, the React rule's plants. Control: the mapping module passes
+    relates:
+      - id: react.client-state.2
+        how: see
+    open:
+      - >-
+        The mapping helper's source (a server 400 with problem details) and its stable machine codes are the
+        contract with the service parts.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.forms.4
+    slug: schema-validation-message-keys
+    since: 0.1.0
+    rule: >-
+      Forms validate with schema validators, and schema messages are message keys, never string literals.
+    detail: >-
+      The schema is the one validation source for a form; how a form library parses schema output in its
+      submit handler is the React form, react.client-state.2.
+    level: function
+    why: >-
+      A validator that carries its own sentence escapes the message catalogue and the locale.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          the no-hardcoded-text rule of the words concern applied to schema message arguments. Plant: a schema
+          with a string literal message fails. Control: a schema carrying a message key passes
+    relates:
+      - id: react.client-state.2
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: web.forms.5
+    slug: unsaved-changes-guarded
+    since: 0.1.0
+    rule: >-
+      Unsaved changes are not lost silently: leaving a dirty form or graph shows a confirm through the shared
+      confirm part, and the confirm is safe to deep-link.
+    detail: >-
+      A journey per form types into a field and then follows a link or presses Back; it asserts a confirm (a
+      before-unload dialog) or an in-app block. The number of forms with a journey equals the form count from
+      the detector. Dialog event `page.on("dialog")` for `beforeunload`; the in-app block on a router stack is
+      the router's blocker (react.routing.8 for React).
+    level: program
+    why: One visual builder in the reference lacked a guard entirely.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a journey per form in the shared kit. Plant: a dirty form that navigates away silently fails.
+          Control: a dirty form that confirms passes
+    relates:
+      - id: react.routing.8
+        how: see
+    open:
+      - The source needs a product ruling on blocking versus warning.
+      - >-
+        The source row marked it judgement with no check; the dirty-navigation test is mechanical, and what
+        counts as lost is the test's assertion. Vacuous today.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.forms.6
+    slug: destructive-asks-first
+    since: 0.1.0
+    rule: >-
+      A destructive action asks first, in words naming the outcome, with the safe choice focused; a reversible
+      one offers undo.
+    detail: >-
+      The button part exposes no danger variant in its public props; only the confirm dialog may render one
+      (the variant lives in an internal module), so a danger button elsewhere is a type error. A journey
+      asserts the dialog opens with focus on the safe choice and its text contains the outcome noun from the
+      action's data, and an undo control exists for reversible actions. The count of danger controls is
+      printed; zero is "not applicable: 0 inputs". Plant: `<Button variant="danger">`; the type-level
+      restriction applies; asserted on `document.activeElement` in `ConfirmDialog`.
+    level: program
+    why: One site has three confirm classes (evidence D).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "3"
+        note: >-
+          v1 class compiler. the button part's closed variant type plus a kit journey on the confirm dialog.
+          Plant: a danger button in a feature file fails the type check; a confirm dialog opened with focus on
+          Delete fails the journey. Control: a confirm dialog with focus on Cancel and an outcome noun passes
+    open:
+      - >-
+        Half holds: whether to ask is review. A raw danger class on a hand-built button is the
+        no-hand-built-twin ban.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.forms.7
+    slug: copy-and-link-labels
+    since: 0.1.0
+    rule: >-
+      A copy button says it copied and says when it could not; a link that opens elsewhere says so; a link
+      label is a word, never "here".
+    detail: >-
+      `no-restricted-properties` on the clipboard API outside the copy part; an ambiguous-link-text rule bans
+      "here" and "click here"; a no-target-blank rule plus a visually hidden "opens in a new tab" text check
+      for links that open elsewhere. A clipboard journey allows and denies the permission and asserts "Copied"
+      and "Could not copy" appear. The count of copy buttons and new-tab links is printed; zero is "not
+      applicable: 0 inputs". Plant `<a href="/x">here</a>`; permission via `context.grantPermissions`; part
+      `CopyButton`; html-validate `no-target-blank` on the template stack (the component-stack lint names are
+      in react.lint.3); hidden text is visually-hidden.
+    level: file
+    why: v1 gave no reason beyond its evidence grade, Evidence C.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          `no-restricted-properties` on `navigator.clipboard`, the stack's ambiguous-link-text rule, the
+          no-target-blank rule (html-validate on templates, react.lint.3 on components), and a clipboard
+          journey in the kit. Plant: `<a href="/x">here</a>` fails; `navigator.clipboard.writeText` in a page
+          file fails; a copy button that shows nothing on denial fails the journey. Control: a copy part
+          showing "Copied" and "Could not copy" passes
+    relates:
+      - id: react.lint.3
+        how: see
+    open:
+      - The build is lint plus kit test.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: C"
+  - id: web.forms.8
+    slug: form-detector
+    since: 0.1.0
+    rule: >-
+      The gate reports the count of form elements and form-library imports, and the first non-zero count turns
+      the forms rules on: a repository with a form and no configured forms check fails.
+    detail: >-
+      No separate detector is built: each form check computes its own input count (form elements found by the
+      syntax tree, and form-library imports) and returns "not applicable: 0 inputs" with the count; the runner
+      summary prints the counts; with a count above zero and a binding check not configured or with no plant,
+      the gate fails. Counted `<form` elements found by the syntax tree in `.astro` and `.tsx`. The counted
+      element is `<form>`.
+    level: program
+    why: >-
+      The exemptions table says the forms rows bind on the first form, and nothing watched for it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "2"
+        note: >-
+          v1 class our-cli. the shared runner's third result ("not applicable: 0 inputs") and its summary of
+          counts. Plant: a repository with one form and the field check removed fails; with the check present
+          it runs. Control: a repository with no form passes with "not applicable: 0 inputs"
+    open:
+      - >-
+        Depends on the shared runner's third result (decision 26), owned by the enforcement runner.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: J: the count is a mechanical read;
+        the reading of it is a judgement
+  - id: web.forms.9
+    slug: record-page-read-first
+    since: 0.1.0
+    rule: >-
+      A record page is read-first with an edit toggle: editable cells use the record mode of the field,
+      immutable cells are read cells, all inside section cards; the form field is for data-entry forms.
+    level: file
+    why: >-
+      A record changed only by an explicit step is safe to look at and hard to alter by accident.
+    kind: rule
+    strength: Review
+    status: proposed
+    review_question: Is this record page read-first, with an explicit edit step and one form pattern?
+    open:
+      - >-
+        No check yet; the golden page and review hold it. Related to the unsaved-changes rule.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"

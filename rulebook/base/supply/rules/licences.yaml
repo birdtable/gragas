@@ -1,0 +1,76 @@
+format: 3
+part: supply
+concern: licences
+rules:
+  - id: supply.licences.1
+    statement: "Every installed package carries a licence on one shared allowlist, weak copyleft (MPL-2.0) passes only when the package is used unmodified, and strong copyleft, unlicensed or unknown licences fail."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Allowed examples are MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC and 0BSD. MPL-2.0 is allowed for a package used as published: a patch, a vendored edited copy or a fork of an MPL-2.0 package fails until its changed files are published under the same licence and the exception is recorded. AGPL, GPL, SSPL, UNLICENSED and an unknown licence fail. What ships to the browser is held to a stricter list than the rest. Our own modules are skipped by path or scope. The policy ships once: allowed SPDX ids, the weak-copyleft list with its unmodified condition, an own-scope skip, dated exceptions and clarifications. The check runs in the gate command the pre-push hook runs. Go uses its own licence tool with the allowed list and with our modules ignored (without that, they report no licence found). Go form: go-licenses check ./... --allowed_licenses=<list> --ignore=<our modules>. Web alternative: license-checker-rseidelsohn with --onlyAllow."
+      pros:
+        - "A strong copyleft licence in a shipped dependency can force the product's source open, and an unlicensed one gives no right to use it. Weak copyleft binds only the files of the package itself, so it is safe while those files are not changed."
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+  - id: supply.licences.2
+    statement: "The licence judgement is exact SPDX satisfaction of the allowlist; an empty tree, a declared but uninstalled dependency, a missing licence or non-SPDX text all fail."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      pros:
+        - A licence check that passes on nothing found passes on a broken install.
+    sources:
+      - ref: decision-26
+        backs: rule
+  - id: supply.licences.3
+    statement: "A dated licence exception covers one named package and one licence, only as a development dependency, and fails once expired."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - A broad or undated exception becomes the way round the policy. A licence exception never covers shipped code.
+  - id: supply.licences.4
+    statement: "A licence guessed from a file needs a clarification entry naming the same package and file; the own scope is skipped by name."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A licence read from a file's text is a guess, and a clarification records who decided it."
+  - id: supply.licences.5
+    statement: "Every shared module a program requires has a licence file, and its visibility is known to the check."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "All packages are private for now, so the check treats every shared module as private and requires the licence file anyway. Revisit before the first repository goes public."
+      pros:
+        - "Three released versions of the shared module had no licence file and the module is private, which the licence scan flagged."
+    sources:
+      - ref: decision-1
+        backs: rule
+  - id: supply.licences.6
+    statement: "LICENSE and NOTICE sit at the repository root, and every artifact that bundles third-party code ships a generated notices file equal to what it bundles, compared in the gate."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The root holds the project's own LICENSE and a NOTICE naming the project and its copyright. Each artifact that bundles third-party code (a binary, a bundle, an image, a packed package) carries a third-party notices file generated from the exact set of packages it bundles, with each package's licence text and any NOTICE it ships. The gate regenerates the notices for each artifact and fails when the committed or packed file differs. Apache-2.0 and MPL-2.0 notices travel with the code that carries them."
+      pros:
+        - "Most permissive licences are conditional on keeping their notice; an artifact that bundles code without it breaks the licence that allowed the bundle. A hand-kept notices file drifts from what the artifact holds."
+    sources:
+      - ref: decision-63
+        backs: rule
+      - ref: decision-65-supply
+        backs: rule
+    bindings:
+      - tool: goreleaser
+        target: source
+        key: archives
+        severity: error
+        rung: 0
+        run_point: release

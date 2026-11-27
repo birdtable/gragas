@@ -1,0 +1,32 @@
+--- language/go/rules/errors.yaml after unbind
+format: 3
+part: go
+concern: errors
+rules:
+  - id: go.errors.1
+    statement: Wrap an error.
+    strength: must
+    status: proposed
+    origin: authored
+    sources:
+      - ref: effective-go
+        backs: rule
+    pairs:
+      - number: 1
+        target: source
+  - id: go.errors.2
+    statement: Log an error once.
+    strength: may
+    status: active
+    origin: authored
+    sources:
+      - ref: effective-go
+        backs: rule
+  - id: go.errors.3
+    statement: Return an error.
+    strength: must
+    status: proposed
+    origin: authored
+    sources:
+      - ref: effective-go
+        backs: rule

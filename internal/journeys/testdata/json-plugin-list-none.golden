@@ -1,0 +1,7 @@
+$ gragas plugin list --json
+--- exit 0
+--- stdout
+{
+  "rows": null
+}
+--- stderr

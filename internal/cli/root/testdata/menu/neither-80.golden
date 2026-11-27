@@ -1,0 +1,3 @@
+  help     Show the help of a command
+  version  Say which build this is
+  gen      Say which generated files are out of date, and write them

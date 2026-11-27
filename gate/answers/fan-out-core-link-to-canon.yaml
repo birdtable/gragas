@@ -1,0 +1,5 @@
+rule: arch.measures.1
+path: internal/core/link/read.go
+fingerprint: c91f756ee15c107c2456ae66efce4d584e26793ead4caab3ddcbde5ffe508f23
+answer: keep
+reason: "internal/canon is the engine's one RFC 8259 reader, pure and in the core's allowed set; link reads a tool's printed JSON config through canon.Decode so each value is compared as JSON holds it, never re-read as YAML 1.1, where it would otherwise need a second JSON reader of its own"

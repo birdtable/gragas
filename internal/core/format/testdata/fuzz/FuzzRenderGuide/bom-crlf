@@ -1,0 +1,5 @@
+go test fuzz v1
+string("\ufeff# T\r\n\r\n```gragas\r\nanchor: a\r\nrules:\r\n  - id: a.b.1\r\n    owner: y\r\n```\r\n")
+string("owner")
+string("y")
+string("z")

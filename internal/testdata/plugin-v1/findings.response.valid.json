@@ -1,0 +1,25 @@
+[
+  {
+    "ran": true,
+    "findings": [
+      {
+        "key": "a",
+        "message": "do not",
+        "path": "bad/a.ts",
+        "line": 1,
+        "column": 1,
+        "severity": "error",
+        "url": "https://example.org/a"
+      },
+      {
+        "key": "b",
+        "message": "whole file"
+      }
+    ]
+  },
+  {
+    "ran": false,
+    "why": "the tool printed no document",
+    "findings": []
+  }
+]

@@ -1,0 +1,34 @@
+$ gragas cache --help
+--- stdout
+
+  What gragas keeps on this machine, outside any project:
+  the copies of what a run replaced and the runs they belong
+  to, and the caches that later commands fill. Nothing in it
+  carries a project's name.
+
+    gragas cache list
+    gragas cache clear --apply
+
+  USAGE
+
+
+    gragas cache [command] [--flags]
+
+
+  COMMANDS
+
+    clear [--flags]  Remove the closed runs kept longer than
+                     the keep age, the scratch folders a
+                     stopped run left and the tools' caches
+    list             List what is kept, how big and how old
+
+  FLAGS
+
+    --accessible     Plain questions (ACCESSIBLE)
+    --config         The settings file (GRAGAS_CONFIG)
+    -h --help        Help for cache
+    --json           Answer in one JSON document
+    --no-color       No colour (NO_COLOR)
+    --plain          Print plainly: nothing moves
+
+--- stderr

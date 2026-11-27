@@ -1,0 +1,9 @@
+
+what changes
+rule a: active, then retired
+what is written where
+replace rules/a.yaml
+append to history.jsonl
+Add --apply
+declined nothing was changed
+gragas test --apply

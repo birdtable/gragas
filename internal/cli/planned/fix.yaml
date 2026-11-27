@@ -1,0 +1,11 @@
+name: fix
+order: 110
+context: B
+ends: plan
+summary: "Offer a fix for each finding and apply the ones you pick"
+examples:
+  - {line: "gragas fix", does: "show the menu over the findings"}
+  - {line: "gragas fix --apply", does: "carry out the fixes picked"}
+writes: ["the files the findings name"]
+exits: ["done", "declined"]
+json: plan

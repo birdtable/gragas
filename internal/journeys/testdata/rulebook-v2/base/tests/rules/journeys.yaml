@@ -1,0 +1,391 @@
+part: tests
+concern: journeys
+order: 3
+title: End-to-end and browser journeys
+summary: >-
+  A journey drives the real thing end to end: the built binary run script-style, an install and start under
+  the init system, a request and its answer, a browser page against the real server. Journeys are the dearest
+  tests, so each is scoped to the change, declares what it exercises, justifies its place and runs on
+  the shipped tree.
+rules:
+  - id: tests.journeys.1
+    slug: journeys-scoped-to-the-change
+    since: 0.1.0
+    rule: >-
+      Each journey declares what it exercises, and a change selects the journeys whose declared inputs it
+      touches; every command, route or page has a journey.
+    detail: >-
+      End-to-end journeys of a CLI or a daemon (the built binary run script-style, an install and start under
+      the init system, a request and its answer) and browser journeys declare their inputs: commands, routes,
+      packages, config files, build inputs, source paths. A change selects the journeys whose declared inputs
+      it touches or whose inputs depend on what it touched. The journey map is a file; the command tree (CLI)
+      and the route table (daemon) are the complete list, and a test fails when a leaf command or route has no
+      journey, a journey has no declared inputs, a journey sits in no entry or a glob matches nothing. A flow
+      that spans CLI, daemon and page has one cross-program journey, run when any touched program changes; its
+      declared programs list is the selector's cross-repo input. A consumer contract comes first, so a journey
+      covers only what the contract cannot see. Unplaced paths pick all (tests.selection.2); the plan is
+      printed and carries a hash and a freshness date per map entry. Every cross-service flow has a journey,
+      run when any program it touches changes.
+    level: program
+    why: >-
+      Operator direction: end-to-end tests must be scoped. One repo's browser reach map selected 7 of 41
+      journey files for a one-card change; none of the repos declares inputs per journey, and the land step
+      runs the whole acceptance suite.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-18
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. journey map file plus a test that every leaf command and route has a journey and
+          every journey declares inputs; selector tests with a planted failing journey behind a changed
+          command. Plant: a command with no journey fails, a journey with no declared inputs fails, and a
+          planted journey behind a changed command is selected. Control: a complete map passes
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. reach map and pure picker lifted from the browser-test repo, with its unit test;
+          add a freshness date per entry and a plan hash. Plant: a journey in no entry fails the test, and a
+          glob matching nothing fails. Control: a mapped journey is selected by its paths
+    relates:
+      - id: tests.selection.2
+        how: see
+      - id: tests.selection.5
+        how: see
+    open:
+      - Under discussion with the operator (D-G); recorded as written.
+      - >-
+        Known holes in the reach map as it stands: the map and picker select nothing (tests.selection.5), no
+        plan file or hash, a journey may not exercise what its paths draw, Go paths reach the page only where
+        written, no freshness date per entry. A scoped run was not timed against a full one.
+      - The selector's cross-repo input is not built.
+      - "v1 evidence, not yet a source: own measure (operator direction); A"
+  - id: tests.journeys.2
+    slug: real-binary-script-test
+    since: 0.1.0
+    rule: >-
+      The real built binary runs in a script-style test with its own home, temp folder and environment, and
+      only the acceptance package and its sub-packages run it.
+    detail: >-
+      A shared harness runs the binary (testscript-style or the shared UI test matrix) and one built-binary
+      test exists per program. A program that is only a library has no binary and is exempt. A sub-package of
+      the acceptance package is for a journey that needs a run of its own, as one that runs in a containment
+      which wraps its whole test binary and so cannot hold the other journeys.
+    level: program
+    why: >-
+      Own measure: one repo has the acceptance package; three others carry drifting copies of the client
+      harness. A harness each repo copies drifts.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It has no binary to run.
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapter 8
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          v1 class shared-code. import scan that only the acceptance package and its sub-packages run the built
+          binary, with the shared harness giving each run its own home, temp folder and environment. Plant: a
+          package outside the acceptance package and its sub-packages running the built binary fails the scan.
+          Control: the acceptance package and a sub-package of it pass
+    open:
+      - >-
+        The harness is not built as a shared one; it is a pilot of a script-test library.
+  - id: tests.journeys.3
+    slug: stamped-build-only
+    since: 0.1.0
+    rule: >-
+      A binary or page under a gate check records the tree and toolchain it came from, and a check on a stale
+      or unstamped build is refused.
+    detail: >-
+      Go stamps the revision and the modified flag into the binary (build info); the script test asserts the
+      stamp equals the tree under test and a missing stamp fails. A page build carries the same stamp.
+    level: program
+    why: >-
+      A gate that runs yesterday's binary proves yesterday's tree. The check is the stale-build plant, not the
+      stamp itself.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 23
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          v1 class compiler. vcs revision and modified flag stamped by the build (source says) and asserted
+          equal to the tree under test by the script test. Plant: a binary built from the previous commit run
+          under the gate fails. Control: a binary built from the tree passes
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. build output stamped with tree and toolchain, and the gate refuses an unstamped or
+          stale build. Plant: a build with no stamp fails, and a build from the previous commit fails.
+          Control: a stamped current build passes
+    open:
+      - Built inside the verdict store the land path needs.
+  - id: tests.journeys.4
+    slug: journey-states-its-risk
+    since: 0.1.0
+    rule: >-
+      Each journey declares a stated risk naming what a cheaper test cannot see, an owner and its place in a
+      capped list; the cap is an alarm and not a limit.
+    detail: >-
+      A schema check on the journey list requires risk, owner and the cheaper-test reason, and fails a journey
+      with none. Identical risk text across journeys is reported. The cap is a guess and only alarms. A
+      cross-program journey lists its programs. A consumer contract comes first. An end-to-end journey records
+      the risk it covers, an owner and why a cheaper test cannot see it.
+    level: program
+    why: >-
+      Journeys are the dearest tests and the rule that every flow has a journey grows the list by one per
+      producer-consumer pair. Authoring is now free, so upkeep is the limit. One repo's journeys are 35
+      minutes serial for one family (not re-timed). Estate record: 39 journeys in the reference baseline, run
+      only by hand.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapters 8.1.2 and 8.3.1
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "3"
+        note: >-
+          journey list JSON Schema (ajv) requiring risk, owner and a cap on count; identical risk text
+          reported; cross-program journeys list their programs. Plant: a journey with no risk or no owner
+          fails. Control: a journey with both passes
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. the same schema applied to the Go journey map file (tests.journeys.1). Plant: a
+          journey with no risk or owner fails the list check. Control: complete entries pass
+    review_question: >-
+      Could a cheaper test see this edge case, and what risk does this journey cover that nothing cheaper can?
+    relates:
+      - id: tests.journeys.1
+        how: see
+    open:
+      - The cap number is a guess until a real journey count exists.
+    note: >-
+      Adds tension to the rule that every flow has a journey (tests.journeys.1): that rule grows the list,
+      this one asks each journey to justify itself.
+  - id: tests.journeys.5
+    slug: one-longest-path
+    since: 0.1.0
+    rule: >-
+      An integration or journey test follows one longest path per scenario, and edge cases go to unit or
+      contract tests.
+    level: function
+    why: >-
+      Agents write an integration test per branch unless told, and that is a structural cause of slow suites.
+    kind: instruction
+    strength: Review
+    status: active
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapter 8.1
+        backs: rule
+    review_question: >-
+      Could a cheaper test see this edge case, leaving this integration test to the longest path?
+    open:
+      - >-
+        No plant: a seeded change adding one integration test per branch must be flagged.
+  - id: tests.journeys.6
+    slug: journeys-on-the-shipped-tree
+    since: 0.1.0
+    rule: >-
+      Journeys run on the shipped tree, with no internal stubs and in a development environment only, and
+      leave nothing behind; every created marker is torn down, referents first.
+    level: program
+    why: >-
+      A journey with stubs proves the stubs; one that leaves records breaks the next run. Binds to the tree
+      through the verdict (tests.selection.7).
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "3"
+        note: >-
+          journey harness reads the deployed or built tree id, refuses a production target, and a teardown
+          step deletes every marker it minted, referents first; a leftover scan after the run fails on any
+          marker. Plant: a journey that leaves a created record behind fails the scan, and one pointed at a
+          production target is refused. Control: a journey that cleans up passes
+    relates:
+      - id: tests.selection.7
+        how: see
+    open:
+      - >-
+        No row in the catalogue holds the teardown order; the check is recorded from the reference practice.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: tests.journeys.7
+    slug: crash-injection-at-release
+    since: 0.1.0
+    rule: >-
+      A program that writes users' files is killed at many points of a write and recovered in a crash-injection
+      run at release, with a short run at push.
+    detail: >-
+      The release run kills the program at a stated number of points across each write path and checks that
+      every recovery leaves the old file or the new one and never a half. The push run kills at a smaller
+      number of points chosen to cover every path once, and takes seconds. A program that writes no user file
+      has no crash-injection member. The number of points is data on the member, and a path added to the write
+      code adds its points in the same change.
+    level: program
+    why: >-
+      A torn write is found only by the kill that lands in it, and a run long enough to find them all does not
+      belong in a push; the release already runs everything a release alone proves.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      Does this program write a user's file, and does a run kill it at points across that write and check the
+      recovery?
+    relates:
+      - id: tests.journeys.6
+        how: see
+    open:
+      - >-
+        Planned check: the member table holds a crash-injection member in the release tier and a short one at
+        push for a program whose write paths are listed in data. No tool key is bound yet.
+  - id: tests.journeys.8
+    slug: narrow-widths-are-properties
+    since: 0.1.0
+    rule: >-
+      A screen is held to one golden width read by a person, and at the narrower widths to properties: no line
+      wider than the screen, nothing cut off, the same rows in the same order.
+    detail: >-
+      The golden at the standard width is the oracle a person approved. At each narrower width a check runs
+      the same command and asserts the three properties on its output, so a width adds a few lines of data and
+      no golden file. A property that fails prints the width, the row and the measure. The widths are data on
+      the check, and a screen that is new adds its rows to the standard golden only. A column a table leaves out
+      and marks is not cut off only when the width forces it out: the lowest of the table's drop order, in that
+      order, never the first column, and no more than the width leaves no room for.
+    level: program
+    why: >-
+      Three goldens of the same screen at three widths triple the review of every change and say the same thing
+      three times; the properties catch the same breakage and never need a hand read.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      Is this screen's narrow-width behaviour held by properties, and does only the standard width have a golden?
+    relates:
+      - id: tests.generated.5
+        how: see
+    open:
+      - >-
+        Planned check: a narrow-width member at push that runs the screens at the stated widths and asserts the
+        three properties. The member is unbuilt; the rule stays a review question until it exists.
+  - id: tests.journeys.9
+    slug: the-long-crash-run-in-parallel-children
+    since: 0.1.0
+    rule: >-
+      The long crash-injection run at release is 400 kill points and 100 recoveries spread over several child
+      processes, each with its own root; a program that writes only its own records takes atomic-write tests
+      instead and is exempt from the crash members.
+    detail: >-
+      tests.journeys.7 holds that a program which writes users' files is killed and recovered at release with a
+      short run at push. This rule holds the long run's size and shape. The points are split across children
+      so the run uses the pool (gates.command.27) and each child writes under its own root, so a kill in one
+      cannot touch another's files. A program whose files are its own records (a cache, a journal) proves
+      atomic writes (cli.commands.23) and lists no crash member.
+    level: release
+    why: >-
+      The crash run of one project is 400 and 100 by ruling; run in one child it is a serial member that sets
+      the release time.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      How many children run this release's crash points, does each have its own root, and does this program
+      write a user's files or only its own records?
+    relates:
+      - id: tests.journeys.7
+        how: see
+      - id: cli.commands.23
+        how: see
+      - id: cli.commands.3
+        how: see
+      - id: gates.command.27
+        how: see
+    open:
+      - >-
+        Planned check: the crash member's report carries the child count and the points per child. No tool key
+        is bound yet.
+  - id: tests.journeys.10
+    slug: real-machine-journeys-at-release-or-on-demand
+    since: 0.1.0
+    rule: >-
+      A journey that needs a virtual machine, a container runtime or a device is a journeys member at release
+      or on demand, skipped with its reason where the host lacks the runtime and listed every run; a
+      container leg for a second platform is a release member, and the long or costly set is on demand.
+    detail: >-
+      gates.command.30 holds that a member says where it can run and that a skip is red at land and release
+      unless a dated exemption names the machine. This rule places the journeys that need a machine the gate's
+      host may not have: at release where the host has the runtime, on demand for the long set
+      (gates.command.26), and never at push. A platform the project claims is proved by a run on it
+      (gates.command.16); a container leg is one way to run one.
+    level: release
+    why: >-
+      Three projects of one fleet had journeys that need a virtual machine, a container runtime or a device,
+      and each needed somewhere to say the host lacked it without a quiet pass.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      Which of this project's journeys need a machine the gate's host may lack, which tier holds each, and
+      what does the report print where the runtime is missing?
+    relates:
+      - id: gates.command.30
+        how: see
+      - id: gates.command.26
+        how: see
+      - id: gates.command.16
+        how: see
+      - id: tests.journeys.2
+        how: see
+    open:
+      - >-
+        Planned check: the members file holds each such journey with its os and net fields at release or on
+        demand. No tool key is bound yet.

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "entity-checker-code.schema.json",
+  "title": "Checker-code artifact (entity, spec 16.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "publisher",
+    "digest",
+    "tool",
+    "tests_present"
+  ],
+  "properties": {
+    "name": {
+      "$ref": "common.schema.json#/$defs/slug",
+      "x-introduced": "1.0"
+    },
+    "publisher": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "digest": {
+      "$ref": "common.schema.json#/$defs/digest",
+      "x-introduced": "1.0"
+    },
+    "tool": {
+      "$ref": "common.schema.json#/$defs/text",
+      "x-introduced": "1.0"
+    },
+    "tests_present": {
+      "type": "boolean",
+      "x-introduced": "1.0"
+    },
+    "reviewed_by": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/text"
+      },
+      "x-introduced": "1.0",
+      "default": []
+    },
+    "licence": {
+      "$ref": "common.schema.json#/$defs/textOrEmpty",
+      "x-introduced": "1.0",
+      "default": ""
+    },
+    "by_reference": {
+      "type": "boolean",
+      "x-introduced": "1.0",
+      "default": false
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pin.schema.json",
+  "title": "A project's pin: .gragas/pin.yaml, the file in which a repository names its rulebook (pin format 1)",
+  "description": "Four keys and no other: the spec's version, kinds and content hash are not read by release 1. internal/core/project reads the pin in Go and holds it to the same rules, with the file and line of each refusal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["rulebook", "source", "parts", "format"],
+  "properties": {
+    "rulebook": {"type": "string", "pattern": "\\S", "description": "the rulebook's short name"},
+    "source": {
+      "type": "string",
+      "pattern": "^(?:\\.|(?:[^/:.][^/:]*|\\.[^/:.][^/:]*|\\.\\.[^/:]+)(?:/(?:[^/:.][^/:]*|\\.[^/:.][^/:]*|\\.\\.[^/:]+))*)$",
+      "description": "the folder of the repository that holds the rulebook, relative to the folder holding .gragas/: slash-separated, no leading or trailing slash, no empty, . or .. step, no colon; . alone is that folder. A git host or a mirror is not read in release 1"
+    },
+    "parts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "pattern": "\\S"},
+      "description": "the parts in play for the project, at least one"
+    },
+    "format": {"type": "integer", "const": 1, "description": "the pin file's own version, not the rulebook's format"}
+  }
+}

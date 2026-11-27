@@ -1,0 +1,36 @@
+part: lambda
+concern: bundle
+order: 3
+title: Bundle size
+summary: >-
+  Each function bundle is held under a size budget, because package size drives cold start.
+rules:
+  - id: lambda.bundle.1
+    slug: bundle-size-budget
+    since: 0.1.0
+    rule: >-
+      Each function bundle has a size budget, and a built handler bundle over its byte limit fails the check.
+    detail: >-
+      A size-limit tool bundles each handler entry with the build bundler and compares it with the limit in
+      the package manifest (a list of path and limit). In Go, binary size is recorded as a metric, not a gate.
+    level: package
+    why: >-
+      A large bundle slows cold start and approaches the platform package limit without anyone choosing it.
+    kind: measure
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - service
+    checks:
+      - binding: ts
+        class: preset-config
+        tool: size-limit-with-bundler-plugin
+        tier: "2"
+        note: >-
+          size-limit with its bundler plugin, one entry per handler with a byte limit in the package manifest.
+          Plant: a handler bundle over its limit fails. Control: a bundle under the limit passes
+    open:
+      - >-
+        No limit value is chosen; it should be set from measured bundle sizes of existing handlers.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"

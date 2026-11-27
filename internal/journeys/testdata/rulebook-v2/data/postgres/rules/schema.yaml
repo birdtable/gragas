@@ -1,0 +1,213 @@
+part: postgres
+concern: schema
+order: 4
+title: The live schema
+summary: >-
+  What the replayed schema must hold. Naming, check constraints, audit columns and exclusive arcs hold in the
+  live schema, SQL laws are tested in SQL, fact tables are append-only, libraries keep their own schema, the
+  application role reaches every table after replay, uniqueness behind a check-then-insert is a constraint
+  read back from the catalogue, and a generated rules catalogue is regenerated in the gate.
+rules:
+  - id: postgres.schema.1
+    slug: naming-checks-audit-columns-live
+    since: 0.1.0
+    rule: >-
+      Naming, check constraints, mandatory columns, primary keys, references and audit columns hold in the
+      live schema; a reference to one of several kinds is a foreign key per kind in an exclusive arc, never a
+      kind and an id in text; and a rule enforced in SQL is tested in SQL against the replayed migrations,
+      never re-implemented in code to be tested.
+    detail: >-
+      A schema lint runs in the shared container: name casing, name inflection, mandatory columns, a primary
+      key on every table, references and types, with ignores by identifier pattern. A status column has a
+      check. An exclusive arc is one nullable foreign-key column per kind and a check that exactly one is set.
+      A law the database enforces (a check, a trigger, a constraint) has a SQL test (pgTAP or plain SQL run by
+      the test runner) on a database built from the migrations; a copy of the law in application code to test
+      it is a second implementation and is refused in review.
+    level: package
+    why: >-
+      A convention held only in migration text drifts from what the database actually holds. A kind-and-id
+      text reference is one the database cannot check, and a law tested only through a copy in code proves the
+      copy.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-postgres
+        backs: rule
+    checks:
+      - binding: sql
+        class: preset-config
+        tool: schemalint
+        tier: "2"
+        note: >-
+          schemalint on the live schema after replay, with its rules for casing, inflection, mandatory
+          columns, primary keys, references and types, plus a catalogue query refusing a pair of text kind and
+          id columns with no foreign key and no exclusive-arc check, and a test that every check constraint
+          and trigger is named in a SQL test. Plant: a table with no primary key or a mixed-case name fails; a
+          subject_kind and subject_id text pair fails; a check constraint with no SQL test fails. Control: a
+          conforming table passes
+    open:
+      - The source rows give no plant; the plant is proposed.
+  - id: postgres.schema.2
+    slug: app-role-reaches-every-table
+    since: 0.1.0
+    rule: >-
+      After replay, the application role reads and writes every table, tables with an update time have the
+      update trigger, actor columns are not null, and no update sets a created field.
+    detail: >-
+      The application role is named per service (<svc>_app); update-time tables have an updated_at trigger,
+      and no update sets a created_* field.
+    level: package
+    why: >-
+      A table the app role cannot reach, a missing trigger or a rewritten created field is invisible until
+      production.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: sql
+        class: test-kit
+        tier: "2"
+        note: >-
+          a catalogue test after replay that reads grants, triggers and not-null flags, plus a scan of updates
+          for created fields. Plant: a table with no grant for the app role fails; an update that sets a
+          created field fails. Control: a fully granted table passes
+    open:
+      - The source row gives no tool or plant; both are proposed.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: postgres.schema.3
+    slug: unique-constraint-behind-check-then-insert
+    since: 0.1.0
+    rule: >-
+      Every if-it-does-not-exist-insert is backed by a unique index or exclusion constraint on the same key,
+      read back from the live catalogue by a test, and a status column has a check.
+    detail: >-
+      A registry kept beside the repository lists the natural keys the repository layer claims; the catalogue
+      test asserts a unique index for each. An ast-grep pattern flags a select followed by an insert on the
+      same key in one function, to be listed or constrained.
+    level: package
+    why: >-
+      Application-level uniqueness and association validations in Rails applications were shown to be violable
+      under concurrent requests; the finding is about where an invariant must live.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: bailis-feral-concurrency-control
+        backs: rule
+      - ref: p-03-data
+        where: section 13
+        backs: rule
+    checks:
+      - binding: sql
+        class: test-kit
+        tool: ast-grep
+        tier: "3"
+        note: >-
+          a catalogue test asserting a unique index for each natural key in the registry, and an ast-grep scan
+          for select-then-insert on the same key. Plant: dropping the index fails the catalogue test; two
+          concurrent inserts with the same key must end with one row and one typed conflict. Control: the
+          indexed key passes
+    relates:
+      - id: store.schemas.3
+        how: see
+    open:
+      - >-
+        It is one framework; the finding is about where an invariant must live, and the cheap form of the test
+        is a plant.
+      - "v1 evidence, not yet a source: a study of one framework (Bailis and colleagues)"
+    note: The embedded-store counterpart is store.schemas.3.
+  - id: postgres.schema.4
+    slug: generated-rules-catalogue-regenerated
+    since: 0.1.0
+    rule: A generated rules catalogue is regenerated in the gate and fails on drift.
+    detail: >-
+      The catalogue file is named RULES-CATALOG.md in the reference, kept at a service root and regenerated by
+      the gate.
+    level: file
+    why: A catalogue that is not regenerated drifts from the rules it lists.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: any
+        class: preset-config
+        tier: "3"
+        note: >-
+          regenerate the catalogue in the gate and git diff --exit-code; not applicable with the count while
+          no generator exists. Plant: a stale catalogue fails. Control: a freshly generated catalogue passes
+    relates:
+      - id: supply.provenance.4
+        how: see
+    open:
+      - >-
+        It could be merged into supply.provenance.4; it is kept apart because the catalogue is a service-level
+        file.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+    note: >-
+      Same intent as supply.provenance.4 (regenerating leaves no diff) for a service's generated rules
+      catalogue.
+  - id: postgres.schema.5
+    slug: append-only-table-refuses-change
+    since: 0.1.0
+    rule: >-
+      A table that records facts is append-only: a trigger refuses UPDATE and DELETE for every role, the
+      superuser included, and a test drives it.
+    detail: >-
+      The trigger raises on UPDATE and DELETE (and TRUNCATE where the engine allows a trigger on it); a grant
+      alone is not enough because the superuser bypasses grants. A correction is a new row that refers to the
+      one it corrects. The table is marked append-only in the model, so a new fact table gets the trigger from
+      the same declaration.
+    level: package
+    why: >-
+      A recorded fact that can be changed is not a record, and a trigger outlasts every application that
+      writes to the table.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-postgres
+        backs: rule
+    checks:
+      - binding: sql
+        class: test-kit
+        tier: "2"
+        note: >-
+          a SQL test that, as the superuser, updates and deletes a row in every table marked append-only and
+          expects both to fail. Plant: an append-only table whose trigger is dropped fails. Control: a table
+          whose trigger refuses both passes
+  - id: postgres.schema.6
+    slug: library-tables-own-schema
+    since: 0.1.0
+    rule: >-
+      A library that owns tables keeps them in its own schema, migrated by the library at a pinned version,
+      and only the program's own schema is held to the DDL its model generates.
+    detail: >-
+      An auth library, a job queue or the migrator's ledger each get a Postgres schema of their own. The
+      program never writes their tables by hand, and its migrations never touch them. Upgrading a library
+      moves its pin and runs its own migrations.
+    level: package
+    why: >-
+      A library schema lets a library be upgraded without touching the product's tables, and keeps the
+      model-equals-DDL check (postgres.migrations.1) from failing on tables the model does not own.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-postgres
+        backs: rule
+    checks:
+      - binding: sql
+        class: test-kit
+        tier: "2"
+        note: >-
+          a catalogue test after replay that every table outside the program's schema belongs to a listed
+          library schema with a pinned version, and that no program migration names a library schema. Plant: a
+          library's table created in the program's schema fails. Control: the library's tables in its own
+          schema pass
+    relates:
+      - id: postgres.migrations.1
+        how: see

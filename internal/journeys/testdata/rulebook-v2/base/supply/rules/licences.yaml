@@ -1,0 +1,216 @@
+part: supply
+concern: licences
+order: 6
+title: Licences
+summary: >-
+  Every dependency carries a licence on one shared allowlist. The check fails closed, exceptions are dated and
+  narrow, a licence guessed from a file needs a clarification, and our own shared modules are checked for a
+  licence file with their visibility known.
+rules:
+  - id: supply.licences.1
+    slug: licence-on-the-allowlist
+    since: 0.1.0
+    rule: >-
+      Every installed package carries a licence on one shared allowlist, weak copyleft (MPL-2.0) passes only
+      when the package is used unmodified, and strong copyleft, unlicensed or unknown licences fail.
+    detail: >-
+      Allowed examples are MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC and 0BSD. MPL-2.0 is allowed for a
+      package used as published: a patch, a vendored edited copy or a fork of an MPL-2.0 package fails until
+      its changed files are published under the same licence and the exception is recorded. AGPL, GPL, SSPL,
+      UNLICENSED and an unknown licence fail. What ships to the browser is held to a stricter list than the
+      rest. Our own modules are skipped by path or scope. The policy ships once: allowed SPDX ids, the
+      weak-copyleft list with its unmodified condition, an own-scope skip, dated exceptions and
+      clarifications. The check runs in the gate command the pre-push hook runs. Go uses its own licence tool
+      with the allowed list and with our modules ignored (without that, they report no licence found). Go
+      form: go-licenses check ./... --allowed_licenses=<list> --ignore=<our modules>. Web alternative:
+      license-checker-rseidelsohn with --onlyAllow.
+    level: release
+    why: >-
+      A strong copyleft licence in a shipped dependency can force the product's source open, and an unlicensed
+      one gives no right to use it. Weak copyleft binds only the files of the package itself, so it is safe
+      while those files are not changed.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "2"
+        note: >-
+          go-licenses check with --allowed_licenses and --ignore for our modules, in the gate command the
+          pre-push hook runs. Plant: a dependency with a disallowed licence gives exit 1 and a not-allowed
+          message. Control: the allowed list with our modules ignored exits 0
+      - binding: ts
+        class: preset-config
+        tier: "2"
+        note: >-
+          pnpm licenses list over the lockfile against an allowlist in the packages data file with a stricter
+          list for production dependencies, and a check that no MPL-2.0 package is patched
+          (patchedDependencies) or vendored; license-checker with --onlyAllow is the alternative. Plant: a
+          scratch dependency with GPL-3.0 fails; an MPL-2.0 package listed in patchedDependencies fails.
+          Control: MIT passes; an unmodified MPL-2.0 package passes
+    open:
+      - >-
+        Neither web tool was run; an existing check script in a web repository was read only. The Go tool was
+        verified.
+  - id: supply.licences.2
+    slug: licence-check-fails-closed
+    since: 0.1.0
+    rule: >-
+      The licence judgement is exact SPDX satisfaction of the allowlist; an empty tree, a declared but
+      uninstalled dependency, a missing licence or non-SPDX text all fail.
+    level: release
+    why: A licence check that passes on nothing found passes on a broken install.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-26
+        backs: rule
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a test of the licence command with an empty tree, an uninstalled dependency, a missing licence and a
+          non-SPDX string. Plant: an empty tree fails. Control: a tree of allowed licences passes
+  - id: supply.licences.3
+    slug: dated-licence-exceptions
+    since: 0.1.0
+    rule: >-
+      A dated licence exception covers one named package and one licence, only as a development dependency,
+      and fails once expired.
+    level: release
+    why: >-
+      A broad or undated exception becomes the way round the policy. A licence exception never covers shipped
+      code.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          the licence command rejects an exception naming more than one package or licence, a production
+          dependency, or a past expiry date. Plant: an expired exception fails; an exception for a production
+          dependency fails. Control: a current exception for a development dependency passes
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          a licence exception names the module, the reason and an expiry. Plant: an exception without an
+          expiry fails. Control: a dated exception passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: supply.licences.4
+    slug: licence-clarifications
+    since: 0.1.0
+    rule: >-
+      A licence guessed from a file needs a clarification entry naming the same package and file; the own
+      scope is skipped by name.
+    level: release
+    why: >-
+      A licence read from a file's text is a guess, and a clarification records who decided it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          the licence command requires a clarification entry for a guessed licence and skips the own scope by
+          name. Plant: a guessed licence with no clarification fails. Control: a clarified entry passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: supply.licences.5
+    slug: shared-modules-have-licence-file
+    since: 0.1.0
+    rule: >-
+      Every shared module a program requires has a licence file, and its visibility is known to the check.
+    detail: >-
+      All packages are private for now (decision 1), so the check treats every shared module as private and
+      requires the licence file anyway. Revisit before the first repository goes public.
+    level: package
+    why: >-
+      Three released versions of the shared module had no licence file and the module is private, which the
+      licence scan flagged.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-1
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "4"
+        note: >-
+          repository view and a licence-file check on each shared module in go.mod, a recipe in the shared
+          makefile fragment. Plant: a module without a licence file fails. Control: a module with one passes
+    open:
+      - >-
+        v1 evidence, not yet a source: own measure; three released versions of the shared modules had none
+  - id: supply.licences.6
+    slug: licence-and-notices-ship
+    since: 0.1.0
+    rule: >-
+      LICENSE and NOTICE sit at the repository root, and every artifact that bundles third-party code ships a
+      generated notices file equal to what it bundles, compared in the gate.
+    detail: >-
+      The root holds the project's own LICENSE and a NOTICE naming the project and its copyright. Each
+      artifact that bundles third-party code (a binary, a bundle, an image, a packed package) carries a
+      third-party notices file generated from the exact set of packages it bundles, with each package's
+      licence text and any NOTICE it ships. The gate regenerates the notices for each artifact and fails when
+      the committed or packed file differs. Apache-2.0 and MPL-2.0 notices travel with the code that carries
+      them.
+    level: release
+    why: >-
+      Most permissive licences are conditional on keeping their notice; an artifact that bundles code without
+      it breaks the licence that allowed the bundle. A hand-kept notices file drifts from what the artifact
+      holds.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-63
+        backs: rule
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          a gate member that checks LICENSE and NOTICE at the root and regenerates each artifact's notices
+          file from its bundled package list (go-licenses save or report for Go, the package manager's licence
+          listing for web) and compares it with the shipped file. Plant: a new bundled dependency without a
+          regenerated notices file fails; a missing NOTICE at root fails. Control: a notices file equal to the
+          regenerated one passes
+      - binding: go
+        class: preset-rule
+        tool: goreleaser
+        key: archives
+        tier: "4"
+        fix: never
+        note: >-
+          gragas check reads the repository's goreleaser config and reports an archive whose files do not
+          carry LICENSE and NOTICE. A repo with no goreleaser config gets no finding. Plant: an archive
+          listing no NOTICE is reported. Control: an archive listing both passes
+    examples:
+      bad:
+        lang: yaml
+        code: |
+          archives:
+            - formats: [tar.gz]
+              files: [LICENSE]
+      good:
+        lang: yaml
+        code: |
+          archives:
+            - formats: [tar.gz]
+              files: [LICENSE, NOTICE]

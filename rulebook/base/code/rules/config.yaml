@@ -1,0 +1,21 @@
+format: 3
+part: code
+concern: config
+rules:
+  - id: code.config.1
+    statement: "A value specific to one installation comes only from the loaded config: a literal of one in non-config, non-test code fails, and a default is the program's own neutral choice said once, never one installation's fact."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "An installation-specific value is a service address, a path on one machine, a port, a container, host, network or household name, or any other fact true of one deployment and not of the program. It comes from the loaded config or is observed on the machine at run time. There is no literal service address or fallback beside the configured one. A default exists only as the program's own neutral choice (a documented port, a path under the platform's standard folders), declared once in the config package. Config is read in one package with a reader, a default and a doc row per key; a secret never comes from a flag. Variables are declared in a typed schema. A word-list check reads non-config, non-test source and the defaults, with the installation's known names, addresses and paths as a list kept outside the repository (supply.secrets.4 holds that list's handling); a hit fails."
+      pros:
+        - "A hard-coded fallback address sends traffic to the wrong place when the configured one is missing. A default holding one installation's fact works on the author's machine and silently misbehaves on every other."
+    relations:
+      relates:
+        - supply.secrets.4
+        - gates.own-rules.4
+        - web.delivery.8
+    sources:
+      - ref: decision-65-code
+        backs: rule

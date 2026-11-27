@@ -1,0 +1,6 @@
+[
+  {"name": "an unknown field", "patch": [{"op": "add", "path": "/0/digest", "value": "sha256:00"}], "problem": "Additional properties are not allowed ('digest' was unexpected)"},
+  {"name": "a missing publisher", "patch": [{"op": "remove", "path": "/0/publisher"}], "problem": "'publisher' is a required property"},
+  {"name": "a name that is no slug", "patch": [{"op": "replace", "path": "/0/name", "value": "Errwrap Plugin"}], "problem": "does not match"},
+  {"name": "a tests path that climbs", "patch": [{"op": "replace", "path": "/0/tests", "value": "../other"}], "problem": "does not match"}
+]

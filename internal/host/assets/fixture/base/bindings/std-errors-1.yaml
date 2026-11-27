@@ -1,0 +1,8 @@
+subject: std.errors.1
+tool: golangci-lint
+target: source
+key: wrapcheck
+value: true
+severity: error
+rung: 1
+run_point: commit

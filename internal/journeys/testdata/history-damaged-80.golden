@@ -1,0 +1,33 @@
+$ gragas history
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+gragas history
+No  Entity            Kind      When                  Who      Decision
+1   rule:go.errors.1  propose   2026-03-01T09:00:00Z  ada      -
+2   rule:go.errors.1  promote   2026-03-01T10:00:00Z  ada      start-small
+4   rule:go.errors.1  promote   2026-03-04T09:00:00Z  ada      ship-it
+5   rule:go.wrap.1    promote   2026-03-06T15:00:00Z  mallory  -
+6   rule:go.errors.2  renumber  2026-03-08T10:00:00Z  ada      renumber-go-error
+                                                               s
+8   rule:go.wrap.1    promote   2026-03-10T09:00:00Z  grace    wrap-it
+1 column not shown: Plan
+gap: line 4: no entry has number 3, and a higher one exists
+broken-previous: line 4: entry 4 names
+sha256:1477ead0931f8240e86b3ae92537f37150fd6f4c00e055c1ee1b14ac179fba80 as the
+entry before it, and no entry with a lower number has that digest: a line was
+rewritten or removed
+broken-previous: line 6: entry 6 names
+sha256:ef1b96d36c1ecf92b60bb941c925f6ff9f162527997c37f2cb27c9ef10315df0 as the
+entry before it, and no entry with a lower number has that digest: a line was
+rewritten or removed
+gap: line 7: no entry has number 7, and a higher one exists
+broken-previous: line 7: entry 8 names
+sha256:3971795c5f9a2355cf852c3c15a3c7597a3785b3fa83b14bd3e7c228ff074d99 as the
+entry before it, and no entry with a lower number has that digest: a line was
+rewritten or removed
+skipped line 3: the line is not JSON: canon: bad syntax at byte 153: the input
+ends inside a string
+
+  done       6 entries listed, 1 line skipped, 5 problems in the chain
+--- stderr

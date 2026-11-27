@@ -1,0 +1,3 @@
+version: 1
+sandbox:
+  firejail: {root}/usr/bin/firejail

@@ -1,0 +1,30 @@
+$ gragas history go.errors.1
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+gragas history
+No  Entity            Kind
+1   rule:go.errors.1  propose
+2   rule:go.errors.1  promote
+4   rule:go.errors.1  promote
+6   rule:go.errors.2  renumber
+7   rule:go.errors.2  confirm
+8   rule:go.errors.2  edit
+10  rule:go.errors.2  retire
+11  rule:go.errors.2  restore
+13  rule:go.errors.2  confirm
+14  rule:go.errors.2  confirm
+16  rule:go.errors.2  confirm
+17  rule:go.errors.2  confirm
+19  rule:go.errors.2  confirm
+20  rule:go.errors.2  confirm
+22  rule:go.errors.2  confirm
+23  rule:go.errors.2  confirm
+25  rule:go.errors.2  confirm
+26  rule:go.errors.2  confirm
+28  rule:go.errors.2  confirm
+29  rule:go.errors.2  confirm
+4 columns not shown: When, Who, Decision, Plan
+
+  done       20 entries listed of 31
+--- stderr

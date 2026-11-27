@@ -1,0 +1,9 @@
+$ gragas rule edit go.errors.1 --uncite effective-go
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    go.errors.1 is active, and the edit takes away its last source; a
+  rule past proposed keeps one (S24)
+    cite another source first with gragas rule edit go.errors.1 --cite <source
+slug>, or move the rule back to proposed
+--- stderr

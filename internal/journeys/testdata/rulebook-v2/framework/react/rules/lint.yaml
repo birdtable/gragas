@@ -1,0 +1,160 @@
+part: react
+concern: lint
+order: 5
+title: React lint set
+summary: >-
+  The ESLint plugins a React program must run as errors: the hooks rules and the compiler rules, the query
+  plugin, the recommended React rules and the accessibility rules for JSX.
+rules:
+  - id: react.lint.1
+    slug: hooks-and-query-lint-as-errors
+    since: 0.1.0
+    rule: >-
+      The hooks lint pack runs as errors: rules of hooks, exhaustive dependencies, the compiler-compatibility
+      rule and the query plugin's stable-client and key rules.
+    detail: >-
+      Libraries the compiler cannot memoise (a form library's `watch`, the old table hook, the virtualiser)
+      live in one module each under a path-scoped override with an expiry date, not an inline disable. The
+      expiry sits in a data file that a check reads; an override past its date fails.
+    level: function
+    why: >-
+      A missing dependency or a conditional hook is a bug that shows only at run time. Tried on eight planted
+      files (three incompatible-library warnings, two query errors, four clean cases); never run on a real
+      tree.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: react-docs
+        where: rules of hooks
+        backs: rule
+      - ref: react-docs
+        where: React Compiler
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          eslint-plugin-react-hooks (rules-of-hooks, exhaustive-deps, compiler rules) and
+          @tanstack/eslint-plugin-query recommended set, all as errors; path-scoped overrides with an expiry
+          in a data file read by a check (Biome form: `useHookAtTopLevel` and `useExhaustiveDependencies` at
+          error; the React compiler rules and the query plugin are ESLint-only). Plant: a `useEffect` missing
+          a dependency fails; a conditional hook fails; an override past its expiry fails. Control: an effect
+          with complete dependencies passes
+    open:
+      - Trialled on 8 planted files, never on a real React tree.
+      - >-
+        Versions in the source (hooks plugin 7.1.1, query plugin 5.105.3) are pins from the trial and are
+        re-read at adoption.
+      - "v1 evidence, not yet a source: C (trial on planted files), D"
+  - id: react.lint.2
+    slug: recommended-react-rules
+    since: 0.1.0
+    rule: >-
+      The React lint set carries the plugin's recommended rules (keys, no nested component definitions, no
+      `dangerouslySetInnerHTML`) beside the hooks and query plugins.
+    detail: >-
+      The set is `jsx-key`, `no-unstable-nested-components` and `no-danger`, as errors, with one plant per
+      rule. The raw-markup funnel is the only exemption for `no-danger`. The choice between the plugin and its
+      active alternative is made at adoption and re-planted.
+    level: function
+    why: >-
+      The hooks and query plugins alone do not catch a list without keys or a component defined inside a
+      component. The rule was added when the catalogue's search found no holder for it (evidence D).
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: react-docs
+        where: rendering lists
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          eslint-plugin-react recommended set as errors (jsx-key, no-unstable-nested-components, no-danger),
+          or the alternative plugin's matching rules (Biome form: `useJsxKeyInIterable`,
+          `noNestedComponentDefinitions` and `noDangerouslySetInnerHtml` at error). Plant: a list `.map`
+          returning elements with no key fails; a component defined inside a component fails. Control: a list
+          with stable keys and top-level components passes
+    open:
+      - >-
+        The older plugin (7.37.5, last published 2025-04) declares peers only up to ESLint 9.7 and needed
+        legacy peer deps on ESLint 10; an alternative plugin (5.28.8, MIT, published 5 Nov 2026, peers any) is
+        active. Choose one at adoption and re-plant.
+      - Never run on a real React tree.
+  - id: react.lint.3
+    slug: jsx-accessibility-strict
+    since: 0.1.0
+    rule: >-
+      JSX meets the strict accessibility lint set, covering labels, roles, keyboard handlers, alt text,
+      ambiguous link text and links that open elsewhere.
+    detail: >-
+      The jsx-a11y rules run in their strict preset as errors, through the ESLint 10 fork of the same rules
+      (`eslint-plugin-jsx-a11y-x`) because the original plugin's peers stop at ESLint 9. The set covers no
+      image without alt text, role mismatch, click without a key (key-less click handlers on `.tsx`), positive
+      tabindex, empty link, untitled iframe and autofocus (web.accessibility.8). The link rules of web.forms.7
+      are `jsx-a11y-x/anchor-ambiguous-text` (bans "here" and "click here") and `react/jsx-no-target-blank`.
+      The Astro form is a template lint that must prove it loaded its rules.
+    level: function
+    why: >-
+      A label, role or key handler missing in markup is found cheaply at lint time, before the accessibility
+      run in a browser.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - web-app
+    sources:
+      - ref: wcag-22
+        backs: rule
+      - ref: eslint-plugin-jsx-a11y
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+    checks:
+      - binding: ts
+        class: preset-rule
+        tool: eslint
+        tier: "0"
+        note: >-
+          `eslint-plugin-jsx-a11y-x` (the ESLint 10 fork of eslint-plugin-jsx-a11y) strict preset as errors,
+          including `jsx-a11y-x/anchor-ambiguous-text`, plus `react/jsx-no-target-blank` (Biome form: the a11y
+          group at error and `noBlankTarget`; `anchor-ambiguous-text` is ESLint-only). Plant: an image without
+          alt text fails; a click handler on a `div` with no key handler fails; an empty anchor, untitled
+          iframe, autofocus and positive tabindex each fail in a component; `<a href="/x">here</a>` fails.
+          Control: a button with a label passes
+    relates:
+      - id: web.accessibility.8
+        how: see
+      - id: web.forms.7
+        how: see
+    open:
+      - Never run on a real React tree.
+      - The fork is below version 1.0; pin it and re-plant on each bump.
+      - >-
+        The original plugin's peers stop at ESLint 9 and its last release was 26 Oct 2024.
+      - >-
+        v1 evidence, not yet a source: C: 8 of 32 plants in 0.35 s (the template and component plants of
+        web.accessibility.8 fired in both stacks); D otherwise
+    note: >-
+      The component-stack form of web.accessibility.8 and of the link-label lint of web.forms.7, moved here
+      from the web part: the fork and its doubts came from web.accessibility.8.

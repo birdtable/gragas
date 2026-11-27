@@ -1,0 +1,36 @@
+$ gragas history --help
+--- stdout
+
+  Every change to a rule's life, one row each, in the order
+  the history keeps: its number, what was done, to which rule,
+  by whom, when, the plan that was accepted and the decision
+  taken. Give a rule's id, or an id it had before it was
+  renumbered, to list only that rule's rows.
+
+  A line that cannot be read is skipped and counted, and a
+  link that does not hold is listed under the rows. It reads
+  and changes nothing.
+
+    gragas history
+    gragas history <id>
+    gragas history --at v1.2.0
+    gragas history --json
+
+  USAGE
+
+
+    gragas history [id] [--flags]
+
+
+  FLAGS
+
+    --accessible  Plain questions (ACCESSIBLE)
+    --at          Read the history as it is at this tag, commit or branch
+    --config      The settings file (GRAGAS_CONFIG)
+    --entity      List only the rows about this entity, as the history names it
+    -h --help     Help for history
+    --json        Answer in one JSON document
+    --no-color    No colour (NO_COLOR)
+    --plain       Print plainly: nothing moves
+
+--- stderr

@@ -1,0 +1,77 @@
+{
+  "contract": "1.3",
+  "command": "check",
+  "summary": "Validate the rulebook tree",
+  "about": "Reads every file under rulebook/ and checks it: each\nagainst its JSON Schema, then across files (ids used\nonce and kept in ids.lock, a retired rule's\nreplacement, each source, kind, facet, binding and\ntool a rule names, folders that are parts), then each\ncount against its baseline in baseline.json, which may\nonly fall, then, when gate/exemptions.yaml is there,\neach exception row in it (an expired row, a row for a\nrule that is not active, an id listed twice and an\nexit file that is not there fail), and, when\nGRAGAS_NAMES_FILE is set, for names public text\nmust not hold. It writes nothing.\n\n  gragas check\n  gragas check -C ../gragas\n  gragas check --json\n\nIn a folder that holds one rulebook.yaml it checks the\nrulebook instead: validate's findings, then its history\nagainst the merge base of HEAD and the base ref (the\nbase-ref setting, or GRAGAS_BASE_REF): no line of the\nmerge base rewritten, no broken link or gap, each commit\nsince held to its own entries as guard staged holds one,\nno pin or governance changed without its entry, and no\nrule on trial past the merge base's window. Where the merge\nbase holds one rulebook, a branch that removes it or adds a\nsecond is a finding. With no base ref it is not ready.\n\nBelow a .gragas/pin.yaml, in the repository the pin lies\nin, it checks the project: its tool configs held to the\nbindings of the rulebook the pin names, its tier contract\nand its exemptions. It ends done with the findings listed;\n--fail-on names the kinds of finding that end it on\nfindings. A tool with bindings that could not be asked\nends it not ready.",
+  "usage": "gragas check [flags]",
+  "commands": [],
+  "flags": [
+    {
+      "name": "dir",
+      "shorthand": "C",
+      "type": "string",
+      "default": ".",
+      "usage": "The repository holding rulebook/"
+    },
+    {
+      "name": "fail-on",
+      "type": "stringSlice",
+      "default": "[]",
+      "usage": "end on findings when one is of this kind, below a pin (the kinds are tool-config, tier-contract, exemption, names, tracked-files, counts)"
+    }
+  ],
+  "global_flags": [
+    {
+      "name": "accessible",
+      "type": "bool",
+      "default": "false",
+      "usage": "Plain questions (ACCESSIBLE)"
+    },
+    {
+      "name": "config",
+      "type": "string",
+      "default": "",
+      "usage": "The settings file (GRAGAS_CONFIG)"
+    },
+    {
+      "name": "json",
+      "type": "bool",
+      "default": "false",
+      "usage": "Answer in one JSON document"
+    },
+    {
+      "name": "no-color",
+      "type": "bool",
+      "default": "false",
+      "usage": "No colour (NO_COLOR)"
+    },
+    {
+      "name": "plain",
+      "type": "bool",
+      "default": "false",
+      "usage": "Print plainly: nothing moves"
+    }
+  ],
+  "exits": [
+    {
+      "word": "done",
+      "code": 0
+    },
+    {
+      "word": "findings",
+      "code": 1
+    },
+    {
+      "word": "usage",
+      "code": 2
+    },
+    {
+      "word": "busy",
+      "code": 3
+    },
+    {
+      "word": "not ready",
+      "code": 4
+    }
+  ]
+}

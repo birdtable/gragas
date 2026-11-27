@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("format: 3\ntool: lint-a\nversion: 1.0.0\nrun:\n  argv: [\x27{fixtures}\x27, --x]\n")

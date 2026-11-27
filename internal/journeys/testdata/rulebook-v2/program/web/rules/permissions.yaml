@@ -1,0 +1,508 @@
+part: web
+concern: permissions
+order: 10
+title: Permissions in the UI
+summary: >-
+  No request is sent without its permission, every gated surface shows a designed state for allow, deny,
+  loading and degraded, and failure denies.
+rules:
+  - id: web.permissions.1
+    slug: no-request-without-permission
+    since: 0.1.0
+    rule: >-
+      A request is sent only when the visitor holds its permission: every read, write, route loader and
+      prefetch goes through a gate primitive, raw query, mutation and fetch calls are banned outside the core
+      client, the auth layer and generated code, and the gate sits at the data hook, not only at the page.
+    detail: >-
+      The gate primitives are a gated query, a gated infinite query, gated parallel queries, a gated mutation
+      and an ensure-gated loader. The raw framework calls (query, queries, infinite query, mutation) and
+      `fetch` are banned in every source folder except the core client folder, the authz folder and the
+      generated-output folder. Connector reads use the gated query. A tab or panel that reads gated data
+      declares its permission. No request for a gated read is sent before the decision is allow, from a hook
+      or from a route loader. The gated-read wrapper in the console stack is `ask(perm, load)`.
+    level: package
+    why: >-
+      The permission rule is invariant 17 of the source; a read sent before the grant is known leaks data and
+      work.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          `no-restricted-imports` and `no-restricted-syntax` banning the raw query, mutation and fetch calls
+          outside the three allowed folders; the zero-requests sweep proves it end to end. Plant: a raw query
+          call in a feature file fails; a gated read fired before the grant is known fails the sweep. Control:
+          the same read through the gated query passes
+    open:
+      - >-
+        The primitive names are one codebase's; the rule is generic and the names belong to the react part.
+      - A site's own gated-read wrapper is unproven.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D; C for one site's gated-read
+        wrapper (unproven)
+  - id: web.permissions.2
+    slug: writes-gated-like-reads
+    since: 0.1.0
+    rule: >-
+      Writes are gated like reads: they go through a gated mutation, and handlers use the guarded helpers,
+      never a bare permission assert.
+    level: function
+    why: >-
+      A write that checks its permission by hand can skip the loading and unknown cases the gate already
+      denies.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          the raw-mutation ban of the no-request rule plus `no-restricted-syntax` on a bare permission assert
+          in handlers. Plant: a handler calling a bare can-run assert fails; a raw mutation call fails.
+          Control: a gated mutation through the guarded helper passes
+    open:
+      - The guarded helper names are one codebase's and belong to react.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D (ledger L-99)
+  - id: web.permissions.3
+    slug: unknown-denies
+    since: 0.1.0
+    rule: >-
+      Loading, unknown and degraded permission states deny, and gates key off the user's own decision, never a
+      view-as identity.
+    detail: >-
+      Checking and degraded count as deny. A hung dependency does not block unrelated pages.
+    level: function
+    why: >-
+      Allowing while the answer is unknown shows data to someone who may not hold the permission.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          the zero-requests sweep renders every page while permissions are loading and degraded and fails on
+          any gated request. Plant: a page that fetches a gated list while permissions are loading fails.
+          Control: a page that waits for allow passes
+    open:
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D; C for the first site's wrapper
+  - id: web.permissions.4
+    slug: no-fail-open-permission-api
+    since: 0.1.0
+    rule: >-
+      A fail-open permission API is never used; a check allows only on a positive decision.
+    detail: >-
+      The source named the retired helpers of one codebase (capability checks that return true while loading,
+      and a role gate); the generic rule bans any helper that cannot say unknown.
+    level: function
+    why: A fail-open helper allows when it cannot decide.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "0"
+        note: >-
+          `no-restricted-imports` and `no-restricted-syntax` on each fail-open helper, kept in a ban list.
+          Plant: importing a fail-open helper fails. Control: the gated check passes
+    open:
+      - The ban list names are one codebase's retired helpers and belong to react.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.permissions.5
+    slug: gate-status-closed-set
+    since: 0.1.0
+    rule: >-
+      Compose the catalogued gate and never hand-roll the enabled flag; branch on the gate status (forbidden,
+      loading, error, data), never on a raw pending flag.
+    level: function
+    why: A raw pending flag cannot tell denied from loading.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "1"
+        note: >-
+          `no-restricted-syntax` on a hand-built `enabled` option fed by a permission check and on reading
+          `isPending` from a gated result, plus switch exhaustiveness on the gate status. Plant: hand-rolling
+          the enabled flag fails; branching on a raw pending flag fails. Control: a switch over the four gate
+          statuses passes
+    open:
+      - The query-library flags named are React-library specific and belong to react.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.permissions.6
+    slug: source-declares-permission
+    since: 0.1.0
+    rule: >-
+      A list definition declares the permission it requires for every source kind, or an explicit public flag,
+      and a tab or panel that reads gated data declares its permission.
+    level: type
+    why: A source with no declared permission is gated by nobody.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          v1 class compiler. the list definition type makes the permission field required (or a public flag),
+          and a lint on tabs and panels reading gated data. Plant: a list definition with neither a
+          requirement nor a public flag fails the type check. Control: a definition naming its permission
+          passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.permissions.7
+    slug: routes-gated
+    since: 0.1.0
+    rule: >-
+      Every route is gated by a capability page or an allow-list entry with a reason, including route loaders
+      and hover preload.
+    detail: >-
+      A route-list test proves the server refuses what the page hides, and the sweep covers every route. Route
+      gating covers route loaders and `hover-preload`.
+    level: program
+    why: An ungated route is reachable by URL even when its menu entry is hidden.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a route-list test iterates the router's routes and fails on one with neither a gate nor an
+          allow-list entry with a reason. Plant: a route added with no gate and no allow-list entry fails.
+          Control: a gated route passes
+    open:
+      - >-
+        The route descriptor form (before-load helper) is router specific and belongs to react.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.permissions.8
+    slug: hidden-panel-fetches-nothing
+    since: 0.1.0
+    rule: >-
+      A tab, section or panel renders and mounts only with its permission, and a hidden panel fetches nothing.
+    level: function
+    why: A panel that mounts hidden still requests its data.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          the zero-requests sweep with one grant asserts that only that permission's reads fire. Plant: a tab
+          with its panel mounted but hidden that fetches under no grant fails the sweep. Control: a panel that
+          mounts only with its permission passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.permissions.9
+    slug: nav-matches-target
+    since: 0.1.0
+    rule: A navigation item requires the same permission as its target page.
+    level: program
+    why: A menu entry the visitor cannot use is a dead end and a hint of what exists.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a test compares each navigation entry's requirement with its target route's requirement. Plant: a
+          navigation entry whose permission differs from its target page's fails. Control: matching
+          requirements pass
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.permissions.10
+    slug: permission-registry
+    since: 0.1.0
+    rule: >-
+      Permission descriptors come from one registry generated from the contract; no raw permission strings and
+      no hand-added permissions.
+    level: package
+    why: A hand-typed permission string passes review and fails at run time.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "2"
+        note: >-
+          `no-restricted-syntax` on string literals shaped like a permission outside the registry, plus the
+          generate-with-check loop on the registry file. Plant: a raw permission string in a page fails; a
+          hand-added registry entry fails the regenerate compare. Control: a descriptor read from the registry
+          passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.permissions.11
+    slug: designed-gated-states
+    since: 0.1.0
+    rule: >-
+      Every gated surface (page, tab, section, row, button, field, navigation entry) renders one designed
+      state for allow, deny, loading and degraded; nothing appears then vanishes, and no denied control stays
+      live.
+    level: program
+    why: >-
+      A gate that hides a control during loading shifts the layout when the decision arrives, and a control
+      that stays live when denied invites a failing request.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a gated-surface test renders each state with the mock identity provider and asserts the designed
+          state and no live denied control. Plant: a denied button that remains enabled fails; a section that
+          appears then vanishes fails. Control: a surface drawing all four states passes
+    open:
+      - >-
+        Controls that stay live when denied were found in the source and fixed by hand; no check existed.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.permissions.12
+    slug: disabled-while-loading
+    since: 0.1.0
+    rule: A gate in disable mode renders a disabled control while loading, not nothing.
+    level: function
+    why: >-
+      A control that is absent and then present moves the box, which the layout-shift rule forbids.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a gate test asserts a disabled control is present while permissions are loading. Plant: a gate in
+          disable mode that renders null while loading fails. Control: a disabled control while loading passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+    note: Related to the layout-shift rule, which holds the outcome; this holds the cause.
+  - id: web.permissions.13
+    slug: bounded-capability-wait
+    since: 0.1.0
+    rule: >-
+      The capability fan-out has a bounded timeout that yields degraded, so a hung dependency degrades one
+      surface and blocks no unrelated page.
+    level: function
+    why: An unbounded wait on a permission service hangs every page behind it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a test holds the capability call open past the bound and asserts the surface ends as degraded and an
+          unrelated page still renders. Plant: a capability call with no timeout hangs the test and fails.
+          Control: a call that times out into degraded passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.permissions.14
+    slug: zero-requests-sweep
+    since: 0.1.0
+    rule: >-
+      With no grants, while loading and while degraded, a page fires no request except identity and session;
+      with one grant only that permission's reads fire, and the sweep must render as many pages as there are
+      routes.
+    detail: >-
+      A browser run renders every route under no grants, while loading and degraded, and fails on any request
+      except the identity call. The number of pages rendered must equal the route count from the router, which
+      proves the sweep reads something.
+    level: program
+    why: >-
+      One check proves every other permission rule end to end; with no sweep, a fetch before the grant is
+      known is found in production.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          a Playwright sweep in the shared kit using the gated-read wrapper and the mock identity provider
+          that models loading. Plant: a page that fetches a gated list before the grant is known fails the
+          sweep; the count of pages swept below the route count fails. Control: a page that fires only the
+          identity request passes
+    open:
+      - >-
+        No fault in our record; built because every rule binds from adoption (decision 19).
+      - Applies where a door names the visitor.
+      - >-
+        Proposed for lack of a source (decision 47); the v1 evidence was: D; C for one site's wrapper
+  - id: web.permissions.15
+    slug: permission-test-fixture
+    since: 0.1.0
+    rule: >-
+      Permission tests use a mock identity provider with grants, degraded and loading modes, and loading
+      models production.
+    detail: >-
+      In production, loading means all service views are null; the fixture's loading mode does the same.
+    level: function
+    why: >-
+      A fixture whose loading differs from production proves nothing about the real unknown state.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          a test that the fixture's loading mode yields null service views, as production does. Plant: a
+          fixture whose loading mode returns a granted set fails. Control: the fixture with null service views
+          passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+  - id: web.permissions.16
+    slug: no-fan-out-for-unseen-data
+    since: 0.1.0
+    rule: No per-row fan-out of requests for a column or field the user cannot read.
+    level: function
+    why: Each row costs a request that returns forbidden.
+    kind: rule
+    strength: Hard
+    status: proposed
+    unless:
+      - kinds:
+          - no-identity
+        reason: >-
+          The program has no visitor identity and no grant: every view is public data from a bundle the host chose to publish.
+    checks:
+      - binding: ts
+        class: test-kit
+        tier: "3"
+        note: >-
+          the request budget counter on a list page under a grant that hides one column. Plant: a list that
+          fires one request per row for an unreadable column exceeds its budget and fails. Control: a list
+          that skips the hidden column passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"
+    note: >-
+      The budget half of the source row is the request-budget rule in the states concern.
+  - id: web.permissions.17
+    slug: no-identity-has-no-sign-in
+    since: 0.1.0
+    rule: >-
+      A program that declares the kind no-identity has no sign-in surface: no sign-in route or form, no
+      identity-provider client, and no stored session or token.
+    detail: >-
+      The kind switches the permission rules off on the project's word alone (S73), so this rule is the fact
+      check of that word. A reviewer lists each route, each form and each outgoing call of the program and
+      names any that asks a visitor who they are or sends proof of it. One that exists means the project is
+      not of this kind, and the permission rules bind it again.
+    level: program
+    why: >-
+      A project that declares the kind excuses itself from every permission rule; with no check of the claim, a
+      program with a sign-in ships ungated.
+    kind: rule
+    strength: Lens
+    status: active
+    when:
+      kinds:
+        - no-identity
+    sources:
+      - ref: gragas-spec-s73
+        where: S73, and S61 for the kinds
+        backs: rule
+    checks: []
+    review_question: >-
+      Which route, form or outgoing call of this program asks a visitor who they are, or sends proof of it?
+    open:
+      - >-
+        No tool sees a sign-in surface by itself: an import ban names one provider's client, not the class.
+        The zero-requests sweep (web.permissions.14) could fail on an identity or session call under this
+        kind, and a check row waits on that sweep.

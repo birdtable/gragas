@@ -1,0 +1,115 @@
+format: 3
+part: daemon
+concern: resilience
+rules:
+  - id: daemon.resilience.1
+    statement: "A daemon bounds its work: a request body cap, a cap on concurrent requests and bounded queues."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      pros:
+        - "Practice; unbounded work turns a burst into an outage. Part of the supervision row, whose restart half is daemon.units.3."
+    relations:
+      relates:
+        - daemon.units.3
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+  - id: daemon.resilience.2
+    statement: "A panic in a goroutine ends the process, so every goroutine recovers at its edge or the supervisor restarts it, and the restart has a stated limit."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      pros:
+        - Practice. Goroutine ownership itself is go.concurrency.2.
+    relations:
+      relates:
+        - go.concurrency.2
+  - id: daemon.resilience.3
+    statement: "Failed work parks with a reason and a redrive path (a dead letter), and a redrive filters for what can still resolve."
+    strength: may
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      pros:
+        - "Practice; parked work with no reason or no way back is lost work."
+  - id: daemon.resilience.4
+    statement: "A retried path is safe twice: one helper calls any daemon route or job handler twice and compares state; a repeated idempotency key replays the stored outcome and the same key with a different request conflicts."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "The list of writing routes is taken from the contract, not from the author. The same double-call helper serves the command rule (cli.commands.6) and is required for daemon routes by an analyser."
+      pros:
+        - "Practice only; it would become a rule with a duplicate-effect fault in one of our daemons. The command-side twin is cli.commands.2."
+    relations:
+      relates:
+        - cli.commands.6
+        - cli.commands.2
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+  - id: daemon.resilience.5
+    statement: "Retry discipline: one constructor carries the policy; it retries only idempotent calls, at one layer, with backoff, jitter and a budget, and hand-rolled retry loops are banned."
+    strength: must
+    status: proposed
+    origin: migrated
+    scope:
+      kinds:
+        - cli
+        - daemon
+    exemptions:
+      - kinds:
+          - no-retry
+        reason: A program that retries nothing has no policy to carry.
+    reasoning:
+      definition: "A syntax rule flags a sleep or timer inside a loop around a call with an error check outside the retry constructor; retry libraries are banned by depguard; a behaviour budget test checks the retry ratio, because recursion or a ticker passes the form."
+      pros:
+        - "Practice only; only the retry-library ban is cheap. It would become a rule with a retry fault in the run log."
+  - id: daemon.resilience.6
+    statement: "A daemon reads the machine only on a request or during a run it already pays for; a watcher waits on its source's own event stream and never polls; one short cache shares a round of reads between concurrent readers; and a timer, poll or resident sampler for a value nobody is reading needs a measured idle cost and a recorded reason."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "The cache lives for a stated short time (for example 15 seconds) and serves readers that arrive while a read is in flight or fresh; it is never refreshed on a timer. A value only known while watched is left out after a restart, not carried forward. An exception names its measured cost (daemon.resilience.7) and its reason in a recorded decision."
+      pros:
+        - "A poll costs power every hour whether anyone looks or not, and it makes behaviour depend on a clock no one set. Reading on request keeps idle cost at zero and every read explainable."
+    relations:
+      relates:
+        - daemon.resilience.7
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+  - id: daemon.resilience.7
+    statement: "A recurring run or a daemon read states a processor and memory budget, measured on the real machine before it ships and again when it grows."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - daemon
+    reasoning:
+      definition: "The budget is a number in the code or the decision beside it, with the method of the measure (for example the tree's CPU time through proc.Usage, run interleaved with and without the work, other work paused) and the date and machine it was taken on. A change that adds work to the run, a new probe or a shorter interval is measured again before it merges."
+      pros:
+        - "A measured budget turns a preference for quiet into a check; an unmeasured run grows by small additions until the machine never sleeps."
+    sources:
+      - ref: decision-65-daemon
+        backs: rule

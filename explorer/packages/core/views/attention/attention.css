@@ -1,0 +1,113 @@
+[data-view="attention"] {
+  display: grid;
+  gap: var(--gr-space-4);
+}
+
+.gr-attention-question,
+.gr-attention-nothing {
+  margin: 0;
+  color: var(--gr-text-muted);
+}
+
+.gr-attention-filters,
+.gr-attention-options,
+.gr-attention-releases,
+.gr-attention-changes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gr-attention-filters {
+  display: grid;
+  gap: var(--gr-space-3);
+}
+
+.gr-attention-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gr-space-3);
+}
+
+.gr-attention-options [aria-current="true"] {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.gr-attention-releases,
+.gr-attention-changes {
+  display: grid;
+  gap: var(--gr-space-4);
+}
+
+[data-part="attention-release"] {
+  display: grid;
+  gap: var(--gr-space-3);
+}
+
+[data-part="attention-release"] h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+[data-part="attention-change"] {
+  display: grid;
+  gap: var(--gr-space-2);
+  padding: var(--gr-space-3);
+  border: 1px solid var(--gr-control-border);
+  border-radius: var(--gr-radius-md);
+}
+
+.gr-attention-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
+  gap: var(--gr-space-2) var(--gr-space-4);
+  margin: 0;
+}
+
+.gr-attention-fields dt {
+  color: var(--gr-text-muted);
+}
+
+.gr-attention-fields dd,
+.gr-attention-fields p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.gr-attention-mark {
+  color: var(--gr-text-muted);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 40rem) {
+  .gr-attention-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.gr-attention-groups,
+.gr-attention-items,
+.gr-attention-further {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--gr-space-4);
+}
+
+[data-part="attention-group"] {
+  display: grid;
+  gap: var(--gr-space-3);
+}
+
+[data-part="attention-group"] h2,
+[data-part="attention-further"] h2 {
+  margin: 0;
+}
+
+[data-part="attention-item"] {
+  padding: var(--gr-space-3);
+  border: 1px solid var(--gr-control-border);
+  border-radius: var(--gr-radius-md);
+}

@@ -1,0 +1,296 @@
+part: supply
+concern: bumps
+order: 8
+title: Version bumps and shared releases
+summary: >-
+  How versions move. A dependency bump is its own change, shared modules and tools stay at one version
+  everywhere, consumers stay within a currency window of the latest shared release, related modules are tagged
+  together, and a shared release plans who pays for each bump.
+rules:
+  - id: supply.bumps.1
+    slug: bump-is-its-own-change
+    since: 0.1.0
+    rule: >-
+      A dependency bump is its own change: one direct bump per commit, no source file touched, after its
+      cooldown, with the trial counts in the change.
+    detail: >-
+      The commit check compares the manifest and lockfile with the base: more than one direct dependency
+      changed in one commit fails, a manifest or lockfile change together with non-manifest files fails, and
+      the commit message carries a Trial line with the counts. For Go the scan is on go.mod with non-module
+      files; indirect lines are left out because a module graph brings them in. A vendor family counts as one
+      bump. There is no bump bot; the owner lane opens bumps. The diff scan for web reads package.json and the
+      lockfile together with non-manifest files.
+    level: file
+    why: >-
+      A bump mixed with source edits hides the change a reader should see, and a bump can ride inside a large
+      refactor unseen. The known way round is hiding the bump in a refactor, which the same scan catches.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: decision-16
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        backs: rule
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "3"
+        note: >-
+          v1 class our-cli. companion lock-diff compares the manifest and lockfile with the base; more than
+          one direct change in a commit fails, and the message must carry a Trial line. Plant: two direct
+          bumps in one commit fail; a commit with a bump and a source edit fails. Control: one bump with a
+          Trial line passes
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          a diff scan on go.mod together with non-module files, a recipe in the shared makefile fragment.
+          Plant: a commit with a go.mod bump and a source edit fails. Control: a go.mod-only commit passes
+    open:
+      - >-
+        The reference rule leaves a bump of an existing dependency out of its sign-off, so this rule is what
+        covers bumps.
+      - Astro bumps of one repository are out of scope under a ruling of the operator.
+      - >-
+        v1 evidence, not yet a source: D; the cost is small because the lock diff is built for the age and
+        family rules
+  - id: supply.bumps.2
+    slug: currency-window
+    since: 0.1.0
+    rule: >-
+      Consumer lag behind the shared module and lockstep pairs are reported with the release as the unit, lag
+      is not gated by a fixed window, each consumer moves its require when it is ready, and a breaking module
+      change fixes every caller the owner keeps in the same change.
+    detail: >-
+      One module version in every program. The report compares the shared module's version in each program's
+      go.mod with the latest tag and its date, and shows each consumer's distance from the latest shared
+      module and the pairs that release together, with the release as the unit. Nothing fails on lag: a
+      consumer moves its require when it is ready. A change to the shared module that breaks its surface
+      fixes, in the same change or the same coordinated release, every caller in the repositories the owner
+      keeps, so no kept consumer is left on a broken path. The lag is reported in minors per module, the root
+      module and each separately versioned module on their own, and a waiver whose trigger is "until the
+      shared module bumps" is listed beside the lag, so the release report reads "one module lags three
+      minors; three waivers wait on it". The tag-date read needs network access to a private module.
+    level: program
+    why: >-
+      A consumer that lags keeps running code the owner has already replaced, so the lag is shown. A fixed
+      window forces every consumer to the newest version on the owner's schedule, which arch.measures.6 itself
+      names as a cause of coupling; fixing callers in the breaking change is what keeps a lagging consumer
+      safe to move later. A pair that must always release together signals a misplaced boundary.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ford-sathp
+        where: ch. 8 shared library
+        backs: rule
+      - ref: bellemare-bedm
+        where: ch. 16
+        backs: rule
+      - ref: decision-16
+        backs: rule
+      - ref: decision-65-supply
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. companion report currency lists each consumer's go.mod require of the shared
+          module against the latest tag and its date, and the lockstep pairs; a release check of the shared
+          module fails a breaking surface change (supply.release.2) whose change does not update the callers
+          in the kept repositories. Plant: a breaking change to the shared module with an unfixed caller in a
+          kept repository fails. Control: a consumer two tags behind is reported and passes
+    relates:
+      - id: arch.measures.6
+        how: see
+    open:
+      - >-
+        Decision 16 set a five-working-day window; decision 65 (D-T99) reports lag instead of gating it.
+      - >-
+        How a check in the shared module's repository finds callers in other kept repositories without hosted
+        CI is to be built.
+  - id: supply.bumps.3
+    slug: related-modules-tagged-together
+    since: 0.1.0
+    rule: >-
+      Related shared modules are tagged together, and a separately owned package has its own versioning.
+    detail: >-
+      A shared root module and its sub-module are tagged together; the design-tokens package is not in that
+      tag and defaults to its own semver (decision 28). A release check that the tags match runs in the owner
+      repository only. The deprecate-first form is the //go:fix inline directive.
+    level: release
+    why: >-
+      The sub-module tags came about 64 minutes and two commits after the root tag, so the pair was not
+      atomic.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - library
+    sources:
+      - ref: decision-28
+        backs: rule
+      - ref: decision-35
+        backs: rule
+    checks:
+      - binding: go
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. a release script check that the root and sub-module tags match, in the owner
+          repository only. Plant: a mismatched tag fails. Control: matching tags pass
+    open:
+      - >-
+        How a removed name is handled is open, either deprecate it first with a go:fix inline directive, or
+        break with no alias kept (the repositories' own rule).
+      - go:fix inline across modules is untested.
+      - Blocked on decision 35 (the new platform lane waits for the hold).
+  - id: supply.bumps.4
+    slug: release-plans-who-pays
+    since: 0.1.0
+    rule: >-
+      A shared release plans who pays for each bump: consumers pay in lockstep, an upgrade comes with a
+      codemod or a list of what changes, and a new shared rule lands as a minor with each repository recording
+      its debt first.
+    detail: >-
+      A breaking tag without a changelog section that lists what consumers change is refused. A
+      cross-repository sweep tool opens a pull request in each repository for a codemod. Debt may not grow on
+      a bump. The changelog tool kept is git-cliff (decision 17).
+    level: release
+    why: >-
+      A release that does not say what consumers must change shifts the cost silently. The changelog of an
+      earlier shared release is the shape of such a list.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: ford-sathp
+        where: ch. 8
+        backs: rule
+      - ref: bellemare-bedm
+        where: ch. 16
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: "4"
+        note: >-
+          v1 class our-cli. release step refuses a breaking tag without a changelog section listing what
+          consumers change; consumer lag report from tag dates and lock requirements. Plant: a breaking tag
+          with no consumer section is refused; a fixture consumer one tag behind reads 1. Control: a tag with
+          the section passes
+    open:
+      - >-
+        Half of this holds, since the changelog section is enforced and the lag is only a report.
+      - >-
+        v1 evidence, not yet a source: A at the reference source; the 0.14.0 changelog shape
+  - id: supply.bumps.5
+    slug: version-range-reaches-next-release
+    since: 0.1.0
+    rule: >-
+      A shared package's version range spans minors on purpose, since a caret on a 0.x version pins one minor
+      and could never resolve the next release.
+    level: file
+    why: >-
+      A caret range on 0.x means the next minor is a different compatible set, so the range never reaches it.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          a template setting that renders the shared package's range to span minors, with the exact-pin rule
+          for direct dependencies unchanged. Plant: a caret range on a 0.x shared package fails the template
+          check. Control: a range spanning minors passes
+    open:
+      - >-
+        The reference setting was a template value; whether the direct-dependency exact-pin rule conflicts
+        with it is not settled.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: supply.bumps.6
+    slug: shared-config-carries-readable-version
+    since: 0.1.0
+    rule: A shared config carries a version that consumers can read and pin.
+    level: package
+    why: >-
+      A consumer cannot pin or report the distance from a shared config that does not state its version.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: fact
+        tool: gragas
+        tier: "1"
+        note: >-
+          v1 class our-cli. the sync command stamps the source version in the vendored copy and the preflight
+          reads it. Plant: a vendored copy without a stamped version fails. Control: a stamped copy passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: supply.bumps.7
+    slug: shared-check-tools-move-together
+    since: 0.1.0
+    rule: >-
+      The shared package's check tools are regular dependencies so one version bump moves all of them; lint
+      and compiler tools are peers with declared ranges.
+    level: package
+    why: >-
+      Tools declared as peers drift apart per consumer; regular dependencies move with the one bump.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-config
+        tier: "1"
+        note: >-
+          a manifest check on the shared package that its check tools are regular dependencies and its lint
+          and compiler tools are peers with ranges. Plant: a check tool declared as a peer fails. Control: the
+          declared split passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: supply.bumps.8
+    slug: a-library-release-reaches-its-consumers
+    since: 0.1.0
+    rule: >-
+      A library's release clock runs from the last fix merged to its consumers' main branch, the bump in each
+      consumer has an owner, and the hand-off is logged like a review round.
+    detail: >-
+      supply.bumps.2 holds that consumer lag is reported with the release as the unit. This rule holds that
+      the release is not done at publish. The release names the consumer's bump and who makes it, and the
+      hand-off is a row where the hub counts rounds (gates.measures.5). A program's release clock runs from
+      the last fix merged to published; a library's runs on to the consumers' main.
+    level: release
+    why: >-
+      One fleet's design-system releases reached its main web application in 2 hours 45 minutes, 5 hours 30
+      minutes, and once not in 5 days, because nothing linked a publish to its consumer.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule
+    review_question: >-
+      Who bumps each consumer of this release, where is the hand-off logged, and when did the last release
+      reach the consumers' main?
+    relates:
+      - id: supply.bumps.2
+        how: see
+      - id: gates.measures.5
+        how: see
+      - id: gates.land.18
+        how: see
+    open:
+      - >-
+        Planned check: the release record names each consumer and the commit on its main that took the bump,
+        and a release with a consumer still on the old version after a stated window is listed. No tool key is
+        bound yet.

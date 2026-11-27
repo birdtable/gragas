@@ -1,0 +1,219 @@
+part: store
+concern: consistency
+order: 4
+title: Locks, versions and effects
+summary: >-
+  How concurrent writers and outward effects stay correct whatever the store. A lock is a kernel advisory lock
+  with a deadline, a lock that guards correctness across hosts hands out a fencing token, a mutation carries a
+  version precondition, the intent is written before the effect, and every outward effect goes through one
+  recording wrapper.
+rules:
+  - id: store.consistency.1
+    slug: kernel-advisory-lock
+    since: 0.1.0
+    rule: >-
+      A lock is a kernel advisory lock, non-blocking by default, with a deadline on any blocking wait; the
+      order of two locks is written and tested; it is taken only through the platform's lock package, and any
+      failure other than held stops the run.
+    detail: >-
+      forbidigo (type-aware) bans Flock and FcntlFlock calls outside the lock package, with a plain-text check
+      for the raw system-call number and the four planted files kept as the fixture pair; a depguard row bans
+      the third-party flock module, with an owner-lock rule that exempts the lock package's own path. A test
+      checks that the claim fails when the lock folder is unwritable. The atomic-write package's own two calls
+      are exempt.
+    level: function
+    why: >-
+      Fourteen production files call flock directly. In two programs the claim function treats every error
+      except held as success. A trial planted four lock forms and the pattern flagged 2 of 4.
+    kind: rule
+    strength: Hard
+    status: active
+    unless:
+      - kinds:
+          - library
+        facets:
+          - not-lock-owner
+        reason: Only the owner carries the lock implementation.
+    sources:
+      - ref: p-03-data
+        where: sections 2 to 4
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          forbidigo (analyze-types) on Flock and FcntlFlock outside the lock package, a plain-text SYS_FLOCK
+          check, depguard on the third-party flock module, and a claim test. Plant: unix.Flock, an alias of it
+          and unix.FcntlFlock fire; a raw syscall of the flock number fires the plain-text check. Control: the
+          lock package passes
+    open:
+      - >-
+        The pattern misses one of five planted forms (a POSIX record lock, FcntlFlock with F_SETLK, and the
+        raw syscall pass), so the plain-text check stays.
+      - >-
+        The shared claim helper in the platform environment is proposed; the rendered depguard config needs an
+        owner-lock rule.
+      - "v1 evidence, not yet a source: own measure (read; the claim shape verified)"
+  - id: store.consistency.2
+    slug: fencing-token
+    since: 0.1.0
+    rule: >-
+      A lock that guards correctness across hosts hands out a monotonically increasing fencing token, and the
+      store checks it on the write.
+    detail: >-
+      It applies where a lease or lock stands between two hosts and a double execution would corrupt data and
+      not merely waste work. The write that follows is rejected by the store if the token is older than one it
+      has seen. Most answers are a conditional write on a revision (store.consistency.3), which makes the
+      question cost nothing.
+    level: function
+    why: >-
+      A lease can expire during a pause while the holder goes on writing; the same shape appears when an
+      invocation is frozen and thawed or an at-least-once delivery runs the same work twice (inference, not
+      measured; no case from the estate).
+    kind: rule
+    strength: Review
+    status: active
+    when:
+      kinds:
+        - service
+    sources:
+      - ref: kleppmann-ddia
+        where: distributed locks and fencing tokens
+        backs: rule
+      - ref: p-03-data
+        where: section 23
+        backs: rule
+    review_question: >-
+      Can a paused holder of this lock still write after its lease ends, and what refuses it?
+    relates:
+      - id: store.consistency.3
+        how: see
+    open:
+      - >-
+        No plant exists; a seeded change that takes an advisory lock or a lease row and writes without a
+        conditional check must be flagged.
+      - >-
+        v1 evidence, not yet a source: practice (a published argument separating locks for efficiency from
+        locks for correctness)
+    note: Agents reach for a lease and stop there (inference).
+  - id: store.consistency.3
+    slug: version-precondition
+    since: 0.1.0
+    rule: >-
+      A mutation carries a version precondition; compare-and-set puts the version in the condition, and a
+      conflict is a typed outcome distinct from not found.
+    detail: >-
+      Both read as zero rows affected unless told apart. The test asserts the stale write's values are absent,
+      so a retry that re-reads and overwrites fails. The request carries the revision in its body. Not-found
+      and conflict are different typed outcomes (not-found for a missing row, a conflict for a stale one).
+    level: function
+    why: >-
+      An update without the version in its condition overwrites a newer write silently.
+    kind: rule
+    strength: Hard
+    status: active
+    unless:
+      - facets:
+          - no-store
+        reason: There is nothing to mutate.
+    sources:
+      - ref: p-03-data
+        where: section 23
+        backs: rule
+      - ref: p-04-systems-and-delivery
+        where: section 7
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a store test with two writers (one stale) and a missing row, asserting the stale write's values are
+          absent. Plant: an update without the version in the condition fails the two-writer test; a stale
+          write and a missing row must give different typed errors. Control: the conditional update passes
+    open:
+      - "v1 evidence, not yet a source: practice (not measured)"
+    note: >-
+      The kernel-lock rule does not cover this; the engine-specific forms are in the Postgres and DynamoDB
+      parts.
+  - id: store.consistency.4
+    slug: intent-before-effect
+    since: 0.1.0
+    rule: >-
+      The intent is written before the effect and a record that cannot be written stops the effect; no message
+      is published inside a database transaction (transactional outbox).
+    detail: >-
+      The run record is opened after the lock is taken, so a refused second run writes no record. The outbox
+      writes the row in the transaction and publishes after commit; whether a message can go out for a change
+      that then rolls back is a review question.
+    level: function
+    why: >-
+      One program opens its run record before it takes the library lock, so a refused run writes its own
+      record.
+    kind: rule
+    strength: Hard
+    status: active
+    unless:
+      - facets:
+          - read-only
+        reason: There is no effect to precede.
+    sources:
+      - ref: bellemare-bedm
+        where: ch. 4 liberating data using outbox tables
+        backs: rule
+      - ref: p-03-data
+        where: section 21
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          a per-effect test with a failing journal, and a test that a refused second run writes no record.
+          Plant: an effect before its journal write fails. Control: journal first passes
+    review_question: Can this message go out for a change that then rolls back?
+    open:
+      - >-
+        The outbox half is review; the claim-before-begin construction in the platform environment is
+        proposed.
+      - "v1 evidence, not yet a source: own measure (read; the order verified)"
+  - id: store.consistency.5
+    slug: outward-effects-through-one-wrapper
+    since: 0.1.0
+    rule: >-
+      Every outward effect goes through a wrapper that records it, and a program is run from one package.
+    detail: >-
+      depguard owner-exec on the process package, forbidigo on os.StartProcess and syscall.ForkExec outside
+      the runner (both run a program without the process package, and os itself cannot be banned), and the
+      security analyser's rule for a variable command. The runner package, proposed, has a context, a timeout,
+      no shell and an output cap. Counts on macOS: the process package appears in 90 production files across
+      seven repositories (24, 20, 11 and 13 in four of them).
+    level: package
+    why: >-
+      An effect outside the wrapper is invisible to the record and to the journal that precedes effects.
+    kind: rule
+    strength: Hard
+    status: retired
+    replaced_by: cli.process.1
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        tier: "1"
+        note: >-
+          depguard owner-exec on os/exec, forbidigo on os.StartProcess and syscall.ForkExec outside the
+          runner, and gosec G204. Plant: exec.Command outside the runner fails. Control: the runner package
+          passes
+    relates:
+      - id: store.consistency.4
+        how: see
+    open:
+      - belongs in cli
+      - >-
+        The split agent doubted whether this could be a rule of the CLI program part or of the architecture
+        base, and it is kept here because the effect record is the journal of store.consistency.4.
+      - The owner-exec counts are macOS numbers.

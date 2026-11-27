@@ -1,0 +1,127 @@
+$ gragas --no-color
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  Gragás is a rulebook plus presets: shared configs that
+  projects import into their own tool configs. This
+  program checks the rulebook and writes the files made
+  from it.
+
+    gragas validate                              list the findings and notices
+    gragas validate --json                       as one JSON document
+    gragas migrate --name rb --owner me          show the plan
+    gragas migrate --name rb --owner me --apply  carry it out
+    gragas rule new                              add a draft rule
+    gragas rule retire <id>                      retire a rule and keep its id
+    gragas term new                              define a term
+    gragas term retire <slug>                    retire a term nothing uses
+    gragas source new                            record a source
+    gragas source edit <slug>                    change a source
+    gragas decision new                          record a decision
+    gragas decision supersede <slug>             supersede a decision by a new one
+    gragas undo                                  show the plan
+    gragas undo --entry 12 --apply               carry it out
+    gragas guard edit                            judge an edit on standard input
+    gragas guard staged                          judge the staged change
+    gragas import <folder>                       show the plan
+    gragas import <folder> --apply               carry it out
+    gragas attention                             list it
+    gragas attention --json                      as one JSON document
+    gragas history                               list the entries
+    gragas history <id>                          list the entries for one rule
+    gragas bind <id> --key <entry>               show the plan
+    gragas bind <id> --apply                     carry it out
+    gragas rebind <id> --to-key <new>            show the plan
+    gragas rebind <id> --apply                   carry it out
+    gragas unbind <id> --key <entry>             show the plan
+    gragas unbind <id> --apply                   carry it out
+    gragas conflicts                             list them
+    gragas conflicts --json                      as one JSON document
+    gragas coverage                              list it
+    gragas coverage --json                       as one JSON document
+    gragas tools                                 list them
+    gragas tools --json                          as one JSON document
+    gragas plugin test <folder>                  run the checks over one bundle
+    gragas plugin contract --json                say the contract number and features, as one JSON document
+    gragas resolve                               list it
+    gragas resolve --json                        as one JSON document
+    gragas explain <id>                          say what holds a rule
+    gragas explain <tool> <key>                  say which rules hold it
+    gragas preset                                show the preset files that are new or differ
+    gragas preset --check                        name each file that differs, writing nothing
+    gragas init --kind rulebook                  show the plan for a rulebook
+    gragas init --kind rulebook --apply          write it
+    gragas check                                 list the findings
+    gragas check --json                          as one JSON document
+    gragas contract validate <file>              check a document
+    gragas contract fields rule                  list the rule entity's fields
+    gragas version                               say which build this is
+    gragas version --json                        as one JSON document
+    gragas journal list                          list the runs
+    gragas journal recover --apply               roll an interrupted run back
+    gragas cache list                            list it
+    gragas cache clear --apply                   clear it
+    gragas gen                                   list the files out of date
+    gragas gen --apply                           write them
+
+  Environment:
+    GRAGAS_NAMES_FILE  a private file of names public
+                       text must not hold, one regular
+                       expression a line; unset skips it
+    XDG_STATE_HOME     where gen --apply keeps its lock
+                       and run record (gragas/ in it),
+                       else the user's state folder
+    CI                 set: no colour, banner or question
+    NO_COLOR, TERM, COLUMNS, ACCESSIBLE  as everywhere
+
+  Exit codes: 0 done, 1 refused or failed, 2 usage,
+  3 busy, 4 not ready.
+         
+  USAGE  
+         
+    gragas [command] [--flags]  
+            
+  COMMANDS  
+            
+    attention                     List what needs the owner's attention first
+    bind <id> [--flags]           Bind a rule to the tool setting that holds it
+    cache [command]               List or clear what gragas keeps in its cache
+    check [--flags]               Validate the rulebook tree
+    conflicts [--flags]           List rules whose settings disagree and offer the three resolutions
+    contract [command] [--flags]  Check documents, read fields, write a fixture
+    coverage                      List the rules tools hold and those none hold
+    decision [command]            Record a decision or supersede one, with a history entry for each change
+    explain <id> | <tool> <key>   Explain a rule or a tool entry by what holds it
+    gen [--flags]                 Regenerate the generated files
+    guard [command]               Refuse a hand edit of a lifecycle field
+    help [command]                Help about any command
+    history [id] [--flags]        List the history of a rule or of the rulebook
+    import [<folder>] [--flags]   Bring a guide and a tool's config in as rules, grandfathering what the config holds
+    init [--flags]                Set up a project or a rulebook
+    journal [command]             List, recover or restore runs that wrote here
+    migrate [--flags]             Move a rulebook to the format this build reads
+    plugin [command]              Prove, list, approve, add or upgrade a plugin, or say which contract this gragas speaks
+    preset [--flags]              Write every tool's preset from the rulebook's bindings
+    rebind <id> [--flags]         Move a rule's binding to another tool setting
+    resolve                       List the rulebook a chain resolves to, and where each entry came from
+    rule [command]                Add or change a rule, with its history
+    source [command]              Record or change a source, with its history
+    term [command]                Add, change or retire a term, with its history
+    tools                         List the tools the rules bind to
+    unbind <id> [--flags]         Remove a rule's binding
+    undo [--flags]                Take back the last change the history records, with a new entry
+    validate [--flags]            Check a rulebook and list what is wrong in it
+    version                       Print this build
+         
+  FLAGS  
+         
+    --accessible                  Plain questions (ACCESSIBLE)
+    --config                      The settings file (GRAGAS_CONFIG)
+    --json                        Answer in one JSON document
+    --no-color                    No colour (NO_COLOR)
+    --plain                       Print plainly: nothing moves
+
+--- stderr
+error: no command given, and nobody to ask which one
+       see `gragas --help`
+--- exit 2

@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("[1e300,0.1,1e-7,\"\\ud83d\\ude00\"]")

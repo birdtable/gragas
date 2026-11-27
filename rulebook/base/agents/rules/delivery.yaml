@@ -1,0 +1,62 @@
+format: 3
+part: agents
+concern: delivery
+rules:
+  - id: agents.delivery.1
+    statement: "The gate writes a delivery record per ticket holding gate rounds, review rounds, rework and time, with the first-pass gate-green rate."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The record is appended by the gate to a per-ticket file, and a figure that cannot be measured prints null with its reason. A test fails if the record is missing. Coverage per changed file is reported with no threshold."
+      pros:
+        - "The ticket is the unit that commits and pull requests cannot give: 1,739 commits in 14 days says nothing of value (principles report P-09 section 9.3)."
+    sources:
+      - ref: p-09-agentic-development
+        where: section 9.3
+        backs: rule
+      - ref: p-02-enforcement-and-measure
+        where: section 7.2 item 2
+        backs: rule
+  - id: agents.delivery.2
+    statement: A short list of measures rolls up into one line a week for the reader.
+    strength: should
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The list: first-pass gate-green rate, review rounds, rework within 14 days, files over the size line, new disables, platform-import ratio, state coverage, accessibility violations, and time to green."
+      pros:
+        - A weekly line shows trend without making any one number a target.
+  - id: agents.delivery.3
+    statement: "The reader sees the delivery numbers; the agent judged on them does not."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - "A scorer visible to the agent invites gaming; scorer visibility is linked to hacking in an outside study (principles report P-09 section 5.5)."
+  - id: agents.delivery.4
+    statement: "A change to guidance is measured before it spreads, by replaying closed tickets with and without it and reporting success and cost for each arm."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A replay harness runs the arms and a person reads the two arms; nothing passes or fails, so it has no plant. A guidance change must carry its replay result. Tests that give an agent a task and check that it followed the guidance are the same idea in eval form."
+      pros:
+        - "The one controlled study shows guidance can add cost with no gain (principles report P-09 section 7.7); its figures are second-hand, from a workshop poster."
+    sources:
+      - ref: p-09-agentic-development
+        where: section 7.7
+        backs: rule
+  - id: agents.delivery.5
+    statement: "A commit subject states what is true after it, not what was done, its body says why, and a type and scope prefix is a repo parameter."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The subject is a sentence about the tree after the commit (\"The gate refuses a stale base\"), not an action (\"Fix gate\" or \"Updated docs\"). The body says why the change was needed; a body that only repeats the subject fails. A repo declares once whether subjects carry a conventional type and scope prefix, and the commit check holds whichever it declared."
+      pros:
+        - "A log of what is true reads as the history of the program's behaviour; a log of actions says only that someone was busy. The body is the one place the reason survives."
+    sources:
+      - ref: decision-65-agents
+        backs: rule

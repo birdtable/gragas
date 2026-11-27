@@ -1,0 +1,35 @@
+$ gragas check --fail-on tool-config
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+reading rulebook/ in .
+
+part                                     entries  enforced  tools
+Architecture and boundaries              79       7         10
+Code health                              31       10        7
+Tests                                    96       3         11
+Gates and enforcement                    142      4         16
+Supply chain and release                 76       5         12
+Docs and vocabulary                      28       0         16
+Agents and review                        45       0         25
+Go                                       31       9         8
+TypeScript                               54       0         15
+Python                                   8        0         0
+CLI                                      90       6         0
+Daemon                                   40       0         0
+Backend service                          101      0         15
+Web front end                            179      0         5
+Static pages and docs-only repositories  5        0         0
+React                                    39       0         6
+Astro                                    4        0         3
+Liquid themes                            6        0         0
+Data, any store                          26       0         0
+Postgres                                 25       0         5
+DynamoDB                                 10       0         1
+AWS                                      5        0         1
+AWS Lambda                               4        0         6
+SST                                      8        0         3
+
+  done       1,132 entries in 165 files, and no problem
+--- stderr
+warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
+--- exit 0

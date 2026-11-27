@@ -1,0 +1,67 @@
+format: 3
+part: supply
+concern: age
+rules:
+  - id: supply.age.1
+    statement: "A dependency version younger than the release-age window of 7 days is refused unless the module is our own release, and the check at land reads publish dates from the lockfile."
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "The window is 7 days (it replaced 14 days). Our own modules are exempt: a module under the organisation's own module path, at a release tag (vX.Y.Z, never a pseudo-version or a pre-release), with no replace and a publish time that can be read, does not wait. A land check reads publish dates from go.sum and the lockfile, because an install that follows a lockfile installs a young package that is already locked. The rule states what it defends against: a bad release that is noticed quickly, not a long campaign. A maintainer change is shown in the bump. The young-version case is planted and run before the rule counts as a gate. The package manager setting is the minimum-release-age setting (min-release-age for npm). Publish times come from the proxy .info record for Go. An install that follows the lockfile, such as npm ci, installs a young locked package. The lockfile read for web is the package manager lock (pnpm-lock.yaml). The npm setting min-release-age is one line: install only versions older than N days."
+      pros:
+        - "In the xz backdoor, version 5.6.0 was 33 days old and 5.6.1 was 19 days old at discovery, so a two-week window would have admitted both. The other supply rules (provenance, licence, scans, install scripts) do the work the window cannot. In the web estate an install that followed the lock passed a young locked entry, and one repository set the window to one day."
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 13
+        backs: rule
+      - ref: decision-15
+        backs: rule
+      - ref: xz-backdoor-2024
+        backs: rule
+  - id: supply.age.2
+    statement: "A release-age cooldown is set for the package manager at add time, numeric, and equal to the release-age window of seven days, read as the package manager reads it (the last value wins)."
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "The estate value is 7 days (10080 minutes), the release-age window of supply.age.1, the same in every project and equal to the template and to the window the tools are held to: one number, neither under it nor over it (it replaced 14 days, 20160 minutes). The check reads the resolved setting, handles comments and quotes, and compares with the template. The setting lives in the workspace file (pnpm-workspace.yaml)."
+      pros:
+        - "A setting that is absent, non-numeric or overridden by a later line looks present and does nothing."
+    sources:
+      - ref: decision-10
+        backs: rule
+  - id: supply.age.3
+    statement: "A security skip of the age window names an advisory id that resolves, and a waiver names every package it lets through, with a reason, an owner and the date all are clear."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A skip with no advisory id is refused; a skip naming a real advisory in a vulnerability database passes. A waiver for a new vendor release lists each transitive package under the window and the date by which all of them are old enough. A waiver for a new vendor major lists its transitives under the window (for example @inlang/sdk, @inlang/plugin-message-format, kysely, @napi-rs/wasm-runtime) with the date all are clear; an update-bot cooldown of seven days is the reference window. The reference waiver covered @inlang/paraglide-js 3.0.0 published that week and everything it pulls in."
+      pros:
+        - "A fast lane for security fixes is also an attacker's route, because the second xz release arrived looking like a fix; a skip an agent can claim must therefore resolve to a real advisory."
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 13
+        backs: rule
+  - id: supply.age.4
+    statement: "The integrity and provenance signatures of every locked package are verified, and a version with weaker publishing evidence than an earlier one is refused."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "Go modules are checked against go.sum and the checksum database. For packages, a trust policy that forbids a downgrade of publishing evidence is read back, and where the package manager has no signature-audit command the intent is a provenance check on the lockfile diff."
+      pros:
+        - A release that loses the provenance attestation its predecessors had is the signature of a stolen publishing token.
+    sources:
+      - ref: supply-reasons-stated
+        backs: rule
+  - id: supply.age.5
+    statement: "A vendor family updates as one group: exact pins, a stated minimum age, a provenance check on the lockfile diff, one family bump per change, and a 0.x release only through a labelled pilot with a removal path."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A bump that touches one member of a family must touch all members in one change. Each member is past the age line, and a waiver of the age rule names each package it lets through and the date all are clear. Go families, such as a terminal-UI set or a database-driver pair, move together the same way. Example family: @inlang/paraglide-js and @inlang/plugin-message-format are pinned exactly; the vendor sub-packages are neither pinned nor overridden, and there is no overrides block."
+      pros:
+        - "A family bumped member by member leaves versions that do not fit each other, and a bump mixed with others hides which change broke."

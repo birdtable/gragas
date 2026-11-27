@@ -1,0 +1,20 @@
+# Paths the adapter refuses by their spelling (checkPath), wherever a caller
+# hands one: a Blob of a rev and a Commit of the work tree both refuse each
+# before git runs. A line is a path as a Go string literal, then what it is.
+# Some are spelled as one system's paths, so they are data here, not code.
+"" an empty path
+"/work/scratch/x" an absolute path
+"../x" a path that climbs
+"a/../b" a path through ..
+"sub/../rules.yaml" a path through .. to a file the tree holds
+"a//b" an empty name
+"./a" a name that is .
+"a/" a path that ends in a slash
+".git/config" the .git folder
+".GIT/config" a .GIT folder
+"a/.GIT/x" a .GIT folder below the top
+"a\\b" a backslash
+"sub\\d.txt" a backslash between names the tree holds
+"a\x01b" a control character
+"a\nb" a newline
+"\xff" a byte that is not UTF-8

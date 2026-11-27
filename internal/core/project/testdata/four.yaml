@@ -1,0 +1,9 @@
+# A project's exceptions with four things wrong, one each: a row that has
+# expired, a row for a retired rule, an id listed twice, and an exit file that
+# is not there.
+exemptions:
+  - {id: expired, rule: arch.layers.1, path: internal/a/, reason: "the split waits for its ticket", exit: "x/rulebook#34", owner: gate, expires: "2020-01-02"}
+  - {id: retired, rule: arch.layers.3, path: internal/b/, reason: "the rule was retired", exit: "x/rulebook#35", owner: gate, expires: "2099-12-31"}
+  - {id: twice, rule: go.errors.1, path: internal/c/, reason: "the wrapper lands with its part", exit: "x/rulebook#36", owner: gate, expires: "2099-12-31"}
+  - {id: twice, rule: go.errors.1, path: internal/d/, reason: "the wrapper lands with its part", exit: "x/rulebook#36", owner: gate, expires: "2099-12-31"}
+  - {id: lost-exit, rule: arch.layers.2, path: internal/e/, reason: "the doc says when", exit: "docs/gone.md", owner: gate, expires: "2099-12-31"}

@@ -1,0 +1,171 @@
+part: gates
+concern: quality
+order: 4
+title: Quality of checks
+summary: >-
+  A gate is only worth its noise. A blocking check has a measured false-positive rate, its failure message
+  names the home and the fix, main stays green so red means something, a new check is trialled on a real repo
+  before it is required, and every gate can be explained in a sentence.
+rules:
+  - id: gates.quality.1
+    slug: false-positive-bar
+    since: 0.1.0
+    rule: >-
+      A blocking check has a measured false-positive rate under 10 percent; a check above the bar drops a
+      level.
+    detail: >-
+      For every check that blocks, keep a count of hits, suppressed hits, findings later overturned, and the
+      agent time spent satisfying a failure, from the delivery record, and report them per check. A check that
+      is mostly suppressed is changed or dropped. A check above the bar drops a level (blocking to ratcheted
+      to review) by a recorded decision; the reporter itself never demotes a check, because that would be a
+      gate weakening. The 10 percent bar is a practice figure and a guess on UI gates. A failing test is never
+      rerun to green.
+    level: process
+    why: >-
+      A check that wastes agent rounds taxes every ticket, and time spent satisfying a wrong finding is
+      invisible unless recorded. One lint rule has 40 of 40 hits suppressed; one repo has 26 init functions
+      each suppressed with a reason (V-55). No UI gate has an override count today.
+    kind: rule
+    strength: Answered
+    status: active
+    sources:
+      - ref: p-02-enforcement-and-measure
+        where: section 7.1
+        backs: rule
+      - ref: p-09-agentic-development
+        where: section 7.7
+        backs: rule
+      - ref: sadowski-tricorder
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class our-cli. The runner counts hits, suppressions and overridden hits per rule from the
+          delivery record and prints the false-positive share; a check above the bar blocks its next change
+          until the answer (the decision to rework, demote or keep) is recorded. Plant: A fixture log with
+          known counts yields the known share, and a check over the bar blocks until answered. Control: A
+          check under the bar passes.
+    review_question: >-
+      Which blocking check is above the false-positive bar, and what was decided about it?
+    relates:
+      - id: gates.quality.2
+        how: see
+    open:
+      - >-
+        Strength is a judgement: the Go row's enforcement note proposes Hard (suppressions per check may only
+        fall; a check above the bar blocks until reworked) and the web row proposes Answered. Answered is used
+        until the ratchet on per-check suppressions exists.
+      - >-
+        The review-only part (does the first screen name the failing check) is gates.quality.2.
+      - "v1 evidence, not yet a source: practice (Tricorder); own measure"
+    note: >-
+      Merges the Go and web false-positive rows and the measure of suppressed and overturned findings.
+  - id: gates.quality.2
+    slug: failure-message-names-fix
+    since: 0.1.0
+    rule: >-
+      A failing rule's message names its home and the fix; a failing test's first screen names the check, the
+      expected and actual values and the one line to rerun it, and the rest goes to a file.
+    detail: >-
+      The rule table requires home and fix fields in every rule message; for our own lint plugin rules a
+      plugin lint enforces the message format and docs URL. The first screen of a failing test is a review
+      question. No line limit is set because none is measured.
+    level: word
+    why: >-
+      A message that does not say what to do is satisfied by guessing. Argued, not measured; no measured
+      number is cited.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-09-agentic-development
+        where: section 7.2
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tool: eslint
+        tier: "1"
+        note: >-
+          v1 class shared-code. Rule-table schema requires `home` and `fix` fields in every rule message; for
+          custom lint rules the eslint-plugin-eslint-plugin rules report-message-format and
+          require-meta-docs-url. Plant: A rule message without a fix line fails the schema. Control: A message
+          naming home and fix passes.
+    review_question: >-
+      Does the first screen of this gate's failure output name the failing check and the line to rerun it?
+    open:
+      - "Half: message form is mechanical; the quality of the first screen is review."
+    note: >-
+      Merges the web message rule, the new-rule-ships-with-a-message half and the first-screen sentence of the
+      false-positive row.
+  - id: gates.quality.3
+    slug: main-stays-green
+    since: 0.1.0
+    rule: Every gate on main is green, so that a red result means something.
+    detail: >-
+      A failing test is never rerun to green, a blocking check has a measured false-positive rate
+      (gates.quality.1), and the release backstop (a full run at the tag) catches what selection missed.
+    level: process
+    why: >-
+      A main that is sometimes red teaches everyone to retry, and a retry hides a real fault.
+    kind: instruction
+    strength: Review
+    status: active
+    sources:
+      - ref: decision-18
+        backs: rule
+      - ref: decision-27
+        backs: rule
+    review_question: Is any gate on main red or retried, and why is it not fixed or removed?
+    relates:
+      - id: gates.quality.1
+        how: see
+  - id: gates.quality.4
+    slug: trial-before-required
+    since: 0.1.0
+    rule: >-
+      A new check runs on one real repo before it is required anywhere, and the trial is recorded.
+    detail: >-
+      Shared checks run over existing repos at pinned commits with a control run, so a result cannot pass by
+      accident, and a dry adoption report is written per tool, before any check is required. The trial needs a
+      known positive. The registry refuses a required check with no trial record; that a trial was real and
+      was read is judgement.
+    level: process
+    why: >-
+      A check that has never run on real code misfires on first contact and gets switched off.
+    kind: rule
+    strength: Record
+    status: proposed
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class record. The registry refuses a required check with no `trialled_on` field and run record.
+          Plant: A required check with no trial record is refused. Control: A required check with a trial
+          record passes.
+    review_question: On which real repo was this check trialled, and who read the result?
+    open:
+      - >-
+        Recorded as a possible weak rule by the enforcement review; it binds when promoted.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: own measure"
+    note: Merges the single-sentence rule with the trial scripts rule.
+  - id: gates.quality.5
+    slug: gate-explained-in-a-sentence
+    since: 0.1.0
+    rule: A gate is one you can explain in a sentence.
+    detail: >-
+      A required one-line `why` field on each rule row with a length cap gives presence only; a model lens
+      checks that the sentence matches the check.
+    level: word
+    why: A gate nobody can explain gets weakened or removed without understanding.
+    kind: instruction
+    strength: Lens
+    status: proposed
+    review_question: Does the one-line reason on this rule match what its check actually does?
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: D"

@@ -1,0 +1,7 @@
+[
+  {"name": "an unknown field", "patch": [{"op":"add","path":"/0/proposal/extra","value":1}], "problem": "Additional properties are not allowed ('extra' was unexpected)"},
+  {"name": "a missing state", "patch": [{"op":"remove","path":"/0/proposal/state"}], "problem": "'state' is a required property"},
+  {"name": "a wrong enum", "patch": [{"op":"replace","path":"/0/proposal/state","value":"lost"}], "problem": "is not one of"},
+  {"name": "a project named in the evidence", "patch": [{"op":"add","path":"/0/proposal/evidence/0/project","value":"fixture-project"}], "problem": "Additional properties are not allowed ('project' was unexpected)"},
+  {"name": "an evidence kind the spec does not give", "patch": [{"op":"replace","path":"/0/proposal/evidence/0/kind","value":"commit"}], "problem": "is not one of"}
+]

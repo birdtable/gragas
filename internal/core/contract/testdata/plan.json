@@ -1,0 +1,10 @@
+{
+  "contract": "1.3",
+  "plan": {
+    "changes": [],
+    "command": "example",
+    "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "question": "example",
+    "writes": []
+  }
+}

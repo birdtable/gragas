@@ -1,0 +1,167 @@
+format: 3
+part: web
+concern: testing
+rules:
+  - id: web.testing.1
+    statement: Journeys run in both light and dark themes.
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The Playwright preset defines projects for each colour scheme; the parameters file lists the schemes; a check fails when a journey is registered in only one scheme. Fixture `colorScheme: light` and `dark`."
+      pros:
+        - Light-mode contrast was an operator find in one site.
+  - id: web.testing.2
+    statement: "Behaviour checks run in two browser engines, Chromium and WebKit."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Playwright projects `chromium` and `webkit` in the shared config for the land tier; `no-skipped-test` and `no-conditional-in-test` ban a hidden engine skip (a `test.skip` on the engine needs a reason string); the project list is checked against the parameters file. Kit helpers take the engine, since WebKit has no layout-shift entry. Skip form: `test.skip(browserName === \"webkit\")` needs a reason string."
+      pros:
+        - "Two WebKit faults recurred in one site (the iPhone pressed look is not WebKit-only, as first merged)."
+  - id: web.testing.3
+    statement: "A picture baseline is made and compared on one platform in a pinned container, and the file name carries the platform."
+    strength: must
+    status: retired
+    origin: migrated
+    reasoning:
+      definition: "The default snapshot path template includes platform and project name; a config grep fails if the template is overridden to drop either. Baselines are written only inside the pinned container: the update command refuses unless the image digest (an environment value) matches the pinned one, and the land step runs without `--update-snapshots`. Laptop runs are previews. Template keys `snapshotPathTemplate` with the `platform` and `projectName` tokens."
+      pros:
+        - "24 smoke pictures differed on Linux for two causes; 2.9 to 22.8 percent of pixels differ between macOS and Linux Chromium, and no threshold separates that from a real change."
+  - id: web.testing.4
+    statement: "Screenshots use a fixed clock, no animation, no caret, scale 1, a fixed locale and zone, and fixed fonts."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The shared preset sets animations disabled, caret hidden, css scale, fixed locale and timezone, an installed fixed clock, reduced motion, and fonts served from the pinned container. A flake meter takes N consecutive shots and requires 0 differing pixels; a config check fails when a spec overrides these keys. Preset keys: `animations: \"disabled\"`, `caret: \"hide\"`, `scale: \"css\"`, `timezoneId`, `page.clock.install` with a fixed `time`, `reducedMotion: \"reduce\"`; meter script `flake.mjs`."
+      pros:
+        - "The meter showed 0 px over 29 shots, and a clock page differed on every shot until fixed."
+  - id: web.testing.5
+    statement: "Rendered UI is judged by numbers measured on named parts (web.parts.17); a picture or pixel diff is attached as evidence and never decides a test, and no test asserts on a screenshot."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "`no-restricted-syntax` in test files bans `toHaveScreenshot`, `toMatchSnapshot` on an image and any visual-diff assertion; a screenshot is taken with `page.screenshot` and attached with `testInfo.attach`. A config grep refuses a screenshot expectation block in `playwright.config`. The numbers are box sizes, positions, colours read from computed style and contrast, each on a named part."
+      pros:
+        - "A pixel threshold is either so tight it fails on a font update or so loose it passes a broken layout; a number on a named part says what is wrong and where."
+    relations:
+      relates:
+        - web.parts.17
+    sources:
+      - ref: decision-65-web
+        backs: rule
+  - id: web.testing.6
+    statement: "The page list, widths, schemes and engines are declared in a parameters file, not globbed."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The Playwright config builds its project and test list from the parameters file; a check fails when the test match uses a glob over spec files outside the parameters-driven list, and when the file lists a page that is absent from the route table (count equality). Test match `*.spec` glob and `testMatch` banned outside the list."
+      pros:
+        - "v1 gave no reason beyond its evidence grade, Evidence D."
+  - id: web.testing.7
+    statement: "Every screen, size, theme and state named in a spec has a built cell in the run."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The matrix check computes the cross product of the spec's screens, sizes, themes and states; the run record lists the built cells; a cell in the product with no result fails, and the product count equals the cell count. Command `companion matrix`."
+      pros:
+        - "One site's spec had cells that were never built (the screenshot ledger shows twelve missing)."
+  - id: web.testing.8
+    statement: "Every page has a sibling story file with Default, Loading, Empty, Error, NoPermission and a phone-width story, plus the permission states Allowed, Denied, CheckingAccess and Degraded."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - no-identity
+        reason: "There is no Allowed, Denied, CheckingAccess or Degraded state to write a story for."
+    reasoning:
+      definition: "The example for each state is a story where the stack has a story tool, and a gallery entry where it has none (no story framework exists for the template stack, so its gallery is ours). The story-tool form, the sibling story file and its named stories, is react.testing.4."
+      pros:
+        - A page with no example for a state has never been looked at in that state.
+    relations:
+      relates:
+        - react.testing.4
+  - id: web.testing.9
+    statement: "Pixel comparison is an instrument: a person looks at changed pixels before approving, a model may flag, a shared UI baseline is approved in a pull request diff with no hosted service, and snapshot and picture files change only when the work item sanctions it."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A golden is judged by who parses it: one read by a machine fails on any change, and one read by a person is approved by a person. The land step lists changed snapshot files and counts tests whose snapshot changed, failing on a rise above the ticket's declared scope. Gate files are protected paths. Assertion `toHaveScreenshot`."
+      pros:
+        - "A blanket update is the cheap cure for a human-read golden, and only the count catches it. The hosted pixel service tried is archived, and the free tier of another is Chrome only."
+    sources:
+      - ref: decision-33
+        backs: rule
+  - id: web.testing.10
+    statement: "A journey fails on any console error or unhandled rejection, with a shrink-only allow list."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Every spec imports its test function from the kit (`no-restricted-imports` bans the raw test runner in spec files), and the kit's test registers listeners for page errors and console messages at error level; any event fails the test unless it matches an entry in a shrink-only allow-list file. Raw runner `@playwright/test` banned in specs; listeners `page.on(\"pageerror\")` and `page.on(\"console\")`."
+      pros:
+        - "The kit asserts on the DOM, not on the page's errors; the word \"console\" never appeared in the catalogue except for console apps."
+  - id: web.testing.11
+    statement: "One test runner runs every example in one pass; every story renders and its interaction script passes, and every affected story also passes the config proof."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "The config proof is the canary brand and pseudo-locale rule. The platform's single runner is Vitest. The story tool's binding to that runner is react.testing.5."
+      pros:
+        - Two runners split the evidence and double the maintenance.
+    relations:
+      relates:
+        - react.testing.5
+  - id: web.testing.12
+    statement: "Network is faked at the network with handlers generated from the contract, not by mocking modules; no hand-written handlers and no per-feature fake harnesses."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      pros:
+        - A module mock agrees with the code that the same agent wrote and proves nothing about the contract.
+  - id: web.testing.13
+    statement: "A layout or geometry change runs the geometry check, which is not part of the normal test run."
+    strength: may
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "Browser journeys are picked by a reach map from source paths; an unplaced path picks all."
+      pros:
+        - A heavy check that runs only when the change can reach it keeps the normal run fast.
+  - id: web.testing.14
+    statement: "Every affected story renders under a canary brand and a pseudo-locale and must change in both; a story with no brand or text surface takes an exemption that names a reason, a ticket and an expiry."
+    strength: must
+    status: proposed
+    origin: migrated
+    exemptions:
+      - kinds:
+          - story-without-text-surface
+        reason: "nothing in it can change under a canary brand or pseudo-locale; the exemption names a reason, a ticket and an expiry"
+    reasoning:
+      definition: "This runs on the affected stories at land, never on the whole story set in the full tier. Shared words and tokens are proved by re-rendering under a different brand and an inflated pseudo-language."
+      pros:
+        - "Without it, a word or colour that ignores the config still passes every test."
+  - id: web.testing.15
+    statement: "Component tests run in a real browser engine, and a DOM shim (jsdom, happy-dom or a later one) is not a dependency."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The test runner's browser mode (for example Vitest browser mode with Playwright) runs component and renderer tests in Chromium or another real engine. The dependency check refuses a package whose purpose is to imitate the DOM in Node; a new shim is one more name in the ban list."
+      pros:
+        - "A shim passes layout, focus, events and styles that a browser would fail, so a green test says little about the page people see."
+    sources:
+      - ref: decision-65-web
+        backs: rule

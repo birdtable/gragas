@@ -1,0 +1,6 @@
+# Values a person on another system could write, which this system's paths do
+# not hold: a name is "key value", and \\ is a backslash.
+backslash \\
+name a\\b
+file rules\\a.yaml
+scope rules\\*

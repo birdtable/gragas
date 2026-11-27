@@ -1,0 +1,10 @@
+$ gragas term retire gate
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+  refused    retire stands on a
+  decision, and none is given
+    cite a decision with --decision
+<slug>, or take one with
+--decision-title and --decision-text
+--- stderr

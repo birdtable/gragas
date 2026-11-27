@@ -1,0 +1,269 @@
+part: cli
+concern: errors
+order: 5
+title: Errors and words that reach a person
+summary: >-
+  An error or a warning for a person names where to read more or what to type and quotes an id; an error in
+  JSON is structured; a refusal is one value (a word from a closed list, what was observed, the valid choices
+  and a line to paste) printed unchanged by the CLI, the API and the audit; a command never throws past its
+  executor; and no word reaches a terminal except through the shared module, which strips control sequences
+  from text the program did not write.
+rules:
+  - id: cli.errors.1
+    slug: error-names-the-next-step
+    since: 0.1.0
+    rule: >-
+      An error for a person names the next step, an error in JSON is structured, a mistyped command prints
+      nothing on stdout, an error shown to a person carries a run or request id they can quote, and every
+      warning, as well as every error, names where to read more or what to type.
+    detail: >-
+      The matrix runs a failing command twice with and without --json and asserts: stderr holds a next-step
+      line (a regex for run or try followed by a command the registry knows); the JSON error is an object with
+      a code and a next field; stdout is empty for a mistyped command; the run id differs between the two runs
+      while a golden with the id masked is equal. Warnings (doctor findings included) are built by one
+      constructor that takes the pointer as a required argument; a test reads the code for warnings built any
+      other way and fails, and every pointer resolves (cli.commands.8). Whether the next step is useful is
+      review; the check proves presence and form only.
+    level: program
+    why: >-
+      Own measure; one program prints its version line on stdout after a typo. A warning with no pointer
+      leaves the person where an error would have; marginal assertion on the matrix helper.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    unless:
+      - kinds:
+          - library
+        reason: It prints no errors of its own.
+    sources:
+      - ref: p-04-systems-and-delivery
+        where: section 21
+        backs: rule
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          matrix test over a failing command with and without --json, with a golden on the error output with
+          the id masked; a warning constructor with a required pointer and a source test for warnings built
+          without it. Plant: an error with no next step fails; a constant run id (two runs print the same id)
+          fails; a doctor warning with no more line fails. Control: a unique id per run and a warning built by
+          the constructor pass
+    review_question: Is the next step this error names useful to someone who has not read the code?
+    relates:
+      - id: cli.commands.8
+        how: see
+  - id: cli.errors.2
+    slug: refusal-carries-its-next-step
+    since: 0.1.0
+    rule: >-
+      A refusal is one value, a word from a closed list and a hint as a line to paste, built by a constructor
+      that requires both, and the CLI, the API body and the audit line all print from that value unchanged.
+    detail: >-
+      Go: the refusal constructor takes the word and the hint as required parameters, so omission is a compile
+      error; the word is a typed constant from one list, and a new refusal is a word added to the list with a
+      test, never a new string. A golden per refusal asserts the hint is pasteable; forbidigo bans building
+      the refusal struct literal outside the module. A test drives each word through the CLI, an API route and
+      the audit writer and compares the word and hint in all three. TypeScript: the error table entries have a
+      required word and next field in their type.
+    level: word
+    why: >-
+      Held in Go. One value for one refusal makes a new surface (MCP, HTTP, a page) print the right thing with
+      no new code.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tool: golangci-lint
+        tier: G
+        note: >-
+          v1 class compiler. refusal constructor with required word and hint parameters (ui.Refuse(word,
+          next)); forbidigo on the refusal struct literal (ui.Refusal{} and ui.Ending{}) outside the shared
+          module (verified: it catches the literal form in trial T5b); a three-surface test per word. Plant: a
+          refusal built without the hint does not compile; a ui.Refusal{} literal in a program fails
+          forbidigo; an API body that rewords the refusal fails the three-surface test. Control: a refusal
+          built by the constructor and printed unchanged on all three surfaces passes
+  - id: cli.errors.3
+    slug: words-only-through-the-module
+    since: 0.1.0
+    rule: >-
+      Go words reach a person only through the shared module and its refusal constructors; nothing writes to
+      the terminal or decides how to paint except the module.
+    detail: >-
+      forbidigo on the print family, writes to stdout and stderr, and the raw write calls outside the shared
+      terminal module (path exclusion), plus reads of NO_COLOR, PAGER and TERM through the environment calls
+      outside the module and the program's config package (an AST helper checks the names that forbidigo
+      cannot see in arguments), plus an AST test for string literals that look like sentences passed to
+      writers.
+    level: file
+    why: >-
+      Forbidigo matches identifiers, not argument text; its licence shows as unasserted on GitHub, and
+      golangci-lint bundles it.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: golangci-lint
+        key: forbidigo
+        tier: "1"
+        fix: never
+        note: >-
+          golangci-lint 2.14.0 forbidigo with patterns for the print family and direct stdout and stderr
+          writes outside the shared terminal module, plus a go/ast test for sentence-like literals passed to
+          writers forbidigo patterns cover fmt.Print*, fmt.Fprint* aimed at os.Stdout or os.Stderr, and
+          os.Stdout.Write, outside the shared terminal module (path exclusion); the same rule reads os.Getenv
+          and os.LookupEnv of NO_COLOR, PAGER and TERM outside the module. Plant: fmt.Println("done") in a
+          command package fails and fmt.Println(userInput) fails. Control: the same through the module's say
+          function passes the same words through ui.Say pass.
+    open:
+      - >-
+        Fired on print calls in the trial. Output through other writers (a buffered writer over stdout) is a
+        hole forbidigo cannot see; the escape-byte matrix check covers it.
+  - id: cli.errors.4
+    slug: untrusted-text-sanitised
+    since: 0.1.0
+    rule: >-
+      Text the program did not write (agent output, file names, peer data) is safe to show: terminal output of
+      such text strips control sequences, and a log line strips CR and LF from data.
+    level: function
+    why: >-
+      Practice. A sanitiser in the shared module with a test; the structured log handler covers logs; a raw
+      print is cli.errors.3's to catch.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It prints nothing.
+    sources:
+      - ref: cli-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "1"
+        note: >-
+          sanitiser test in the shared terminal module (a string with ESC [ 31 m and C1 codes comes out
+          stripped, CR and LF in log values removed) plus the print ban of cli.errors.3 The module function is
+          Sanitize. Plant: fmt.Println(peerData) in a command file fails. Control: ui.Print(peerData) passes
+    relates:
+      - id: cli.errors.3
+        how: see
+      - id: cli.environment.1
+        how: see
+    open:
+      - >-
+        The matrix escape-byte check (cli.environment.1) with an escape-bearing fixture covers writers
+        forbidigo cannot see.
+  - id: cli.errors.5
+    slug: nothing-throws-past-the-executor
+    since: 0.1.0
+    rule: >-
+      A command never throws past its executor: every outcome is a result the renderer prints, a failure the
+      caller branches on is a typed result, and an exception or panic means a bug.
+    detail: >-
+      Binds a program with more than one client (CLI and MCP, HTTP or a worker) where every write runs through
+      one executor. The executor is driven with a malformed input for every registered command and must answer
+      with a result (the refused or failed ending and its fields), never an uncaught exception or panic. A
+      panic or exception that reaches the executor is caught once, reported as a bug with the run id, and ends
+      with the failed code.
+    level: program
+    why: >-
+      Typed results through one place are what make a CLI and an API print the same refusal; an exception
+      crossing the executor is an outcome no client renders.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It has no executor.
+      - facets:
+          - single-client
+        reason: >-
+          A program with one client has no second path to keep equal; the go.errors rules hold it.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "2"
+        note: >-
+          shared executor test driving every registered command with a malformed input and asserting a typed
+          result, never an uncaught throw or panic. Plant: a command that throws on a malformed argument fails
+          the test. Control: a command that returns a refused result passes
+    relates:
+      - id: arch.ports.14
+        how: see
+    open:
+      - The one executor and write port is arch.ports.14.
+  - id: cli.errors.6
+    slug: what-a-refusal-carries
+    since: 0.1.0
+    rule: >-
+      A refusal carries what was observed as the person named it, the closed set of valid choices (never the
+      caller's own input), the rule or state in the person's terms, and the next command as a line to paste;
+      it never holds a secret or blame, and the word invalid is refused in printed text.
+    detail: >-
+      The refusal type has observed, valid, rule and hint fields; valid is filled from the set the command
+      accepts, never echoed from input. A check over printed strings and goldens fails on the word invalid (in
+      any case) in text a person reads; the closed word list may keep it as an internal code that is not
+      printed.
+    level: word
+    why: >-
+      Observed plus valid plus the next line is the shape that lets an agent fix its own mistake without a
+      second round trip; the ban on invalid is a one-word lint that forces the message to say what is wrong.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - kinds:
+          - library
+        reason: It prints no refusals.
+    sources:
+      - ref: decision-65-cli
+        backs: rule
+    checks:
+      - binding: any
+        class: test-kit
+        tier: "1"
+        note: >-
+          refusal type with required fields, a registry test holding each command's valid set closed, and a
+          golden scan for the printed word invalid. Plant: a refusal whose valid field echoes the caller's
+          input fails; a printed "invalid value" fails the scan. Control: a refusal naming the observed value,
+          the valid set and the line to paste passes

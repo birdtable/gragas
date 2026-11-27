@@ -1,0 +1,69 @@
+format: 3
+part: react
+concern: lint
+rules:
+  - id: react.lint.1
+    statement: "The hooks lint pack runs as errors: rules of hooks, exhaustive dependencies, the compiler-compatibility rule and the query plugin's stable-client and key rules."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "Libraries the compiler cannot memoise (a form library's `watch`, the old table hook, the virtualiser) live in one module each under a path-scoped override with an expiry date, not an inline disable. The expiry sits in a data file that a check reads; an override past its date fails."
+      pros:
+        - "A missing dependency or a conditional hook is a bug that shows only at run time. Tried on eight planted files (three incompatible-library warnings, two query errors, four clean cases); never run on a real tree."
+    sources:
+      - ref: react-docs
+        where: rules of hooks
+        backs: rule
+      - ref: react-docs
+        where: React Compiler
+        backs: rule
+      - ref: decision-43
+        where: reviewer verdict A1
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.lint.2
+    statement: "The React lint set carries the plugin's recommended rules (keys, no nested component definitions, no `dangerouslySetInnerHTML`) beside the hooks and query plugins."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The set is `jsx-key`, `no-unstable-nested-components` and `no-danger`, as errors, with one plant per rule. The raw-markup funnel is the only exemption for `no-danger`. The choice between the plugin and its active alternative is made at adoption and re-planted."
+      pros:
+        - "The hooks and query plugins alone do not catch a list without keys or a component defined inside a component. The rule was added when the catalogue's search found no holder for it (evidence D)."
+    sources:
+      - ref: react-docs
+        where: rendering lists
+        backs: rule
+      - ref: decision-65-react
+        backs: rule
+  - id: react.lint.3
+    statement: "JSX meets the strict accessibility lint set, covering labels, roles, keyboard handlers, alt text, ambiguous link text and links that open elsewhere."
+    strength: must
+    status: active
+    origin: migrated
+    scope:
+      kinds:
+        - web-app
+    reasoning:
+      definition: "The jsx-a11y rules run in their strict preset as errors, through the ESLint 10 fork of the same rules (`eslint-plugin-jsx-a11y-x`) because the original plugin's peers stop at ESLint 9. The set covers no image without alt text, role mismatch, click without a key (key-less click handlers on `.tsx`), positive tabindex, empty link, untitled iframe and autofocus (web.accessibility.8). The link rules of web.forms.7 are `jsx-a11y-x/anchor-ambiguous-text` (bans \"here\" and \"click here\") and `react/jsx-no-target-blank`. The Astro form is a template lint that must prove it loaded its rules."
+      pros:
+        - "A label, role or key handler missing in markup is found cheaply at lint time, before the accessibility run in a browser."
+    relations:
+      relates:
+        - web.accessibility.8
+        - web.forms.7
+    sources:
+      - ref: wcag-22
+        backs: rule
+      - ref: eslint-plugin-jsx-a11y
+        backs: rule
+      - ref: decision-65-react
+        backs: rule

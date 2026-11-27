@@ -1,0 +1,19 @@
+format: 3
+part: ui
+concern: forms
+rules:
+  - id: ui.forms.1
+    statement: Give every form field a label the reader can see.
+    strength: must
+    status: active
+    owner: alex
+    review_by: "2027-06-01"
+    origin: authored
+    bindings:
+      - tool: stylelint
+        target: source
+        key: field-label
+        value: true
+        severity: error
+        rung: 2
+        run_point: commit

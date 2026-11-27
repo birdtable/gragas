@@ -1,0 +1,49 @@
+format: 3
+part: code
+concern: deadcode
+rules:
+  - id: code.deadcode.1
+    statement: "No file nobody imports, no unused export (including in a shared package), no unused dependency and no unused path alias."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "In Go the dead-code tool must print nothing, or print only lines on a committed list, because its exit status is 0 even with findings. The dead-code tool and the linter run for each system of the project's list, by GOOS, on the one machine the gate runs on, as one step. Tidying the module file leaves no diff. Both runs are in the local gate. In the web stack the unused-file finder follows the project's entry points (page routes, scripts, test files) with the framework plugins active (else .astro files report false unused), reports unused files, exports and dependencies as errors with a baseline of known ones that only shrinks; the lock holds exactly the declared dependencies. An unused export in a shared package fails."
+      pros:
+        - "27 lines of dead exports in one Go repo; 97 and 124 unused exports in two web repos. At the donor the finder caught unused exports at land on two changes. (An earlier version of this rule asked for a run per GOOS because a single run called the other system's code dead; a product now holds none, so one run suffices.)"
+    sources:
+      - ref: decision-65-code
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: unused
+        severity: error
+        rung: 0
+        run_point: commit
+  - id: code.deadcode.2
+    statement: "No stub is left in shipped source: no not-implemented bodies and no placeholder returns."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "A command that is not built refuses and says so; documents say what is built and what is only designed. A scan for stub bodies and placeholder returns in shipped source is the check; stub patterns include not-implemented errors and a typed empty value cast to the return type."
+      pros:
+        - A stub that compiles looks like a feature and fails at the first caller.
+  - id: code.deadcode.3
+    statement: "A project's own Go code has no //go:linkname directive, unless the project lists the file in an exemption with an expiry date."
+    strength: may
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "A linkname binds a name to a symbol of another package by string, past the compiler's export rules and the linker's check of what a package may reach. The scan reads every non-generated Go file of the project's own modules for the directive, in test files too, and a hit outside the exemption list is a finding. The list starts empty; a row names the file, the reason and the date it ends, and a row past its date is a finding. The directive needs an unsafe import, but a scan for that import is not the check: the import has other uses and the directive can sit in a file that gosec passes."
+      pros:
+        - "A linkname is invisible to the dead-code tool and to the compiler's export rules, and the standard library's linker now refuses new references to its internals, so a binding that builds today can fail on the next toolchain. The gap was found in the review of #650: no rule banned it."
+    relations:
+      relates:
+        - code.deadcode.1
+    sources:
+      - ref: go-1-23-release-notes
+        where: Linker
+        says: "The linker now disallows using a //go:linkname directive to refer to internal symbols in the standard library (including the runtime) that are not marked with //go:linkname on their definitions"
+        backs: rule

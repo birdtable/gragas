@@ -1,0 +1,48 @@
+format: 3
+part: code
+concern: duplication
+rules:
+  - id: code.duplication.1
+    statement: "Duplicated blocks only fall, measured across packages by a clone detector; no new clone is added inside a repository."
+    strength: must
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "For Go there are two rows. The lint runner's detector (dupl) runs at 60 tokens and compares within one package only, as a tripwire. A standalone build of the same detector, pinned in the tool list like the other Go tools and built offline, runs over every non-test file at 60 tokens, so it sees across packages; its clone-group count goes to the measure output and to a shrink-only baseline row, at its count on the day of adoption and then at 0. For TypeScript a clone detector (jscpd) runs over the source roots with generated files ignored, and the clone count and the cloned-block metric are held by a shrink-only ratchet through one ratchet helper; its thresholds are 10 lines and 80 tokens. No Node tool is used where a Go one does the job in the Go gate. A clone found at adoption goes on the baseline."
+      pros:
+        - "One Go repo has 82 source clones (1.25% of tokens); two web repos had 2 clones (0.26%) and 5 (0.15%). The lint runner's detector misses cross-package copies, so a cross-package detector is needed. The two reports' figures are not reconciled."
+    relations:
+      relates:
+        - code.duplication.2
+    sources:
+      - ref: code-reasons-stated
+        backs: rule
+    bindings:
+      - tool: golangci-lint
+        target: source
+        key: dupl
+        severity: error
+        rung: 0
+        run_point: land
+  - id: code.duplication.2
+    statement: "The duplicate-block check runs a second pass that ignores identifiers, with the same shrink-only ratchet, so a copy with renamed names is seen."
+    strength: must
+    status: proposed
+    origin: migrated
+    reasoning:
+      definition: "For Go, the standalone detector of code.duplication.1 is token-based and already ignores identifier names, so the renamed-copy pass is met by the engine at 60 tokens; the threshold goes to 40 once the 60 pass is clean. For TypeScript the second pass uses identifier matching in its consistent mode at 50 tokens and 8 lines beside the default pass; the blind mode lets any name match any other and matches too much. The default pass returns 0 clones on a renamed copy."
+      pros:
+        - "Renaming every name defeats a name-based detector for free; the shape is what repeats."
+  - id: code.duplication.3
+    statement: "Functions that do the same job written differently are looked for as advice when a package is added that overlaps a shared one; a semantic near-match to a shared export blocks until answered."
+    strength: should
+    status: active
+    origin: migrated
+    reasoning:
+      definition: "The optional mechanism is a clone tool's semantic mode (experimental, a 548 MB local model) or an offline embedding tool that lists pairs with the same intent and different syntax. A report from it is a hint, not a gate."
+      pros:
+        - "Same job written differently is a semantic question; a text detector cannot see it."
+    sources:
+      - ref: go-review-r-02-donor-section-gap
+        where: section 3.5
+        backs: rule

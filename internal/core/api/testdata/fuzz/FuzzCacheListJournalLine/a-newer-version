@@ -1,0 +1,2 @@
+go test fuzz v1
+string("{\"v\":9,\"run\":\"r1\",\"kind\":\"close\",\"at\":1}")

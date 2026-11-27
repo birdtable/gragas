@@ -1,0 +1,16 @@
+$ gragas source new --source-slug rfc-9110 --source-kind standard --title HTTP Semantics --locator RFC 9110 --attribution IETF
+--- stdout
+gragas  v1.2.3 (abc1234) go<version>
+
+What changes
+  new source rfc-9110: HTTP Semantics (standard), found at RFC 9110
+
+What is written where
+  sources.yaml: adds source rfc-9110
+  history.jsonl: appends one entry (new)
+This was a dry run and nothing was changed. Add --apply to make these changes.
+
+  declined   nothing was changed
+    gragas source new --attribution IETF --locator 'RFC 9110' --source-kind
+standard --source-slug rfc-9110 --title 'HTTP Semantics' --apply
+--- stderr

@@ -1,0 +1,229 @@
+part: daemon
+concern: resilience
+order: 6
+title: Bounds, retries and parked work
+summary: >-
+  A daemon bounds its work, reads only on request with a measured idle budget, and recovers: a request body
+  cap, a cap on concurrent requests and bounded queues; every goroutine recovers at its edge; failed work
+  parks with a reason and a redrive path. A retried path is safe twice and retries come from one constructor.
+rules:
+  - id: daemon.resilience.1
+    slug: bounded-work
+    since: 0.1.0
+    rule: >-
+      A daemon bounds its work: a request body cap, a cap on concurrent requests and bounded queues.
+    level: program
+    why: >-
+      Practice; unbounded work turns a burst into an outage. Part of the supervision row, whose restart half
+      is daemon.units.3.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          test that sends more than the cap and sees a refusal. Plant: a handler with no cap accepts the
+          oversized request and fails. Control: the capped handler refuses it
+    relates:
+      - id: daemon.units.3
+        how: see
+  - id: daemon.resilience.2
+    slug: goroutine-recovers-at-its-edge
+    since: 0.1.0
+    rule: >-
+      A panic in a goroutine ends the process, so every goroutine recovers at its edge or the supervisor
+      restarts it, and the restart has a stated limit.
+    level: function
+    why: Practice. Goroutine ownership itself is go.concurrency.2.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - daemon
+    checks:
+      - binding: go
+        class: test-kit
+        tier: "2"
+        note: >-
+          start test with a panic in a goroutine, asserting recovery at the edge or a supervised restart
+          within the limit The start test is a panic-in-goroutine test. Plant: a goroutine that panics and
+          takes the process down with no restart fails. Control: a goroutine that recovers passes
+    relates:
+      - id: go.concurrency.2
+        how: see
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: daemon.resilience.3
+    slug: failed-work-parks
+    since: 0.1.0
+    rule: >-
+      Failed work parks with a reason and a redrive path (a dead letter), and a redrive filters for what can
+      still resolve.
+    level: program
+    why: Practice; parked work with no reason or no way back is lost work.
+    kind: instruction
+    strength: Review
+    status: proposed
+    when:
+      kinds:
+        - daemon
+    review_question: Where does this failed work park, with what reason, and how is it redriven?
+    open:
+      - Dead-letter redrive is review; no check is named.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: daemon.resilience.4
+    slug: retried-path-safe-twice
+    since: 0.1.0
+    rule: >-
+      A retried path is safe twice: one helper calls any daemon route or job handler twice and compares state;
+      a repeated idempotency key replays the stored outcome and the same key with a different request
+      conflicts.
+    detail: >-
+      The list of writing routes is taken from the contract, not from the author. The same double-call helper
+      serves the command rule (cli.commands.6) and is required for daemon routes by an analyser.
+    level: program
+    why: >-
+      Practice only; it would become a rule with a duplicate-effect fault in one of our daemons. The
+      command-side twin is cli.commands.2.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: daemon-reasons-stated
+        backs: rule
+    checks:
+      - binding: go
+        class: test-kit
+        tier: R
+        note: >-
+          v1 class shared-code. shared twice-call helper plus a list of writing routes from the contract; a
+          test fails when a writing route lacks a twice-test. Plant: an append-on-every-call handler fails.
+          Control: an idempotent handler passes
+    relates:
+      - id: cli.commands.6
+        how: see
+      - id: cli.commands.2
+        how: see
+    open:
+      - >-
+        Proposed plant for a repeated idempotency key; no duplicate-effect fault in a daemon of ours so far.
+  - id: daemon.resilience.5
+    slug: one-retry-constructor
+    since: 0.1.0
+    rule: >-
+      Retry discipline: one constructor carries the policy; it retries only idempotent calls, at one layer,
+      with backoff, jitter and a budget, and hand-rolled retry loops are banned.
+    detail: >-
+      A syntax rule flags a sleep or timer inside a loop around a call with an error check outside the retry
+      constructor; retry libraries are banned by depguard; a behaviour budget test checks the retry ratio,
+      because recursion or a ticker passes the form.
+    level: program
+    why: >-
+      Practice only; only the retry-library ban is cheap. It would become a rule with a retry fault in the run
+      log.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - cli
+        - daemon
+    unless:
+      - facets:
+          - no-retry
+        reason: A program that retries nothing has no policy to carry.
+    checks:
+      - binding: go
+        class: preset-rule
+        tool: ast-grep
+        tier: R
+        note: >-
+          ast-grep ban of a sleep inside a loop around a call, and depguard ban of retry libraries. Plant: a
+          hand-rolled retry loop fails. Control: a call through the retry constructor passes
+    open:
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: daemon.resilience.6
+    slug: no-polling-reads-on-request
+    since: 0.1.0
+    rule: >-
+      A daemon reads the machine only on a request or during a run it already pays for; a watcher waits on its
+      source's own event stream and never polls; one short cache shares a round of reads between concurrent
+      readers; and a timer, poll or resident sampler for a value nobody is reading needs a measured idle cost
+      and a recorded reason.
+    detail: >-
+      The cache lives for a stated short time (for example 15 seconds) and serves readers that arrive while a
+      read is in flight or fresh; it is never refreshed on a timer. A value only known while watched is left
+      out after a restart, not carried forward. An exception names its measured cost (daemon.resilience.7) and
+      its reason in a recorded decision.
+    level: program
+    why: >-
+      A poll costs power every hour whether anyone looks or not, and it makes behaviour depend on a clock no
+      one set. Reading on request keeps idle cost at zero and every read explainable.
+    kind: rule
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-rule
+        tier: "2"
+        note: >-
+          a syntax rule refusing time.NewTicker, time.Tick and a sleep inside a loop outside the packages
+          listed with a recorded decision; a test that runs the daemon idle with no requests and asserts no
+          probe or read is made. Plant: a ticker that samples the machine every minute with no recorded
+          decision fails. Control: a read on request through the shared short cache passes
+    relates:
+      - id: daemon.resilience.7
+        how: see
+  - id: daemon.resilience.7
+    slug: measured-idle-budget
+    since: 0.1.0
+    rule: >-
+      A recurring run or a daemon read states a processor and memory budget, measured on the real machine
+      before it ships and again when it grows.
+    detail: >-
+      The budget is a number in the code or the decision beside it, with the method of the measure (for
+      example the tree's CPU time through proc.Usage, run interleaved with and without the work, other work
+      paused) and the
+      date and machine it was taken on. A change that adds work to the run, a new probe or a shorter interval
+      is measured again before it merges.
+    level: release
+    why: >-
+      A measured budget turns a preference for quiet into a check; an unmeasured run grows by small additions
+      until the machine never sleeps.
+    kind: measure
+    strength: Hard
+    status: active
+    when:
+      kinds:
+        - daemon
+    sources:
+      - ref: decision-65-daemon
+        backs: rule
+    checks:
+      - binding: any
+        class: fact
+        tool: gragas
+        tier: R
+        note: >-
+          v1 class record. a release check that every recurring run and probe in the run table has a budget
+          entry with a measured value, a method, a machine and a date no older than its last change. Plant: a
+          new recurring run with no budget entry fails. Control: a run with a measured budget dated after its
+          last change passes

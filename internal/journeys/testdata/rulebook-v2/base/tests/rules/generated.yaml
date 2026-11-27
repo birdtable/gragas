@@ -1,0 +1,289 @@
+part: tests
+concern: generated
+order: 7
+title: Fuzz, property and golden tests
+summary: >-
+  Inputs the program did not write are fuzzed from checked-in seeds, pure logic with a stateable invariant has
+  a property test that is shown able to fail, a deployed API is checked against its own contract, and output a
+  person reads is held by a golden file that the gate compares without writing.
+rules:
+  - id: tests.generated.1
+    slug: fuzz-foreign-input
+    since: 0.1.0
+    rule: >-
+      A parser of input the program did not write has a fuzz target with seeds checked in.
+    detail: >-
+      Every parser package listed in rule data has a fuzz function and a checked-in seed folder. Long fuzz
+      runs sit at the slow tier: the changed parser packages on every tag, all of them at least every third
+      tag (decision 27). The presence check looks for a func Fuzz function and a testdata/fuzz folder in each
+      listed parser package; whether a stateable invariant exists for pure logic is the review half
+      (tests.generated.2).
+    level: package
+    why: >-
+      Practice with fuzz targets already in the repos: 25 in one, 2 and 1 in two others.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: p-07-testing
+        where: section 4.9
+        backs: rule
+      - ref: decision-27
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "1"
+        note: >-
+          companion check fuzz-targets, a recipe over the parser-package list in rule data that greps each
+          package for a fuzz function and a seed folder. Plant: a parser package with no fuzz target fails.
+          Control: a package with a target and seeds passes
+      - binding: ts
+        class: test-kit
+        tier: "1"
+        note: >-
+          fast-check or equivalent fuzz over each parser listed in rule data, with recorded seeds in the repo.
+          Plant: a listed parser with no generated-input test fails. Control: a parser with a seeded test
+          passes
+    relates:
+      - id: tests.generated.2
+        how: see
+    open:
+      - >-
+        Decision 27 (what runs at which tier, and how often the long fuzz runs) is open with the operator
+        (D-G).
+      - The TypeScript form is not in the catalogue; derived from the reference rule.
+  - id: tests.generated.2
+    slug: property-tests-for-pure-logic
+    since: 0.1.0
+    rule: >-
+      Pure logic with a stateable invariant (a formatter, a parser, a pure domain function) has a property
+      test that generates its inputs.
+    detail: >-
+      A property-based test generates the inputs; fuzz targets for parsers are tests.generated.1.
+    level: function
+    why: >-
+      Generated inputs find the case the author did not write; a property is the stated invariant. The web
+      catalogue has no row for pure UI logic such as formatters and parsers; the rule fits them.
+    kind: rule
+    strength: Review
+    status: active
+    sources:
+      - ref: decision-27
+        backs: rule
+    review_question: >-
+      Is there a stateable invariant for this logic, and is it tested by generated input?
+    relates:
+      - id: tests.generated.1
+        how: see
+    open:
+      - >-
+        Only the presence of fuzz targets is a mechanical check (tests.generated.1); whether a stateable
+        invariant exists is a review.
+  - id: tests.generated.3
+    slug: property-file-anti-vacuity
+    since: 0.1.0
+    rule: >-
+      A property test file ends with an anti-vacuity test that shows the generator can produce a failing
+      input.
+    level: file
+    why: >-
+      A property over an empty or constant generator passes forever; the last test in the file proves the
+      generator reaches the interesting inputs.
+    kind: rule
+    strength: Hard
+    status: proposed
+    checks:
+      - binding: ts
+        class: preset-rule
+        tier: "2"
+        note: >-
+          a scan that the last test of a file importing the property library is the anti-vacuity test (named
+          by convention) The property library is fast-check. Plant: a property file with no anti-vacuity test
+          fails. Control: a file ending with one passes
+    relates:
+      - id: tests.admission.3
+        how: see
+    open:
+      - >-
+        No Go equivalent; the mutation threshold on the laws' subjects (tests.admission.3) is the Go-side
+        proof.
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: tests.generated.4
+    slug: api-fuzzed-against-its-contract
+    since: 0.1.0
+    rule: >-
+      Each deployed API (a daemon's routes, a service's endpoints) is fuzzed against its own contract, and its
+      responses are checked against the contract.
+    detail: >-
+      Requests are generated from the API spec and responses checked against it; the running service answers
+      what its spec says. In our programs help and JSON are golden and the command tree is diffed with the
+      last tag, but a daemon's answers are not yet checked against a description.
+    level: deploy
+    why: >-
+      A page or client consumes the contract; only the server can prove it holds. The web side does not own
+      this check.
+    kind: rule
+    strength: Hard
+    status: proposed
+    when:
+      kinds:
+        - daemon
+        - service
+    checks:
+      - binding: any
+        class: test-kit
+        tool: schemathesis
+        tier: "3"
+        note: >-
+          contract fuzzer that generates requests from the published spec and checks responses against it
+          (Schemathesis is the reference tool). Plant: a route whose response violates its schema fails.
+          Control: a conforming route passes
+    open:
+      - >-
+        No catalogue row for daemon routes fuzzed against the contract; recorded as a gap.
+      - The tool pick is open (see the tool record).
+      - "Proposed for lack of a source (decision 47); the v1 evidence was: practice"
+  - id: tests.generated.5
+    slug: goldens-compared-not-written
+    since: 0.1.0
+    rule: >-
+      Output a person reads is held by a golden file, and the gate compares without writing; a golden a
+      machine reads fails on any change, and one a person reads is approved by a person.
+    detail: >-
+      git diff --exit-code on golden files after the compare run; the golden helper never writes in gate mode.
+    level: file
+    why: >-
+      Own measure: one repo's goldens-check target; the shared golden helper is used by nobody outside the
+      shared UI test package today.
+    kind: rule
+    strength: Hard
+    status: active
+    sources:
+      - ref: khorikov-unit-testing
+        where: chapter 4.1.3
+        backs: rule
+    checks:
+      - binding: go
+        class: preset-config
+        tier: "3"
+        note: >-
+          git diff --exit-code over golden files after the compare run, in the gate; the shared golden helper
+          never writes in gate mode. Plant: a golden changed by a run without the update flag is detected.
+          Control: a clean compare passes
+    review_question: Who parses this output, and who approved this golden update?
+    open:
+      - Who approved a golden update stays a review.
+  - id: tests.generated.6
+    slug: fuzz-on-demand
+    since: 0.1.0
+    rule: >-
+      Long fuzz runs happen on demand, for a new parser in the pull request that adds it, and never as a
+      blocker of a push, a land or a release.
+    detail: >-
+      The seeds checked in under tests.generated.1 run as ordinary tests in every tier, in seconds. The
+      long run, which mutates the seeds for minutes, runs when the owner asks for it, or when the hub asks the
+      owner first, and a pull request that adds a parser asks for one run of it in its description. A long
+      run that finds a crash adds the failing input to the seeds in the same change as the fix. Fuzz is
+      not a release gate: a release does not wait for it and does not fail for the lack of it.
+    level: program
+    why: >-
+      A fuzz run of 14 minutes 38 seconds found two bugs in 260 commits, both while a parser was new; at the
+      release it cost more than every other member together and found nothing.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: go-fuzzing
+        where: Glossary, seed corpus
+        says: >-
+          These entries are run by default with go test, whether fuzzing or not.
+        backs: rule
+    review_question: >-
+      Does this change add a parser, and if so, does its description ask for one long fuzz run?
+    relates:
+      - id: tests.generated.1
+        how: refines
+      - id: gates.hooks.4
+        how: see
+    open:
+      - >-
+        The owner's word is the trigger, so there is no machine check of a request. Planned check: no tier of the
+        member table runs a fuzz member. That is the members change of gragas#638's follow-up tickets.
+  - id: tests.generated.7
+    slug: a-cap-is-proved-by-the-smallest-crossing-input
+    since: 0.1.0
+    rule: >-
+      A size or depth cap on a parser is proved by the smallest input that crosses it, never by a large input,
+      and an allocation or alias proof shrinks to the smallest size that still proves the cap.
+    detail: >-
+      tests.generated.1 holds that a parser of untrusted input has a fuzz target with seeds. This rule holds
+      how its caps are tested. A test that feeds a large input proves the cap at a cost of seconds and under
+      the race detector of tens; the input one byte over the cap proves the same thing in milliseconds. A
+      proof that an alias bomb or a deep nest is refused is shrunk the same way. The seeds run in every tier
+      and the long fuzz run is on demand (tests.generated.6).
+    level: package
+    why: >-
+      One project's alias-bomb proof took 23 seconds under the race detector and about 1 second once shrunk to
+      the smallest input that crosses the cap.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: tests-reasons-stated
+        backs: rule
+    review_question: >-
+      Which input proves this cap, is it the smallest that crosses it, and how long does the proof take under
+      the race detector?
+    relates:
+      - id: tests.generated.1
+        how: see
+      - id: tests.generated.6
+        how: see
+      - id: tests.measures.11
+        how: see
+    open:
+      - >-
+        Planned check: the per-test time report lists cap tests over a stated time. No tool key is bound yet.
+  - id: tests.generated.8
+    slug: every-parser-has-a-fuzz-target-or-a-named-exemption
+    since: 0.1.0
+    rule: >-
+      Every parser of input the program did not write has a fuzz target with its seeds checked in, or is on a
+      named exemption list that gives its reason, and the seeds run in every tier.
+    detail: >-
+      The program parses input it did not write when it reads config, a rulebook, a tool's output or a file a
+      person edits. Each such parser has a fuzz function and a checked-in seed folder (tests.generated.1). A
+      parser that cannot have a target, such as one that only wraps a library's own fuzzed parser, is named
+      on a list in the project, one line each with its reason, and the list only shrinks. The seeds run as
+      ordinary tests in the push tier and every tier above it; the long fuzz run stays on demand
+      (tests.generated.6); the caps of a parser are proved by tests.generated.7.
+    level: package
+    why: >-
+      Fuzz found 2 bugs in 260 commits of one project, both while a parser was new; a parser with no target and
+      no named reason is one nobody decided to leave unfuzzed.
+    kind: instruction
+    strength: Lens
+    status: active
+    sources:
+      - ref: go-fuzzing
+        where: Glossary, seed corpus
+        says: >-
+          These entries are run by default with go test, whether fuzzing or not.
+        backs: rule
+    review_question: >-
+      Does this change add a parser of input the program did not write, and does it come with a fuzz target and
+      seeds, or a line on the exemption list with its reason?
+    relates:
+      - id: tests.generated.1
+        how: refines
+      - id: tests.generated.6
+        how: see
+      - id: tests.generated.7
+        how: see
+    open:
+      - >-
+        Planned check: a scan that finds each parser package of the project and fails on one with neither a fuzz
+        function with a seed folder nor a line on the exemption list. Plant: a parser with neither fails.
+        Control: one with a target, and one on the list, pass. No tool key is bound yet, and the exemption
+        list's file and its baseline row are the project's to add with the scan.
