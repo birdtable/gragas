@@ -124,7 +124,7 @@ tini is a minimal init, the one Docker's `--init` uses. gragas needs it on Linux
 | `rulebook/<layer>/<part>/tools.yaml` | the tools each part uses |
 | `rulebook/parts.yaml` | the parts, their layers and what each builds on |
 | `rulebook/schema/` | JSON Schemas for the YAML |
-| `rulebook/rules.json`, `bindings.json` | generated from the YAML |
+| `rulebook/rules.json`, `ids.lock` | generated from the YAML |
 | `presets/` | the presets: written by hand, except the Go lint file presets/golangci-lint/.golangci.yml, which is generated from the bindings in the rule files and presets/golangci-lint/settings.yml |
 | `cmd/gragas/` | the CLI's entry point |
 | `internal/` | the CLI's packages, in layers: `docs/layers.md` |

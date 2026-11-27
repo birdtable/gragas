@@ -13,8 +13,7 @@ import (
 
 // The owner's gate is make rules (gragas check) and make gen-check (gragas
 // gen --check). What
-// they depend on is the shape of rulebook/rules.json, bindings.json and
-// coverage.json: the keys below, as literals (tests.admission.4), never read
+// they depend on is the shape of rulebook/rules.json: the keys below, as literals (tests.admission.4), never read
 // back from the code that writes them. A key that goes, is renamed or is
 // added turns this red, so the move is seen and decided by a person. A new
 // optional key is added here in the same commit that adds it to the writer.
@@ -26,7 +25,7 @@ import (
 //   - a move of the gen path (renderers, layers, depguard, stale files):
 //     TestTheOwnersTranscripts for gen, gen --check, gen --apply and every
 //     --json document of them, TestGenWritesOnlyWithApplyRecordsTheRunAndIsSafeTwice,
-//     and this file, since the three JSON files are gen's output.
+//     and this file, since the JSON file is gen's output.
 //   - a move of the command tree or the flags: TestEveryCommandAndFlagHasATranscript
 //     and every help transcript.
 //   - a move of anything that prints: all of them, at 80, 60 and 40 columns.
@@ -72,27 +71,12 @@ func records(v any) []map[string]any {
 	return out
 }
 
-// bindingRows are the rows under bindings.json's "bindings": each key maps
-// to a list of rows.
-func bindingRows(doc map[string]any) []map[string]any {
-	byRule, _ := doc["bindings"].(map[string]any)
-	var out []map[string]any
-	for _, v := range byRule {
-		out = append(out, records(v)...)
-	}
-	return out
-}
-
 func field(name string) func(map[string]any) []map[string]any {
 	return func(doc map[string]any) []map[string]any { return records(doc[name]) }
 }
 
-func coverageCounts() []string {
-	return []string{"rules", "enforced", "planned", "advisory", "later", "retired", "proposed", "unsourced", "checks", "unresolved", "external_equal", "external_stricter"}
-}
-
-// shapes are the three files as the owner's rulebook has them today
-// (rules.json in schema 3, which gen writes; the other two as the old gen wrote them).
+// shapes are the generated JSON files as the owner's rulebook has them today:
+// rules.json in schema 3, which gen writes.
 func shapes() []shape {
 	return []shape{
 		{
@@ -111,25 +95,6 @@ func shapes() []shape {
 				{"sources", field("sources"),
 					[]string{"slug", "kind", "title", "locator"},
 					[]string{"attribution", "verified"}},
-			},
-		},
-		{
-			file: "bindings.json",
-			top:  []string{"bindings", "generated_by"},
-			groups: []group{
-				{"binding rows", bindingRows,
-					[]string{"binding", "class", "tool", "key", "tier", "fix"}, nil},
-			},
-		},
-		{
-			file: "coverage.json",
-			top:  []string{"generated_by", "parts", "total"},
-			groups: []group{
-				{"parts", field("parts"), coverageCounts(), nil},
-				{"total", func(doc map[string]any) []map[string]any {
-					t, _ := doc["total"].(map[string]any)
-					return []map[string]any{t}
-				}, coverageCounts(), nil},
 			},
 		},
 	}
@@ -201,12 +166,12 @@ func readShape(t *testing.T, s shape) []byte {
 	return data
 }
 
-// TestTheGeneratedJSONHoldsTheKeysTheGateReads: the owner's own three files
-// pass. Risk: gen drifting a key make rules depends on.
+// TestTheGeneratedJSONHoldsTheKeysTheGateReads: the owner's rules.json
+// passes. Risk: gen drifting a key make rules depends on.
 func TestTheGeneratedJSONHoldsTheKeysTheGateReads(t *testing.T) {
 	t.Parallel()
-	if len(shapes()) != 3 {
-		t.Fatalf("%d files in the contract, want rules.json, bindings.json and coverage.json", len(shapes()))
+	if len(shapes()) != 1 {
+		t.Fatalf("%d files in the contract, want rules.json", len(shapes()))
 	}
 	for _, s := range shapes() {
 		t.Run(s.file, func(t *testing.T) {
@@ -227,9 +192,7 @@ func TestARenamedOrLostKeyTurnsTheContractRed(t *testing.T) {
 		from, to string
 		want     string
 	}{
-		"rules.json":    {field("rules"), "statement", "text", `has no "statement"`},
-		"bindings.json": {bindingRows, "tool", "program", `has no "tool"`},
-		"coverage.json": {field("parts"), "enforced", "enforcing", `has no "enforced"`},
+		"rules.json": {field("rules"), "statement", "text", `has no "statement"`},
 	}
 	for _, s := range shapes() {
 		rn, ok := renames[s.file]

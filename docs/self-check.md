@@ -52,7 +52,7 @@ every exception is listed in `suppressions.txt`.
 | arch.layers.9 | `layers.yaml` renders the depguard rows and the layer doc, but the layer check is gragas's own test in `internal/`, not one shared program every site imports, and no protected-path list holds the table (gragas#912 retired the list) | not placed |
 | arch.ports.2 | gragas names no provider in shipped source, but no word-list test holds it | not placed |
 | arch.ports.6 | the owner list in `layers.yaml` is per import path: the shared kit's root module is reached from four packages (write, lock and run each from its adapter, version from the command tree), and the list has no shrink-only ratchet | not placed |
-| arch.ports.7 | `--json`, `rulebook/rules.json` and `rulebook/bindings.json` cross a program boundary with no consumer-driven contract | not placed |
+| arch.ports.7 | `--json` and `rulebook/rules.json` cross a program boundary with no consumer-driven contract | not placed |
 | arch.ports.15 | the ports are named in `layers.yaml`, not in a target architecture document with a section per port; yaml.v3 enters through the leaf `internal/ordered`, and cobra, pflag and the shared kit's ui package through the command tree, not as adapters on a port | not placed |
 | arch.structure.1, .2 | no classification table or door trailer, and no land check for a complete extension | not placed |
 | arch.structure.8 | this restructure was proved by the journeys' goldens and the in-process tests; no transcript of every command was committed first, and no gate reruns one | not placed |
