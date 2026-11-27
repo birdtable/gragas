@@ -21,6 +21,7 @@ var goVersion = regexp.MustCompile(`go1\.[0-9]+(\.[0-9]+)?`)
 func TestTheGoldensHoldWhatAPersonReads(t *testing.T) {
 	t.Parallel()
 	repo := fixture(t)
+	genRepo := genFixture(t, false)
 	for _, cols := range []string{"80", "60", "40"} {
 		for _, tc := range []struct {
 			name string
@@ -35,7 +36,11 @@ func TestTheGoldensHoldWhatAPersonReads(t *testing.T) {
 			{"mistyped", []string{"chek"}},
 		} {
 			t.Run(tc.name+"-"+cols, func(t *testing.T) {
-				r := run(t, repo, map[string]string{"COLUMNS": cols}, tc.args...)
+				dir := repo
+				if tc.name == "gen-dry-run" {
+					dir = genRepo
+				}
+				r := run(t, dir, map[string]string{"COLUMNS": cols}, tc.args...)
 				got := "$ gragas " + strings.Join(tc.args, " ") + "\n--- stdout\n" + r.stdout + "--- stderr\n" + r.stderr
 				uitest.Golden(t, tc.name+"-"+cols, scrub(got, ""))
 			})
@@ -52,6 +57,7 @@ func TestTheGoldensHoldWhatAPersonReads(t *testing.T) {
 func TestJSONIsOneDocumentWithASchemaNumber(t *testing.T) {
 	t.Parallel()
 	repo := fixture(t)
+	genRepo := genFixture(t, true)
 	for _, tc := range []struct {
 		name     string
 		args     []string
@@ -67,7 +73,11 @@ func TestJSONIsOneDocumentWithASchemaNumber(t *testing.T) {
 		{"not-a-repository", []string{"check", "--json", "-C", "rulebook"}, 4, 2, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := run(t, repo, nil, tc.args...)
+			dir := repo
+			if tc.name == "gen-dry-run" {
+				dir = genRepo
+			}
+			r := run(t, dir, nil, tc.args...)
 			if r.code != tc.code {
 				t.Fatalf("exit %d, want %d\n%s%s", r.code, tc.code, r.stdout, r.stderr)
 			}

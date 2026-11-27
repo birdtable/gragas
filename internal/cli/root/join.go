@@ -142,7 +142,7 @@ func (k kitSession) OldCheck() *cobra.Command { return legacy.Check(host(k), k.s
 
 // legacyDeps are what the old commands read from the world.
 func (s *session) legacyDeps() legacy.Deps {
-	return legacy.Deps{Ports: s.p.Ports, NamesFile: s.p.Config.NamesFile, Today: s.today, Readers: s.p.Readers, Tiers: s.p.Tiers, Audit: s.auditPlugins}
+	return legacy.Deps{Ports: s.p.Ports, NamesFile: s.p.Config.NamesFile, Today: s.today, Readers: s.p.Readers, Tiers: s.p.Tiers, Audit: s.auditPlugins, Stale: s.staleGenerated}
 }
 
 // auditPlugins is the ports the check reads a tool's config through its
@@ -326,4 +326,14 @@ func (k kitSession) PluginApprove(ctx context.Context, ref string, d model.Diges
 	return listed(ctx, k, func(ctx context.Context, p port.Ports, r model.Root) (model.PluginApproval, error) {
 		return coreapi.PluginApprove(ctx, p, r, ref, d)
 	})
+}
+
+// staleGenerated is the generated files of the rulebook at dir that are not
+// what its sources make (coreapi.StaleRulesJSON).
+func (s *session) staleGenerated(ctx context.Context, dir string) ([]coreapi.Output, error) {
+	root, err := s.p.World.Tree.Open(dir)
+	if err != nil {
+		return nil, fmt.Errorf("the folder %s could not be opened: %w", dir, err)
+	}
+	return coreapi.StaleRulesJSON(ctx, s.p.World, root)
 }

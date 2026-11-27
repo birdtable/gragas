@@ -5,5 +5,4 @@ reading rulebook/ in .
 
   done       the generated files are current
 --- stderr
-warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
 --- exit 0

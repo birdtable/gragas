@@ -733,6 +733,8 @@ tasks:
     cmds:
       - cmd: go run -trimpath ./cmd/gragas-generate --check
         timeout: 3m
+      - cmd: go run -trimpath ./cmd/gragas gen --check
+        timeout: 3m
 
   generated-surface:
     internal: true
@@ -772,6 +774,8 @@ tasks:
       - cmd: "{{.GATE}} tokens"
         timeout: 5m
       - cmd: go run -trimpath ./cmd/gragas-generate
+        timeout: 5m
+      - cmd: go run -trimpath ./cmd/gragas gen --apply
         timeout: 5m
       - cmd: "{{.GATE}} surface"
         timeout: 5m

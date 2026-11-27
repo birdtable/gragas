@@ -124,11 +124,11 @@ func TestAReplayedLineRunsOnlyAPlanCommandAndReadsNothingOnTheHost(t *testing.T)
 	if len(asked) != 0 {
 		t.Errorf("the replays read %q on the host", asked)
 	}
-	p, _ := process(t, f, "gen", "-C", dir)
+	p, _ := process(t, f, "check", "-C", dir)
 	p.Ports = ports
 	execute(t.Context(), t, p)
 	if !slices.Contains(asked, dir) {
-		t.Errorf("plant: gen -C %s run as a command read %q, so the recorder proves nothing", dir, asked)
+		t.Errorf("plant: check -C %s run as a command read %q, so the recorder proves nothing", dir, asked)
 	}
 }
 

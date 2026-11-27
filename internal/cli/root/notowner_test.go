@@ -25,21 +25,6 @@ func (refusingLocks) Take(string, string) (legacy.Lock, error) {
 	return nil, notMine("the state folder", "/made/up/state")
 }
 
-// laterRefusal passes the first write to w and refuses every one after it, as
-// a repository whose owner changed under the run would.
-type laterRefusal struct {
-	w legacy.Writer
-	n int
-}
-
-func (x *laterRefusal) Write(dir, path string, data []byte) error {
-	x.n++
-	if x.n > 1 {
-		return notMine("the repository", dir)
-	}
-	return x.w.Write(dir, path, data)
-}
-
 // TestALockInAnotherAccountsFolderIsRefusedAndWritesNothing: the old lock
 // refuses a state folder another account owns, so gen --apply ends refused
 // with the host's sentence and the line to type, takes no lock, writes
@@ -85,22 +70,6 @@ func TestARepositoryAnotherAccountOwnsIsRefused(t *testing.T) {
 	}
 	if len(f.Runs) != 1 || f.Runs[0].Word != string(model.Refused) || f.Runs[0].Code != exit.Refused {
 		t.Errorf("the run's record is %+v, want one closed on refused", f.Runs)
-	}
-}
-
-// TestARefusalAfterAWriteFails: a refusal that comes after a file was written
-// is not the clean refusal of a run that wrote nothing, so gen --apply ends
-// failed, naming what it wrote and the line to type again. Risk: a run that
-// wrote half its files said to have written nothing.
-func TestARefusalAfterAWriteFails(t *testing.T) {
-	t.Parallel()
-	f := world(t)
-	p, _ := process(t, f, "gen", "--apply")
-	p.Ports.Writer = &laterRefusal{w: p.Ports.Writer}
-	code, sc := execute(t.Context(), t, p)
-	said := sc.output()
-	if code != exit.Failed || len(f.Wrote) != 1 || !strings.Contains(said, "Run it again: `gragas gen --apply`") {
-		t.Fatalf("exit %d, wrote %v, want failed after one write; said:\n%s", code, f.Wrote, said)
 	}
 }
 

@@ -27,6 +27,14 @@ func attach(t *testing.T, p Process) (Process, screens) {
 	// The working folder, holding no rulebook until a test seeds one: check
 	// asks it for one before it falls back to the old check.
 	s.out.Seed(".", nil)
+	for i, a := range p.Args {
+		if a == "-C" && i+1 < len(p.Args) {
+			s.out.Seed(p.Args[i+1], nil)
+		}
+	}
+	if len(p.Args) > 0 && p.Args[0] == "gen" {
+		seedGenBook(s.out, "some dir")
+	}
 	p.World = s.out.Ports()
 	p.Diagnostics = s.diag.Ports().Terminal
 	return p, s

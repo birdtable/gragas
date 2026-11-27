@@ -93,3 +93,9 @@ The fixture rulebooks under `internal/host/assets/fixture/` are the suite; its [
 ## Changing the format
 
 A change to the format arrives as a proposal under the [template](../process/proposal-template.md): motivation, change, compatibility, migration.
+
+## The generated rules.json
+
+`gragas gen` writes `rulebook/rules.json` from a format-3 book, in its own schema, number 3 (the file's `schema` key; it is not the `schema` of `gragas gen --json`). It is the book as the loader read it and nothing else: `generated_by`, `schema`, then `parts` (slug, layer, name, aliases, owners, concerns), `kinds`, `sources` and `rules`. A rule row carries its id, the part and concern its id files it under, and every field the rules file wrote, in the order of the model, then its `standing`, derived with no proof grid. The format-2 keys that have no source in format 3 (`slug`, `since`, `level`, `kind`, `why`, and the strengths Hard, Answered, Lens, Record, Review and Session) are not written.
+
+`gragas gen --check` compares what gen would write with the file on disk and ends on findings when they differ, so a stale file is refused. `gragas gen` no longer writes `bindings.json`, `coverage.json` or `ids.lock`.

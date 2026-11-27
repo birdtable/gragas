@@ -110,7 +110,7 @@ func bare(name, summary, does string, menu bool) draft {
 func legacyGen() draft {
 	c := row("gen", kit.Anywhere, kit.EndsPlan, "Say which generated files are out of date, and write them").
 		with(ex("gragas gen", "list the files out of date"), ex("gragas gen --apply", "write them")).
-		says("done; findings; declined; refused", "plan", "rules.json, bindings.json, coverage.json and ids.lock")
+		says("done; findings; declined; refused", "plan", "rules.json")
 	c.Spec = false
 	return state(c, kit.Legacy, true)
 }

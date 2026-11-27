@@ -92,7 +92,7 @@ func coverageCounts() []string {
 }
 
 // shapes are the three files as the owner's rulebook has them today
-// (schema v2).
+// (rules.json in schema 3, which gen writes; the other two as the old gen wrote them).
 func shapes() []shape {
 	return []shape{
 		{
@@ -100,17 +100,17 @@ func shapes() []shape {
 			top:  []string{"generated_by", "kinds", "parts", "rules", "schema", "sources"},
 			groups: []group{
 				{"parts", field("parts"),
-					[]string{"short", "split", "layer", "name", "description", "builds_on", "bindings", "owner"},
-					[]string{"facets", "when"}},
+					[]string{"slug", "layer", "name", "concerns"},
+					[]string{"aliases", "owners"}},
 				{"kinds", field("kinds"),
-					[]string{"key", "name", "description"},
-					[]string{"instances", "note"}},
+					[]string{"slug", "name"},
+					[]string{"description"}},
 				{"rules", field("rules"),
-					[]string{"id", "part", "concern", "slug", "since", "rule", "level", "why", "kind", "strength", "status", "standing"},
-					[]string{"detail", "sources", "checks", "review_question", "open", "note", "relates", "when", "unless", "replaced_by", "promoted", "examples"}},
+					[]string{"id", "part", "concern", "statement", "strength", "status", "origin"},
+					[]string{"aliases", "owner", "review_by", "zero_by", "scope", "exemptions", "reasoning", "relations", "sources", "bindings", "pairs", "replaced_by", "standing"}},
 				{"sources", field("sources"),
-					[]string{"kind", "title", "locator"},
-					[]string{"verified"}},
+					[]string{"slug", "kind", "title", "locator"},
+					[]string{"attribution", "verified"}},
 			},
 		},
 		{
@@ -227,7 +227,7 @@ func TestARenamedOrLostKeyTurnsTheContractRed(t *testing.T) {
 		from, to string
 		want     string
 	}{
-		"rules.json":    {field("rules"), "slug", "name_slug", `has no "slug"`},
+		"rules.json":    {field("rules"), "statement", "text", `has no "statement"`},
 		"bindings.json": {bindingRows, "tool", "program", `has no "tool"`},
 		"coverage.json": {field("parts"), "enforced", "enforcing", `has no "enforced"`},
 	}

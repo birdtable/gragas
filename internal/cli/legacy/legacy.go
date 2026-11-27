@@ -84,6 +84,10 @@ type Deps struct {
 	// installed plugin with, for the project at a folder. Nil
 	// reads by the adapter alone.
 	Audit func(dir string) coreapi.AuditPlugins
+	// Stale reads the format-3 rulebook in the repository at dir and returns
+	// the generated files that are missing or differ from what its sources
+	// make; nil returns none, and an error is a book that cannot be read.
+	Stale func(ctx context.Context, dir string) ([]coreapi.Output, error)
 }
 
 type commands struct {
@@ -342,16 +346,17 @@ func (c *commands) gen(ctx context.Context, dir string, check bool) int {
 	if err != nil {
 		return c.h.End(Ending{Word: model.Usage, What: err.Error()})
 	}
-	l, lead, e := c.load(ctx, dir, "gen", again, false)
-	var stale []coreapi.Output
-	if e == nil {
-		stale, err = coreapi.Stale(l)
-	}
-	if e = c.release(l, e); e != nil {
-		return c.h.End(*e, lead...)
-	}
-	if err != nil {
-		return c.h.End(Ending{Word: model.Failed, What: c.h.WithRun(err.Error())}, lead...)
+	c.h.Say("reading rulebook/ in " + dir)
+	var lead []model.Block
+	stale, err := c.d.Stale(ctx, dir)
+	switch {
+	case errors.Is(err, context.Canceled):
+		return c.h.End(Ending{Word: model.Failed, What: c.h.WithRun("stopped by a signal before the rulebook was read; nothing was written. Run it again: `" + again + "`"), Said: again})
+	case errors.Is(err, coreapi.ErrNoBook):
+		return c.h.End(Ending{Word: model.NotReady, What: dir + " is not a rulebook repository: it has no rulebook.yaml",
+			Next: "gragas gen -C <the gragas repository>"})
+	case err != nil:
+		return c.h.End(Ending{Word: model.Failed, What: c.h.WithRun(err.Error() + "; `gragas check` lists them")})
 	}
 	paths := make([]string, len(stale))
 	for i, o := range stale {

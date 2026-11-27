@@ -8,14 +8,13 @@ $ gragas gen --json
   "msg": "nothing was written yet, the lines above are the plan",
   "next": "gragas gen --apply",
   "changes": [
-    "write rulebook/coverage.json"
+    "write rulebook/rules.json"
   ],
   "data": {
     "stale": [
-      "rulebook/coverage.json"
+      "rulebook/rules.json"
     ]
   }
 }
 --- stderr
-warning: the names check is skipped: GRAGAS_NAMES_FILE is not set
 --- exit 6

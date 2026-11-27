@@ -41,7 +41,7 @@ Every command gragas has decided on, from the one registry the program is built 
 | version | A | listing | nothing | done | version |
 | journal (list, recover, restore) | A | listing | the files an open run changed, and its record (recover) | done, refused | journal |
 | cache (list, clear) | A | listing | the closed runs of the journal, the scratch folders a stopped run left and the tools' cache folders (clear) | done, refused | cache |
-| gen | A | plan | rules.json, bindings.json, coverage.json and ids.lock | done, findings, declined, refused | plan |
+| gen | A | plan | rules.json | done, findings, declined, refused | plan |
 
 ## Not built yet
 
