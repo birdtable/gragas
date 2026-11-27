@@ -80,7 +80,13 @@ func readGlob(root *os.Root, glob string) ([]plugin.File, error) {
 	files := make([]plugin.File, 0, len(names))
 	total := 0
 	for _, name := range names {
-		data, err := readCapped(root, name, min(plugin.MaxFile, plugin.MaxFiles-total))
+		// The walk names a match in fs's slash form; confine takes the
+		// system's, which confine.Local gives, as stepPath gives a collect's.
+		local, err := stepPath(name)
+		if err != nil {
+			return nil, err
+		}
+		data, err := readCapped(root, local, min(plugin.MaxFile, plugin.MaxFiles-total))
 		if err != nil {
 			return nil, err
 		}
@@ -90,12 +96,13 @@ func readGlob(root *os.Root, glob string) ([]plugin.File, error) {
 	return files, nil
 }
 
-// readCapped is the file name of root, refused, matching port.ErrRefused, when
-// it holds more than capBytes: it reads at most one byte past the cap. The
-// cap is the smaller of the file's and what is left of the read's in all. A
-// name that is no regular file is refused before it is opened, and what was
-// opened is looked at again before a byte is read, as a collect names its
-// files with no walk before it.
+// readCapped is the file name of root, a name in the system's form as
+// confine.Local gives it, refused, matching port.ErrRefused, when it holds
+// more than capBytes: it reads at most one byte past the cap. The cap is the
+// smaller of the file's and what is left of the read's in all. A name that is
+// no regular file is refused before it is opened, and what was opened is
+// looked at again before a byte is read, as a collect names its files with no
+// walk before it.
 func readCapped(root *os.Root, name string, capBytes int) ([]byte, error) {
 	info, err := confine.NoLinks(root, name)
 	if err == nil && info != nil && !info.Mode().IsRegular() {

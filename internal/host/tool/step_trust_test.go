@@ -85,12 +85,15 @@ func TestAStepsToolOthersCouldSwapIsRefusedAndNotPassedOver(t *testing.T) {
 					machine["lint-a@1.2.3"] = sound
 				case "own":
 					// The grant's own place is refused with the tools file's sound.
-					rel, err := filepath.Rel(root, at)
+					// A grant names its program as the step does, lint-a, and the
+					// find adds the extension the system asks for, so the place is
+					// the folder of at and that name, not at's own file name.
+					rel, err := filepath.Rel(root, filepath.Dir(at))
 					if err != nil {
 						t.Fatal(err)
 					}
 					m = atGrant()
-					m.Programs[0].At.Path = filepath.ToSlash(rel)
+					m.Programs[0].At.Path = filepath.ToSlash(rel) + "/lint-a"
 					machine["lint-a@1.2.3"] = sound
 				case "tools":
 					machine["lint-a@1.2.3"] = at

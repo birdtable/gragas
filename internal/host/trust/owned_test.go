@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	shell "github.com/birdtable/go-console/shell"
 	gotrust "github.com/birdtable/go-files/trust"
 	"github.com/birdtable/go-files/trust/trusttest"
 
@@ -100,13 +99,18 @@ func TestTheSettingsAreReadOnlyFromThisAccountOrRoot(t *testing.T) {
 	})
 	t.Run("another account's file is refused, with the line that gives it to this one", func(t *testing.T) {
 		t.Parallel()
+		// The account asked for is a real one in this system's form, the
+		// owner of a file the system owns, so go-files gives the line that
+		// hands this file to it on every system: a uid's on Unix, a SID's
+		// on Windows.
+		_, owner := trusttest.SystemFile(t)
 		p := put(t, "theirs.yaml")
-		data, err := readOwned(p, other(1), other(2), nil)
-		line, qerr := shell.Quote(shell.POSIX, []string{"chown", "-h", "4000000001", p})
-		if qerr != nil {
-			t.Fatal(qerr)
+		data, err := readOwned(p, owner, other(2), nil)
+		fix := ownerFix(t, p, owner)
+		if fix == "" {
+			t.Fatalf("go-files gives no line that hands %s to %s", p, owner)
 		}
-		refused(t, err, "is owned by "+me+", not by this account or root", "sudo "+line)
+		refused(t, err, "is owned by "+me+", not by this account or root", fix)
 		if data != nil || !errors.Is(err, gotrust.ErrNotOwners) {
 			t.Errorf("%q, %v; want nothing read, matching ErrNotOwners", data, err)
 		}
@@ -180,16 +184,17 @@ func TestTheSettingsAreReadOnlyFromThisAccountOrRoot(t *testing.T) {
 			t.Errorf("%v; want refused with no fix", err)
 		}
 	})
-	t.Run("a SID owner on a path of another system has no line (go-files words a fix in the form of its path)", func(t *testing.T) {
+	t.Run("a SID owner has the line go-files gives for this system's path, and none for a path of another system", func(t *testing.T) {
 		t.Parallel()
 		// go-files reads an owner of either form on every system, so a SID
-		// for another account is refused here as a Windows file of another's is;
-		// its fix is for a Windows path (TestEachFixGoFilesGivesIsTheLineItWroteBefore),
-		// so none is given for this system's.
+		// for another account is refused here as a Windows file of another's is.
+		// Its fix is for a Windows path (TestEachFixGoFilesGivesIsTheLineItWroteBefore):
+		// go-files gives the icacls line where the path is one, and no line
+		// where it is a path of another system, and the refusal gives that.
 		sid := "S-1-5-21-1-2-3-1001"
 		p := put(t, "sid.yaml")
 		_, err := readOwned(p, sid, rootAccount, nil)
-		refused(t, err, "is owned by "+me+", not by this account or root; only an elevated shell can give it to this account", "")
+		refused(t, err, "is owned by "+me+", not by this account or root; only an elevated shell can give it to this account", ownerFix(t, p, sid))
 	})
 	t.Run("a missing file matches fs.ErrNotExist and is no refusal", func(t *testing.T) {
 		t.Parallel()
@@ -207,6 +212,29 @@ func TestTheSettingsAreReadOnlyFromThisAccountOrRoot(t *testing.T) {
 			t.Errorf("%v, want a permission error", err)
 		}
 	})
+}
+
+// ownerFix is the line that gives the file at p to owner, from go-files' own
+// steps for it on this system (gotrust.Fix.Commands), or "" where go-files
+// gives none, as for a path not in the form of the owner's system. Each word
+// of each step is in the line, and the line is those steps as fixLine prints
+// them, whose quoting TestEachFixGoFilesGivesIsTheLineItWroteBefore holds.
+func ownerFix(t *testing.T, p, owner string) string {
+	t.Helper()
+	f := gotrust.Fix{Path: p, Owner: owner}
+	steps, ok := f.Commands()
+	if !ok {
+		return ""
+	}
+	line := fixLine(f)
+	for _, s := range steps {
+		for _, w := range s.Argv {
+			if !strings.Contains(line, w) {
+				t.Fatalf("the line %q leaves out %q of go-files' step %q", line, w, s.Argv)
+			}
+		}
+	}
+	return line
 }
 
 // refusedAsGoFiles fails t unless err is ReadOwned's refusal of the file at
