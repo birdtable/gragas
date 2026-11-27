@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
-	"strings"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -679,23 +678,12 @@ func Owned(t *testing.T, build OwnedMaker) {
 }
 
 // relativeTo is the path of the absolute one as seen from the working folder:
-// relative, and for a file that exists it names that file. A file on another
-// drive than the working folder has no such path from it, so it is spelled
-// relative to its own drive: the drive's name, then the rest with no leading
-// separator, which is not absolute and which the system reads from that
-// drive's current folder, the drive's root.
+// relative, and for a file that exists it names that file.
 func relativeTo(t *testing.T, abs string) string {
 	t.Helper()
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
-	}
-	if vol := filepath.VolumeName(abs); vol != filepath.VolumeName(wd) {
-		rel := vol + strings.TrimLeft(abs[len(vol):], `\/`)
-		if filepath.IsAbs(rel) {
-			t.Fatalf("no relative path to %q: %q is absolute", abs, rel)
-		}
-		return rel
 	}
 	rel, err := filepath.Rel(wd, abs)
 	if err != nil || filepath.IsAbs(rel) {
