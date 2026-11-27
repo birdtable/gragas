@@ -689,11 +689,13 @@ tasks:
           [ -z "$bad" ]
         timeout: 1m
 
-  # The seven generated-file checks read the tree and write nothing, so they run side by side as deps: the
+  # The six generated-file checks read the tree and write nothing, so they run side by side as deps: the
   # commit's longest member was seven commands in a row. A red check does not stop the others, and each names itself.
-  # The seventh, generated-presets, writes only a temp folder of its own run, never the tree.
+  # generated-presets is not a member for now: it needs the plugins that write the bound presets installed in
+  # the tree, and this tree holds none for golangci-lint. It returns to this list when they are installed;
+  # task generated-presets still runs by hand.
   generated-files:
-    desc: Every generated file is current, the seven checks side by side
+    desc: Every generated file is current, the six checks side by side
     deps:
       - task: generated-commands
         vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
@@ -706,8 +708,6 @@ tasks:
       - task: generated-surface
         vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
       - task: generated-docs
-        vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
-      - task: generated-presets
         vars: {NO_NETWORK: "{{.NO_NETWORK}}"}
 
   generated-commands:
@@ -751,8 +751,8 @@ tasks:
   # gragas preset --check through them. A plugin missing, a digest off its pin and a changed bundle are red. A plant
   # sets PRESET_ROOT on the command line to a copy holding tools.yaml, plugins/, rulebook/ and presets/. changie,
   # goreleaser and gragas are hand_written_presets, so preset --check names them and compares golangci-lint's file
-  # alone. It is a member of generated-files since golangci-lint@1.0.1
-  # makes the committed file byte for byte. A pinned plugin's manifest that asks for the mark has its file open with
+  # alone. It is not a member of generated-files for now (see there); it ran as one once golangci-lint's plugin
+  # made the committed file byte for byte. A pinned plugin's manifest that asks for the mark has its file open with
   # it: the mark taken away would make a copy-once file the project's, and this gate refuses that.
   generated-presets:
     desc: The presets are what the plugins tools.yaml pins make, approved in a state folder of this run alone

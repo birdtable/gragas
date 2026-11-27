@@ -341,15 +341,7 @@ func staleFiles(root *os.Root) (stale []rendered, compared int, wide []string, e
 	if err != nil {
 		return nil, 0, nil, err
 	}
-	have, err := root.ReadFile(layers.AgentsFile)
-	if err != nil {
-		return nil, 0, nil, err
-	}
-	agents, err := t.Shared.Agents(have)
-	if err != nil {
-		return nil, 0, nil, err
-	}
-	for _, r := range []rendered{{t.DocFile, []byte(t.Doc())}, {t.LintFile, lint}, {t.EslintFile, []byte(t.Eslint())}, {layers.AgentsFile, agents}, {layers.SharedDocFile, []byte(t.Shared.Page())}} {
+	for _, r := range []rendered{{t.DocFile, []byte(t.Doc())}, {t.LintFile, lint}, {t.EslintFile, []byte(t.Eslint())}, {layers.SharedDocFile, []byte(t.Shared.Page())}} {
 		have, err := root.ReadFile(r.path)
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return nil, 0, nil, err

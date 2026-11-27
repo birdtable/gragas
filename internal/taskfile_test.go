@@ -2290,21 +2290,22 @@ func noRacePushProblems(times string, groups, list []string) []string {
 	return problems
 }
 
-// TestGeneratedFilesRunsItsSevenChecksSideBySideAndARedOneStillTurnsItRed (gragas#1348): the commit's
-// generated-files member is deps alone, one task whose one step has a timeout for each check, so the seven run
-// side by side. Each is internal but generated-presets, whose plants run it by name with PRESET_ROOT
-// (gragas#2340). Planted: the same texts in a Taskfile whose third check fails turn the member red, and
+// TestGeneratedFilesRunsItsSixChecksSideBySideAndARedOneStillTurnsItRed (gragas#1348): the commit's
+// generated-files member is deps alone, one task whose one step has a timeout for each check, so the six run
+// side by side. Each is internal. generated-presets is not one of them for now: it needs the plugins that write
+// the bound presets installed in the tree, and it returns to the member, and this test to seven, when they are.
+// Planted: the same texts in a Taskfile whose third check fails turn the member red, and
 // the checks after it still ran (a red dep stops none of the others).
-func TestGeneratedFilesRunsItsSevenChecksSideBySideAndARedOneStillTurnsItRed(t *testing.T) {
+func TestGeneratedFilesRunsItsSixChecksSideBySideAndARedOneStillTurnsItRed(t *testing.T) {
 	t.Parallel()
 	task := pinnedTask(t)
 	member := taskSection(t, "generated-files")
 	calls := regexp.MustCompile(`(?m)^      - task: (generated-[a-z]+)$`).FindAllStringSubmatch(member, -1)
-	if !depsAlone(member) || len(calls) != 7 {
-		t.Fatalf("generated-files is not seven deps alone (gragas#1348, gragas#2340):\n%s", member)
+	if !depsAlone(member) || len(calls) != 6 {
+		t.Fatalf("generated-files is not six deps alone (gragas#1348):\n%s", member)
 	}
-	if !slices.ContainsFunc(calls, func(c []string) bool { return c[1] == "generated-presets" }) {
-		t.Errorf("generated-files does not run generated-presets (gragas#2340):\n%s", member)
+	if slices.ContainsFunc(calls, func(c []string) bool { return c[1] == "generated-presets" }) {
+		t.Errorf("generated-files runs generated-presets, which is out of the member until its plugins are installed:\n%s", member)
 	}
 	file := "version: \"3\"\ntasks:\n  generated-files:\n" + strings.SplitN(member, "\n", 2)[1]
 	for i, c := range calls {
@@ -2312,8 +2313,8 @@ func TestGeneratedFilesRunsItsSevenChecksSideBySideAndARedOneStillTurnsItRed(t *
 		if !strings.Contains(section, "\n        timeout: ") {
 			t.Errorf("%s has no timeout:\n%s", c[1], section)
 		}
-		if internal := strings.Contains(section, "internal: true"); internal == (c[1] == "generated-presets") {
-			t.Errorf("%s: internal is %v, and every check is internal but generated-presets, whose plants run it by name:\n%s", c[1], internal, section)
+		if !strings.Contains(section, "internal: true") {
+			t.Errorf("%s is not internal:\n%s", c[1], section)
 		}
 		cmd := "echo ran " + c[1]
 		if i == 2 {

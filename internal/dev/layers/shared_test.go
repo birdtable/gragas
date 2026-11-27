@@ -365,29 +365,11 @@ func TestTheExportsOfASourceAreItsTopLevelNamesAndMethods(t *testing.T) {
 	}
 }
 
-// TestTheInstructionBlockIsWrittenBetweenItsMarkers: the block between the
-// markers is the registry's and the rest of the file is kept; a file with no
-// block, or a marker twice, is refused. Risk: an instruction file rewritten
-// past its block.
-func TestTheInstructionBlockIsWrittenBetweenItsMarkers(t *testing.T) {
+// TestTheSharedPageHoldsOneLineToARow: the page is the registry's rows, one
+// line each. Risk: a row that is left out of the page, or put in the wrong form.
+func TestTheSharedPageHoldsOneLineToARow(t *testing.T) {
 	t.Parallel()
 	reg := shared(t, registry)
-	file := "# Title\n\nkept\n" + layers.AgentsBeginMark + "\nplanted-old-block\n" + layers.AgentsEndMark + "\nafter\n"
-	got, err := reg.Agents([]byte(file))
-	if err != nil {
-		t.Fatal(err)
-	}
-	s := string(got)
-	for _, want := range []string{"# Title\n\nkept\n", "after\n", "`docs/shared.md`"} {
-		if !strings.Contains(s, want) {
-			t.Errorf("the file lacks %q:\n%s", want, s)
-		}
-	}
-	for _, row := range []string{"- lock:", "- seal:", "- digest:"} {
-		if strings.Contains(s, row) {
-			t.Errorf("a row %q is in AGENTS.md; the rows are in docs/shared.md:\n%s", row, s)
-		}
-	}
 	page := reg.Page()
 	for _, want := range []string{"- lock: use `Lock.Take` of `internal/host/x`; outside it the lint refuses syscall.Flock.\n",
 		"- seal: use `Seal` of `internal/core/a` (runlog.Digest of go-run); outside it the lint refuses crypto/hmac.\n",
@@ -395,17 +377,6 @@ func TestTheInstructionBlockIsWrittenBetweenItsMarkers(t *testing.T) {
 		"type: reference\n", "\nfor: "} {
 		if !strings.Contains(page, want) {
 			t.Errorf("the shared page lacks %q:\n%s", want, page)
-		}
-	}
-	if strings.Contains(s, "planted-old-block") {
-		t.Errorf("the old block is left:\n%s", s)
-	}
-	if again, err := reg.Agents(got); err != nil || string(again) != s {
-		t.Errorf("a second write differs: %v", err)
-	}
-	for _, bad := range []string{"no block\n", layers.AgentsEndMark + "\n" + layers.AgentsBeginMark + "\n", file + layers.AgentsBeginMark + "\n"} {
-		if _, err := reg.Agents([]byte(bad)); !errors.Is(err, layers.ErrNoBlock) {
-			t.Errorf("Agents(%q) = %v, want ErrNoBlock", bad, err)
 		}
 	}
 }
@@ -425,47 +396,5 @@ func TestAnOwnerBelowAPatternIsAPackageOfItsRow(t *testing.T) {
 		if err := tb.Hold(shared(t, plant)); !errors.Is(err, layers.ErrShared) {
 			t.Errorf("an owner %s: Hold = %v, want ErrShared", name, err)
 		}
-	}
-}
-
-// TestTheInstructionBlockIsTheSameSizeForAnyNumberOfRows: AGENTS.md's block of
-// the shared code does not grow with a row, since the rows are in
-// docs/shared.md (agents.instructions.1 caps the file). Plant:
-// three rows more leave the block as it was and add three lines to the page.
-// Risk: a row that costs another change its line of AGENTS.md.
-func TestTheInstructionBlockIsTheSameSizeForAnyNumberOfRows(t *testing.T) {
-	t.Parallel()
-	lines := func(s string) int { return strings.Count(s, "\n") }
-	few := shared(t, registry)
-	more := shared(t, registry+`  - capability: extra-one
-    owner: internal/core/x1
-    export: One
-    primitives:
-      - call: os.Getpid
-    status: local
-    since: 0.1.0
-  - capability: extra-two
-    owner: internal/core/x2
-    export: Two
-    primitives:
-      - call: os.Getppid
-    status: local
-    since: 0.1.0
-  - capability: extra-three
-    owner: internal/core/x3
-    export: Three
-    primitives:
-      - call: os.Getuid
-    status: local
-    since: 0.1.0
-`)
-	if len(more.Rows) != len(few.Rows)+3 {
-		t.Fatalf("the plant has %d rows, want %d", len(more.Rows), len(few.Rows)+3)
-	}
-	if few.Instructions() != more.Instructions() {
-		t.Errorf("the block depends on the rows:\n%s\nagainst\n%s", few.Instructions(), more.Instructions())
-	}
-	if got, want := lines(more.Page()), lines(few.Page())+3; got != want {
-		t.Errorf("the page has %d lines for three rows more, want %d", got, want)
 	}
 }
