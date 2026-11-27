@@ -23,7 +23,7 @@ const reportMark = "report: "
 // errGate is the gate check finding something wrong.
 var errGate = errors.New("the gate registry does not hold")
 
-// baseRef is the revision the head's change record of the surface is held to
+// baseRef is the revision the head's change record of the surface is held to.
 // It is the remote branch named in full: git resolves a bare
 // origin/main as a tag of that name before the remote branch, so anyone who
 // can push a tag could choose the base (gragas#589).
