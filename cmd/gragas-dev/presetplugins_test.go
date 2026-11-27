@@ -3,17 +3,25 @@ package main
 import (
 	"errors"
 	"os"
+	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
+	configtest "github.com/birdtable/gragas/internal/config/testing"
 	hostfs "github.com/birdtable/gragas/internal/host/fs"
+	"github.com/birdtable/gragas/internal/model"
 )
 
 // fakeReport is the fake's answer to --json preset --check: the tree's one
 // preset, golangci-lint's, compared and the same.
 const fakeReport = `{"schema": "gragas.result/v1", "command": "preset", "ended": "done", "msg": "the fake: 1 preset file compared",
 "data": {"files": [{"path": "presets/golangci-lint/.golangci.yml", "tool": "golangci-lint", "state": "same"}], "compared": 1}}`
+
+// golangciManifest is the manifest of golangci-lint's plugin as these tests
+// need it, planted inline: this tree holds no bundle for it.
+const golangciManifest = "name: golangci-lint\ntool: golangci-lint\npreset:\n  path: .golangci.yml\n  mark: true\n"
 
 // The pins of tools.yaml's plugins: block and the plugin lock held to them
 // (gragas#2340): a pin that cannot be read pins nothing, and a lock that is
@@ -59,6 +67,149 @@ func TestThePluginPinsAreReadStrictly(t *testing.T) {
 			}
 		})
 	}
+}
+
+// The preset: block of a plugin's manifest, read by lines: the tool, the path and the mark, and nothing deeper in the block; a
+// manifest with no preset: makes none, and one the member cannot read is
+// refused, naming what it is.
+func TestThePluginsPresetIsReadStrictly(t *testing.T) {
+	pre, ok, err := readPluginPreset([]byte(golangciManifest))
+	if err != nil || !ok || pre != (pluginPreset{tool: "golangci-lint", path: ".golangci.yml", mark: true}) {
+		t.Fatalf("golangci-lint's manifest: %+v, %v, %v; want its .golangci.yml, marked", pre, ok, err)
+	}
+	head := "name: x\ntool: x\n"
+	block := "preset:\n  path: x.yml\n  # a note\n  readback:\n    mark: false\n"
+	for _, c := range []struct {
+		name, yaml string
+		want       pluginPreset
+	}{
+		{"no mark", head + block, pluginPreset{tool: "x", path: "x.yml"}},
+		{"marked, quoted", head + block + "  mark: \"true\"\nwiring: {}\n", pluginPreset{tool: "x", path: "x.yml", mark: true}},
+		{"a mark below the block", head + block + "wiring:\n  mark: true\n", pluginPreset{tool: "x", path: "x.yml"}},
+		{"a path in a folder", head + "preset:\n  path: conf/.x.yml\n", pluginPreset{tool: "x", path: "conf/.x.yml"}},
+		// A line of spaces in the block is a blank, as YAML reads it, not a
+		// key to refuse, and never a slice past its end.
+		{"a line of one space in the block", head + "preset:\n  path: x.yml\n \n  mark: true\n", pluginPreset{tool: "x", path: "x.yml", mark: true}},
+		{"a line of two spaces in the block", head + "preset:\n  path: x.yml\n  \n  mark: true\n", pluginPreset{tool: "x", path: "x.yml", mark: true}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			got, ok, err := readPluginPreset([]byte(c.yaml))
+			if err != nil || !ok || got != c.want {
+				t.Errorf("%q: %+v, %v, %v; want %+v", c.yaml, got, ok, err, c.want)
+			}
+		})
+	}
+	if _, ok, err := readPluginPreset([]byte(head)); ok || err != nil {
+		t.Errorf("no preset: block: %v, %v; want none and no error", ok, err)
+	}
+	for _, c := range []struct{ name, yaml, want string }{
+		{"a flow block", head + "preset: {path: x.yml, mark: true}\n", "line 3: \"preset: {path: x.yml, mark: true}\" is not the one preset block"},
+		{"two blocks", head + block + "preset:\n", "is not the one preset block"},
+		{"two tools", head + "tool: y\n" + block, "line 3: a second tool key"},
+		{"two paths", head + block + "  path: y.yml\n", "a second path key"},
+		{"two marks", head + block + "  mark: true\n  mark: false\n", "is not the one mark"},
+		{"a mark not a bool", head + block + "  mark: yes\n", "true or false"},
+		{"a path out of the folder", head + "preset:\n  path: ../x.yml\n", "none of them . or .. alone"},
+		{"a path with a backslash", head + "preset:\n  path: a\\x.yml\n", "none of them . or .. alone"},
+		{"no path", head + "preset:\n  mark: true\n", "none of them . or .. alone"},
+		{"no tool", "preset:\n  path: x.yml\n", "names its tool by one name"},
+		// A quoted key is the same key to YAML, and a reader of bare keys
+		// would pass over it, so it is refused.
+		{"a quoted top-level key", head + "\"preset\":\n  path: x.yml\n  mark: true\n", "line 3: \"\\\"preset\\\":\" is not a bare key"},
+		{"a quoted key in the block", head + "preset:\n  path: x.yml\n  'mark': true\n", "line 5: \"  'mark': true\" is not a bare key"},
+		{"a key spaced from its colon", head + "preset :\n  path: x.yml\n", "line 3: \"preset :\" is not a bare key"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if _, _, err := readPluginPreset([]byte(c.yaml)); err == nil || !strings.Contains(err.Error(), c.want) {
+				t.Errorf("%q: error %v, want one saying %q", c.yaml, err, c.want)
+			}
+		})
+	}
+}
+
+// markedRoot is a root of two pinned plugins whose manifests ask for the mark:
+// golangci-lint, its manifest planted inline, with its preset as given, and
+// ast-grep, whose preset is not there. Only the plants write files.
+func markedRoot(t *testing.T, golangci string) (string, []pluginPin) {
+	t.Helper()
+	dir := t.TempDir()
+	for name, body := range map[string]string{
+		"plugins/golangci-lint/1.0.1/plugin.yaml": golangciManifest,
+		"plugins/ast-grep/1.0.0/plugin.yaml":      "name: ast-grep\ntool: ast-grep\npreset:\n  path: sgconfig.yml\n  mark: true\n",
+		"presets/golangci-lint/.golangci.yml":     golangci,
+	} {
+		configtest.MkdirPrivate(t, dir, path.Dir(name))
+		if err := os.WriteFile(filepath.Join(dir, filepath.FromSlash(name)), []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return dir, []pluginPin{{name: "golangci-lint", version: "1.0.1"}, {name: "ast-grep", version: "1.0.0"}}
+}
+
+// TestAPinnedPluginNoRuleBindsIsSkippedAndNamed holds the skip to preset
+// --check's own list: a pinned plugin whose tool the report does not
+// list is skipped and named, and for every tool it lists, a preset that is
+// not there and one without the mark stay red; a file the project owns is a
+// listed tool's, never a skip.
+func TestAPinnedPluginNoRuleBindsIsSkippedAndNamed(t *testing.T) {
+	marked := "# " + model.PresetMark + "\nversion: \"2\"\n"
+	golangci := presetCheckedFile{Path: "presets/golangci-lint/.golangci.yml", Tool: "golangci-lint", State: "same"}
+	t.Run("an unbound pinned plugin with no file passes and is named", func(t *testing.T) {
+		dir, pins := markedRoot(t, marked)
+		rep := &presetChecked{Files: []presetCheckedFile{golangci}, Compared: 1}
+		n, skipped, err := markedPresets(dir, pins, rep)
+		if err != nil || n != 1 || !slices.Equal(skipped, []string{"ast-grep"}) {
+			t.Fatalf("ast-grep pinned and unlisted: %d marked, skipped %q, error %v; want golangci-lint held and ast-grep skipped", n, skipped, err)
+		}
+		said := presetCheck{Ended: "done", Msg: "1 preset file compared, none differs", Data: rep}.said(skipped)
+		if !strings.Contains(said, "ast-grep: pinned, no rule binds it, no preset checked\n") {
+			t.Errorf("the member says %q, want ast-grep named as skipped", said)
+		}
+	})
+	// The skip is for a plugin with no file: a file at an unlisted tool's
+	// path is one nothing holds, so it is red.
+	t.Run("an unbound pinned plugin with a file there is red", func(t *testing.T) {
+		dir, pins := markedRoot(t, marked)
+		configtest.MkdirPrivate(t, dir, "presets/ast-grep")
+		if err := os.WriteFile(filepath.Join(dir, "presets", "ast-grep", "sgconfig.yml"), []byte("# "+model.PresetMark+"\nruleDirs: []\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		rep := &presetChecked{Files: []presetCheckedFile{golangci}, Compared: 1}
+		n, skipped, err := markedPresets(dir, pins, rep)
+		if err == nil || !strings.Contains(err.Error(), "presets/ast-grep/sgconfig.yml is there, and preset --check does not list ast-grep") {
+			t.Errorf("ast-grep pinned and unlisted, its file there: %d marked, skipped %q, error %v; want the file named as held to nothing", n, skipped, err)
+		}
+	})
+	// A hand-written tool's pinned plugin is skipped as hand-written, never
+	// named as unbound, whether its file is there or not.
+	t.Run("a hand-written tool's pinned plugin is not named as unbound", func(t *testing.T) {
+		dir, pins := markedRoot(t, marked)
+		configtest.MkdirPrivate(t, dir, "presets/ast-grep")
+		if err := os.WriteFile(filepath.Join(dir, "presets", "ast-grep", "sgconfig.yml"), []byte("ruleDirs: []\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		rep := &presetChecked{Files: []presetCheckedFile{golangci}, Compared: 1, HandWritten: []string{"ast-grep"}}
+		n, skipped, err := markedPresets(dir, pins, rep)
+		if err != nil || n != 1 || len(skipped) != 0 {
+			t.Errorf("ast-grep hand-written and pinned: %d marked, skipped %q, error %v; want golangci-lint held and ast-grep neither skipped as unbound nor red", n, skipped, err)
+		}
+	})
+	t.Run("a bound tool with its file missing is red", func(t *testing.T) {
+		dir, pins := markedRoot(t, marked)
+		rep := &presetChecked{Files: []presetCheckedFile{golangci, {Path: "presets/ast-grep/sgconfig.yml", Tool: "ast-grep", State: "differs", First: "it is not there"}}, Compared: 2}
+		if _, _, err := markedPresets(dir, pins, rep); err == nil || !strings.Contains(err.Error(), "presets/ast-grep/sgconfig.yml could not be read") {
+			t.Errorf("ast-grep listed with no file: error %v, want its preset named as not there", err)
+		}
+	})
+	t.Run("a bound tool with its mark removed and a line edited is red", func(t *testing.T) {
+		dir, pins := markedRoot(t, "version: \"3\"\n")
+		// preset --check reads the unmarked file as the project's: it lists
+		// the path under owned, not the tool under files
+		rep := &presetChecked{Files: []presetCheckedFile{}, Owned: []string{golangci.Path}}
+		if _, _, err := markedPresets(dir, pins, rep); err == nil || !strings.Contains(err.Error(), golangci.Path+" does not open with the mark") {
+			t.Errorf("golangci-lint owned, the mark removed: error %v, want the file named as not opening with the mark", err)
+		}
+	})
 }
 
 // The answer of --json preset --check is read strictly: a document with no
