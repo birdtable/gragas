@@ -751,8 +751,8 @@ tasks:
   # gragas preset --check through them. A plugin missing, a digest off its pin and a changed bundle are red. A plant
   # sets PRESET_ROOT on the command line to a copy holding tools.yaml, plugins/, rulebook/ and presets/. changie,
   # goreleaser and gragas are hand_written_presets, so preset --check names them and compares golangci-lint's file
-  # alone. It is a member of generated-files since golangci-lint@1.0.1
-  # makes the committed file byte for byte. A pinned plugin's manifest that asks for the mark has its file open with
+  # alone. It is not a member of generated-files for now (see there); it ran as one once golangci-lint's plugin
+  # made the committed file byte for byte. A pinned plugin's manifest that asks for the mark has its file open with
   # it: the mark taken away would make a copy-once file the project's, and this gate refuses that.
   generated-presets:
     desc: The presets are what the plugins tools.yaml pins make, approved in a state folder of this run alone
