@@ -33,7 +33,7 @@ Schema: [checker.schema.json](../../internal/host/assets/format/schema/v3/checke
 - an empty publisher or licence, one that prints as nothing, such as one Hangul filler, or one with a control character, a format character such as a zero-width space or a right-to-left override, or a line or paragraph separator, which the reader refuses whatever the schema says;
 - a binding whose `checker` names no declaration, or one of another tool.
 
-A parent's and an import's checker code are read from them once they are fetched (#234). Until then nothing is fetched, so on a live run neither the import's half nor the overlay's rule against its parent is checked; a declaration by reference, the rulebook's own file, is read and listed now. No fix sends the author back to the finding they came from.
+A parent's and an import's checker code are read from them once they are fetched. Until then nothing is fetched, so on a live run neither the import's half nor the overlay's rule against its parent is checked; a declaration by reference, the rulebook's own file, is read and listed now. No fix sends the author back to the finding they came from.
 
 ## Example
 
