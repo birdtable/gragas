@@ -78,7 +78,7 @@ func TestAStepNamesItsProgramByGrant(t *testing.T) {
 func TestAGrantIsFoundInItsOrder(t *testing.T) {
 	t.Parallel()
 	root := private(t)
-	own := program(t, root+"/"+binDir+"/"+proc.LocalFileName("lint-a"), says("1.2.3"))
+	own := program(t, root+"/"+binDir+"/lint-a", says("1.2.3"))
 	set, pin := elsewhere(t, "1.2.3"), elsewhere(t, "1.2.3")
 	settings := map[string]map[string]string{root: {"lint-a@1.2.3": set}}
 	machine := map[string]string{"lint-a@1.2.3": pin}

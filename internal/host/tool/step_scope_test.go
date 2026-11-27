@@ -6,8 +6,6 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/birdtable/go-proc/proc"
-
 	"github.com/birdtable/gragas/internal/host/tool"
 	"github.com/birdtable/gragas/internal/model"
 	"github.com/birdtable/gragas/internal/model/plugin"
@@ -34,7 +32,7 @@ func ranPaths(tl *tool.Tool) []string {
 func TestAZeroScopeNeverTakesARepoLocalProgram(t *testing.T) {
 	t.Parallel()
 	root := private(t)
-	own := program(t, root+"/"+binDir+"/"+proc.LocalFileName("lint-a"), says("1.2.3"))
+	own := program(t, root+"/"+binDir+"/lint-a", says("1.2.3"))
 	pin := elsewhere(t, "1.2.3")
 	m := atGrant()
 	m.Tool = "lint-a"

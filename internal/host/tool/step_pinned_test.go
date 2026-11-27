@@ -250,8 +250,9 @@ func TestAStepsPinnedPathLeavesOutEveryFolderTheProjectCouldHold(t *testing.T) {
 			marked(claim + ", the step")
 			if !viaScript {
 				lines := strings.Split(strings.TrimSpace(text(t, res.Stdout)), "\n")
-				if got := lines[len(lines)-1]; got != good {
-					t.Errorf("%s: the step's PATH is %q; want the one folder %q", claim, got, good)
+				// A PATH is in the system's form, so good is spelt so too.
+				if got, want := lines[len(lines)-1], filepath.FromSlash(good); got != want {
+					t.Errorf("%s: the step's PATH is %q; want the one folder %q", claim, got, want)
 				}
 			}
 		}
@@ -274,7 +275,7 @@ func TestAStepsPinnedPathLeavesOutEveryFolderTheProjectCouldHold(t *testing.T) {
 			t.Fatal(err)
 		}
 		lines := strings.Split(strings.TrimSpace(text(t, res.Stdout)), "\n")
-		if got := filepath.SplitList(lines[len(lines)-1]); !slices.Contains(got, root+"/"+binDir) {
+		if got := filepath.SplitList(lines[len(lines)-1]); !slices.Contains(got, filepath.FromSlash(root+"/"+binDir)) {
 			t.Errorf("OwnPlace: the step's PATH is %q; want the project's folder in it", got)
 		}
 	})
