@@ -2,6 +2,7 @@ package fs_test
 
 import (
 	"errors"
+	"github.com/birdtable/go-files/confine"
 	"os"
 	"path/filepath"
 	"testing"
@@ -199,7 +200,10 @@ func TestAnEmptyDirIsTheWorkingFolder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want, _ := filepath.EvalSymlinks(mustGetwd(t))
+	want, err := confine.Resolve(mustGetwd(t))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if string(root) != filepath.ToSlash(want) {
 		t.Errorf("Open(\"\") = %q, want %q", root, want)
 	}

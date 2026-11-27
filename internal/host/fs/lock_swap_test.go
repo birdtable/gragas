@@ -24,7 +24,7 @@ type swappable struct {
 
 func newSwappable(t *testing.T) *swappable {
 	t.Helper()
-	top, err := filepath.EvalSymlinks(t.TempDir())
+	top, err := confine.Resolve(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

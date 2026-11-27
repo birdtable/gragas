@@ -102,7 +102,16 @@ func (r Repo) open(name string) (*os.File, error) {
 	if !fs.ValidPath(name) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
 	}
-	f, err := confine.Open(r.root, filepath.FromSlash(name), os.O_RDONLY, 0)
+	// Local refuses "." (its own spelling of the root is ""), which is a valid
+	// io/fs name for the root.
+	inRoot := "."
+	if name != "." {
+		var err error
+		if inRoot, err = confine.Local(name); err != nil {
+			return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
+		}
+	}
+	f, err := confine.Open(r.root, inRoot, os.O_RDONLY, 0)
 	if errors.Is(err, confine.ErrOutside) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fmt.Errorf("it is a link, or a folder on the way to it is, and no link in the repository is followed: %w", offRoot{err})}
 	}

@@ -18,7 +18,6 @@ import (
 	"io/fs"
 	"maps"
 	"os"
-	"path/filepath"
 	"slices"
 	"sort"
 	"testing"
@@ -653,7 +652,7 @@ func Owned(t *testing.T, build OwnedMaker) {
 		if got, err := tr.ReadOwned(outside.File); err != nil || string(got) != "outside\n" {
 			t.Errorf("ReadOwned = %q, %v", got, err)
 		}
-		rel := relativeTo(t, outside.File)
+		rel := workingFile(t)
 		if _, err := tr.ReadOwned(rel); err == nil {
 			t.Errorf("the relative path %q to a file that exists was read owned", rel)
 		}
@@ -677,19 +676,22 @@ func Owned(t *testing.T, build OwnedMaker) {
 	})
 }
 
-// relativeTo is the path of the absolute one as seen from the working folder:
-// relative, and for a file that exists it names that file.
-func relativeTo(t *testing.T, abs string) string {
+// workingFile is the name of a regular file of the working folder, the first
+// the folder lists: a relative path to a file that exists, made with no path
+// from one folder to another, so no drive or folder of the system is read.
+func workingFile(t *testing.T) string {
 	t.Helper()
-	wd, err := os.Getwd()
+	entries, err := os.ReadDir(".")
 	if err != nil {
 		t.Fatal(err)
 	}
-	rel, err := filepath.Rel(wd, abs)
-	if err != nil || filepath.IsAbs(rel) {
-		t.Fatalf("no relative path from %q to %q: %v", wd, abs, err)
+	for _, e := range entries {
+		if e.Type().IsRegular() {
+			return e.Name()
+		}
 	}
-	return rel
+	t.Fatal("the working folder holds no regular file to name by a relative path")
+	return ""
 }
 
 // saysEach calls next once per line and fails the test for each answer that is
