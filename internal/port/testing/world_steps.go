@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"path"
+	"path/filepath"
 	"slices"
 	"sync"
 
@@ -103,8 +104,11 @@ func (x stepsPort) Bind(ctx context.Context, s plugin.Scope) (port.StepRunner, e
 	return r, nil
 }
 
-// absClean is whether p is an absolute, clean, slash-separated path.
-func absClean(p string) bool { return path.IsAbs(p) && path.Clean(p) == p }
+// absClean is whether p is an absolute, clean, slash-separated path: one that
+// starts at the root, or at a volume where the system names them (C:/x).
+func absClean(p string) bool {
+	return (path.IsAbs(p) || filepath.IsAbs(filepath.FromSlash(p))) && path.Clean(p) == p
+}
 
 func (r stepRunner) Tool() model.Found { return r.tool }
 
