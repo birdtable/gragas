@@ -34,8 +34,7 @@ func TestMain(m *testing.M) {
 
 // The blocked child takes "--" and a program by its absolute path, and
 // anything else is a usage fault that names the word and starts nothing:
-// go-proc's sandbox is never asked to run a line gragas refuses
-// (gragas#1455).
+// go-proc's sandbox is never asked to run a line gragas refuses.
 func TestTheBlockedChildRefusesALineItDoesNotTake(t *testing.T) {
 	t.Parallel()
 	for claim, args := range map[string][]string{
@@ -540,7 +539,7 @@ func TestUsageAndExitCodes(t *testing.T) {
 }
 
 // release is the source test: no SBOM, provenance or signing code is left under
-// cmd/gragas-release (#914; gragas#345, #346 and #353 hold them for later).
+// cmd/gragas-release; they are held for a later release.
 var releaseExtras = regexp.MustCompile(`(?i)sbom|provenance|signer|signature|cyclonedx|spdx|in-toto|slsa|\bsign\(`)
 
 func extrasIn(src map[string]string) []string {
@@ -607,7 +606,7 @@ func TestTheRealHostIgnoresAHostileShell(t *testing.T) {
 		t.Fatal(err)
 	}
 	// go reads its configuration folder under this home, not the isolated one
-	// go-proc v0.1.1 turned telemetry off in (gragas#913). So the home's
+	// go-proc v0.1.1 turned telemetry off in the isolated one. So the home's
 	// telemetry is turned off with go's own command, run with the home and the
 	// toolchain's environment; without it go's telemetry writes to the home
 	// after go exits.
@@ -645,7 +644,7 @@ func TestTheRealHostIgnoresAHostileShell(t *testing.T) {
 // own command and the environment of every go command here. Only the
 // hostile-shell test runs it: it hands go a home of its own, which go-proc's
 // testenv does not cover, and the release itself never changes a person's go
-// settings, so it lives with the tests (gragas#1897).
+// settings, so it lives with the tests.
 func telemetryOff(ctx context.Context, getenv func(string) string) error {
 	_, err := capture(ctx, "", baseEnv(getenv), "go", "telemetry", "off")
 	return err

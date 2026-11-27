@@ -10,11 +10,11 @@
 //     clean clones of HEAD in it, runs sources in each, starts that
 //     goreleaser in each, the second with a cold build
 //     cache, then compare and verify (build.go). It was a sh script of rm,
-//     mkdir, a clone loop and goreleaser twice (gragas#1655, X211).
+//     mkdir, a clone loop and goreleaser twice.
 //   - sources runs before goreleaser, in each clean clone: it reads every
 //     source .goreleaser.yaml names under files: and its like, and holds each
 //     to be a plain file in the commit checked out, never a symbolic link,
-//     which goreleaser would follow (gragas#1206).
+//     which goreleaser would follow.
 //   - compare holds two checksum files, of two builds from two clean clones,
 //     to each other: the same archives, each the same bytes
 //     (supply.release.11).
@@ -36,9 +36,9 @@
 // itself. The release guard, which holds the tree to be the commit the release
 // names, clean, and the remote's (supply.release.1), is hatch tag, which the
 // Taskfile runs before the tag, in the dry release and at the publish; it was
-// this command's guard step, and before that scripts/release-guard
-// (gragas#1655, gragas#2260). The command is its own program, apart from
-// gragas-dev, so the landing check's closure does not grow (A60).
+// this command's guard step, and before that scripts/release-guard. The
+// command is its own program, apart from gragas-dev, so the landing check's
+// closure does not grow (A60).
 //
 // main is the only place that exits (go.errors.4).
 package main
@@ -65,7 +65,7 @@ func main() {
 		os.Exit(code)
 	}
 	// Ctrl+C and SIGTERM are the kit's: its Main cancels the context the run is
-	// given, on every system (gragas#1614).
+	// given, on every system.
 	os.Exit(term.Main(context.Background(), "gragas-release", os.Stderr, func(ctx context.Context, args []string) int {
 		return run(ctx, args, os.Stdout, os.Stderr, newToolchain(os.Getenv, os.Environ()))
 	}))
@@ -309,7 +309,7 @@ var errNoLine = errors.New("a line that is not a digest and a name")
 // blockedChild is gragas-release started as the blocked child, when its first
 // argument is exit.BlockedWord: the unpack step starts the binary it unpacked
 // through it, so the start tests run behind go-proc's block
-// (supply.install.2, A25, gragas#1455). ok is false when it was started as
+// (supply.install.2). ok is false when it was started as
 // anything else.
 func blockedChild() (code int, ok bool) {
 	if len(os.Args) < 2 || os.Args[1] != exit.BlockedWord {

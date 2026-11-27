@@ -59,9 +59,8 @@ const builtSeed = `[{"name":"metadata.json","path":"dist/metadata.json","type":"
 
 // builtFolders are the project folder and the release folder inside it the
 // fuzz target reads paths against. Both are absolute on every system, as
-// builtBinaries makes them, and nothing is written there (gragas#1589: a
-// rooted "/build/a" has no volume on Windows, so no absolute path was ever
-// inside it).
+// builtBinaries makes them, and nothing is written there (a rooted
+// "/build/a" has no volume on Windows, so no absolute path was ever inside it).
 func builtFolders(tb testing.TB) (repo, dist string) {
 	tb.Helper()
 	repo, err := filepath.Abs(filepath.Join("build", "a"))

@@ -12,7 +12,7 @@ import (
 // go-proc hands a child its list as given, and a child reads the first of two
 // settings. Risk: the person's GIT_TERMINAL_PROMPT=1 reaching the guard's git
 // ahead of the 0 the toolchain sets, so a remote that asks for a password
-// waits on a terminal nobody reads (gragas#2263).
+// waits on a terminal nobody reads.
 func TestOverSetsEachExtraVariableOnceAtItsValue(t *testing.T) {
 	t.Parallel()
 	environ := []string{"KEPT=a", "GIT_TERMINAL_PROMPT=1", "ALSO_KEPT=b", "GIT_OPTIONAL_LOCKS=1", "GIT_TERMINAL_PROMPT=2"}

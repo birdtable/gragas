@@ -40,8 +40,7 @@ const (
 // writeRecord writes r as JSON to path, whole or not at all, through the
 // host's one writer (gate/shared.yaml, atomic-write). The bytes come from
 // internal/ordered, the one JSON writer outside the root command's answer,
-// so the encoder ban of cli.output.2 holds this file with no suppression
-// (gragas#1750).
+// so the encoder ban of cli.output.2 holds this file with no suppression.
 func writeRecord(path string, r record) error {
 	tree := &hostfs.Tree{}
 	root, err := tree.Open(filepath.Dir(path))

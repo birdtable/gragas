@@ -30,7 +30,7 @@ func sourceKeys() []string {
 	return []string{"files", "extra_files", "templated_files", "templated_extra_files", "contents"}
 }
 
-// sourcesStep is the step before goreleaser runs (gragas#1206). goreleaser
+// sourcesStep is the step before goreleaser runs. goreleaser
 // follows a files: source that is a symbolic link and writes the bytes of what
 // it points to as a plain file, so the unpack step, which admits only plain
 // files and folders, never sees the link, and a link to a file outside the tree

@@ -78,11 +78,11 @@ func buildFlags(args []string, diag *say.Speaker) (buildRequest, bool) {
 	return req, true
 }
 
-// buildStep is the release's build (supply.release.6, .11; gragas#1655, X211),
+// buildStep is the release's build (supply.release.6, .11),
 // the Taskfile's release-build, which was a sh script of rm, mkdir, a clone loop
 // and goreleaser twice. goreleaser runs twice, from two clean clones of HEAD
-// in out, each clone's sources first held to plain files (sourcesStep,
-// gragas#1206), the second with a cold build cache; the two checksum files are
+// in out, each clone's sources first held to plain files (sourcesStep), the
+// second with a cold build cache; the two checksum files are
 // compared, then the first folder is unpacked and what it found recorded in
 // out/unpack.json. With publish the first build is the draft release, made with
 // GITHUB_TOKEN and the tag's notes, and the second publishes nothing and is

@@ -1,5 +1,5 @@
 // Command gragas-tmp makes and prints the stable temp folder the Taskfile's
-// cached members hand Go's test cache as TMPDIR (gragas#910, RULED): the folder
+// cached members hand Go's test cache as TMPDIR: the folder
 // of internal/host/trust's StableTemp, one gragas makes itself at mode 0700
 // under os.TempDir(), whose way from / down the trust walk has checked. A
 // parent its group can write (a 775 ~/.cache on a host with a group for each
@@ -22,7 +22,7 @@ func main() {
 }
 
 // apart is the folder the command runs in, the work tree, which the temp folder
-// may not be inside (gragas#1042): the Taskfile runs it from the repository root.
+// may not be inside: the Taskfile runs it from the repository root.
 func apart() []string {
 	if wd, err := os.Getwd(); err == nil {
 		return []string{wd}

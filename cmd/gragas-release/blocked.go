@@ -18,8 +18,8 @@ var errBlockedUsage = errors.New("usage: " + exit.BlockedWord + " -- <program by
 // runBlocked is gragas-release started as the blocked child (main's
 // blockedChild): args are what follows exit.BlockedWord, "--", the program's
 // absolute path and its arguments. It sets go-proc's block on this process
-// and execs the program (sandbox.Run, gragas#1455), so it returns only when
-// the program was not run.
+// and execs the program (sandbox.Run), so it returns only when the
+// program was not run.
 func runBlocked(args, environ []string, stderr io.Writer) int {
 	talk := &say.Speaker{W: stderr}
 	if len(args) < 2 || args[0] != "--" || !filepath.IsAbs(args[1]) {

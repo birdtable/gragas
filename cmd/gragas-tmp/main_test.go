@@ -9,7 +9,7 @@ import (
 	hosttrust "github.com/birdtable/gragas/internal/host/trust"
 )
 
-// TestTheCommandPrintsTheFolderOrTheWalksMessage (gragas#910, RULED): a folder
+// TestTheCommandPrintsTheFolderOrTheWalksMessage: a folder
 // is printed as one line; the walk's refusal prints nothing on stdout, its
 // message with its fix on stderr, and exits 1, and so does any other error.
 // Planted: the refusal is the one a 775 ~/.cache gives on a host with a group

@@ -245,7 +245,7 @@ func startEnv(dir string) []string {
 // dir, with the environment env and no other, for no longer than readLimit, and
 // answers its stdout. A failure carries what the program said on stderr.
 // A nil env is refused: a caller that gives none has lost the one it built,
-// and go-proc would run the program in a bare one instead (gragas#2263).
+// and go-proc would run the program in a bare one instead.
 func capture(ctx context.Context, dir string, env []string, name string, args ...string) (string, error) {
 	what := strings.Join(append([]string{name}, args...), " ")
 	if env == nil {
@@ -259,7 +259,7 @@ func capture(ctx context.Context, dir string, env []string, name string, args ..
 }
 
 // readLimit is how long a go env, a git ls-tree or one of the guard's git
-// calls may take: each reads a little and answers at once (gragas#2263).
+// calls may take: each reads a little and answers at once.
 const readLimit = 2 * time.Minute
 
 // releaseLimit is how long goreleaser may take to build, pack and sum every

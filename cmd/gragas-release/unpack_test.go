@@ -18,7 +18,7 @@ import (
 
 // Each archive's binary is held to the binary goreleaser built for its system,
 // read from the build's folder as artifacts.json names it and never from the
-// archive (gragas#347, supply.release.6). Each way that record or that binary
+// archive (supply.release.6). Each way that record or that binary
 // can be wrong is refused, naming the archive or the system.
 func TestEachBinaryIsHeldToTheOneBuilt(t *testing.T) {
 	t.Parallel()
@@ -78,7 +78,7 @@ func TestEachBinaryIsHeldToTheOneBuilt(t *testing.T) {
 		})
 	}
 	// an absolute binary path, made in the test's own folder so it is absolute
-	// on every system: a rooted string is relative on Windows (gragas#1689)
+	// on every system: a rooted string is relative on Windows
 	t.Run("an absolute binary path", func(t *testing.T) {
 		t.Parallel()
 		fx := newFixture(t)
@@ -140,7 +140,7 @@ func runRecorded(t *testing.T, fx *fixture, tc *fakeChain) (int, record) {
 	return code, r
 }
 
-// The step's result is recorded, pass or fail (gragas#347): a release that
+// The step's result is recorded, pass or fail: a release that
 // passes records each archive with its digest and its binary's, the host, how
 // the start tests were kept from the network and each start test run; one
 // that fails records the failure the step ended on.
@@ -176,8 +176,8 @@ func TestTheRecordSaysWhatTheStepFound(t *testing.T) {
 
 // A start test's whole environment is the system's own variables and its own
 // folders beneath the one it runs in, under each name this system reads, and
-// no network, proxy or path variable of the person's (gragas#347,
-// tests.isolation.1). madeFolders makes every one of those folders, and
+// no network, proxy or path variable of the person's
+// (tests.isolation.1). madeFolders makes every one of those folders, and
 // nothing outside the folder.
 func TestTheStartTestsEnvironmentIsItsOwnFoldersAlone(t *testing.T) {
 	t.Parallel()

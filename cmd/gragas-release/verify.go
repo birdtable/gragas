@@ -208,7 +208,7 @@ func checkArchive(req request, s system, digest string, want map[string][]byte) 
 // everywhere; then contract fixture, which writes the fixture rulebook into the
 // folder and must leave it there. Each test that passes is added to rec.
 func start(ctx context.Context, tc toolchain, tag string, s system, bin entry, rec *record) (err error) {
-	// host/trust's FreshFolder (gragas#2264): fresh at 0700 in the account's
+	// host/trust's FreshFolder: fresh at 0700 in the account's
 	// own temp folder, which no other account can write, and never swept.
 	dir, remove, err := hosttrust.FreshFolder(nil, "gragas-release-run-")
 	if err != nil {
