@@ -5239,8 +5239,8 @@ linters:
       - path: ^internal/(core/api|core/proof|apply)/
         linters: [forbidigo]
         text: "arch\\.ports\\.24: a local path is judged with filepath"
-      # The in-memory world and the sandbox's names are slash paths too.
-      - path: ^internal/(port/testing|host/sandbox)/
+      # The in-memory world's names and the sandbox's one file of names are slash paths too.
+      - path: ^internal/port/testing/|^internal/host/sandbox/sandbox\.go$
         linters: [forbidigo]
         text: "arch\\.ports\\.24: a local path is judged with filepath"
       # The contract test's sandbox check and the fixture and deprecation readers name slash paths of the contract.
