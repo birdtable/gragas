@@ -543,7 +543,7 @@ func TestAToolNotBuiltFromTheLockIsRedAndThePinnedTaskIsNot(t *testing.T) {
 		cmd := exec.CommandContext(t.Context(), pinned)
 		cmd.Args = append(cmd.Args, "tools-check", "GATE="+gate, "RELEASE_TOOLS=", "PNPM_TREES=")
 		cmd.Dir = dir
-		cmd.Env = append(configtest.Inherited(), "PATH="+filepath.Dir(pinned)+string(os.PathListSeparator)+inheritedPath())
+		cmd.Env = append(configtest.Inherited(), toolchainPin(t), "PATH="+filepath.Dir(pinned)+string(os.PathListSeparator)+inheritedPath())
 		out, err := cmd.CombinedOutput()
 		return string(out), err
 	}
@@ -653,7 +653,7 @@ func TestAToolBuiltAgainstOtherDependenciesThanTheLockIsRedAndTheLocksDepsAreNot
 		cmd := exec.CommandContext(t.Context(), pinned)
 		cmd.Args = append(cmd.Args, "tools-check", "GATE="+gate, "RELEASE_TOOLS=", "PNPM_TREES=")
 		cmd.Dir = dir
-		cmd.Env = append(configtest.Inherited(), "PATH="+fake+string(os.PathListSeparator)+filepath.Dir(pinned)+string(os.PathListSeparator)+inheritedPath())
+		cmd.Env = append(configtest.Inherited(), toolchainPin(t), "PATH="+fake+string(os.PathListSeparator)+filepath.Dir(pinned)+string(os.PathListSeparator)+inheritedPath())
 		out, err := cmd.CombinedOutput()
 		return string(out), err
 	}
@@ -802,7 +802,7 @@ func TestACallersGoFlagsAreRefusedBeforeAnyMemberAndAMemberThatRanNoTestIsRed(t 
 		cmd := exec.CommandContext(t.Context(), pinned)
 		cmd.Args = append(cmd.Args, "tools-check")
 		cmd.Dir = dir
-		cmd.Env = append(append(configtest.Inherited(), "GOFLAGS="+goflags, "PATH="+filepath.Dir(pinned)+string(os.PathListSeparator)+inheritedPath()), more...)
+		cmd.Env = append(append(configtest.Inherited(), toolchainPin(t), "GOFLAGS="+goflags, "PATH="+filepath.Dir(pinned)+string(os.PathListSeparator)+inheritedPath()), more...)
 		out, err := cmd.CombinedOutput()
 		return string(out), err
 	}
@@ -901,7 +901,7 @@ func TestACallersGOMAXPROCSReachesTheGoCommandsAndNoMemberSetsItsOwn(t *testing.
 		cmd.Args = append(cmd.Args, "tools-check", "GATE=go run -trimpath ./cmd/gragas-dev")
 		cmd.Dir = dir
 		path := fake + string(os.PathListSeparator) + filepath.Dir(pinned) + string(os.PathListSeparator) + inheritedPath()
-		cmd.Env = append(configtest.Inherited(), "GOFLAGS=-mod=readonly", "GOMAXPROCS=2", "MAXPROCS_LOG="+log, "PATH="+path)
+		cmd.Env = append(configtest.Inherited(), toolchainPin(t), "GOFLAGS=-mod=readonly", "GOMAXPROCS=2", "MAXPROCS_LOG="+log, "PATH="+path)
 		out, _ := cmd.CombinedOutput()
 		b, err := os.ReadFile(log)
 		if err != nil {
@@ -2454,7 +2454,7 @@ func TestAnUnverifiedHatchNeverRunsBeforeToolsCheckRefusesIt(t *testing.T) {
 			cmd.Args = append(cmd.Args, strings.Fields(tier)...)
 			cmd.Args = append(cmd.Args, "GATE="+gate, "RELEASE_TOOLS=", "PNPM_TREES=")
 			cmd.Dir = dir
-			cmd.Env = append(configtest.Inherited(), "HATCH_RAN="+marker, "PATH="+filepath.Dir(pinned)+string(os.PathListSeparator)+inheritedPath())
+			cmd.Env = append(configtest.Inherited(), toolchainPin(t), "HATCH_RAN="+marker, "PATH="+filepath.Dir(pinned)+string(os.PathListSeparator)+inheritedPath())
 			out, err := cmd.CombinedOutput()
 			return string(out), err
 		}
@@ -2719,4 +2719,16 @@ func TestThePtyMemberSaysNotAskedWhereItsJourneysAreNotBuilt(t *testing.T) {
 			t.Errorf("%s: planted, and the check found nothing", name)
 		}
 	}
+}
+
+// toolchainPin is GOTOOLCHAIN set to go.mod's toolchain line, for a child that runs the pinned task:
+// the isolation gives every child GOTOOLCHAIN=local, and the Taskfile's guard refuses anything but
+// the toolchain line, so a test that means to get past the guard names it.
+func toolchainPin(t *testing.T) string {
+	t.Helper()
+	tc := regexp.MustCompile(`(?m)^toolchain (go[0-9.]+)$`).FindStringSubmatch(read(t, "go.mod"))
+	if tc == nil {
+		t.Fatal("go.mod has no toolchain line")
+	}
+	return "GOTOOLCHAIN=" + tc[1]
 }
