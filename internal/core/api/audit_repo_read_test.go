@@ -305,12 +305,12 @@ func fill(f *os.File, ext string) error {
 	return nil
 }
 
-// leastPeak is the least over allocRuns runs of the most live heap at a
+// leastPeak is the least over liveRuns runs of the most live heap at a
 // close of a run's files.
 func leastPeak(t *testing.T, a coreapi.RepoAudit, peak *atomic.Uint64) uint64 {
 	t.Helper()
 	least := ^uint64(0)
-	for range allocRuns {
+	for range liveRuns {
 		peak.Store(0)
 		coreapi.CheckRepo(context.Background(), a)
 		least = min(least, peak.Load())
@@ -319,9 +319,16 @@ func leastPeak(t *testing.T, a coreapi.RepoAudit, peak *atomic.Uint64) uint64 {
 }
 
 // liveFiles is how many files the run of the live row reads: with each text
-// kept the run holds liveFiles times the cap, far over liveCeiling; one text
-// at a time it holds one cap, under it.
-const liveFiles = 8
+// kept the run holds liveFiles times the cap, three caps, over liveCeiling's
+// two; one text at a time it holds one cap, under it.
+const liveFiles = 3
+
+// liveRuns is how many runs the live row takes the least of. Each run reads
+// files of the cap's size under the race detector, so it is fewer than
+// allocRuns: a window can only be fuller than the run held, never emptier, so
+// the least of a few holds the claim as the least of many does. The row's
+// work is the claim and no more, so a slow runner is no reason for it to fail.
+const liveRuns = 8
 
 // liveCeiling is the most live heap a run of liveFiles files may hold at the
 // close of any: two caps. One text, as the run holds it, is a cap.
@@ -334,9 +341,9 @@ const liveHeap = "live-heap"
 // keeps: each file is let go before the next is opened, so the
 // live heap is one text under the cap and no total needs a bound. The
 // control is one file, whose text the meter must see (a cap, so not a row
-// that reads nothing) and that stays under the ceiling; the run is eight,
-// eight caps if each text were kept in a slice, and must stay under it too.
-// The row takes the least of allocRuns runs, as the row above does: a busy
+// that reads nothing) and that stays under the ceiling; the run is three,
+// three caps if each text were kept in a slice, over the two the ceiling allows.
+// The row takes the least of liveRuns runs, as the row above does of allocRuns: a busy
 // machine can raise a window, never lower it, so a red with the texts let go
 // is every window full of other tests' live data: run it again, and never
 // raise the ceiling to quiet it.
@@ -386,14 +393,14 @@ func measureLiveHeap(t *testing.T) {
 	t.Helper()
 	one, peak := liveAudit(t, 1, ".txt")
 	control := leastPeak(t, one, peak)
-	t.Logf("one file: the least of %d runs held %d live bytes; the ceiling is %d", allocRuns, control, liveCeiling)
+	t.Logf("one file: the least of %d runs held %d live bytes; the ceiling is %d", liveRuns, control, liveCeiling)
 	if control < coreapi.MaxRead-1 || control >= liveCeiling {
 		t.Errorf("one file held %d live bytes, want from %d to under %d", control, coreapi.MaxRead-1, liveCeiling)
 	}
 	for _, ext := range []string{".txt", ".go"} {
 		many, peak := liveAudit(t, liveFiles, ext)
 		least := leastPeak(t, many, peak)
-		t.Logf("%d %s files: the least of %d runs held %d live bytes; the ceiling is %d", liveFiles, ext, allocRuns, least, liveCeiling)
+		t.Logf("%d %s files: the least of %d runs held %d live bytes; the ceiling is %d", liveFiles, ext, liveRuns, least, liveCeiling)
 		if least >= liveCeiling {
 			t.Errorf("%d %s files held %d live bytes, want under %d: a text is kept past its turn", liveFiles, ext, least, liveCeiling)
 		}

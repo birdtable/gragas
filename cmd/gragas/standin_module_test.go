@@ -26,8 +26,15 @@ func (approving) Approved(context.Context, model.Digest) (bool, error) { return 
 // process do. Risk: the module answers otherwise than the fake every core test
 // uses, or the host reads its answer otherwise than the codec, so a core test
 // that passes on the fake fails, or passes wrongly, on the real plugin.
+//
+// Each call is held to the host's five-second limit, and one takes about
+// 0.6 s alone under the race detector; run beside the package's parallel tests
+// on a two-core runner, one was held past the limit. A row with no t.Parallel
+// runs before the parallel ones resume, so its calls have the machine to
+// themselves.
+//
+//nolint:paralleltest // serial: each call is held to the host's five-second limit, and run beside the package's parallel tests on a loaded runner one was held past it
 func TestTheHostServesStandinWasmAsTheCasesSay(t *testing.T) {
-	t.Parallel()
 	wasm := configtest.StandinWasm(t)
 	ref := model.PluginRef{Name: "standin", Version: "1.0.0"}
 	bundles := &porttest.Bundles{}
