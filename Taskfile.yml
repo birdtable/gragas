@@ -41,7 +41,7 @@ vars:
   # the folders task tools installs with pnpm, frozen; tools-check holds each node_modules to its pnpm-lock.yaml
   PNPM_TREES: explorer,tools/.node
   # The release programs of tools.yaml that tools-check holds to their sha256 pins (each is fetched by task tools).
-  RELEASE_TOOLS: golangci-lint node ast-grep goreleaser changie vale pnpm
+  RELEASE_TOOLS: golangci-lint node ast-grep goreleaser changie vale pnpm actionlint zizmor
   # Every system of the list (arch.ports.4), this list.
   CROSS: [linux/amd64, linux/arm64, darwin/arm64, windows/amd64, freebsd/amd64]
   # What explorer-format lists over, and the root boards rebuilds in; a plant sets either on the command line.
@@ -529,7 +529,7 @@ tasks:
   # ---- pre-commit members ----
 
   tools:
-    desc: Fetch the modules of every system of CROSS into the module cache, build the go tools into .tools/bin when one is missing or is not the pinned build, fetch the pinned golangci-lint, node, ast-grep, goreleaser, changie, vale and pnpm releases, and check node against .node-version; a tool that is not there fails the tier (supply.install.10)
+    desc: Fetch the modules of every system of CROSS into the module cache, build the go tools into .tools/bin when one is missing or is not the pinned build, fetch the pinned golangci-lint, node, ast-grep, goreleaser, changie, vale, pnpm, actionlint and zizmor releases, and check node against .node-version; a tool that is not there fails the tier (supply.install.10)
     cmds:
       - task: gate-build
         timeout: 5m
@@ -557,6 +557,10 @@ tasks:
       - cmd: "{{.GATE}} fetch changie --platform {{OS}}/{{ARCH}}"
         timeout: 20m
       - cmd: "{{.GATE}} fetch vale --platform {{OS}}/{{ARCH}}"
+        timeout: 20m
+      - cmd: "{{.GATE}} fetch actionlint --platform {{OS}}/{{ARCH}}"
+        timeout: 20m
+      - cmd: "{{.GATE}} fetch zizmor --platform {{OS}}/{{ARCH}}"
         timeout: 20m
       # node's version, held to .node-version with each side's space trimmed, so Windows's carriage return is none.
       - cmd: "{{.GATE}} tools-check --platform {{OS}}/{{ARCH}} --bin {{.TOOLS}} --node-version .node-version"
@@ -605,7 +609,7 @@ tasks:
 
   tools-check:
     silent: true
-    desc: Every go tool is in .tools/bin and built from the module, version and sum tools/go.sum pins, golangci-lint, node, ast-grep, goreleaser, changie, vale and pnpm are the sha256 tools.yaml pins, and each pnpm tree's node_modules is the install of its pnpm-lock.yaml; red when one is missing or is not, never an install (supply.install.10)
+    desc: Every go tool is in .tools/bin and built from the module, version and sum tools/go.sum pins, golangci-lint, node, ast-grep, goreleaser, changie, vale, pnpm, actionlint and zizmor are the sha256 tools.yaml pins, and each pnpm tree's node_modules is the install of its pnpm-lock.yaml; red when one is missing or is not, never an install (supply.install.10)
     cmds:
       - cmd: "{{.GOFLAGS_GUARD}}"
         timeout: 1m

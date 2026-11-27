@@ -1,11 +1,13 @@
-# Runs go vet and go test on GitHub's hosted runners: on Linux and Windows for every pull request,
-# and on Linux, macOS and Windows for every push to main, every tag and by hand. It holds no secret, and its
+# Runs go vet and go test on GitHub's hosted runners: on Linux and Windows for every pull request and
+# every merge queue entry, and on Linux, macOS and Windows for every push to main, every tag and by hand. It holds no secret, and its
 # token reads the repository's contents alone. Every module is fetched through the public Go module
 # proxy, and nothing is kept in the Actions cache.
 name: test
 
 on:
   pull_request:
+  # A merge queue entry runs the same two systems as a pull request, on the merged tree the queue builds.
+  merge_group:
   push:
     branches: [main]
     # A release's proof is all three jobs at the tagged commit.
@@ -28,8 +30,8 @@ jobs:
       matrix:
         # The organisation's hosted macOS runners are a small pool shared by all its repositories, and
         # a macOS job has waited out its whole timeout for one. So a pull request runs Linux and
-        # Windows only, and macOS runs where it is the proof: on main and on a tag.
-        os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest", "windows-latest"]') || fromJSON('["ubuntu-latest", "windows-latest", "macos-latest"]') }}
+        # Windows only, as does a merge queue entry, and macOS runs where it is the proof: on main and on a tag.
+        os: ${{ (github.event_name == 'pull_request' || github.event_name == 'merge_group') && fromJSON('["ubuntu-latest", "windows-latest"]') || fromJSON('["ubuntu-latest", "windows-latest", "macos-latest"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     # No GOFLAGS or GOPROXY: go's defaults, -mod=readonly and the public proxy, so a go.mod or go.sum
