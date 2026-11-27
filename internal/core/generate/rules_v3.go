@@ -140,20 +140,10 @@ func ruleRowOf(r model.Rule, s model.Standing) *ordered.Map {
 		m.Set("exemptions", xs, 0)
 	}
 	if r.Reasoning != nil {
-		rm := ordered.NewMap(0)
-		setText(rm, "definition", r.Reasoning.Definition)
-		setList(rm, "pros", r.Reasoning.Pros)
-		setList(rm, "cons", r.Reasoning.Cons)
-		setText(rm, "decision", r.Reasoning.Decision)
-		m.Set("reasoning", rm, 0)
+		m.Set("reasoning", reasoningRow(r.Reasoning), 0)
 	}
 	if r.Relations != nil {
-		rm := ordered.NewMap(0)
-		setList(rm, "relates", r.Relations.Relates)
-		setList(rm, "conflicts", r.Relations.Conflicts)
-		setList(rm, "depends", r.Relations.Depends)
-		setList(rm, "covers", r.Relations.Covers)
-		m.Set("relations", rm, 0)
+		m.Set("relations", relationsRow(r.Relations), 0)
 	}
 	if len(r.Sources) > 0 {
 		xs := make([]any, len(r.Sources))
@@ -266,4 +256,22 @@ func splitID(id model.RuleID) (part, concern string, ok bool) {
 		return s[:first], s[first+1 : i], true
 	}
 	return s, "", false
+}
+
+func reasoningRow(r *model.Reasoning) *ordered.Map {
+	m := ordered.NewMap(0)
+	setText(m, "definition", r.Definition)
+	setList(m, "pros", r.Pros)
+	setList(m, "cons", r.Cons)
+	setText(m, "decision", r.Decision)
+	return m
+}
+
+func relationsRow(r *model.Relations) *ordered.Map {
+	m := ordered.NewMap(0)
+	setList(m, "relates", r.Relates)
+	setList(m, "conflicts", r.Conflicts)
+	setList(m, "depends", r.Depends)
+	setList(m, "covers", r.Covers)
+	return m
 }
