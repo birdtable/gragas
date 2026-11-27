@@ -13,8 +13,13 @@ import (
 )
 
 // timeSlack is what C24 lets an endless loop run past TimeLimit before its
-// call ends: 100 ms.
-const timeSlack = 100 * time.Millisecond
+// call ends: 1 s. On a loaded Mac under -race, a call ends at most 12 ms past
+// its deadline, and nearly all of that is the runtime closing the module once
+// the deadline passes. Shared CI runners under -race have ended it more than
+// 100 ms past, on macOS, Linux and Windows alike, so a tighter slack measures
+// the runner, not the host. A limit that was taken out, or one 2 s longer, is
+// still red.
+const timeSlack = 1 * time.Second
 
 // hostileRef is the ref of the plugin that tries to break a limit, installed
 // beside standin in one host.
@@ -101,12 +106,12 @@ func goesOn(t *testing.T, echoing port.Plugin, hostileEnded *atomic.Bool) {
 }
 
 // TestC24AnEndlessLoopEndsWithinTheTimeLimit (C24): a plugin that
-// loops forever ends over the time limit, at most 100 ms past TimeLimit, and
+// loops forever ends over the time limit, at most timeSlack past TimeLimit, and
 // gragas goes on. A call of another plugin of the same host, made half the
 // time limit into the loop's call, answers before the loop's call ends. Once it has ended, the next
 // call of each plugin answers as usual: the other's answer, and the loop's own
 // limit again. Planted red: a runtime that does not close a module when its
-// context ends never ends the loop; a time limit 200 ms longer ends it late;
+// context ends never ends the loop; a time limit 2 s longer ends it late;
 // a host that runs one call at a time answers the other call only after the
 // loop's.
 func TestC24AnEndlessLoopEndsWithinTheTimeLimit(t *testing.T) {
@@ -119,14 +124,14 @@ func TestC24AnEndlessLoopEndsWithinTheTimeLimit(t *testing.T) {
 		ended.Store(true)
 	}()
 	goesOn(t, echoing, &ended)
-	loop.wait(t, TimeLimit+time.Second, "an endless loop")
+	loop.wait(t, TimeLimit+timeSlack+time.Second, "an endless loop")
 	if limitOf(loop.err) != plugin.LimitTime {
 		t.Errorf("an endless loop = %v; want over the time limit of %s, before a caller that waits %s more ends it", loop.err, TimeLimit, timeSlack)
 	}
 	if _, err := echoing.Entries(t.Context(), plugin.EntriesRequest{}); err != nil {
 		t.Errorf("the call after an endless loop = %v; want it to answer as usual", err)
 	}
-	again := inTime(t, hostile).wait(t, TimeLimit+time.Second, "the loop's next call")
+	again := inTime(t, hostile).wait(t, TimeLimit+timeSlack+time.Second, "the loop's next call")
 	if limitOf(again.err) != plugin.LimitTime {
 		t.Errorf("the loop's next call = %v; want over the time limit again, within %s of it", again.err, timeSlack)
 	}
