@@ -975,7 +975,7 @@ tasks:
       - defer: '{{.GATE}} lap end {{.TASK}}'
         timeout: 1m
         silent: true
-      - cmd: "{{.TOOLS}}/actionlint{{exeExt}}"
+      - cmd: "{{.TOOLS}}/actionlint{{exeExt}} -shellcheck= -pyflakes="
         timeout: 2m
       - cmd: "{{.TOOLS}}/zizmor{{exeExt}} -o .github/workflows"
         timeout: 2m
