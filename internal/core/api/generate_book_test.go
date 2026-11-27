@@ -28,7 +28,7 @@ func generatedWorld(t *testing.T, name, rules, rulesJSON, lock string) (*porttes
 // TestStaleGeneratedMakesTheFilesFromTheSourcesAndComparesThem: the files the
 // sources make are current; a missing one, one that is not what they make and
 // one left from before a rule was edited are each refused, and a refusal
-// carries the bytes that replace the file (gragas#2549).
+// carries the bytes that replace the file.
 func TestStaleGeneratedMakesTheFilesFromTheSourcesAndComparesThem(t *testing.T) {
 	t.Parallel()
 	w, root := generatedWorld(t, "none", bookRules, "", "")
