@@ -74,7 +74,7 @@ func TestToolsGoBuildsAgainAGoToolChangedPastItsBuildID(t *testing.T) {
 	run.Path, run.Err = pinned, nil // the clone's own, set after the call, as runSecretsFrom does
 	run.Args = append(run.Args, "tools-go", "GATE="+gate, "GO_TOOLS=dupl=github.com/mibk/dupl")
 	run.Dir = dir
-	run.Env = append(configtest.Inherited(), "PATH="+filepath.Dir(pinned)+string(os.PathListSeparator)+inheritedPath())
+	run.Env = append(configtest.Inherited(), toolchainPin(t), "PATH="+filepath.Dir(pinned)+string(os.PathListSeparator)+inheritedPath())
 	if out, err := run.CombinedOutput(); err != nil {
 		t.Fatalf("task tools-go over a planted dupl: %v\n%s", err, out)
 	}

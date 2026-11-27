@@ -98,12 +98,11 @@ func readGlob(root *os.Root, glob string) ([]plugin.File, error) {
 
 // readCapped is the file name of root, a name in the system's form as
 // confine.Local gives it, refused, matching port.ErrRefused, when it holds
-// more than capBytes. The cap is the smaller of the file's and what is left of
-// the read's in all. A name that is no regular file is refused before it is
-// opened, as a collect names its files with no walk before it, and the read
-// is go-files' confine.ReadCapped: no link followed, what opened looked at
-// again, so a pipe swapped in after the look is refused and never waited on,
-// and at most one byte read past the cap.
+// more than capBytes: it reads at most one byte past the cap. The cap is the
+// smaller of the file's and what is left of the read's in all. A name that is
+// no regular file is refused before it is opened, and what was opened is
+// looked at again before a byte is read, as a collect names its files with no
+// walk before it.
 func readCapped(root *os.Root, name string, capBytes int) ([]byte, error) {
 	info, err := confine.NoLinks(root, name)
 	if err == nil && info != nil && !info.Mode().IsRegular() {
@@ -114,17 +113,18 @@ func readCapped(root *os.Root, name string, capBytes int) ([]byte, error) {
 		data, err = confine.ReadCapped(root, name, int64(capBytes))
 	}
 	switch {
-	case err == nil:
-		return data, nil
-	case errors.Is(err, confine.ErrOutside):
-		return nil, fmt.Errorf("the file %s of the read is a link or leads out of the scratch folder: %w: %w", name, port.ErrRefused, err)
-	case errors.Is(err, confine.ErrNotRegular):
-		return nil, fmt.Errorf("the file %s of the read is no regular file: %w: %w", name, port.ErrRefused, err)
 	case errors.Is(err, confine.ErrOverCap):
 		return nil, fmt.Errorf("the file %s of the read holds more than %d bytes, the most one file gives (%d) or what is left of the read's %d in all: %w",
 			name, capBytes, plugin.MaxFile, plugin.MaxFiles, port.ErrRefused)
+	case errors.Is(err, confine.ErrNotRegular):
+		// A pipe swapped in after the look is refused by the read, never waited on.
+		return nil, fmt.Errorf("the file %s of the read is no regular file: %w: %w", name, port.ErrRefused, err)
+	case errors.Is(err, confine.ErrOutside):
+		return nil, fmt.Errorf("the file %s of the read is a link or leads out of the scratch folder: %w: %w", name, port.ErrRefused, err)
+	case err != nil:
+		return nil, fmt.Errorf("the file %s of the read: %w", name, err)
 	}
-	return nil, fmt.Errorf("the file %s of the read: %w", name, err)
+	return data, nil
 }
 
 // stepBytes is data in the contract's form: text when it is valid UTF-8, and

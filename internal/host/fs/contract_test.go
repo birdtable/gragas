@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/birdtable/go-files/confine"
 	"github.com/birdtable/go-files/trust/trusttest"
 	testenv "github.com/birdtable/go-testkit"
 	hostfs "github.com/birdtable/gragas/internal/host/fs"
@@ -199,7 +200,7 @@ func TestAnEmptyDirIsTheWorkingFolder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want, _ := filepath.EvalSymlinks(mustGetwd(t))
+	want, _ := confine.Resolve(mustGetwd(t))
 	if string(root) != filepath.ToSlash(want) {
 		t.Errorf("Open(\"\") = %q, want %q", root, want)
 	}

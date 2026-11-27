@@ -424,12 +424,10 @@ type recording struct {
 // preset in its config alone, once. One whose recording held a read is asked
 // for its plan, with the preset as the config, and the files its read globs
 // match are handed over as a read result, in the first place after the
-// recorded runs. The config is always the whole preset, as the engine sends it
-// (rounds.go entriesRequest sends the config unchanged beside every read
-// result), so a file a read takes is in the request twice, as it is in the
-// engine's, and a preset the read takes whole over half the entries cap fails
-// here as it does there (the engine does not yet leave a file its read
-// returned out of the config). The declarative SDK reads its rule files from
+// recorded runs. A file a read takes is left out of the config, as the
+// engine leaves it out (rounds.go unread, gragas#2375), so it counts once
+// against the entries cap; the plan is asked with the whole preset as the
+// config. The declarative SDK reads its rule files from
 // the read and from nowhere else. A plan that asks for no read, or fails, gets no read.
 func (rec recording) split(ctx context.Context, p Caller, version string, t plugin.Target, r plugin.PresetResponse) ([]plugin.Config, []plugin.Result) {
 	all := make([]plugin.Config, 0, len(r.Files))
@@ -446,12 +444,16 @@ func (rec recording) split(ctx context.Context, p Caller, version string, t plug
 		return all, rec.have
 	}
 	var files []plugin.File
+	read := map[string]bool{}
 	for _, f := range r.Files {
 		if matches(globs, f.Path) {
 			tx := f.Text
 			files = append(files, plugin.File{Path: f.Path, Data: plugin.Bytes{Text: &tx}})
+			read[f.Path] = true
 		}
 	}
+	// A file the read took is left out of the config, as the engine leaves it out (rounds.go unread, gragas#2375).
+	all = slices.DeleteFunc(all, func(c plugin.Config) bool { return read[c.Path] })
 	return all, append(slices.Clone(rec.have), plugin.Result{Round: round, Step: step, Kind: plugin.KindRead, Files: files})
 }
 

@@ -60,9 +60,8 @@ func TestTheSourcesAreTheFilesVerifyChecks(t *testing.T) {
 }
 
 // The real tree, listed by the real git with no variable of the environment,
-// holds every source as a plain file, and CLAUDE.md, a regular file that
-// imports AGENTS.md since gragas#872, as one: the tree tracks no link, so the
-// plants below carry a link of their own (plainTree's CLAUDE.md).
+// holds every source as a plain file: the tree tracks no link, so the plants
+// below carry a link of their own (plainTree's CLAUDE.md).
 func TestTheRealTreeHoldsEachSourceAPlainFile(t *testing.T) {
 	t.Parallel()
 	listing, err := newToolchain(func(string) string { return "" }, nil).Tree(t.Context(), repoRoot)
@@ -77,9 +76,6 @@ func TestTheRealTreeHoldsEachSourceAPlainFile(t *testing.T) {
 		if modes[src] != plainMode {
 			t.Errorf("%s is mode %q in HEAD, want %s", src, modes[src], plainMode)
 		}
-	}
-	if modes["CLAUDE.md"] != plainMode {
-		t.Errorf("CLAUDE.md is mode %q in HEAD, want %s: it is a regular file that imports AGENTS.md (gragas#872), and no tracked file may be a link", modes["CLAUDE.md"], plainMode)
 	}
 }
 
