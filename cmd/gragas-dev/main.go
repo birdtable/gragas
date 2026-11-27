@@ -50,6 +50,7 @@ const usage = `usage: gragas-dev layers [--check] [-C dir]
        gragas-dev fuzz [--fuzztime 60s] [--grace 30s] [--jobs n] [-C dir]
        gragas-dev gate check [-C dir]
        gragas-dev scan names [-C dir]
+       gragas-dev scan public-text [--apply] [--list] [-C dir]
        gragas-dev census [-C dir]
        gragas-dev fetch id --platform goos/goarch [--check] [-C dir]
        gragas-dev preset-plugins [-C root]
@@ -126,6 +127,12 @@ const usage = `usage: gragas-dev layers [--check] [-C dir]
            commits' addresses against the no-reply ones; it proves itself on
            plants first and fails closed; no tier runs it until #432, and
            task scan-names runs it by hand
+           public-text: every tracked file against what a public file does not
+           say (a tracker number, a decision id, a home folder, an address, a
+           word of the hashed list when one is named), counted per file against
+           gate/public-text.txt, which only shrinks: a file over its count
+           fails, and --apply lowers a count and never raises one; --list
+           prints every hit; task public-text runs it at pre-push
   self-check  issues: read the Issue column of the table in docs/self-check.md that
            lists what gragas check finds in gragas, and ask GitHub (through gh, which
            holds its own login) whether each issue is open; red on a closed or a missing

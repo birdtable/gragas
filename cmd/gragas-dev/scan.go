@@ -32,13 +32,15 @@ func runScan(ctx context.Context, env func(string) (string, bool), environ, args
 	fl := flag.NewFlagSet("scan", flag.ContinueOnError)
 	fl.SetOutput(stderr)
 	dir := fl.String("C", ".", "the repository to scan")
+	apply := fl.Bool("apply", false, "public-text: lower the counts that have fallen")
+	list := fl.Bool("list", false, "public-text: print every hit, not only those over a count")
 	// The flags may come before the scan's name or after it.
 	err := fl.Parse(args)
 	name := fl.Arg(0)
 	if err == nil && name != "" {
 		err = fl.Parse(fl.Args()[1:])
 	}
-	if err != nil || name != "names" || fl.NArg() != 0 {
+	if err != nil || (name != "names" && name != "public-text") || fl.NArg() != 0 {
 		talk.Text(usage)
 		return exitUsage
 	}
@@ -48,6 +50,9 @@ func runScan(ctx context.Context, env func(string) (string, bool), environ, args
 		return exitFailed
 	}
 	h := &scanHost{root: root, env: env, environ: environ, mounts: func() ([]string, error) { return settingsMounts(env) }}
+	if name == "public-text" {
+		return h.publicText(ctx, *apply, *list, stdout, stderr)
+	}
 	lines, err := scan.Names(ctx, h.machine())
 	err = errors.Join(err, h.remove())
 	out := &say.Speaker{W: stdout}
