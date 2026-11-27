@@ -332,6 +332,7 @@ tasks:
       - task: build
         vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
       - task: secrets
+      - task: public-text
       - task: vet
         vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
       - task: gate-lists
@@ -947,6 +948,18 @@ tasks:
         timeout: 5m
       - cmd: "{{.GATE}} scan names"
         timeout: 5m
+
+  public-text:
+    desc: "The tracked files against what a public file does not say (a tracker number, a decision id, a home folder, an address): each file may hold no more than gate/public-text.txt counts, which only shrinks; --apply lowers it. The hashed list's words are checked when GRAGAS_NAMES_HASHES is set"
+    cmds:
+      - cmd: '{{.GATE}} lap begin {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - defer: '{{.GATE}} lap end {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - cmd: "{{.GATE}} scan public-text{{if .CLI_ARGS}} {{.CLI_ARGS}}{{end}}"
+        timeout: 2m
 
   secrets:
     desc: gitleaks over the commits past origin/main
