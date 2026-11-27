@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"strings"
@@ -102,37 +101,21 @@ func readCapped(root *os.Root, name string, capBytes int) ([]byte, error) {
 	if err == nil && info != nil && !info.Mode().IsRegular() {
 		return nil, notRegular(name, info.Mode())
 	}
-	var f *os.File
+	var data []byte
 	if err == nil {
-		f, err = confine.Open(root, name, os.O_RDONLY, 0)
+		data, err = confine.ReadCapped(root, name, int64(capBytes))
 	}
-	if err != nil {
-		if errors.Is(err, confine.ErrOutside) {
-			return nil, fmt.Errorf("the file %s of the read is a link or leads out of the scratch folder: %w: %w", name, port.ErrRefused, err)
-		}
-		return nil, fmt.Errorf("the file %s of the read: %w", name, err)
-	}
-	// A pipe swapped in after the look opens at once, as confine.Open never
-	// waits, and is refused here, before a read that would wait for a writer.
-	switch info, err = f.Stat(); {
-	case err != nil:
-		err = fmt.Errorf("the file %s of the read: %w", name, err)
-	case !info.Mode().IsRegular():
-		err = notRegular(name, info.Mode())
-	}
-	if err != nil {
-		return nil, errors.Join(err, f.Close())
-	}
-	data, err := io.ReadAll(io.LimitReader(f, int64(capBytes)+1))
-	if cerr := f.Close(); err == nil {
-		err = cerr
-	}
-	if err != nil {
-		return nil, fmt.Errorf("the file %s of the read: %w", name, err)
-	}
-	if len(data) > capBytes {
+	switch {
+	case errors.Is(err, confine.ErrOverCap):
 		return nil, fmt.Errorf("the file %s of the read holds more than %d bytes, the most one file gives (%d) or what is left of the read's %d in all: %w",
 			name, capBytes, plugin.MaxFile, plugin.MaxFiles, port.ErrRefused)
+	case errors.Is(err, confine.ErrNotRegular):
+		// A pipe swapped in after the look is refused by the read, never waited on.
+		return nil, fmt.Errorf("the file %s of the read is no regular file: %w: %w", name, port.ErrRefused, err)
+	case errors.Is(err, confine.ErrOutside):
+		return nil, fmt.Errorf("the file %s of the read is a link or leads out of the scratch folder: %w: %w", name, port.ErrRefused, err)
+	case err != nil:
+		return nil, fmt.Errorf("the file %s of the read: %w", name, err)
 	}
 	return data, nil
 }

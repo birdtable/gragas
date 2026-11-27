@@ -7,6 +7,7 @@ console_allow: []
 # The allowances of gate/shared.yaml (arch.shared.8): the packages beside a
 # row's owner that may reach its primitives. The count is what the file holds
 # today (internal/journeys on the digest row, tests.journeys.2, and
-# cmd/gragas-dev on the archive row); the list only shrinks, and
+# cmd/gragas-dev on the archive row, and cmd/gragas-dev, internal/core/api and
+# internal/host/git on the capped-read row); the list only shrinks, and
 # a test holds the count to the registry.
-shared_allowances: 2
+shared_allowances: 5
