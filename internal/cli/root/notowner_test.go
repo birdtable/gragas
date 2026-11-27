@@ -73,6 +73,37 @@ func TestARepositoryAnotherAccountOwnsIsRefused(t *testing.T) {
 	}
 }
 
+// laterRefusal passes the first write to w and refuses every one after it, as
+// a repository whose owner changed under the run would.
+type laterRefusal struct {
+	w legacy.Writer
+	n int
+}
+
+func (x *laterRefusal) Write(dir, path string, data []byte) error {
+	x.n++
+	if x.n > 1 {
+		return notMine("the repository", dir)
+	}
+	return x.w.Write(dir, path, data)
+}
+
+// TestARefusalAfterAWriteFails: gen writes rules.json then ids.lock, so a
+// repository whose owner changes after the first write ends failed, with one
+// file written and the line to run again. Risk: a half-written pair said as a
+// plain refusal, so a person does not run it again.
+func TestARefusalAfterAWriteFails(t *testing.T) {
+	t.Parallel()
+	f := world(t)
+	p, _ := process(t, f, "gen", "--apply")
+	p.Ports.Writer = &laterRefusal{w: p.Ports.Writer}
+	code, sc := execute(t.Context(), t, p)
+	said := sc.output()
+	if code != exit.Failed || len(f.Wrote) != 1 || !strings.Contains(said, "Run it again: `gragas gen --apply`") {
+		t.Fatalf("exit %d, wrote %v, want failed after one write; said:\n%s", code, f.Wrote, said)
+	}
+}
+
 // TestEveryCommandThatWritesEndsRefusedOverAnotherAccountsLock: the lock is
 // taken for every command given --apply that writes, not for gen alone, so
 // cache clear --apply ends refused too, and declares it. Risk: a writing

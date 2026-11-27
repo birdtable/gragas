@@ -138,7 +138,7 @@ func TestJSONAnswersWithTheResult(t *testing.T) {
 	if err := json.Unmarshal([]byte(out.String()), &r); err != nil {
 		t.Fatalf("not one JSON document: %v\n%s", err, out)
 	}
-	if r.Schema != coreapi.ResultSchema || r.Command != "gen" || r.Ended != "declined" || r.Apply == nil || *r.Apply || len(r.Changes) != 1 {
+	if r.Schema != coreapi.ResultSchema || r.Command != "gen" || r.Ended != "declined" || r.Apply == nil || *r.Apply || len(r.Changes) != 2 {
 		t.Errorf("answer = %+v", r)
 	}
 }

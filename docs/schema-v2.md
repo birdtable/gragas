@@ -181,5 +181,6 @@ so the commit that closes a gap lowers the number. A test holds this.
   their `why` now says so.
 
 Since the move to format 3, `gragas gen` writes `rulebook/rules.json` in schema 3 (see
-`docs/format/README.md`, The generated rules.json) and the three other generated files
-above are no longer written by it; `rulebook/schema/rules-json.schema.json` describes schema 2 only.
+`docs/format/README.md`, The generated rules.json). It still writes `rulebook/ids.lock`, and no longer
+writes `bindings.json` or `coverage.json`. `rulebook/schema/rules-json.schema.json` describes schema 2
+only; `rulebook/schema/rules-json-3.schema.json` describes what gen writes now.

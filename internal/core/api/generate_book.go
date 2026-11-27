@@ -14,15 +14,17 @@ import (
 	"github.com/birdtable/gragas/internal/port"
 )
 
-// StaleRulesJSON is the rules.json of the format-3 rulebook at root when the
-// file in the tree is missing or differs from it: one Output, or none when the
-// file is what the sources make. The proof grid is not read, so a standing is
-// the one a book with no proof has, as the coverage listing derives it.
+// StaleGenerated is the generated files of the format-3 rulebook at root that
+// are missing or differ from what its sources make: rules.json and ids.lock,
+// in that order, each an Output, or none when both are what the sources make.
+// The proof grid is not read, so a standing is the one a book with no proof
+// has, as the coverage listing derives it. bindings.json and coverage.json
+// have no reader and are not made (docs/format/README.md).
 //
 // A folder with no rulebook is ErrNoBook. A book with findings is the
 // FindingsError and nothing is generated from a book that does not load clean.
 // Nothing is written.
-func StaleRulesJSON(ctx context.Context, p port.Ports, root model.Root) ([]Output, error) {
+func StaleGenerated(ctx context.Context, p port.Ports, root model.Root) ([]Output, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -37,15 +39,39 @@ func StaleRulesJSON(ctx context.Context, p port.Ports, root model.Root) ([]Outpu
 	if err != nil {
 		return nil, err
 	}
-	out := Output{Path: path.Join(rep.Dir, generate.RulesJSON), Data: generate.RulesJSONOf(rep.Book, held)}
-	have, err := p.Tree.Read(root, out.Path)
+	lockPath := path.Join(rep.Dir, "ids.lock")
+	lock, err := readGenerated(p, root, lockPath)
+	if err != nil {
+		return nil, err
+	}
+	made := []Output{
+		{Path: path.Join(rep.Dir, generate.RulesJSON), Data: generate.RulesJSONOf(rep.Book, held)},
+		{Path: lockPath, Data: generate.IDsLock(rep.Book, lock)},
+	}
+	var stale []Output
+	for _, o := range made {
+		have, err := readGenerated(p, root, o.Path)
+		if err != nil {
+			return nil, err
+		}
+		if have == nil || !bytes.Equal(have, o.Data) {
+			stale = append(stale, o)
+		}
+	}
+	return stale, nil
+}
+
+// readGenerated is the file at name, nil when there is none.
+func readGenerated(p port.Ports, root model.Root, name string) ([]byte, error) {
+	data, err := p.Tree.Read(root, name)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
-		return []Output{out}, nil
-	case err != nil:
-		return nil, fmt.Errorf("read %s: %w", out.Path, err)
-	case bytes.Equal(have, out.Data):
 		return nil, nil
+	case err != nil:
+		return nil, fmt.Errorf("read %s: %w", name, err)
 	}
-	return []Output{out}, nil
+	if data == nil {
+		data = []byte{}
+	}
+	return data, nil
 }

@@ -329,11 +329,11 @@ func (k kitSession) PluginApprove(ctx context.Context, ref string, d model.Diges
 }
 
 // staleGenerated is the generated files of the rulebook at dir that are not
-// what its sources make (coreapi.StaleRulesJSON).
+// what its sources make (coreapi.StaleGenerated).
 func (s *session) staleGenerated(ctx context.Context, dir string) ([]coreapi.Output, error) {
 	root, err := s.p.World.Tree.Open(dir)
 	if err != nil {
 		return nil, fmt.Errorf("the folder %s could not be opened: %w", dir, err)
 	}
-	return coreapi.StaleRulesJSON(ctx, s.p.World, root)
+	return coreapi.StaleGenerated(ctx, s.p.World, root)
 }

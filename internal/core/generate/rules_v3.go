@@ -2,6 +2,7 @@ package generate
 
 import (
 	"slices"
+	"strings"
 
 	"github.com/birdtable/gragas/internal/model"
 	"github.com/birdtable/gragas/internal/ordered"
@@ -275,3 +276,33 @@ func relationsRow(r *model.Relations) *ordered.Map {
 	setList(m, "covers", r.Covers)
 	return m
 }
+
+// IDsLock is the file of every rule id ever issued, from a format-3 book: the
+// ids of the old file, which are kept, and the ids of the book's rules, each
+// once, one to a line in order. A retired rule keeps its id, and an id a
+// rules file no longer holds stays.
+func IDsLock(b model.Book, old []byte) []byte {
+	seen := map[string]bool{}
+	var ids []string
+	add := func(id string) {
+		if id != "" && !seen[id] {
+			seen[id] = true
+			ids = append(ids, id)
+		}
+	}
+	for l := range strings.SplitSeq(string(old), "\n") {
+		l = strings.TrimSpace(l)
+		if !strings.HasPrefix(l, "#") {
+			add(l)
+		}
+	}
+	for _, r := range b.Rules {
+		add(string(r.ID))
+	}
+	slices.Sort(ids)
+	return []byte(ids3Header + strings.Join(ids, "\n") + "\n")
+}
+
+const ids3Header = `# Every rule id ever issued, one per line. gragas gen writes it as this
+# list and the rulebook's ids together. A retired rule keeps its id.
+`

@@ -4,6 +4,7 @@ gragas  v1.2.3 (abc1234) go<version>
 reading rulebook/ in .
 
   would write      rulebook/rules.json
+  would write      rulebook/ids.lock
 This was a dry run and nothing was changed. Add --apply to
 make these changes.
 
