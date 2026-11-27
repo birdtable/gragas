@@ -55,7 +55,7 @@ func TestEveryFuzzTargetRunsAtMostJobsAtOnce(t *testing.T) {
 	if err != nil || !ok {
 		t.Fatalf("ok %v, err %v\n%s", ok, err, out.String())
 	}
-	// The count the gate runner reads (#695): each target run.
+	// The count the gate runner reads: each target run.
 	if _, n := counted(t, out.String(), "tests"); n != 5 {
 		t.Errorf("a count of %d tests, want the 5 targets\n%s", n, out.String())
 	}

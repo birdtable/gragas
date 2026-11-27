@@ -109,7 +109,7 @@ func TestTheRepositorysLayerFilesAreCurrent(t *testing.T) {
 	if code != exitDone || !strings.Contains(out, "current") {
 		t.Fatalf("exit %d\n%s%s", code, out, errs)
 	}
-	// The count the gate runner reads (#695): each rendered file compared.
+	// The count the gate runner reads: each rendered file compared.
 	if _, n := counted(t, out, "files"); n < 2 {
 		t.Errorf("a count of %d files compared\n%s", n, out)
 	}

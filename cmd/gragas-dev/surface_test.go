@@ -294,7 +294,7 @@ func TestTheCommittedListingIsCurrent(t *testing.T) {
 	if code != exitDone {
 		t.Errorf("exit %d: %s %s", code, out, errs)
 	}
-	// The count the gate runner reads (#695): the listing compared.
+	// The count the gate runner reads: the listing compared.
 	if _, n := counted(t, out, "files"); n != 1 {
 		t.Errorf("a count of %d files compared, want the listing\n%s", n, out)
 	}

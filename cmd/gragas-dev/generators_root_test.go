@@ -18,7 +18,7 @@ import (
 // A generator reads and writes the repository through one os.Root, so a link
 // on a path it uses, committed in a head the base's generator is run over,
 // leads nowhere: the read or the write is refused and the folder the link
-// points at stays as it was (#509).
+// points at stays as it was.
 
 // outsideWith makes a folder outside the repository, with one file in it.
 func outsideWith(t *testing.T, name, text string) string {
@@ -79,8 +79,8 @@ func TestGenCommandsFollowsNoLinkOutOfTheRepository(t *testing.T) {
 	if code, _, errs := do("gen", "commands", "-C", clean); code != exitDone {
 		t.Fatalf("the clean control: exit %d: %s", code, errs)
 	}
-	// The check of the join it wrote ends on the count the gate runner reads
-	// (#695): the one file compared.
+	// The check of the join it wrote ends on the count the gate runner reads:
+	// the one file compared.
 	if code, out, errs := do("gen", "commands", "--check", "-C", clean); code != exitDone {
 		t.Errorf("the check of the clean control: exit %d: %s", code, errs)
 	} else if _, n := counted(t, out, "files"); n != 1 {

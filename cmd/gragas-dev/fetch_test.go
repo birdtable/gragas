@@ -137,7 +137,7 @@ func TestAToolThatIsNotAReleaseHasNoPinToFetch(t *testing.T) {
 // TestTheRealToolsFilePinsGolangciLintForThisPlatform: tools.yaml, the one
 // pin, names a complete release program of golangci-lint for each platform
 // the fetch runs on, and of ast-grep, which ships as a zip, of node and
-// pnpm, windows/amd64 among them (gragas#1088), and of vale (#1119).
+// pnpm, windows/amd64 among them, and of vale.
 func TestTheRealToolsFilePinsGolangciLintForThisPlatform(t *testing.T) {
 	t.Parallel()
 	data, err := os.ReadFile(filepath.Join("..", "..", "tools.yaml"))
@@ -311,8 +311,8 @@ func windowsGaps(data []byte) []string {
 	return gaps
 }
 
-// TestEveryToolPinsWindowsOrSaysWhyNot (gragas#1088): node, pnpm and the
-// release shelf, goreleaser, changie and vale (#1119) among it, each pin a complete windows/amd64 zip, and every other tool
+// TestEveryToolPinsWindowsOrSaysWhyNot: node, pnpm and the
+// release shelf, goreleaser, changie and vale among it, each pin a complete windows/amd64 zip, and every other tool
 // says in no-windows why it has none. A copy of tools.yaml with a windows pin
 // cut and no reason put in, or with a reason beside a pin, is red.
 func TestEveryToolPinsWindowsOrSaysWhyNot(t *testing.T) {
