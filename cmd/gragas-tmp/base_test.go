@@ -19,7 +19,7 @@ const private = 0x1c0
 // TestTheCommandMakesItsFolderUnderTheBaseTheCallerGivesAndRefusesTheThreeWays: the
 // namespace-caps task hands the command a base as TMPDIR and uses the folder it prints, with no mkdir of its own,
 // so the refusals the walk makes are the task's. Planted, each with the real walk and not a stand-in: a base a
-// group can write (#910), a link in the way of the account's folder, and a base inside the work tree (#1042);
+// group can write, a link in the way of the account's folder, and a base inside the work tree;
 // and a good base that prints a folder under it, at mode 0700.
 func TestTheCommandMakesItsFolderUnderTheBaseTheCallerGivesAndRefusesTheThreeWays(t *testing.T) {
 	// not parallel: it points the temp folder at each base through the environment (one variable is set

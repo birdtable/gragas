@@ -1,6 +1,6 @@
 // Command gragas-release is what gragas keeps of its release: goreleaser
 // builds the archives and their checksum file from .goreleaser.yaml, and this
-// command checks what it reads and what it built (#914). It has five steps,
+// command checks what it reads and what it built. It has five steps,
 // which Taskfile.yml runs, and build, which runs three of them around
 // goreleaser:
 //

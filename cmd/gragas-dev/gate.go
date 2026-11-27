@@ -24,7 +24,7 @@ const reportMark = "report: "
 var errGate = errors.New("the gate registry does not hold")
 
 // baseRef is the revision the head's change record of the surface is held to
-// (#825). It is the remote branch named in full: git resolves a bare
+// It is the remote branch named in full: git resolves a bare
 // origin/main as a tag of that name before the remote branch, so anyone who
 // can push a tag could choose the base (gragas#589).
 const baseRef = "refs/remotes/origin/main"
@@ -43,7 +43,7 @@ type machine struct {
 	environ []string
 	modules func(ctx context.Context, dir string) ([]string, error)
 	// baseMarks is the surface marks file at the base revision, nil when the
-	// base has none: the head keeps its change record's base line (#825).
+	// base has none: the head keeps its change record's base line.
 	baseMarks func(ctx context.Context, dir, ref string) ([]byte, error)
 	// baseFile is a file of the repository as the base revision has it, nil
 	// when the base holds none: the subset list only shrinks against it

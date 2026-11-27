@@ -19,7 +19,7 @@ const (
 	ConsumersDir = "contract/consumers/"
 	// FieldReferenceFile is the field reference skeleton.
 	FieldReferenceFile = "contract/field-reference.md"
-	// FixtureDir holds the fixture's hand-authored documents (#151).
+	// FixtureDir holds the fixture's hand-authored documents.
 	FixtureDir = "contract/fixture/"
 	// FixtureMirrorDir is where `gragas contract fixture` reads them from: a
 	// copy of FixtureDir inside the one go:embed site, which cannot reach the
