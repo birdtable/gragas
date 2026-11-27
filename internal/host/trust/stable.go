@@ -3,6 +3,7 @@ package trust
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -231,11 +232,37 @@ func SweepHomes(apart []string, older time.Duration) (n int, err error) {
 		if info, ierr := e.Info(); ierr != nil || time.Since(info.ModTime()) < older {
 			continue
 		}
-		if rerr := confine.RemoveAllOwned(root, name); rerr != nil {
+		swept, rerr := sweepOne(root, name)
+		if rerr != nil {
 			err = errors.Join(err, rerr)
 			continue
 		}
-		n++
+		if swept {
+			n++
+		}
 	}
 	return n, err
+}
+
+// sweepTries is how often sweepOne goes at a Home another sweep is also
+// removing: each pass finds less of it, so a few end it.
+const sweepTries = 5
+
+// sweepOne removes the Home name below root and says whether this sweep did.
+// Another sweep, in a second run of gragas, may remove the same old Home at the
+// same time, and the walk of the slower says so as "not exist" or as a
+// refusal ("a component changed") while the Home is half there. So an error
+// is met with another pass; a Home that is gone by then was swept by the other,
+// which is no error and not counted. A Home still there after the passes keeps
+// the last error.
+func sweepOne(root *os.Root, name string) (swept bool, err error) {
+	for range sweepTries {
+		if err = confine.RemoveAllOwned(root, name); err == nil {
+			return true, nil
+		}
+		if _, serr := root.Lstat(name); errors.Is(serr, fs.ErrNotExist) {
+			return false, nil
+		}
+	}
+	return false, err
 }

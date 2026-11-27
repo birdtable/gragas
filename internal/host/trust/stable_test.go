@@ -129,12 +129,10 @@ func TestSweepHomesRemovesTheHomesNoRunHolds(t *testing.T) {
 	if err := os.Chtimes(left, old, old); err != nil {
 		t.Fatal(err)
 	}
-	n, err := SweepHomes(nil, time.Hour)
-	if err != nil {
+	// Another test's sweep may take the left Home first, so only the Home's
+	// own state is claimed, not the count.
+	if _, err := SweepHomes(nil, time.Hour); err != nil {
 		t.Fatalf("SweepHomes = %v", err)
-	}
-	if n < 1 {
-		t.Errorf("SweepHomes = %d, want the left Home counted", n)
 	}
 	if _, err := os.Stat(left); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("the left Home %s is there after a sweep: Stat = %v", left, err)
@@ -151,7 +149,7 @@ func TestSweepHomesRemovesTheHomesNoRunHolds(t *testing.T) {
 // Risk: a sweep by any gragas step on the machine that removes a pre-push
 // worktree mid-run, because its folder looks like a Home that no run holds.
 func TestAFreshFolderIsNeverSwept(t *testing.T) {
-	t.Parallel() // a sweep leaves every folder that is not an old Home, so it cannot touch another test's
+	t.Parallel() // a sweep leaves every folder that is not an old Home, and meets an old Home another sweep took without an error
 	for _, prefix := range []string{"run-", "run-gragas-"} {
 		if dir, _, err := FreshFolder(nil, prefix); err == nil {
 			t.Errorf("FreshFolder(%q) = %s, want a refusal: SweepHomes would take it", prefix, dir)
@@ -381,5 +379,56 @@ func TestARunHomeRemovalLeavesWhatALinkInItPointsAt(t *testing.T) {
 	}
 	if after, err := os.Stat(outside); err != nil || after.Mode() != before.Mode() {
 		t.Errorf("what the link points at = %v, %v, want the mode it had, %v", after, err, before.Mode())
+	}
+}
+
+// TestTwoSweepsAtOnceOverTheSameOldHomesBothEndWithoutAnError: two gragas runs
+// on one machine sweep at once, and each lists the same old Homes, so the
+// slower meets a Home the other has taken. A Home that is gone is swept by the
+// other: no error, and not counted twice. Risk: a step fails, and the push
+// with it, for a sweep that did its work.
+func TestTwoSweepsAtOnceOverTheSameOldHomesBothEndWithoutAnError(t *testing.T) {
+	t.Parallel()
+	const homes, sweepers = 12, 4
+	made := make([]string, 0, homes)
+	old := time.Unix(1, 0)
+	for range homes {
+		home, remove, err := RunHome(nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = remove() })
+		for _, sub := range []string{"a/b/c", "d/e"} {
+			if err := os.MkdirAll(filepath.Join(home, sub), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(home, sub, "x"), []byte("x"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := os.Chtimes(home, old, old); err != nil {
+			t.Fatal(err)
+		}
+		made = append(made, home)
+	}
+	errs := make(chan error, sweepers)
+	start := make(chan struct{})
+	for range sweepers {
+		go func() {
+			<-start
+			_, err := SweepHomes(nil, time.Hour)
+			errs <- err
+		}()
+	}
+	close(start)
+	for range sweepers {
+		if err := <-errs; err != nil {
+			t.Errorf("a sweep at the same time as others = %v, want none", err)
+		}
+	}
+	for _, home := range made {
+		if _, err := os.Stat(home); !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("the old Home %s is there after the sweeps: Stat = %v", home, err)
+		}
 	}
 }
