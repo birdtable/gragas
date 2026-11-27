@@ -1,8 +1,10 @@
 <p align="center">
-    <img width="72" alt="" src="docs/gragas.svg" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/mark/gragas-banner-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/mark/gragas-banner-light.svg">
+    <img src="docs/mark/gragas-banner-light.svg" width="268" alt="gragas: a goose feather, then a coral bird in flight and the name">
+  </picture>
 </p>
-
-<h1 align="center">gragas</h1>
 
 <p align="center"><strong>The rules a project's code is held to, written down once.</strong></p>
 
