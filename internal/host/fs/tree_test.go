@@ -115,7 +115,7 @@ func chainOfLinks(t *testing.T, base string, n int) string {
 func TestAChainOrALoopOfLinksIsOutside(t *testing.T) {
 	t.Parallel()
 	for _, links := range []int{1, 40} {
-		base, err := filepath.EvalSymlinks(t.TempDir())
+		base, err := confine.Resolve(t.TempDir())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -123,7 +123,7 @@ func TestAChainOrALoopOfLinksIsOutside(t *testing.T) {
 			t.Errorf("a chain of %d links that ends outside: outside = false, want true", links)
 		}
 	}
-	base, err := filepath.EvalSymlinks(t.TempDir())
+	base, err := confine.Resolve(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +145,7 @@ func TestAChainOrALoopOfLinksIsOutside(t *testing.T) {
 // is judged inside).
 func TestAFolderLinkIsJudgedWhereItLeads(t *testing.T) {
 	t.Parallel()
-	top, err := filepath.EvalSymlinks(t.TempDir())
+	top, err := confine.Resolve(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}

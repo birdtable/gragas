@@ -57,6 +57,27 @@ shared:
       until: "the test files' raw calls move onto go-files' write helper"
     status: shared
     since: 0.1.0
+  # A file read up to a cap: go-files' confine.ReadCapped opens the name with
+  # no link followed, refuses what is no regular file, and reads at most one
+  # byte past the cap, so a hand-written LimitReader behind an open does the
+  # same with a gap a swap can use. Three packages still cap a read by hand:
+  # the dev tool's fetch caps a network body, which is no file in a root; the
+  # audit reads through an fs.FS the caller hands it; and the git adapter
+  # compares the file it opened with the one it checked before it reads, which
+  # ReadCapped does not give. The list only shrinks.
+  - capability: capped-read
+    owner: internal/host/fs
+    export: Tree.ReadSoleWithin
+    shared: {package: github.com/birdtable/go-files/confine, export: ReadCapped}
+    primitives:
+      - call: io.LimitReader
+      - call: io.LimitedReader
+    allow:
+      - {package: cmd/gragas-dev, why: "fetch caps the body of a download, which is a stream and no file in a root"}
+      - {package: internal/core/api, why: "the audit reads each file through an fs.FS its caller hands it, which confine cannot open"}
+      - {package: internal/host/git, why: "a named file is compared with the one checked, by SameFile, before it is read"}
+    status: shared
+    since: 0.1.0
   # The rule for a versioned file's version key: a whole number of at least 1,
   # and one newer than the reader is not ready. One copy, read
   # by the settings and tools files and by the pin, each in its own words. It

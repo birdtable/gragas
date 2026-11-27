@@ -2,7 +2,6 @@ package tool
 
 import (
 	"errors"
-	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -10,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/birdtable/go-files/confine"
 	"github.com/birdtable/go-proc/proc"
 	hosttrust "github.com/birdtable/gragas/internal/host/trust"
 	"github.com/birdtable/gragas/internal/model"
@@ -132,20 +132,14 @@ func manifestBytes(dir, name string) (b []byte, err error) {
 	}
 	defer func() { err = errors.Join(err, root.Close()) }()
 	what := "the " + name + " of " + hosttrust.Quote(dir)
-	f, err := root.Open(name)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil, err
-		}
-		return nil, refused(what+" cannot be read: "+err.Error(), "reinstall the package")
-	}
-	defer func() { err = errors.Join(err, f.Close()) }()
-	b, err = io.ReadAll(io.LimitReader(f, maxPackageJSON+1))
-	if err != nil {
-		return nil, refused(what+" cannot be read: "+err.Error(), "reinstall the package")
-	}
-	if len(b) > maxPackageJSON {
+	b, err = confine.ReadCapped(root, name, maxPackageJSON)
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		return nil, err
+	case errors.Is(err, confine.ErrOverCap):
 		return nil, refused(what+" is over "+itoa(maxPackageJSON)+" bytes", "reinstall the package")
+	case err != nil:
+		return nil, refused(what+" cannot be read: "+err.Error(), "reinstall the package")
 	}
 	return b, nil
 }

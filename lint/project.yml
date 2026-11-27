@@ -92,6 +92,21 @@ forbid-extra: |
     msg: "arch.ports.6: a runtime is made from plugin.RuntimeConfig, wazero's interpreter, with no compilation cache"
   - pattern: ^time\.Now$
     msg: "arch.ports.1: only the Clock adapter reads the clock; every other package, a test of the core included, asks the Clock port"
+  # A test of host/fs names a wanted root with confine.Resolve, which follows a
+  # junction as well as a link; filepath.EvalSymlinks has followed no junction
+  # since Go 1.23, so a root it spells differs on Windows. The exclusion below
+  # spares every file but the tests of that package.
+  - pattern: ^filepath\.EvalSymlinks$
+    pkg: ^path/filepath$
+    msg: "arch.ports.24: a test of host/fs resolves a root with confine.Resolve, not filepath.EvalSymlinks"
+  # A path of the local disk is cleaned and judged with path/filepath or
+  # confine: path reads a backslash and a drive letter as part of a name, so
+  # path.Clean and path.IsAbs differ from the system's on Windows. path is
+  # right for a slash path of the model's tree or a URL, and the exclusions
+  # below name each package or file that holds only those.
+  - pattern: ^path\.(IsAbs|Clean)$
+    pkg: ^path$
+    msg: "arch.ports.24: a local path is judged with filepath or confine, not path.IsAbs or path.Clean; path is for slash paths and URLs"
   # A reader of the gate's, the repo checks' and the dev tool's files refuses a duplicate key, as
   # ParseStrict does and ParseYAML does not; the exclusion below spares every other folder.
   - pattern: ^ordered\.ParseYAML$
@@ -104,6 +119,40 @@ overrides: |
         - path-except: ^(internal/dev/gate|internal/repo|cmd/gragas-dev)/
           linters: [forbidigo]
           text: "gates\\.readers\\.1:"
+        # filepath.EvalSymlinks is banned in the tests of host/fs only.
+        - path-except: ^internal/host/fs/[^/]*_test\.go$
+          linters: [forbidigo]
+          text: "arch\\.ports\\.24: a test of host/fs resolves a root"
+        # path.IsAbs and path.Clean are banned for the code of a local path; each
+        # exclusion is slash-path code, which the model's tree and a URL spell with slashes.
+        # The command layer and the proof judge slash paths of the model's tree.
+        - path: ^internal/(core/api|core/proof|apply)/
+          linters: [forbidigo]
+          text: "arch\\.ports\\.24: a local path is judged with filepath"
+        # The in-memory world and the sandbox's names are slash paths too.
+        - path: ^internal/(port/testing|host/sandbox)/
+          linters: [forbidigo]
+          text: "arch\\.ports\\.24: a local path is judged with filepath"
+        # The contract test's sandbox check and the fixture and deprecation readers name slash paths of the contract.
+        - path: ^internal/(port/contracttest/sandbox|core/contract/(fixture|deprecated))\.go$
+          linters: [forbidigo]
+          text: "arch\\.ports\\.24: a local path is judged with filepath"
+        # The audit's extension and the link check read slash paths of the tracked tree.
+        - path: ^internal/core/(audit/extend|link/checkers)\.go$
+          linters: [forbidigo]
+          text: "arch\\.ports\\.24: a local path is judged with filepath"
+        # The tool adapter judges the slash paths of a package's files and of a script's interpreter chain.
+        - path: ^internal/host/tool/(packagebin|locate|trust)\.go$
+          linters: [forbidigo]
+          text: "arch\\.ports\\.24: a local path is judged with filepath"
+        # The persisted name is the model's slash name, and the release's archive member names are slash names.
+        - path: ^(internal/config/(persisted|tools_test)|cmd/gragas-release/archive)\.go$
+          linters: [forbidigo]
+          text: "arch\\.ports\\.24: a local path is judged with filepath"
+        # The root package's os-code test reads the slash names of the allow-lists.
+        - path: ^internal/oscode_test\.go$
+          linters: [forbidigo]
+          text: "arch\\.ports\\.24: a local path is judged with filepath"
         # The three files that still name syscall or x/sys, each until
         # the OS audit row that replaces it lands;
         # a fourth file is not spared, and the row's own file is deleted with
