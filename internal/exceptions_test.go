@@ -206,12 +206,15 @@ func parseListed(data string) (lines, bad []string) {
 
 // admitted is the entries suppressions.txt may hold, once each, though the
 // list at the merge base does not: the one place the list is let grow, by a
-// ruling and for a time. It admits none: the one it held, the nolint of
+// ruling and for a time. It admits the one nolint of
+// cmd/gragas/standin_module_test.go, the standin module's row, which runs
+// serial so its calls, each held to the host's five-second limit, have the
+// machine to themselves. The one it held before, the nolint of
 // internal/cli/root/commands.go, went with its line and its suppression when
 // the kit's name for a signal's stop came in (gragas#1962). An entry here
 // that the list no longer holds is red (gragas#1963).
 func admitted() []string {
-	return nil
+	return []string{"nolint cmd/gragas/standin_module_test.go paralleltest"}
 }
 
 // grown is each entry of list that base, the list at the merge base, does
