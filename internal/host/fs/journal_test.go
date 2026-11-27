@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/birdtable/go-files/confine"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -348,7 +349,7 @@ func TestALineOfAnOlderFormIsRefusedByName(t *testing.T) {
 		t.Fatal(err)
 	}
 	// The journal names its path by the state folder resolved, as KeptAt does.
-	real, err := filepath.EvalSymlinks(name)
+	real, err := confine.Resolve(name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -797,7 +798,7 @@ func TestWhereACopyLiesIsTheFileKeptReads(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		real, err := filepath.EvalSymlinks(state)
+		real, err := confine.Resolve(state)
 		if err != nil {
 			t.Fatal(err)
 		}

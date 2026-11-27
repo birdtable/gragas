@@ -2,6 +2,7 @@ package fs_test
 
 import (
 	"errors"
+	"github.com/birdtable/go-files/confine"
 	"os"
 	"path/filepath"
 	"strings"
@@ -194,7 +195,7 @@ func mountsJudged(t *testing.T, dir string) bool {
 // system, its links resolved, so a test's own names are all it plants.
 func private(t *testing.T) string {
 	t.Helper()
-	d, err := filepath.EvalSymlinks(filestest.Private(t))
+	d, err := confine.Resolve(filestest.Private(t))
 	if err != nil {
 		t.Fatal(err)
 	}
