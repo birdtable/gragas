@@ -1,5 +1,5 @@
 # Runs go vet and go test on GitHub's hosted runners: on Linux and Windows for every pull request,
-# and on Linux, macOS and Windows for every push to main and every tag. It holds no secret, and its
+# and on Linux, macOS and Windows for every push to main, every tag and by hand. It holds no secret, and its
 # token reads the repository's contents alone. Every module is fetched through the public Go module
 # proxy, and nothing is kept in the Actions cache.
 name: test
@@ -10,6 +10,7 @@ on:
     branches: [main]
     # A release's proof is all three jobs at the tagged commit.
     tags: ['v*']
+  workflow_dispatch:
 
 # A newer push to the same branch, pull request or tag cancels the run it supersedes, so that run's
 # runners go back to the pool.
