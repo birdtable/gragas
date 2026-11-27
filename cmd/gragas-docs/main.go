@@ -95,11 +95,6 @@ func generate(ctx context.Context, dir string, check bool) (stale []string, comp
 	if err != nil {
 		return nil, 0, err
 	}
-	where, err := whereDocuments(tree)
-	if err != nil {
-		return nil, 0, err
-	}
-	maps.Copy(made, where)
 	type document struct {
 		Path string
 		Data []byte

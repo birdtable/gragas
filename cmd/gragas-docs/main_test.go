@@ -29,7 +29,6 @@ func repo(t *testing.T) string {
 		t.Fatal(err)
 	}
 	put(t, dir, archFile, "# a\n\nProse.\n\n## 17. v6\n\n"+plannedOpen+"\n"+plannedClose+"\n")
-	put(t, dir, agentsFile, "# Working\n\n## Where things are\n\n"+whereOpen+"\n"+whereClose+"\n\n## Before a push\n")
 	put(t, dir, layersFile, "planned:\n  - created: M1\n    layer: core\n    packages: [internal/core/format, internal/core/contract]\n")
 	return dir
 }
