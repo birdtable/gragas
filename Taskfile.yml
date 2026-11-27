@@ -335,6 +335,7 @@ tasks:
       - task: vet
         vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
       - task: gate-lists
+      - task: workflows
       - task: standin
         vars: {SKIP_UNCHANGED: "{{.SKIP_UNCHANGED}}"}
 
@@ -964,6 +965,20 @@ tasks:
       - task: secrets-scan
         vars: {SCAN: origin/main..HEAD}
         timeout: 5m
+
+  workflows:
+    desc: The pinned actionlint, then the pinned zizmor with no network (-o), over .github/workflows (supply.workflows.2)
+    cmds:
+      - cmd: '{{.GATE}} lap begin {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - defer: '{{.GATE}} lap end {{.TASK}}'
+        timeout: 1m
+        silent: true
+      - cmd: "{{.TOOLS}}/actionlint{{exeExt}}"
+        timeout: 2m
+      - cmd: "{{.TOOLS}}/zizmor{{exeExt}} -o .github/workflows"
+        timeout: 2m
 
   gate-registry:
     desc: Hold gate/ to its schemas and to the tree

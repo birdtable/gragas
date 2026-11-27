@@ -31,7 +31,7 @@ func builtinCommands() []string {
 // pinnedTools are the programs of tools.yaml a member may run, as {{.TOOLS}}/<name> only.
 func pinnedTools() []string {
 	return []string{
-		"changie", "gitleaks", "go-licenses", "golangci-lint", "goreleaser", "govulncheck", "hatch", "node", "pnpm", "ast-grep", "task", "vale",
+		"changie", "gitleaks", "go-licenses", "golangci-lint", "goreleaser", "govulncheck", "hatch", "node", "pnpm", "ast-grep", "task", "vale", "actionlint", "zizmor",
 	}
 }
 
