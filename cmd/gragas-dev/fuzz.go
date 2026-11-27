@@ -125,7 +125,7 @@ func fuzzCommandLimited(ctx context.Context, p fuzzPlan, run fuzzRun, limit fuzz
 			<-slots
 			break
 		}
-		// measured: the 35 fuzz targets 3 at once, 2100s to 739s at 15 CPUs on 2026-11-09
+		// measured: the 35 fuzz targets 3 at once, 2100s to 739s at 15 CPUs, run on 2026-11-09
 		wg.Go(func() {
 			defer func() { <-slots }()
 			tctx, cancel := limit(ctx, t)
